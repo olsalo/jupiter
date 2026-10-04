@@ -1,0 +1,18 @@
+import type { SVGProps } from "react"
+
+export function AppLogo(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      onDragStart={(event) => event.preventDefault()}
+      fill="none"
+      viewBox="0 0 32 32"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        d="M17.9721 0L20.1234 6.04849L25.9192 3.2917L28.7083 6.08082L25.9515 11.8766L32 14.0279V17.9721L25.9515 20.1234L28.7083 25.9192L25.9192 28.7083L20.1234 25.9515L17.9721 32H14.0279L11.8766 25.9515L6.08082 28.7083L3.2917 25.9192L6.04849 20.1234L0 17.9721V14.0279L6.04849 11.8766L3.2917 6.08082L6.08082 3.2917L11.8766 6.04849L14.0279 0H17.9721Z"
+        fill="currentColor"
+      />
+    </svg>
+  )
+}

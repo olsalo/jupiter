@@ -1,0 +1,319 @@
+"use client";
+
+import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
+import Icon from "../icons"
+import { cn } from "@coss/ui/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+const SheetClosingContext = createContext(false)
+const sheetExitDuration = 220
+
+type SheetOpenChange = NonNullable<SheetPrimitive.Root.Props["onOpenChange"]>
+
+function Sheet({
+  deferClose = true,
+  onOpenChange,
+  open,
+  ...props
+}: SheetPrimitive.Root.Props & { deferClose?: boolean }) {
+  const [isClosing, setIsClosing] = useState(false)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const onOpenChangeRef = useRef(onOpenChange)
+  const previousOpenRef = useRef(open)
+  const isExternallyClosing = open === false && previousOpenRef.current === true
+  const isReopening = open === true && previousOpenRef.current === false
+
+  useEffect(() => {
+    onOpenChangeRef.current = onOpenChange
+  }, [onOpenChange])
+
+  const cancelPendingClose = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+
+    setIsClosing(false)
+  }, [])
+
+  useEffect(() => {
+    const wasOpen = previousOpenRef.current
+    previousOpenRef.current = open
+
+    if (open === false && wasOpen === true) {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current)
+      }
+
+      setIsClosing(true)
+      closeTimerRef.current = setTimeout(() => {
+        closeTimerRef.current = null
+        setIsClosing(false)
+      }, sheetExitDuration)
+    } else if (open === true && wasOpen === false) {
+      cancelPendingClose()
+    }
+  }, [cancelPendingClose, open])
+
+  useEffect(
+    () => () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current)
+      }
+    },
+    [],
+  )
+
+  const handleOpenChange = useCallback<SheetOpenChange>(
+    (...args) => {
+      const [nextOpen] = args
+
+      if (deferClose && open !== undefined && !nextOpen && open) {
+        if (isClosing || closeTimerRef.current) {
+          return
+        }
+
+        setIsClosing(true)
+        closeTimerRef.current = setTimeout(() => {
+          closeTimerRef.current = null
+          onOpenChangeRef.current?.(...args)
+        }, sheetExitDuration)
+        return
+      }
+
+      if (nextOpen) {
+        cancelPendingClose()
+      }
+
+      onOpenChangeRef.current?.(...args)
+    },
+    [cancelPendingClose, deferClose, isClosing, open],
+  )
+
+  return (
+    <SheetClosingContext.Provider value={(isClosing && !isReopening) || isExternallyClosing}>
+      {open === undefined ? (
+        <SheetPrimitive.Root {...props} onOpenChange={handleOpenChange} />
+      ) : (
+        <SheetPrimitive.Root
+          {...props}
+          onOpenChange={handleOpenChange}
+          open={open && (!isClosing || isReopening)}
+        />
+      )}
+    </SheetClosingContext.Provider>
+  )
+}
+
+const SheetPortal = SheetPrimitive.Portal;
+
+function SheetTrigger(props: SheetPrimitive.Trigger.Props) {
+  return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
+}
+
+function SheetClose(props: SheetPrimitive.Close.Props) {
+  return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
+}
+
+function SheetBackdrop({ className, ...props }: SheetPrimitive.Backdrop.Props) {
+  return (
+    <SheetPrimitive.Backdrop
+      className={cn(
+        "fixed inset-0 z-50 bg-black/32 backdrop-blur-[2px] transition-all duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
+        className,
+      )}
+      data-slot="sheet-backdrop"
+      {...props}
+    />
+  );
+}
+
+function SheetViewport({
+  className,
+  side,
+  variant = "default",
+  ...props
+}: SheetPrimitive.Viewport.Props & {
+  side?: "right" | "left" | "top" | "bottom";
+  variant?: "default" | "inset";
+}) {
+  return (
+    <SheetPrimitive.Viewport
+      className={cn(
+        "pointer-events-none fixed inset-0 z-50 grid",
+        side === "bottom" && "grid grid-rows-[1fr_auto] pt-12",
+        side === "top" && "grid grid-rows-[auto_1fr] pb-12",
+        side === "left" && "flex justify-start",
+        side === "right" && "flex justify-end",
+        variant === "inset" && "sm:p-2",
+      )}
+      data-slot="sheet-viewport"
+      {...props}
+    />
+  );
+}
+
+function SheetPopup({
+  className,
+  children,
+  showCloseButton = true,
+  side = "right",
+  variant = "default",
+  ...props
+}: SheetPrimitive.Popup.Props & {
+  showCloseButton?: boolean;
+  side?: "right" | "left" | "top" | "bottom";
+  variant?: "default" | "inset";
+}) {
+  const isClosing = useContext(SheetClosingContext)
+  const previousChildrenRef = useRef(children)
+
+  if (!isClosing) {
+    previousChildrenRef.current = children
+  }
+
+  return (
+    <SheetPortal>
+      <SheetBackdrop />
+      <SheetViewport side={side} variant={variant}>
+        <SheetPrimitive.Popup
+          className={cn(
+            "pointer-events-auto",
+            "relative flex max-h-full min-h-0 w-full min-w-0 flex-col bg-popover not-dark:bg-clip-padding text-popover-foreground shadow-lg/5 transition-[opacity,translate] duration-200 ease-in-out will-change-transform before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] data-ending-style:opacity-0 data-starting-style:opacity-0 max-sm:before:hidden dark:before:shadow-[0_-1px_--theme(--color-white/6%)] border-border",
+            side === "bottom" &&
+              "row-start-2 border-t data-ending-style:translate-y-8 data-starting-style:translate-y-8",
+            side === "top" &&
+              "data-ending-style:-translate-y-8 data-starting-style:-translate-y-8 border-b",
+            side === "left" &&
+              "data-ending-style:-translate-x-8 data-starting-style:-translate-x-8 w-[calc(100%-(--spacing(12)))] max-w-md border-e",
+            side === "right" &&
+              "col-start-2 w-[calc(100%-(--spacing(12)))] max-w-md border-s data-ending-style:translate-x-8 data-starting-style:translate-x-8",
+            variant === "inset" &&
+              "before:hidden sm:rounded-xl sm:border sm:before:rounded-[calc(var(--radius-2xl)-1px)] sm:**:data-[slot=sheet-footer]:rounded-b-[calc(var(--radius-2xl)-1px)]",
+            className,
+          )}
+          data-slot="sheet-popup"
+          {...props}
+          finalFocus={false}
+          initialFocus={false}
+        >
+          {isClosing ? previousChildrenRef.current : children}
+          {showCloseButton && (
+            <SheetPrimitive.Close
+              aria-label="Close"
+              className="absolute inset-e-2 top-2"
+              render={<Button size="icon" variant="ghost" />}
+            >
+              <Icon name={"x"} />
+            </SheetPrimitive.Close>
+          )}
+        </SheetPrimitive.Popup>
+      </SheetViewport>
+    </SheetPortal>
+  );
+}
+
+function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-2 p-6 in-[[data-slot=sheet-popup]:has([data-slot=sheet-panel])]:pb-3 max-sm:pb-4",
+        className,
+      )}
+      data-slot="sheet-header"
+      {...props}
+    />
+  );
+}
+
+function SheetFooter({
+  className,
+  variant = "default",
+  ...props
+}: React.ComponentProps<"div"> & {
+  variant?: "default" | "bare";
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col-reverse gap-2 px-6 sm:flex-row sm:justify-end border-border",
+        variant === "default" && "border-t bg-muted/72 py-4",
+        variant === "bare" &&
+          "in-[[data-slot=sheet-popup]:has([data-slot=sheet-panel])]:pt-3 pt-4 pb-6",
+        className,
+      )}
+      data-slot="sheet-footer"
+      {...props}
+    />
+  );
+}
+
+function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
+  return (
+    <SheetPrimitive.Title
+      className={cn(
+        "font-heading font-semibold text-xl leading-none",
+        className,
+      )}
+      data-slot="sheet-title"
+      {...props}
+    />
+  );
+}
+
+function SheetDescription({
+  className,
+  ...props
+}: SheetPrimitive.Description.Props) {
+  return (
+    <SheetPrimitive.Description
+      className={cn("text-muted-foreground text-sm", className)}
+      data-slot="sheet-description"
+      {...props}
+    />
+  );
+}
+
+function SheetPanel({
+  className,
+  scrollFade = true,
+  ...props
+}: React.ComponentProps<"div"> & { scrollFade?: boolean }) {
+  return (
+    <ScrollArea scrollFade={scrollFade}>
+      <div
+        className={cn(
+          "p-6 in-[[data-slot=sheet-popup]:has([data-slot=sheet-header])]:pt-1 in-[[data-slot=sheet-popup]:has([data-slot=sheet-footer]:not(.border-t))]:pb-1",
+          className,
+        )}
+        data-slot="sheet-panel"
+        {...props}
+      />
+    </ScrollArea>
+  );
+}
+
+export {
+  Sheet,
+  SheetTrigger,
+  SheetPortal,
+  SheetClose,
+  SheetBackdrop,
+  SheetBackdrop as SheetOverlay,
+  SheetPopup,
+  SheetPopup as SheetContent,
+  SheetHeader,
+  SheetFooter,
+  SheetTitle,
+  SheetDescription,
+  SheetPanel,
+};

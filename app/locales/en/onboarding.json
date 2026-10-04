@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "title": "Add your business details",
+    "description": "Add your name and business details to get started."
+  },
+  "title": "Add your business details",
+  "description": "Fill in these details to get started.",
+  "progress": {
+    "label": "Setup steps",
+    "step": "Step {{current}} of {{total}}"
+  },
+  "name": {
+    "label": "Your name",
+    "placeholder": "Jane Doe"
+  },
+  "businessName": {
+    "label": "Business name",
+    "placeholder": "Company Oy"
+  },
+  "location": {
+    "label": "Country",
+    "placeholder": "Choose a country"
+  },
+  "timezone": {
+    "label": "Time zone",
+    "placeholder": "Choose a time zone"
+  },
+  "actions": {
+    "create": "Continue",
+    "finishSetup": "Finish setup",
+    "creating": "Saving…",
+    "chooseSubscription": "Start your free 14-day trial",
+    "choosingSubscription": "Preparing your trial…",
+    "logOut": "Sign out"
+  },
+  "subscription": {
+    "title": "Choose your plan",
+    "description": "Try it free for 14 days. Choose monthly or yearly billing. You can cancel anytime.",
+    "billingLabel": "Billing cycle",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "perMonth": "/ month",
+    "perYear": "/ year",
+    "priceUnavailable": "Price unavailable"
+  },
+  "errors": {
+    "create": "We couldn’t save your details. Please try again.",
+    "organizationNameTaken": "That business name is already in use.",
+    "subscription": "We couldn’t open checkout. Please try again.",
+    "billingNotConfigured": "You can't start a subscription yet. Try again later."
+  }
+}

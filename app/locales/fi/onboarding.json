@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "title": "Lisää yrityksesi tiedot",
+    "description": "Lisää nimesi ja yrityksesi tiedot, niin pääset alkuun."
+  },
+  "title": "Lisää yrityksesi tiedot",
+  "description": "Täytä nämä tiedot, niin pääset alkuun.",
+  "progress": {
+    "label": "Aloituksen vaiheet",
+    "step": "Vaihe {{current}} / {{total}}"
+  },
+  "name": {
+    "label": "Nimesi",
+    "placeholder": "Matti Meikäläinen"
+  },
+  "businessName": {
+    "label": "Yrityksen nimi",
+    "placeholder": "Yritys Oy"
+  },
+  "location": {
+    "label": "Maa",
+    "placeholder": "Valitse maa"
+  },
+  "timezone": {
+    "label": "Aikavyöhyke",
+    "placeholder": "Valitse aikavyöhyke"
+  },
+  "actions": {
+    "create": "Jatka",
+    "finishSetup": "Aloita käyttö",
+    "creating": "Tallennetaan…",
+    "chooseSubscription": "Aloita maksuton 14 päivän kokeilu",
+    "choosingSubscription": "Valmistellaan kokeilua…",
+    "logOut": "Kirjaudu ulos"
+  },
+  "subscription": {
+    "title": "Valitse tilauksesi",
+    "description": "Kokeile maksutta 14 päivää. Valitse kuukausi- tai vuosilaskutus. Voit perua milloin tahansa.",
+    "billingLabel": "Laskutusväli",
+    "monthly": "Kuukausittain",
+    "yearly": "Vuosittain",
+    "perMonth": "/ kk",
+    "perYear": "/ vuosi",
+    "priceUnavailable": "Hinta ei ole saatavilla"
+  },
+  "errors": {
+    "create": "Tietojesi tallennus ei onnistunut. Yritä uudelleen.",
+    "organizationNameTaken": "Yrityksen nimi on jo käytössä.",
+    "subscription": "Maksamisen avaaminen ei onnistunut. Yritä uudelleen.",
+    "billingNotConfigured": "Tilauksen tekeminen ei vielä onnistu. Yritä myöhemmin uudelleen."
+  }
+}

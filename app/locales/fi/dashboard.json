@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "title": "Yleiskatsaus",
+    "description": "Lomakkeesi ja uusimmat vastaukset yhdellä silmäyksellä."
+  },
+  "title": "Yleiskatsaus",
+  "loading": "Ladataan yleiskatsausta",
+  "description": "Lomakkeesi ja uusimmat vastaukset yhdellä silmäyksellä.",
+  "greeting": {
+    "morningNamed": "Huomenta, {{name}}",
+    "afternoonNamed": "Iltapäivää, {{name}}",
+    "eveningNamed": "Iltaa, {{name}}",
+    "morning": "Huomenta",
+    "afternoon": "Iltapäivää",
+    "evening": "Iltaa"
+  },
+  "stats": {
+    "label": "Lomakkeidesi yhteenveto",
+    "activeForms": {
+      "label": "Aktiiviset lomakkeet",
+      "description": "Vastaanottavat vastauksia juuri nyt"
+    },
+    "responses": {
+      "label": "Vastaukset",
+      "description": "Kaikilta lomakkeiltasi"
+    },
+    "thisWeek": {
+      "label": "Tällä viikolla",
+      "description": "Uudet vastaukset maanantaista alkaen"
+    }
+  },
+  "errors": {
+    "load": "Yleiskatsausta ei voitu ladata",
+    "retry": "Yritä uudelleen nähdäksesi uusimmat luvut.",
+    "refresh": "Yleiskatsausta ei voitu päivittää",
+    "stale": "Näytetään viimeksi ladatut luvut."
+  },
+  "retry": "Yritä uudelleen",
+  "chart": {
+    "title": "Vastaukset päivittäin",
+    "period": "Viimeiset 30 päivää",
+    "total_one": "saatu vastaus",
+    "total_other": "saatua vastausta",
+    "daily": "Vastaukset päivittäin",
+    "label": "Päivittäiset lomakevastaukset viimeisten 30 päivän ajalta",
+    "responses": "vastausta",
+    "empty": "Ei vielä vastauksia"
+  },
+  "recentForms": {
+    "title": "Viimeisimmät lomakkeet",
+    "viewAll": "Kaikki lomakkeet",
+    "form": "Lomake",
+    "status": "Tila",
+    "responses": "Vastaukset",
+    "updated": "Muokattu",
+    "openResponses": "Näytä lomakkeen {{title}} vastaukset"
+  },
+  "recentResponses": {
+    "title": "Viimeisimmät vastaukset",
+    "emptyDescription": "Lomakkeidesi uusimmat vastaukset näkyvät tässä."
+  }
+}

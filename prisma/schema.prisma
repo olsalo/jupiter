@@ -1,0 +1,659 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String   @id @default(nanoid())
+  name             String
+  email            String
+  emailVerified    Boolean  @default(false)
+  image            String?
+  locale           String?
+  newResponseEmail Boolean  @default(false)
+  stripeCustomerId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  sessions    Session[]
+  accounts    Account[]
+  members     Member[]
+  invitations Invitation[]
+
+  // Admin-created forms.
+  // Respondents are never User records.
+  formsCreated Form[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Note {
+  id             String       @id @default(nanoid())
+  title          String
+  body           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("note")
+}
+
+model Session {
+  id                   String   @id @default(nanoid())
+  expiresAt            DateTime
+  token                String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(nanoid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(nanoid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Organization {
+  id               String                @id @default(nanoid())
+  name             String
+  slug             String
+  logo             String?
+  createdAt        DateTime
+  metadata         String?
+  stripeCustomerId String?
+
+  members     Member[]
+  invitations Invitation[]
+  notes       Note[]
+  settings    OrganizationSettings?
+
+  forms Form[]
+
+  @@unique([slug])
+  @@map("organization")
+}
+
+model Subscription {
+  id                   String   @id @default(nanoid())
+  plan                 String
+  referenceId          String
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  status               String   @default("incomplete")
+  periodStart          DateTime?
+  periodEnd            DateTime?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+  cancelAtPeriodEnd    Boolean? @default(false)
+  cancelAt             DateTime?
+  canceledAt           DateTime?
+  endedAt              DateTime?
+  seats                Int?
+  billingInterval      String?
+  stripeScheduleId     String?
+
+  @@index([referenceId])
+  @@index([stripeCustomerId])
+  @@map("subscription")
+}
+
+model Member {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String       @default("member")
+  createdAt      DateTime
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("member")
+}
+
+model Invitation {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String       @default("pending")
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+  @@map("invitation")
+}
+
+model OrganizationSettings {
+  id             String       @id @default(nanoid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  businessId     String?
+  timezone       String       @default("Europe/Helsinki")
+  location       String       @default("FI")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("organization_settings")
+}
+
+//
+// Form builder
+//
+
+model Form {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  title       String  @default("Untitled")
+  description String?
+
+  // Public URL: /f/:slug
+  slug String @unique @default(nanoid())
+
+  status FormStatus @default(DRAFT)
+
+  // Live availability, independent of draft edits and published versions.
+  enabled Boolean @default(true)
+
+  //
+  // Submission settings
+  //
+
+  submitButtonText String @default("Submit")
+  successMessage   String @default("Thanks for your response!")
+  redirectUrl      String?
+
+  startsAt      DateTime?
+  closesAt      DateTime?
+  responseLimit Int?
+
+  // NONE     = anonymous
+  // OPTIONAL = optional respondent email
+  // REQUIRED = respondent email required
+  emailCollection FormEmailCollection @default(NONE)
+
+  // Application must enforce:
+  // emailCollection = REQUIRED when this is true.
+  limitOneResponsePerEmail Boolean @default(false)
+
+  //
+  // Appearance
+  //
+
+  theme               FormTheme @default(LIGHT)
+  accentColor         String?
+  logo                String?
+  showProgressBar     Boolean   @default(false)
+  showQuestionNumbers Boolean   @default(false)
+
+  //
+  // Publishing
+  //
+
+  // Latest published FormVersion.version.
+  publishedVersion Int?
+  publishedAt      DateTime?
+
+  // Increment whenever the mutable editor state changes.
+  draftRevision Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sections    FormSection[]
+  logicRules  FormLogicRule[]
+  versions    FormVersion[]
+  submissions FormSubmission[]
+
+  @@index([organizationId])
+  @@index([organizationId, status])
+  @@index([organizationId, updatedAt])
+  @@index([createdById])
+  @@map("form")
+}
+
+model FormSection {
+  id     String @id @default(nanoid())
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  title       String?
+  description String?
+
+  sortOrder Int @default(0)
+
+  settings Json? @db.JsonB
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items FormItem[]
+
+  incomingLogicRules FormLogicRule[] @relation("LogicTargetSection")
+
+  @@index([formId, sortOrder])
+  @@map("form_section")
+}
+
+model FormItem {
+  id        String      @id @default(nanoid())
+  sectionId String
+  section   FormSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  type FormItemType
+
+  // Input: question title
+  // HEADING: heading text
+  // IMAGE/TEXT_BLOCK: optional title
+  label String?
+
+  description String?
+  placeholder String?
+
+  // Content-only items should always have required = false.
+  required Boolean @default(false)
+
+  // Canonical semantic order inside the section.
+  sortOrder Int @default(0)
+
+  //
+  // Desktop layout
+  //
+
+  row    Int @default(0)
+  column Int @default(0)
+  width  Int @default(12)
+
+  //
+  // Type-specific data
+  //
+
+  defaultValue Json? @db.JsonB
+
+  validation Json? @db.JsonB
+
+  settings Json? @db.JsonB
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  options FormItemOption[]
+
+  logicRules FormLogicRule[] @relation("LogicSourceItem")
+
+  @@index([sectionId])
+  @@index([sectionId, sortOrder])
+  @@index([sectionId, row, column])
+  @@map("form_item")
+}
+
+model FormItemOption {
+  id     String   @id @default(nanoid())
+  itemId String
+  item   FormItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  // OPTION = normal choice
+  // ROW    = grid row
+  // COLUMN = grid column
+  kind FormItemOptionKind @default(OPTION)
+
+  label String
+
+  // Stable machine value independent from label.
+  value String @default(nanoid())
+
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([itemId, value])
+  @@index([itemId, kind, sortOrder])
+  @@map("form_item_option")
+}
+
+model FormLogicRule {
+  id     String @id @default(nanoid())
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  // Must point to an answerable FormItem.
+  sourceItemId String
+  sourceItem   FormItem @relation("LogicSourceItem", fields: [sourceItemId], references: [id], onDelete: Cascade)
+
+  operator FormLogicOperator
+
+  // Examples:
+  //
+  // "yes"
+  // "option-id"
+  // 10
+  // ["option-a", "option-b"]
+  comparisonValue Json? @db.JsonB
+
+  action FormLogicAction
+
+  // Required when action = GO_TO_SECTION.
+  // Null when action = SUBMIT_FORM.
+  targetSectionId String?
+  targetSection   FormSection? @relation("LogicTargetSection", fields: [targetSectionId], references: [id], onDelete: SetNull)
+
+  priority Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([formId, priority])
+  @@index([sourceItemId])
+  @@index([targetSectionId])
+  @@map("form_logic_rule")
+}
+
+model FormVersion {
+  id     String @id @default(nanoid())
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  version Int
+
+  // Immutable published representation.
+  //
+  // Contains everything required for rendering:
+  // - form settings
+  // - appearance
+  // - sections
+  // - items
+  // - options
+  // - validation
+  // - layout
+  // - logic rules
+  snapshot Json @db.JsonB
+
+  createdAt DateTime @default(now())
+
+  submissions FormSubmission[]
+
+  @@unique([formId, version])
+  @@index([formId])
+  @@map("form_version")
+}
+
+model FormSubmission {
+  id     String @id @default(nanoid())
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  // Exact published version shown to respondent.
+  formVersionId String
+  formVersion   FormVersion @relation(fields: [formVersionId], references: [id], onDelete: Cascade)
+
+  //
+  // Respondent identity
+  //
+
+  // Null = anonymous.
+  //
+  // If present, normalize before storage:
+  // trim + lowercase.
+  respondentEmail String?
+
+  // Populate only when limitOneResponsePerEmail = true.
+  //
+  // Set to normalized respondentEmail.
+  //
+  // Otherwise leave null.
+  dedupeKey String?
+
+  status FormSubmissionStatus @default(SUBMITTED)
+
+  // Examples:
+  // public
+  // embed
+  // api
+  source String?
+
+  // UTM/referrer/etc.
+  metadata Json? @db.JsonB
+
+  submittedAt DateTime @default(now())
+
+  answers FormAnswer[]
+
+  @@unique([formId, dedupeKey])
+
+  @@index([formId])
+  @@index([formId, submittedAt])
+  @@index([formId, respondentEmail])
+  @@index([formVersionId])
+
+  @@map("form_submission")
+}
+
+model FormAnswer {
+  id           String         @id @default(nanoid())
+  submissionId String
+  submission   FormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  // Intentionally not a FK to FormItem.
+  //
+  // The mutable draft can change or delete the original item
+  // without breaking historical responses.
+  itemId String
+
+  itemLabel String?
+
+  itemType FormItemType
+
+  // Examples:
+  //
+  // "Olli"
+  //
+  // 5
+  //
+  // true
+  //
+  // "option-value"
+  //
+  // ["option-a", "option-b"]
+  //
+  // "2026-10-01"
+  //
+  // Grid:
+  //
+  // {
+  //   "row-a": "column-b",
+  //   "row-b": "column-a"
+  // }
+  value Json? @db.JsonB
+
+  createdAt DateTime @default(now())
+
+  files FormSubmissionFile[]
+
+  @@unique([submissionId, itemId])
+  @@index([submissionId])
+  @@map("form_answer")
+}
+
+model FormSubmissionFile {
+  id       String     @id @default(nanoid())
+  answerId String
+  answer   FormAnswer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  // S3 / R2 object key.
+  storageKey String @unique
+
+  fileName String
+  mimeType String
+  size     Int
+
+  createdAt DateTime @default(now())
+
+  @@index([answerId])
+  @@map("form_submission_file")
+}
+
+//
+// Enums
+//
+
+enum FormStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum FormTheme {
+  SYSTEM
+  LIGHT
+  DARK
+}
+
+enum FormEmailCollection {
+  NONE
+  OPTIONAL
+  REQUIRED
+}
+
+enum FormItemType {
+  //
+  // Content-only
+  //
+
+  HEADING
+  TEXT_BLOCK
+  DIVIDER
+  IMAGE
+
+  //
+  // Text
+  //
+
+  SHORT_TEXT
+  LONG_TEXT
+  EMAIL
+  PHONE
+  URL
+
+  //
+  // Numeric
+  //
+
+  NUMBER
+  LINEAR_SCALE
+  RATING
+
+  //
+  // Date/time
+  //
+
+  DATE
+  TIME
+  DATETIME
+
+  //
+  // Choice
+  //
+
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  DROPDOWN
+  CHECKBOX
+
+  //
+  // Grid
+  //
+
+  MULTIPLE_CHOICE_GRID
+  CHECKBOX_GRID
+
+  //
+  // Upload
+  //
+
+  FILE
+}
+
+enum FormItemOptionKind {
+  OPTION
+  ROW
+  COLUMN
+}
+
+enum FormLogicOperator {
+  EQUALS
+  NOT_EQUALS
+
+  CONTAINS
+  NOT_CONTAINS
+
+  GREATER_THAN
+  GREATER_THAN_OR_EQUAL
+
+  LESS_THAN
+  LESS_THAN_OR_EQUAL
+
+  IS_EMPTY
+  IS_NOT_EMPTY
+}
+
+enum FormLogicAction {
+  GO_TO_SECTION
+  SUBMIT_FORM
+}
+
+enum FormSubmissionStatus {
+  SUBMITTED
+  SPAM
+}

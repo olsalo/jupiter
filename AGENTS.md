@@ -1,0 +1,25 @@
+- Always use TypeScript
+- Do not use semicolons at the end of lines
+- Do not use lint
+- If you start a dev server while testing, always shut it down before finishing
+- Use icons.tsx components for icons, add needed icons to iconMap from tabler
+- Use React Router loaders only for route/app state. Do not use React Router actions for application mutations; use tRPC with TanStack Query for client data fetching and form submissions
+- Forms should use RVF via AppForm and FormLabel
+- Modal forms should reset when opening a new create flow, not while closing or immediately after submission
+- Don't use native html form validation
+- Use ä, ö and other letters for languages that use them eg. finnish
+- If you need create a new component or compose reusable component from UI primitives, add them to "components" folder (not "ui" folder)
+- Use "latest" for all dependency versions when adding or updating dependencies
+- Always try use coss components before creating custom solutions
+- if making db changes run both db:push and db:generate
+- always pay attention to UI details and element sizes, make things polished and symmetrical
+- if creating nested modals, force backdrop render
+- always have errors associated with input, not as seperate text at bottom of form. for unexpected errors use error toast.
+- use explicit boolean props.
+- in forms ensure inputs error styles are working
+- when using figma, always try first map elements to existing components in this projects, before creating completely custom components.
+- for new components where there is high probably for use in other routes, put it in components folder
+- if form submit leads to redirect to other route, ensure the submit button loading state also take into account the next loader loading
+- always use small business friendly ui labels, no corporate talk
+- for date formating use lib/format-preference
+- use coss alert component for error/info states

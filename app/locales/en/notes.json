@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "title": "Notes",
+    "description": "Write and edit your notes."
+  },
+  "title": "Notes",
+  "loadingList": "Loading notes",
+  "description": "Keep track of things you want to remember.",
+  "selection": {
+    "clear": "Clear selection",
+    "row": "Select {{title}}",
+    "selected": "{{count}} selected",
+    "selectAll": "Select all notes",
+    "toolbar": "Note selection"
+  },
+  "view": {
+    "description": "Read or edit this note.",
+    "loading": "Loading note",
+    "loadError": "Could not load this note."
+  },
+  "empty": {
+    "title": "No notes yet",
+    "description": "Add your first note."
+  },
+  "form": {
+    "createTitle": "New note",
+    "editTitle": "Edit note",
+    "title": {
+      "label": "Title",
+      "placeholder": "This week's tasks"
+    },
+    "body": {
+      "label": "Note",
+      "placeholder": "Write the note details"
+    },
+    "create": "Create",
+    "creating": "Creating...",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel"
+  },
+  "actions": {
+    "add": "Add note",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "retry": "Try again"
+  },
+  "deleteConfirmation": {
+    "title": "Delete this note?",
+    "titlePlural": "Delete these {{count}} notes?",
+    "description": "The notes will be permanently deleted.",
+    "confirm": "Delete",
+    "cancel": "Cancel"
+  },
+  "labels": {
+    "created": "Created",
+    "updated": "Updated"
+  },
+  "errors": {
+    "load": "Could not load notes.",
+    "retryDescription": "Please try again in a moment.",
+    "refresh": "Could not refresh notes.",
+    "stale": "Showing the last loaded notes.",
+    "create": "Could not create note.",
+    "update": "Could not update note.",
+    "delete": "Could not delete note."
+  }
+}

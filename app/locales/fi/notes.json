@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "title": "Muistiinpanot",
+    "description": "Kirjoita ja muokkaa muistiinpanojasi."
+  },
+  "title": "Muistiinpanot",
+  "loadingList": "Ladataan muistiinpanoja",
+  "description": "Pidä tärkeät asiat muistissa.",
+  "selection": {
+    "clear": "Tyhjennä valinta",
+    "row": "Valitse {{title}}",
+    "selected": "{{count}} valittu",
+    "selectAll": "Valitse kaikki muistiinpanot",
+    "toolbar": "Muistiinpanojen valinta"
+  },
+  "view": {
+    "description": "Lue tai muokkaa muistiinpanoa.",
+    "loading": "Ladataan muistiinpanoa",
+    "loadError": "Muistiinpanoa ei voitu ladata."
+  },
+  "empty": {
+    "title": "Ei vielä muistiinpanoja",
+    "description": "Lisää ensimmäinen muistiinpanosi."
+  },
+  "form": {
+    "createTitle": "Uusi muistiinpano",
+    "editTitle": "Muokkaa muistiinpanoa",
+    "title": {
+      "label": "Otsikko",
+      "placeholder": "Viikon tehtävät"
+    },
+    "body": {
+      "label": "Sisältö",
+      "placeholder": "Kirjoita muistiinpanon tiedot"
+    },
+    "create": "Luo",
+    "creating": "Luodaan...",
+    "save": "Tallenna",
+    "saving": "Tallennetaan...",
+    "cancel": "Peruuta"
+  },
+  "actions": {
+    "add": "Lisää muistiinpano",
+    "edit": "Muokkaa",
+    "delete": "Poista",
+    "deleting": "Poistetaan...",
+    "retry": "Yritä uudelleen"
+  },
+  "deleteConfirmation": {
+    "title": "Poistetaanko tämä muistiinpano?",
+    "titlePlural": "Poistetaanko nämä {{count}} muistiinpanoa?",
+    "description": "Muistiinpanot poistetaan pysyvästi.",
+    "confirm": "Poista",
+    "cancel": "Peruuta"
+  },
+  "labels": {
+    "created": "Luotu",
+    "updated": "Päivitetty"
+  },
+  "errors": {
+    "load": "Muistiinpanoja ei voitu ladata.",
+    "retryDescription": "Yritä hetken kuluttua uudelleen.",
+    "refresh": "Muistiinpanoja ei voitu päivittää.",
+    "stale": "Näytetään viimeksi ladatut muistiinpanot.",
+    "create": "Muistiinpanoa ei voitu luoda.",
+    "update": "Muistiinpanoa ei voitu päivittää.",
+    "delete": "Muistiinpanoa ei voitu poistaa."
+  }
+}

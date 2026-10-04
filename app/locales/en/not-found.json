@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "title": "Page not found",
+    "description": "The page you requested could not be found."
+  },
+  "eyebrow": "404",
+  "title": "Page not found",
+  "description": "The page you requested does not exist or may have moved.",
+  "backToHome": "Back to home"
+}
