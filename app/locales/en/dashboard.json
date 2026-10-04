@@ -1,11 +1,10 @@
 {
   "meta": {
     "title": "Overview",
-    "description": "See your forms and latest responses at a glance."
+    "description": "A place for your app’s highlights and recent activity."
   },
   "title": "Overview",
-  "loading": "Loading overview",
-  "description": "See your forms and latest responses at a glance.",
+  "description": "A place for your app’s highlights and recent activity.",
   "greeting": {
     "morningNamed": "Morning, {{name}}",
     "afternoonNamed": "Afternoon, {{name}}",
@@ -14,49 +13,15 @@
     "afternoon": "Good afternoon",
     "evening": "Good evening"
   },
-  "stats": {
-    "label": "Your forms at a glance",
-    "activeForms": {
-      "label": "Active forms",
-      "description": "Accepting responses right now"
-    },
-    "responses": {
-      "label": "Responses",
-      "description": "Across all your forms"
-    },
-    "thisWeek": {
-      "label": "This week",
-      "description": "New responses since Monday"
-    }
-  },
-  "errors": {
-    "load": "Could not load your overview",
-    "retry": "Try again to see your latest numbers.",
-    "refresh": "Could not refresh your overview",
-    "stale": "Showing the last loaded numbers."
-  },
-  "retry": "Try again",
-  "chart": {
-    "title": "Responses by day",
-    "period": "Last 30 days",
-    "total_one": "response received",
-    "total_other": "responses received",
-    "daily": "Daily responses",
-    "label": "Daily form responses over the last 30 days",
-    "responses": "responses",
-    "empty": "No responses to show yet"
-  },
-  "recentForms": {
-    "title": "Recent forms",
-    "viewAll": "All forms",
-    "form": "Form",
-    "status": "Status",
-    "responses": "Responses",
-    "updated": "Edited",
-    "openResponses": "View responses for {{title}}"
-  },
-  "recentResponses": {
-    "title": "Recent responses",
-    "emptyDescription": "New responses from your forms will appear here."
+  "placeholder": {
+    "label": "Placeholder content",
+    "title": "Make this space your own",
+    "description": "Add the numbers, updates, and shortcuts that matter to your app.",
+    "summary": "Summary",
+    "summaryDescription": "Your key numbers will appear here.",
+    "activity": "Recent activity",
+    "activityDescription": "Your latest updates will appear here.",
+    "shortcuts": "Quick links",
+    "shortcutsDescription": "Add shortcuts to the things you use most."
   }
 }

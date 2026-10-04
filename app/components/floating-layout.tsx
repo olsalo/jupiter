@@ -4,7 +4,6 @@ import { Link, NavLink, Outlet, href } from "react-router"
 
 import { AppLogo } from "~/components/app-logo"
 import { BillingNotificationBar } from "~/components/billing-notification-bar"
-import { CreateFormButton } from "~/components/forms/create-form-button"
 import Icon, { type AppIconName } from "~/components/icons"
 import { NavigationIcon } from "~/components/navigation-icon"
 import { PageHeader } from "~/components/page-header"
@@ -25,8 +24,8 @@ import { useRouteScrollRestoration } from "~/lib/use-route-scroll-restoration"
 type NavigationItem = {
   activeIcon?: AppIconName
   icon: AppIconName
-  labelKey: "nav.overview" | "nav.notes" | "nav.team" | "nav.forms"
-  path: "/" | "/example" | "/team" | "/forms"
+  labelKey: "nav.overview" | "nav.notes" | "nav.team"
+  path: "/" | "/example" | "/team"
 }
 
 type FloatingLayoutProps = {
@@ -41,7 +40,6 @@ type FloatingLayoutProps = {
   menuItems: readonly NavigationItem[]
   pendingPath?: string
   pageHeaderData?: {
-    actionKind?: "createForm"
     actionHref?: string
     actionLabel?: string
     description?: string
@@ -148,13 +146,7 @@ export function FloatingLayout({
                 />
                 <PageHeader
                   actions={
-                    pageHeaderData.actionKind === "createForm" ? (
-                      <CreateFormButton
-                        className="electron-no-drag h-9 rounded-xl max-md:w-9 max-md:px-0"
-                        compactOnMobile={true}
-                        size="lg"
-                      />
-                    ) : pageHeaderData.actionLabel &&
+                    pageHeaderData.actionLabel &&
                     pageHeaderData.actionHref ? (
                       <Button
                         aria-label={pageHeaderData.actionLabel}

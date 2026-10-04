@@ -14,8 +14,6 @@ import {
 } from "react-router"
 
 import type { Route } from "./+types/root"
-import type { Route as PublicFormRoute } from "./routes/forms/+types/form-public"
-import { useFormPresentation } from "./components/forms/use-form-presentation"
 import {
   getLocale,
   i18nextMiddleware,
@@ -149,18 +147,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { i18n } = useTranslation()
   const matches = useMatches()
   const rootMatch = matches[0] as UIMatch<Route.ComponentProps["loaderData"]>
-  const publicFormMatch = matches.find((match) => match.id === "routes/form-public") as UIMatch<PublicFormRoute.ComponentProps["loaderData"]> | undefined
-  const presentation = useFormPresentation(publicFormMatch?.loaderData?.appearance)
-  const publicDocumentStyle = {
-    ...presentation.documentStyle,
-    "--page-theme-color": publicFormMatch?.loaderData?.unavailable ? presentation.documentStyle.backgroundColor : presentation.documentStyle["--page-theme-color"],
-  }
   const themeSetting = useBackgroundSetting(`${rootMatch?.loaderData?.user?.id}:theme`, rootMatch?.loaderData?.theme ?? "light")
   const theme = themeSetting.value === "dark" ? "dark" : undefined
   const language = i18n.resolvedLanguage || i18n.language
 
   return (
-    <html lang={language} dir={i18n.dir(language)} className={theme} style={publicFormMatch ? publicDocumentStyle : undefined}>
+    <html lang={language} dir={i18n.dir(language)} className={theme}>
       <head>
         <meta charSet="utf-8" />
         <meta
@@ -169,7 +161,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         />
         <meta
           name="theme-color"
-          content={publicFormMatch ? publicDocumentStyle["--page-theme-color"] : theme === "dark" ? "#161616" : "#ffffff"}
+          content={theme === "dark" ? "#161616" : "#ffffff"}
         />
         <Meta />
         <Links />
@@ -191,6 +183,33 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const themeSetting = useBackgroundSetting(`${loaderData.user?.id}:theme`, loaderData.theme)
 
   useEffect(() => restrictKeyboardFocus(), [])
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !window.isSecureContext) return
+
+    let cancelled = false
+    const syncOfflineLocale = () => {
+      navigator.serviceWorker.controller?.postMessage({
+        type: "SET_OFFLINE_LOCALE",
+        locale: loaderData.locale,
+      })
+    }
+
+    // The server resolves this value from the HTTP-only lng cookie.
+    navigator.serviceWorker.addEventListener("controllerchange", syncOfflineLocale)
+    void navigator.serviceWorker.ready.then((registration) => {
+      if (!cancelled) registration.active?.postMessage({
+        type: "SET_OFFLINE_LOCALE",
+        locale: loaderData.locale,
+      })
+    })
+    syncOfflineLocale()
+
+    return () => {
+      cancelled = true
+      navigator.serviceWorker.removeEventListener("controllerchange", syncOfflineLocale)
+    }
+  }, [loaderData.locale])
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)

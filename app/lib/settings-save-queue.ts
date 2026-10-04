@@ -1,4 +1,4 @@
-export function createFormSettingsSaveQueue() {
+export function createSettingsSaveQueue() {
   let tail = Promise.resolve()
   let pendingCount = 0
 

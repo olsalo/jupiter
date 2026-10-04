@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 
-const { createFormSettingsSaveQueue } = await import(new URL("../app/lib/forms/form-settings-save-queue.ts", import.meta.url).href) as typeof import("../app/lib/forms/form-settings-save-queue")
+const { createSettingsSaveQueue } = await import(new URL("../app/lib/settings-save-queue.ts", import.meta.url).href) as typeof import("../app/lib/settings-save-queue")
 
 function deferred() {
   let resolve!: () => void
@@ -8,7 +8,7 @@ function deferred() {
   return { promise, resolve }
 }
 
-const queue = createFormSettingsSaveQueue()
+const queue = createSettingsSaveQueue()
 const firstStarted = deferred()
 const firstResponse = deferred()
 const lastStarted = deferred()
@@ -49,7 +49,7 @@ assert.equal(savedColor, "original", "The latest selection must win, including r
 assert.equal(queue.pendingCount, 0)
 console.info("PASS rapid selections save in order, latest selection wins, and closing waits for newly queued saves")
 
-const recoveryQueue = createFormSettingsSaveQueue()
+const recoveryQueue = createSettingsSaveQueue()
 const failed = recoveryQueue.enqueue(async () => { throw new Error("Temporary save failure") })
 const failureCheck = assert.rejects(failed, /Temporary save failure/)
 const recovered = recoveryQueue.enqueue(async () => { savedColor = "blueberry" })

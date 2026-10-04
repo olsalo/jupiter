@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useSyncExternalStore } from "react"
 import { createBackgroundSetting } from "~/lib/background-setting"
-import { createFormSettingsSaveQueue } from "~/lib/forms/form-settings-save-queue"
+import { createSettingsSaveQueue } from "~/lib/settings-save-queue"
 
 const settings = new Map<string, ReturnType<typeof createBackgroundSetting<unknown>>>()
-const backgroundSettingsSaveQueue = createFormSettingsSaveQueue()
+const backgroundSettingsSaveQueue = createSettingsSaveQueue()
 
 export function useBackgroundSetting<T>(key: string, initialValue: T) {
   const stores = typeof window === "undefined" ? new Map<string, ReturnType<typeof createBackgroundSetting<unknown>>>() : settings

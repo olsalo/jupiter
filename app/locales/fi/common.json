@@ -14,7 +14,6 @@
     "saveError": "Kielen tallentaminen ei onnistunut. Yritä uudelleen."
   },
   "nav": {
-    "forms": "Lomakkeet",
     "team": "Tiimi",
     "overview": "Yleiskatsaus",
     "notes": "Muistiinpanot",
@@ -30,11 +29,7 @@
     "generalDescription": "Muokkaa yrityksesi tietoja.",
     "billing": "Laskutus",
     "billingDescription": "Tilauksesi, maksutapasi ja laskusi.",
-    "notifications": "Ilmoitukset",
-    "newResponseEmail": "Uudet lomakevastaukset",
-    "newResponseEmailDescription": "Lähetä minulle sähköposti, kun lomakkeeseen tulee uusi vastaus.",
     "notificationSaveError": "Ilmoitusasetuksen tallentaminen ei onnistunut. Yritä uudelleen.",
-    "notificationsDescription": "Valitse, mistä saat ilmoituksia.",
     "appearance": "Ulkoasu",
     "appearanceDescription": "Valitse sinulle sopiva ulkoasu.",
     "previewTitle": "Tulossa myöhemmin",
@@ -50,8 +45,8 @@
     "languageDescription": "Valitse käyttämäsi kieli.",
     "regionalFormat": "Päivämäärät ja numerot",
     "regionalFormatDescription": "Valitse, miten päivämäärät, kellonajat ja numerot näytetään.",
-    "regionalFormatEu": "Eurooppa",
-    "regionalFormatUs": "Yhdysvallat",
+    "regionalFormatEu": "EU",
+    "regionalFormatUs": "US",
     "theme": "Teema",
     "themeDescription": "Valitse vaalea tai tumma teema.",
     "themeLight": "Vaalea",
@@ -172,7 +167,7 @@
   },
   "offline": {
     "title": "Yhteys katkesi",
-    "description": "Tarkista internetyhteytesi ja yritä uudelleen."
+    "description": "Tarkista internetyhteytesi. Yritämme uudelleen 5 sekunnin välein."
   },
   "narrow": {
     "title": "Tarvitset leveämmän ikkunan",

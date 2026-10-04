@@ -2,9 +2,14 @@ import { reactRouter } from "@react-router/dev/vite"
 import tailwindcss from "@tailwindcss/vite"
 import { fileURLToPath, URL } from "node:url"
 import { defineConfig } from "vite"
+import { offlinePlugin } from "./build-plugins/offline.ts"
 
 export default defineConfig({
-  plugins: [tailwindcss(), reactRouter()],
+  plugins: [tailwindcss(), reactRouter(), offlinePlugin()],
+  server: {
+    port: 5175,
+    strictPort: true,
+  },
   resolve: {
     alias: {
       "@coss/ui/components": fileURLToPath(

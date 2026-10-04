@@ -1,4 +1,4 @@
-import { useIsFetching, useQuery } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -17,7 +17,6 @@ import type { Route } from "./+types/layout"
 import type { loader as rootLoader } from "~/root"
 import { AppLogo } from "~/components/app-logo"
 import { BillingNotificationBar } from "~/components/billing-notification-bar"
-import { CreateFormButton } from "~/components/forms/create-form-button"
 import { FloatingLayout } from "~/components/floating-layout"
 import Icon, { type AppIconName } from "~/components/icons"
 import { NavigationIcon } from "~/components/navigation-icon"
@@ -50,8 +49,8 @@ export const middleware: Route.MiddlewareFunction[] = [
 const menuItems: Array<{
   activeIcon?: AppIconName
   icon: AppIconName
-  labelKey: "nav.overview" | "nav.notes" | "nav.team" | "nav.forms"
-  path: "/" | "/example" | "/team" | "/forms"
+  labelKey: "nav.overview" | "nav.notes" | "nav.team"
+  path: "/" | "/example" | "/team"
 }> = [
   {
     activeIcon: "dashboardFilled",
@@ -60,9 +59,9 @@ const menuItems: Array<{
     path: "/",
   },
   {
-    icon: "forms",
-    labelKey: "nav.forms",
-    path: "/forms",
+    icon: "notes",
+    labelKey: "nav.notes",
+    path: "/example",
   },
   {
     icon: "users",
@@ -91,7 +90,6 @@ const getElectron = () => navigator.userAgent.includes("Electron/")
 const getServerElectron = () => false
 
 type PageHeaderData = {
-  actionKind?: "createForm"
   actionHref?: string
   actionLabel?: string
   description?: string
@@ -105,24 +103,19 @@ export default function Layout() {
   const trpc = useTRPC()
   useQuery(trpc.example.count.queryOptions())
   useQuery(trpc.team.count.queryOptions())
-  useQuery(trpc.forms.count.queryOptions())
   const rootData = useRouteLoaderData<typeof rootLoader>("root")
   const location = useLocation()
   const matches = useMatches()
   const notesMatch = matches.find(
     (match) => match.id === "routes/example",
   )
-  const formsMatch = matches.find(
-    (match) => match.id === "routes/forms",
-  )
   const isNoteModal = matches.some(
     (match) =>
       match.id === "routes/example-note-modal" ||
       match.id === "routes/example-new-note-modal",
   )
-  const isFormDialog = matches.some((match) => match.id === "routes/form-dialog")
-  const isOverlayRoute = isNoteModal || isFormDialog
-  const pagePathname = notesMatch?.pathname ?? formsMatch?.pathname ?? location.pathname
+  const isOverlayRoute = isNoteModal
+  const pagePathname = notesMatch?.pathname ?? location.pathname
   const previousPathname = useRef(pagePathname)
   const [animatedPathname, setAnimatedPathname] = useState<string | null>(null)
   useLayoutEffect(() => {
@@ -140,8 +133,6 @@ export default function Layout() {
     navigation.state !== "idle" ? navigation.location?.pathname : undefined
   const pendingPath = pendingPathname?.startsWith("/example/")
     ? "/example"
-    : pendingPathname?.startsWith("/forms/")
-      ? "/forms"
     : pendingPathname
   const scrollViewportRef = useRef<HTMLDivElement>(null)
   useRouteScrollRestoration(scrollViewportRef, pagePathname)
@@ -151,28 +142,14 @@ export default function Layout() {
   const [hasVerticalOverflow, setHasVerticalOverflow] = useState(false)
   const user = rootData?.user ?? null
   const isOverviewRoute = matches.some((match) => match.id === "routes/overview")
-  const pageRefetches = useIsFetching({
-    ...(formsMatch ? trpc.forms.list.queryFilter() : trpc.forms.overview.queryFilter()),
-    exact: true,
-    predicate: (query) => Boolean(formsMatch || isOverviewRoute) && query.state.status !== "pending",
-  })
-  const pageHeaderData: PageHeaderData | undefined = formsMatch ? {
-    title: t("forms:title"),
-    description: t("forms:subtitle"),
-    actionKind: "createForm",
-    refreshing: pageRefetches > 0,
-  } : isOverviewRoute ? {
+  const pageHeaderData: PageHeaderData | undefined = isOverviewRoute ? {
     title: overviewGreeting,
     description: t("dashboard:description"),
-    actionKind: "createForm",
-    refreshing: pageRefetches > 0,
   } : undefined
   const isNotesRoute = Boolean(notesMatch)
-  const isFormsRoute = matches.some((match) => match.id === "routes/forms")
   const isTableRoute =
     isNotesRoute ||
     matches.some((match) => match.id === "routes/team")
-  const fillsPage = isTableRoute || isFormsRoute
   useBottomScrollFade(scrollViewportRef, bottomBlurRef, isTableRoute)
   function openCreateNote() {
     navigate("/example/new")
@@ -236,7 +213,7 @@ export default function Layout() {
         isDesktop={isDesktop}
         isElectron={isElectron}
         isTableRoute={isTableRoute}
-        fillContent={isFormsRoute || isOverviewRoute}
+        fillContent={isOverviewRoute}
         pendingPath={pendingPath}
         menuItems={menuItems}
         pageHeaderData={pageHeaderData}
@@ -260,7 +237,7 @@ export default function Layout() {
           className="electron-drag absolute inset-x-0 top-0 z-20 h-8"
         />
       ) : null}
-      <div className="app-page-scroll flex w-full flex-1 overflow-y-auto overscroll-y-none md:min-h-0 md:p-2 md:pl-0">
+      <div className="flex min-h-0 w-full flex-1 overflow-hidden md:p-2 md:pl-0">
         <aside className="hidden w-15 shrink-0 flex-col items-center justify-between px-3 py-1 md:flex">
           <Link
             aria-label={t("nav.overviewHome")}
@@ -326,8 +303,8 @@ export default function Layout() {
           />
           <ScrollArea
             className="min-h-0 flex-1"
-            fill
-            scrollFade
+            fill={true}
+            scrollFade={true}
             scrollbarClassName={cn(
               (isTableRoute || !hasVerticalOverflow) && "[&[data-orientation=vertical]]:hidden",
               !hasHorizontalOverflow && "[&[data-orientation=horizontal]]:hidden",
@@ -337,13 +314,7 @@ export default function Layout() {
               ref: scrollViewportRef,
             }}
           >
-            <div
-              className={cn(
-                "flex min-h-full min-w-0 flex-col",
-                fillsPage && "md:h-full",
-                isOverviewRoute && "h-full",
-              )}
-            >
+            <div className="flex min-h-full min-w-0 flex-col md:h-full">
               {pageHeaderData?.title && !isTableRoute ? (
                 <div
                   className="sticky top-0 z-10 hidden shrink-0 px-6 pt-6 pb-6 md:block"
@@ -357,9 +328,7 @@ export default function Layout() {
                   />
                   <PageHeader
                     actions={
-                      pageHeaderData.actionKind === "createForm" ? (
-                        <CreateFormButton size="lg" />
-                      ) : isNotesRoute && pageHeaderData.actionLabel ? (
+                      isNotesRoute && pageHeaderData.actionLabel ? (
                         <Button
                           onClick={openCreateNote}
                           size="lg"
@@ -386,14 +355,8 @@ export default function Layout() {
                   />
                 </div>
               ) : null}
-              <div
-                className={cn(
-                  "flex min-h-full min-w-0 flex-col gap-6 p-6 md:pt-0 md:px-6",
-                  fillsPage && "md:min-h-0 md:flex-1",
-                  isOverviewRoute && "min-h-0 flex-1",
-                )}
-              >
-                <header className="flex items-start justify-between md:hidden">
+              <div className="flex min-w-0 flex-1 flex-col gap-6 p-6 md:min-h-0 md:pt-0 md:px-6">
+                <header className="flex shrink-0 items-start justify-between md:hidden">
                   <Link
                     aria-label={t("nav.overviewHome")}
                     className="electron-no-drag flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"

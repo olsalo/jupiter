@@ -5,7 +5,7 @@ import Icon from "~/components/icons"
 import { Button } from "~/components/ui/button"
 import { Calendar } from "~/components/ui/calendar"
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "~/components/ui/popover"
-import { calendarDateFromValue, calendarDateToValue } from "~/lib/forms/form-closing-date"
+import { calendarDateFromValue, calendarDateToValue } from "~/lib/calendar-date"
 import { formatDateTime, type FormatPreference } from "~/lib/format-preference"
 import { cn } from "~/lib/utils"
 

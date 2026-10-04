@@ -6,7 +6,6 @@ import enNotFound from "./en/not-found.json"
 import enOnboarding from "./en/onboarding.json"
 import enZod from "./en/zod.json"
 import enTeam from "./en/team.json"
-import enForms from "./en/forms.json"
 import fiCommon from "./fi/common.json"
 import fiAuth from "./fi/auth.json"
 import fiDashboard from "./fi/dashboard.json"
@@ -15,7 +14,6 @@ import fiNotFound from "./fi/not-found.json"
 import fiOnboarding from "./fi/onboarding.json"
 import fiZod from "./fi/zod.json"
 import fiTeam from "./fi/team.json"
-import fiForms from "./fi/forms.json"
 
 export const supportedLanguages = ["en", "fi"] as const
 export const fallbackLanguage = "en"
@@ -28,7 +26,6 @@ export const namespaces = [
   "onboarding",
   "zod",
   "team",
-  "forms",
 ] as const
 
 export const resources = {
@@ -41,7 +38,6 @@ export const resources = {
     onboarding: enOnboarding,
     zod: enZod,
     team: enTeam,
-    forms: enForms,
   },
   fi: {
     common: fiCommon,
@@ -52,6 +48,5 @@ export const resources = {
     onboarding: fiOnboarding,
     zod: fiZod,
     team: fiTeam,
-    forms: fiForms,
   },
 }

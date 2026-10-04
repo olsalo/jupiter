@@ -9,7 +9,6 @@ import {
 } from "react-router"
 
 import { AppForm, type AppFormState } from "~/components/app-form"
-import { NotificationSettings } from "~/components/notification-settings"
 import Icon, { type AppIconName } from "~/components/icons"
 import FormLabel from "~/components/form-label"
 import { Button } from "~/components/ui/button"
@@ -101,12 +100,6 @@ const settingsItems = [
     labelKey: "settings.profile",
   },
   {
-    descriptionKey: "settings.notificationsDescription",
-    icon: "bell" as AppIconName,
-    id: "notifications",
-    labelKey: "settings.notifications",
-  },
-  {
     descriptionKey: "settings.appearanceDescription",
     icon: "palette" as AppIconName,
     id: "appearance",
@@ -177,7 +170,6 @@ export function SettingsModal({
   const [activeItemId, setActiveItemId] = useState<SettingsItemId>("general")
   const [isBillingLoading, setIsBillingLoading] = useState(false)
   const [isGeneralLoading, setIsGeneralLoading] = useState(false)
-  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false)
   const [generalFormState, setGeneralFormState] = useState<GeneralFormState>({
     isDirty: false,
     isSubmitting: false,
@@ -463,16 +455,13 @@ export function SettingsModal({
                   />
                 ) : activeItemId === "billing" ? (
                   <BillingSettingsContent onLoadingChange={setIsBillingLoading} />
-                ) : activeItemId === "notifications" ? (
-                  <NotificationSettings onLoadingChange={setIsNotificationsLoading} />
                 ) : activeItemId === "appearance" ? (
                   <AppearanceSettingsContent />
                 ) : (
                   <PreviewSettingsContent />
                 )}
                 {((activeItemId === "billing" && isBillingLoading) ||
-                  (activeItemId === "general" && isGeneralLoading) ||
-                  (activeItemId === "notifications" && isNotificationsLoading)) ? (
+                  (activeItemId === "general" && isGeneralLoading)) ? (
                   <div
                     aria-hidden="true"
                     className="absolute inset-0 z-10 bg-background"
@@ -541,8 +530,7 @@ export function SettingsModal({
           ) : null}
 
           {((activeItemId === "billing" && isBillingLoading) ||
-            (activeItemId === "general" && isGeneralLoading) ||
-            (activeItemId === "notifications" && isNotificationsLoading)) ? (
+            (activeItemId === "general" && isGeneralLoading)) ? (
             <div className="absolute inset-0 z-20 flex items-center justify-center">
               <Spinner
                 aria-label={t("settings.loading")}
@@ -1876,10 +1864,7 @@ function GeneralSettingsContent({
           formApi.current?.resetForm(values)
         }
 
-        await Promise.all([
-          queryClient.invalidateQueries(trpc.organizations.general.queryFilter()),
-          queryClient.invalidateQueries(trpc.forms.settings.get.queryFilter()),
-        ])
+        await queryClient.invalidateQueries(trpc.organizations.general.queryFilter())
         await revalidator.revalidate()
       }}
       ref={formApi}

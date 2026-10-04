@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 
 const { createBackgroundSetting } = await import(new URL("../app/lib/background-setting.ts", import.meta.url).href) as typeof import("../app/lib/background-setting")
-const { createFormSettingsSaveQueue } = await import(new URL("../app/lib/forms/form-settings-save-queue.ts", import.meta.url).href) as typeof import("../app/lib/forms/form-settings-save-queue")
+const { createSettingsSaveQueue } = await import(new URL("../app/lib/settings-save-queue.ts", import.meta.url).href) as typeof import("../app/lib/settings-save-queue")
 
 function deferred() {
   let resolve!: () => void
@@ -9,7 +9,7 @@ function deferred() {
   return { promise, resolve }
 }
 
-const queue = createFormSettingsSaveQueue()
+const queue = createSettingsSaveQueue()
 const setting = createBackgroundSetting("en", queue)
 const firstStarted = deferred()
 const firstResponse = deferred()

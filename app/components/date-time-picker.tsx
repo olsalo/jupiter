@@ -3,7 +3,7 @@ import type { ComponentProps } from "react"
 
 import { DatePicker } from "~/components/date-picker"
 import { TimePicker } from "~/components/time-picker"
-import { calendarDateToValue } from "~/lib/forms/form-closing-date"
+import { calendarDateToValue } from "~/lib/calendar-date"
 import { cn } from "~/lib/utils"
 
 type DateTimePickerProps = Omit<ComponentProps<typeof DatePicker>, "value" | "onChange" | "className"> & {

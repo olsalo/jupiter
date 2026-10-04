@@ -14,7 +14,6 @@
     "saveError": "We couldn’t save your language. Please try again."
   },
   "nav": {
-    "forms": "Forms",
     "team": "Team",
     "overview": "Overview",
     "notes": "Notes",
@@ -30,11 +29,7 @@
     "generalDescription": "Edit your business details.",
     "billing": "Billing",
     "billingDescription": "Your subscription, payment methods and invoices.",
-    "notifications": "Notifications",
-    "newResponseEmail": "New form responses",
-    "newResponseEmailDescription": "Email me when a form gets a new response.",
     "notificationSaveError": "Couldn’t save your notification setting. Please try again.",
-    "notificationsDescription": "Choose which notifications you receive.",
     "appearance": "Appearance",
     "appearanceDescription": "Choose how the app looks.",
     "previewTitle": "Coming soon",
@@ -50,8 +45,8 @@
     "languageDescription": "Choose your language.",
     "regionalFormat": "Dates and numbers",
     "regionalFormatDescription": "Choose how dates, times and numbers are shown.",
-    "regionalFormatEu": "Europe",
-    "regionalFormatUs": "United States",
+    "regionalFormatEu": "EU",
+    "regionalFormatUs": "US",
     "theme": "Theme",
     "themeDescription": "Choose between a light or dark theme.",
     "themeLight": "Light",
@@ -172,7 +167,7 @@
   },
   "offline": {
     "title": "You’re offline",
-    "description": "Check your internet connection and try again."
+    "description": "Check your internet connection. We’ll try again every 5 seconds."
   },
   "narrow": {
     "title": "Use a wider window",

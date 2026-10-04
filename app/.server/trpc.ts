@@ -1,5 +1,4 @@
 import { initTRPC, TRPCError } from "@trpc/server"
-import { PublicFormNotFoundError } from "./services/forms/public-form"
 import { createInstance } from "i18next"
 import superjson from "superjson"
 
@@ -82,7 +81,6 @@ const t = initTRPC.context<Context>().create({
     ...shape,
     data: {
       ...shape.data,
-      publicFormNotFound: error instanceof PublicFormNotFoundError,
       zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
     },
   }),

@@ -2,7 +2,6 @@ import type { TRPCRouterRecord } from "@trpc/server"
 
 import { protectedProcedure, publicProcedure } from "../trpc"
 import { profileFormSchema } from "~/lib/schemas/profile"
-import { notificationSettingsSchema } from "~/lib/schemas/notifications"
 import { z } from "~/lib/zod"
 import { localeCookie, themeCookie, formatPreferenceCookie } from "~/lib/cookies.server"
 import { syncUserLocale } from "~/lib/locale.server"
@@ -35,21 +34,6 @@ export const profileRouter = {
       if (input.formatPreference) ctx.responseHeaders?.append("Set-Cookie", await formatPreferenceCookie.serialize(input.formatPreference))
       return input
     }),
-  notifications: protectedProcedure.query(({ ctx }) =>
-    ctx.prisma.user.findUniqueOrThrow({
-      where: { id: ctx.user.id },
-      select: { newResponseEmail: true },
-    }),
-  ),
-  updateNotifications: protectedProcedure
-    .input(notificationSettingsSchema)
-    .mutation(({ ctx, input }) =>
-      ctx.prisma.user.update({
-        where: { id: ctx.user.id },
-        data: input,
-        select: { newResponseEmail: true },
-      }),
-    ),
   updateName: protectedProcedure
     .input(profileFormSchema)
     .mutation(({ ctx, input }) =>

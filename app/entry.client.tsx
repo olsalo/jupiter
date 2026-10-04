@@ -44,3 +44,13 @@ async function hydrate() {
 hydrate().catch((error: unknown) => {
   console.error(error)
 })
+
+if ("serviceWorker" in navigator && window.isSecureContext) {
+  navigator.serviceWorker.register("/service-worker.js", {
+    type: "module",
+    scope: "/",
+    updateViaCache: "none",
+  }).catch((error: unknown) => {
+    console.error("Could not register the offline service worker", error)
+  })
+}

@@ -8,16 +8,7 @@ export default [
       route(":noteId", "routes/example-note-modal.tsx"),
     ]),
     route("team", "routes/team.tsx"),
-    route("forms", "routes/forms/form-list.tsx", { id: "routes/forms" }, [
-      route(":id", "routes/forms/form-dialog.tsx", { id: "routes/form-dialog" }, [
-        index("routes/forms/form-index.tsx", { id: "routes/form-index" }),
-        route("edit", "routes/forms/form-edit.tsx", { id: "routes/form-edit" }),
-        route("responses/:responseId?", "routes/forms/form-responses.tsx", { id: "routes/form-responses" }),
-        route("settings", "routes/forms/form-settings.tsx", { id: "routes/form-settings" }),
-      ]),
-    ]),
   ]),
-  route("/f/:id", "routes/forms/form-public.tsx", { id: "routes/form-public" }),
   route("/auth", "routes/auth.tsx"),
   route("/invite/:invitationId", "routes/invite.tsx"),
   route("/onboarding", "routes/onboarding.tsx"),
