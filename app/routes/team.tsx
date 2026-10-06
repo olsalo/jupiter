@@ -1,4 +1,4 @@
-import { dehydrate, useQuery } from "@tanstack/react-query"
+import { dehydrate, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { inferRouterOutputs } from "@trpc/server"
 import { useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
@@ -15,6 +15,7 @@ import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/u
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
+import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "~/components/ui/menu"
 import {
   Empty,
   EmptyDescription,
@@ -24,9 +25,11 @@ import {
 } from "~/components/ui/empty"
 import { Tabs, TabsList, TabsPanel, TabsTab } from "~/components/ui/tabs"
 import { formatDateTime } from "~/lib/format-preference"
+import { clearMobileNavigationQuery } from "~/lib/mobile-navigation"
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
-import { getQueryClient, useTRPC } from "~/lib/trpc/client"
+import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
+import { toast } from "~/lib/toast"
 import { hasOrganizationRole } from "~/lib/utils"
 
 type TeamListOutput = inferRouterOutputs<AppRouter>["team"]["list"]
@@ -47,7 +50,10 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   return { queryClient: dehydrate(queryClient) }
 }
 
-export function clientLoader() {
+export function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const { queryClient, trpc } = getClientTRPC()
+  clearMobileNavigationQuery(queryClient, trpc.team.list.queryKey(), request, "/team")
+
   return null
 }
 
@@ -57,8 +63,19 @@ export default function Team() {
   const { t } = useTranslation("team")
   const root = useRouteLoaderData<typeof rootLoader>("root")
   const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const team = useQuery(trpc.team.list.queryOptions())
   const counts = useQuery({ ...trpc.team.count.queryOptions(), enabled: false })
+  const cancelInvitation = useMutation(trpc.team.cancelInvitation.mutationOptions({
+    onSuccess: async () => {
+      toast.success(t("invite.cancelled"))
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: trpc.team.list.queryKey() }),
+        queryClient.invalidateQueries({ queryKey: trpc.team.count.queryKey() }),
+      ])
+    },
+    onError: () => toast.error(t("invite.cancelFailed")),
+  }))
   const showTeamError = team.isError && team.data === undefined
   const showRefreshError = team.isError && team.data !== undefined
   const memberCount = team.data?.members.length ?? counts.data?.members
@@ -77,6 +94,16 @@ export default function Team() {
     const key = value.trim()
     return key === "owner" || key === "admin" || key === "member" ? t(`roles.${key}`) : key
   }).join(", "), [t])
+  const copyInvitationLink = useCallback(async (invitationId: string, email: string) => {
+    try {
+      const inviteUrl = new URL(`/invite/${encodeURIComponent(invitationId)}`, window.location.origin)
+      inviteUrl.searchParams.set("email", email)
+      await navigator.clipboard.writeText(inviteUrl.href)
+      toast.success(t("invite.linkCopied"))
+    } catch {
+      toast.error(t("invite.copyFailed"))
+    }
+  }, [t])
   const memberColumns = useMemo<TanStackTableColumn<TeamListOutput["members"][number]>[]>(() => [
     {
       id: "member",
@@ -100,7 +127,7 @@ export default function Team() {
     },
     {
       accessorKey: "role",
-      header: t("role"),
+      header: t("permissionLevel"),
       cell: ({ row }) => <Badge variant="outline">{roleLabel(row.original.role)}</Badge>,
       meta: { minWidth: "8rem", skeleton: "badge" },
     },
@@ -113,6 +140,12 @@ export default function Team() {
   ], [formatDate, roleLabel, root?.user?.id, t])
   const inviteColumns = useMemo<TanStackTableColumn<TeamListOutput["invitations"][number]>[]>(() => [
     {
+      accessorKey: "inviteeName",
+      header: t("name"),
+      cell: ({ row }) => <span className="truncate font-medium" title={row.original.inviteeName ?? undefined}>{row.original.inviteeName || "—"}</span>,
+      meta: { minWidth: "9rem" },
+    },
+    {
       accessorKey: "email",
       header: t("email"),
       cell: ({ row }) => <span className="truncate font-medium" title={row.original.email}>{row.original.email}</span>,
@@ -120,7 +153,7 @@ export default function Team() {
     },
     {
       accessorKey: "role",
-      header: t("role"),
+      header: t("permissionLevel"),
       cell: ({ row }) => <Badge variant="outline">{roleLabel(row.original.role)}</Badge>,
       meta: { minWidth: "8rem", skeleton: "badge" },
     },
@@ -130,7 +163,42 @@ export default function Team() {
       cell: ({ row }) => <span className="whitespace-nowrap text-muted-foreground">{formatDate(row.original.expiresAt)}</span>,
       meta: { align: "end", minWidth: "9rem" },
     },
-  ], [formatDate, roleLabel, t])
+    {
+      id: "actions",
+      header: "",
+      cell: ({ row: { original: invitation } }) => (
+        <Menu>
+          <MenuTrigger
+            aria-label={t("invite.actionsFor", { email: invitation.email })}
+            render={<Button disabled={cancelInvitation.isPending} size="icon" type="button" variant="ghost" />}
+          >
+            <Icon aria-hidden="true" name="dotsVertical" size={18} />
+          </MenuTrigger>
+          <MenuPopup align="end" className="min-w-48" sideOffset={6}>
+            <MenuItem closeOnClick={true} onClick={() => void copyInvitationLink(invitation.id, invitation.email)}>
+              <Icon aria-hidden="true" name="copy" />
+              {t("invite.copyLink")}
+            </MenuItem>
+            {canInvite ? (
+              <>
+                <MenuSeparator />
+                <MenuItem
+                  closeOnClick={true}
+                  disabled={cancelInvitation.isPending}
+                  onClick={() => cancelInvitation.mutate({ invitationId: invitation.id })}
+                  variant="destructive"
+                >
+                  <Icon aria-hidden="true" name="delete" />
+                  {t("invite.cancel")}
+                </MenuItem>
+              </>
+            ) : null}
+          </MenuPopup>
+        </Menu>
+      ),
+      meta: { align: "end", width: "7rem", isAction: true },
+    },
+  ], [canInvite, cancelInvitation.isPending, cancelInvitation.mutate, copyInvitationLink, formatDate, roleLabel, t])
 
   return (
     <TablePage>

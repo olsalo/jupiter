@@ -2,7 +2,6 @@ import { createContext, redirect, type MiddlewareFunction } from "react-router"
 
 import { auth } from "~/lib/auth/server"
 import { prisma } from "~/lib/prisma.server"
-import { joinInvitationSearchParam } from "~/lib/team-join"
 import { hasOwnerRole } from "~/lib/utils"
 
 type AuthSession = typeof auth.$Infer.Session
@@ -70,7 +69,15 @@ export const requireAuthMiddleware: MiddlewareFunction<Response> = async ({
       searchParams.set("sessionExpired", "1")
     }
 
-    if (url.pathname !== "/") {
+    const invitationId = url.pathname.startsWith("/invite/")
+      ? url.pathname.slice("/invite/".length)
+      : null
+
+    if (invitationId) {
+      searchParams.set("invite", invitationId)
+      const email = url.searchParams.get("email")
+      if (email) searchParams.set("email", email)
+    } else if (url.pathname !== "/") {
       searchParams.set("redirectTo", `${url.pathname}${url.search}`)
     }
 
@@ -80,16 +87,8 @@ export const requireAuthMiddleware: MiddlewareFunction<Response> = async ({
   }
 }
 
-export const requireOrganizationMiddleware: MiddlewareFunction<
-  Response
-> = async ({ context, url }) => {
-  const invitationId = url.pathname === "/"
-    ? url.searchParams.get(joinInvitationSearchParam)
-    : null
-
-  if (!context.get(organizationContext) && (!invitationId || invitationId.length > 200)) {
-    throw redirect("/onboarding")
-  }
+export const requireOrganizationMiddleware: MiddlewareFunction<Response> = async ({ context }) => {
+  if (!context.get(organizationContext)) throw redirect("/onboarding")
 }
 
 export const requireOwnerMiddleware: MiddlewareFunction<Response> = async ({

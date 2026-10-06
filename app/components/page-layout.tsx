@@ -27,7 +27,7 @@ export function PageLayout({ actions, children, description, title }: PageLayout
         <div className="sticky top-0 z-10 mt-6 shrink-0 md:mt-0 md:mb-3">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 -bottom-3 bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_45%,transparent_100%)] md:bg-background/95 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)]"
+            className="pointer-events-none absolute inset-x-0 top-0 bottom-0 md:-bottom-3 bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)] md:bg-background/95 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_75%,transparent_100%)]"
           />
           <PageHeader
             actions={actions}

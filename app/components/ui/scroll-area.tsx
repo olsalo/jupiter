@@ -7,6 +7,7 @@ import type React from "react";
 export function ScrollArea({
   className,
   children,
+  overscrollContain = false,
   scrollFade = false,
   stickyHeader,
   scrollbarGutter = false,
@@ -17,6 +18,7 @@ export function ScrollArea({
   onWheel,
   ...props
 }: ScrollAreaPrimitive.Root.Props & {
+  overscrollContain?: boolean;
   scrollFade?: boolean;
   stickyHeader?: React.ReactNode
   scrollbarGutter?: boolean;
@@ -93,8 +95,9 @@ export function ScrollArea({
         {...viewportProps}
         className={cn(
           stickyHeader
-            ? "min-h-0 flex-1 overscroll-none rounded-[inherit] outline-none transition-shadows focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
-            : "h-full overscroll-none rounded-[inherit] outline-none transition-shadows focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+            ? "min-h-0 flex-1 rounded-[inherit] outline-none transition-shadows focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+            : "h-full rounded-[inherit] outline-none transition-shadows focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+          overscrollContain ? "overscroll-contain" : "overscroll-auto",
           scrollFade &&
             "mask-t-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-start)))] mask-b-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-end)))] mask-l-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-start)))] mask-r-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-end)))] [--fade-size:1.5rem]",
           scrollbarGutter &&

@@ -110,7 +110,7 @@ export function FloatingLayout({
             className={cn(
               "mx-auto flex w-[calc(100%-44px)] max-w-4xl flex-1 flex-col pb-[calc(70px+max(20px,env(safe-area-inset-bottom)))] md:w-[calc(100%-160px)] md:pb-4",
               isTableRoute
-                ? "md:min-h-0 md:pt-0 md:[--table-page-header-gap:0.75rem] [&_.table-page-header]:pt-[var(--page-header-top-padding,0.75rem)] [&_.table-page-header]:pb-3 [&_.table-page-header_h1]:text-2xl [&_.table-page-header_h1]:font-semibold [&_.table-page-header_h1]:tracking-normal [&_.table-page-header_span]:leading-4"
+                ? "md:min-h-0 md:pt-0 md:[--table-page-header-gap:0.75rem] [&_.table-page-header]:pt-[var(--page-header-top-padding,0.875rem)] [&_.table-page-header]:pb-3 [&_.table-page-header_h1]:text-2xl [&_.table-page-header_h1]:font-semibold [&_.table-page-header_h1]:tracking-normal [&_.table-page-header_span]:leading-4"
                 : "md:pt-0",
               "md:[--table-page-top-space:6rem]",
             )}
@@ -142,7 +142,7 @@ export function FloatingLayout({
               >
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute top-0 -bottom-3 left-1/2 w-screen -translate-x-1/2 bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_45%,transparent_100%)] md:bg-background/95 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)]"
+                  className="pointer-events-none absolute top-0 bottom-0 md:-bottom-3 left-1/2 w-screen -translate-x-1/2 bg-background/25 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)] md:bg-background/40 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_75%,transparent_100%)]"
                 />
                 <PageHeader
                   actions={
@@ -162,7 +162,7 @@ export function FloatingLayout({
                     ) : undefined
                   }
                   className={cn(
-                    "relative items-start gap-2 pt-[var(--page-header-top-padding,0.75rem)] pb-3 max-md:flex-nowrap max-md:items-center max-md:gap-2 max-md:[&_h1]:truncate [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-normal [&_span]:leading-4",
+                    "relative items-start gap-2 pt-[var(--page-header-top-padding,0.875rem)] pb-3 max-md:flex-nowrap max-md:items-center max-md:gap-2 max-md:[&_h1]:truncate [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-normal [&_span]:leading-4",
                     animatePage && "route-enter",
                   )}
                   description={pageHeaderData.description}
@@ -215,11 +215,10 @@ export function FloatingLayout({
       <div
         aria-hidden="true"
         className={cn(
-          "pointer-events-none fixed inset-x-0 bottom-0 z-10 h-[calc(112px+env(safe-area-inset-bottom))] bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_top,black_0%,black_45%,transparent_100%)] will-change-opacity max-md:!opacity-100 md:h-12",
+          "pointer-events-none fixed inset-x-0 bottom-0 z-10 h-[calc(112px+env(safe-area-inset-bottom))] bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_top,black_0%,black_45%,transparent_100%)] will-change-opacity max-md:!opacity-100 md:h-8",
           isTableRoute && "md:hidden",
         )}
         ref={bottomFadeRef}
-        style={{ opacity: 0 }}
       />
 
       <Link
@@ -248,10 +247,10 @@ export function FloatingLayout({
                     aria-label={t(item.labelKey)}
                     className={({ isActive }) =>
                       cn(
-                        "flex size-11 items-center justify-center rounded-full transition-[background-color,color] duration-300 ease-out focus-visible:ring-2 focus-visible:ring-ring max-md:[-webkit-touch-callout:none] motion-reduce:transition-none md:size-9",
+                        "flex size-11 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-ring max-md:[-webkit-touch-callout:none] md:size-9",
                         (pendingPath ? pendingPath === item.path : isActive)
                           ? "bg-foreground text-background"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted active:text-foreground",
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
                       )
                     }
                     draggable={false}

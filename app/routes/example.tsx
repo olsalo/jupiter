@@ -32,7 +32,8 @@ import {
   createDateTimeFormatter,
   defaultTimeZone,
 } from "~/lib/format-preference"
-import { getQueryClient, useTRPC } from "~/lib/trpc/client"
+import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
+import { clearMobileNavigationQuery } from "~/lib/mobile-navigation"
 import { createTRPC } from "~/lib/trpc/server"
 import { useDeleteConfirmation } from "~/lib/hooks"
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
@@ -54,7 +55,10 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   }
 }
 
-export function clientLoader() {
+export function clientLoader({ request }: Route.ClientLoaderArgs) {
+  const { queryClient, trpc } = getClientTRPC()
+  clearMobileNavigationQuery(queryClient, trpc.example.list.queryKey(), request, "/example")
+
   return null
 }
 

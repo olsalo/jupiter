@@ -30,7 +30,10 @@ export function TablePageHeader({ className, ...props }: ComponentProps<typeof P
   return (
     <PageHeader
       className={cn(
-        "table-page-header route-mobile-header relative items-start gap-2 pt-[var(--page-header-top-padding,0.75rem)] pb-3 max-md:mt-8 max-md:mx-0 max-md:flex-nowrap max-md:items-center max-md:gap-2 max-md:[&_h1]:truncate md:mt-0 md:shrink-0 md:gap-2 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-normal [&_span]:leading-4",
+        "table-page-header route-mobile-header relative items-start gap-2 pt-[var(--page-header-top-padding,0.875rem)] pb-3 max-md:mt-8 max-md:mx-0 max-md:flex-nowrap max-md:items-center max-md:gap-2 max-md:[&_h1]:truncate md:mt-0 md:shrink-0 md:gap-2 [&_span]:leading-4",
+        import.meta.env.VITE_APP_LAYOUT_STYLE === "floating"
+          ? "[&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-normal"
+          : "[&_h1]:text-xl [&_h1]:font-medium",
         import.meta.env.VITE_APP_LAYOUT_STYLE !== "floating" && "md:pt-6 md:pb-0",
         className,
       )}

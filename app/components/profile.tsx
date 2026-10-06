@@ -59,7 +59,9 @@ export function Profile({
   const activeBusinessName = rootData?.org?.name ?? organizations[0]?.name
   const businessSummary = (
     <>
-      <Icon name="building" size={16} />
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-foreground ring-1 ring-border">
+        <Icon aria-hidden="true" name="building" size={16} />
+      </span>
       <span className="flex min-w-0 flex-1 flex-col leading-tight">
         <span className="truncate font-medium">{displayName}</span>
         <span className="truncate text-xs text-muted-foreground">{activeBusinessName}</span>
@@ -109,14 +111,14 @@ export function Profile({
           </AvatarFallback>
         </Avatar>
       </MenuTrigger>
-      <MenuPopup align="end" className="w-min min-w-[150px]!" side={menuSide} sideOffset={menuSideOffset}>
+      <MenuPopup align="end" className="w-min min-w-[180px]!" side={menuSide} sideOffset={menuSideOffset}>
         {organizations.length > 0 ? (
           <>
             {organizations.length > 1 ? (
               <MenuSub>
                 <MenuSubTrigger
                   aria-label={`${t("account.switchBusiness")}: ${displayName}, ${activeBusinessName}`}
-                  className="min-h-12 gap-3 px-3 py-2 sm:text-base"
+                  className="min-h-12 gap-3 whitespace-nowrap px-3 py-2 sm:text-base"
                 >
                   {businessSummary}
                 </MenuSubTrigger>
@@ -134,7 +136,7 @@ export function Profile({
                     return (
                       <MenuItem
                         aria-current={isActive ? "true" : undefined}
-                        className="min-h-11 gap-3 px-3 py-2 sm:text-base"
+                        className="min-h-11 gap-3 whitespace-nowrap px-3 py-2 sm:text-base"
                         closeOnClick={false}
                         disabled={isActive || setActive.isPending}
                         key={organization.id}
@@ -158,7 +160,7 @@ export function Profile({
             <MenuSeparator />
           </>
         ) : null}
-        <MenuItem className="min-h-11 gap-3 px-3 py-2 sm:text-base" onClick={logOut}>
+        <MenuItem className="min-h-11 gap-3 whitespace-nowrap px-3 py-2 sm:text-base" onClick={logOut}>
           <Icon name="logOut" />
           {t("account.logOut")}
         </MenuItem>

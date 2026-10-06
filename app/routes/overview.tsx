@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next"
 
 import Icon, { type AppIconName } from "~/components/icons"
-import { JoinTeamInvitation } from "~/components/join-team-invitation"
 import { JoinedTeamDialog } from "~/components/joined-team-dialog"
 import { PageHeader } from "~/components/page-header"
 import { Badge } from "~/components/ui/badge"
@@ -32,7 +31,6 @@ export default function Overview() {
   return (
     <section className="flex w-full flex-1 flex-col gap-6">
       <title>{t("title")}</title>
-      <JoinTeamInvitation />
       <JoinedTeamDialog />
       <PageHeader
         className="route-mobile-header md:hidden"

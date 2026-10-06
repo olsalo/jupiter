@@ -1,15 +1,15 @@
 import { useMutation } from "@tanstack/react-query"
 import { TRPCClientError } from "@trpc/client"
 import { useEffect, useRef } from "react"
-import { useSearchParams } from "react-router"
+import { useTranslation } from "react-i18next"
 
-import { joinInvitationSearchParam, joinedTeamErrorStorageKey, joinedTeamStorageKey } from "~/lib/team-join"
+import { Spinner } from "~/components/ui/spinner"
+import { joinedTeamErrorStorageKey, joinedTeamStorageKey } from "~/lib/team-join"
 import { useTRPC } from "~/lib/trpc/client"
 
-export function JoinTeamInvitation() {
+export function JoinTeamInvitation({ invitationId }: { invitationId: string }) {
+  const { t } = useTranslation("team")
   const trpc = useTRPC()
-  const [searchParams] = useSearchParams()
-  const invitationId = searchParams.get(joinInvitationSearchParam)
   const started = useRef<string | null>(null)
   const invitation = useMutation(trpc.team.acceptInvitation.mutationOptions({
     retry: false,
@@ -24,7 +24,10 @@ export function JoinTeamInvitation() {
       window.location.replace("/")
     },
     onError: (error) => {
-      if (error instanceof TRPCClientError && error.data?.code === "UNAUTHORIZED") return
+      if (error instanceof TRPCClientError && error.data?.code === "UNAUTHORIZED") {
+        window.location.replace(`/auth?invite=${encodeURIComponent(invitationId ?? "")}`)
+        return
+      }
 
       window.sessionStorage.setItem(joinedTeamErrorStorageKey, "unexpected")
       window.location.replace("/")
@@ -38,5 +41,12 @@ export function JoinTeamInvitation() {
     invitation.mutate({ invitationId })
   }, [invitationId, invitation.mutate])
 
-  return null
+  return (
+    <main aria-busy={true} className="grid min-h-dvh place-items-center bg-background px-6" role="status">
+      <div className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 text-base text-muted-foreground">
+        <Spinner aria-hidden={true} className="size-5 text-primary" />
+        <span>{t("accept.checking")}</span>
+      </div>
+    </main>
+  )
 }

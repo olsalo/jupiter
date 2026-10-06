@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react"
-import { useTranslation } from "react-i18next"
+import { Trans, useTranslation } from "react-i18next"
 import {
   redirect,
   useNavigate,
@@ -32,6 +32,8 @@ import { authClient } from "~/lib/auth/client"
 import { getSafeRedirectTo } from "~/lib/auth/redirect"
 import { auth } from "~/lib/auth/server"
 import { createAuthFormSchemas } from "~/lib/schemas/auth"
+import { getQueryClient } from "~/lib/trpc/client"
+import { createTRPC } from "~/lib/trpc/server"
 import { toast } from "~/lib/toast"
 
 type AuthFormValues = {
@@ -45,19 +47,29 @@ type AuthErrorContext = {
   }
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader(args: Route.LoaderArgs) {
+  const { request } = args
   const session = await auth.api.getSession({
     headers: request.headers,
   })
 
   if (session) {
-    throw redirect(getSafeRedirectTo(new URL(request.url).searchParams))
+    throw redirect(getAuthRedirect(new URL(request.url).searchParams))
   }
 
-  return null
+  const invitationId = getInvitationIdFromSearchParams(new URL(request.url).searchParams)
+  if (!invitationId) return { invitation: null }
+
+  const queryClient = getQueryClient()
+  const trpc = await createTRPC(args)
+  const invitation = await queryClient.fetchQuery(
+    trpc.team.invitationPreview.queryOptions({ invitationId }),
+  )
+
+  return { invitation }
 }
 
-export default function Auth() {
+export default function Auth({ loaderData }: Route.ComponentProps) {
   const { t } = useTranslation("auth")
   const rootData = useRouteLoaderData<typeof rootLoader>("root")
   const isElectron = Boolean(rootData?.isElectron)
@@ -108,7 +120,7 @@ export default function Auth() {
       otp: data.otp,
       fetchOptions: {
         onSuccess: () => {
-          navigate(getSafeRedirectTo(searchParams), { replace: true })
+          navigate(getAuthRedirect(searchParams), { replace: true })
         },
         onError: (ctx: AuthErrorContext) => {
           formApi.current?.unstable_setCustomError("otp", ctx.error.message)
@@ -148,9 +160,27 @@ export default function Auth() {
               </p>
             </div>
 
+            {loaderData.invitation ? (
+              <div className="flex items-center gap-3 rounded-xl border bg-muted/40 p-3.5">
+                <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-background text-primary shadow-xs">
+                  <Icon aria-hidden="true" name="users" size={19} stroke={1.75} />
+                </span>
+                <p className="text-balance text-sm leading-5 text-muted-foreground">
+                  <Trans
+                    components={{
+                      strong: <strong className="font-semibold text-foreground" />,
+                    }}
+                    i18nKey="invite.message"
+                    ns="auth"
+                    values={loaderData.invitation}
+                  />
+                </p>
+              </div>
+            ) : null}
+
             <AppForm
               className="flex w-full flex-col gap-3.5"
-              defaultValues={{ email: "", otp: "" }}
+              defaultValues={{ email: searchParams.get("email") ?? "", otp: "" }}
               onBeforeSubmit={() => {
                 formApi.current?.unstable_setCustomError("email", null)
                 formApi.current?.unstable_setCustomError("otp", null)
@@ -319,9 +349,35 @@ export default function Auth() {
 
       <section className="hidden flex-1 md:flex">
         <div
-          className="min-w-0 flex-1 bg-neutral-100 bg-[url('/mockup_1.png')] bg-size-[90%_auto] bg-bottom-right bg-no-repeat dark:bg-neutral-900"
+          className="min-w-0 flex-1 bg-neutral-100 bg-[url('/mockup.png')] bg-size-[90%_auto] bg-bottom-right bg-no-repeat dark:bg-neutral-900"
         />
       </section>
     </main>
   )
+}
+
+function getInvitationIdFromSearchParams(searchParams: URLSearchParams) {
+  const directInvitationId = searchParams.get("invite")
+  if (directInvitationId) {
+    return directInvitationId && !directInvitationId.includes("/")
+      ? directInvitationId
+      : null
+  }
+
+  const redirectUrl = new URL(getSafeRedirectTo(searchParams), "http://astra.local")
+  if (!redirectUrl.pathname.startsWith("/invite/")) return null
+
+  try {
+    const invitationId = decodeURIComponent(redirectUrl.pathname.slice("/invite/".length))
+    return invitationId && !invitationId.includes("/") ? invitationId : null
+  } catch {
+    return null
+  }
+}
+
+function getAuthRedirect(searchParams: URLSearchParams) {
+  const invitationId = getInvitationIdFromSearchParams(searchParams)
+  return invitationId
+    ? `/invite/${encodeURIComponent(invitationId)}`
+    : getSafeRedirectTo(searchParams)
 }

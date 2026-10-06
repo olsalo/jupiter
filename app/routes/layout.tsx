@@ -32,6 +32,7 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip"
 import { cn } from "~/lib/utils"
+import { desktopViewportQuery } from "~/lib/mobile-navigation"
 import { useTRPC } from "~/lib/trpc/client"
 import { useBottomScrollFade } from "~/lib/use-bottom-scroll-fade"
 import { useRouteScrollRestoration } from "~/lib/use-route-scroll-restoration"
@@ -53,7 +54,7 @@ const menuItems: Array<{
   path: "/" | "/example" | "/team"
 }> = [
   {
-    activeIcon: "dashboardFilled",
+    activeIcon: "dashboard",
     icon: "dashboard",
     labelKey: "nav.overview",
     path: "/",
@@ -69,9 +70,6 @@ const menuItems: Array<{
     path: "/team",
   },
 ]
-
-const desktopViewportQuery =
-  "(min-width: 768px) and (pointer: fine), (min-width: 768px) and (min-height: 600px), (min-width: 768px) and (orientation: portrait)"
 
 const subscribeToDesktopViewport = (onStoreChange: () => void) => {
   const mediaQuery = window.matchMedia(desktopViewportQuery)
@@ -166,7 +164,6 @@ export default function Layout() {
     getServerElectron,
   )
   const isElectron = Boolean(rootData?.isElectron) || isElectronFromBrowser
-
   useEffect(() => {
     const viewport = scrollViewportRef.current
 
@@ -263,7 +260,7 @@ export default function Layout() {
                             "relative flex aspect-square items-center justify-center rounded-md text-sm transition-[background-color,color] duration-300 ease-out before:absolute before:-left-3 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r-sm before:bg-primary before:content-[''] before:transition-[opacity,scale] before:duration-300 before:ease-out motion-reduce:transition-none motion-reduce:before:transition-none",
                             (pendingPath ? pendingPath === item.path : isActive)
                               ? "bg-[color-mix(in_oklab,var(--sidebar-accent)_97.5%,black)] text-sidebar-accent-foreground before:scale-y-100 before:opacity-100"
-                              : "text-muted-foreground before:scale-y-50 before:opacity-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground",
+                              : "text-muted-foreground before:scale-y-50 before:opacity-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                           )
                         }
                         draggable={false}
@@ -322,7 +319,7 @@ export default function Layout() {
                 >
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-0 bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_45%,transparent_100%)] will-change-opacity md:bg-background/95 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)]"
+                    className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-0 bg-background/25 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)] will-change-opacity md:bg-background/40 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_75%,transparent_100%)]"
                     ref={headerBlurRef}
                     style={{ opacity: 0 }}
                   />
@@ -388,11 +385,10 @@ export default function Layout() {
           <div
             aria-hidden="true"
             className={cn(
-              "pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_top,black_0%,black_45%,transparent_100%)] will-change-opacity max-md:!opacity-100",
+              "pointer-events-none absolute inset-x-0 bottom-0 z-10 h-12 md:h-8 bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_top,black_0%,black_45%,transparent_100%)] will-change-opacity max-md:!opacity-100",
               isTableRoute && "md:hidden",
             )}
             ref={bottomBlurRef}
-            style={{ opacity: 0 }}
           />
         </section>
       </div>
@@ -405,7 +401,7 @@ export default function Layout() {
                 "flex h-8 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-[background-color,color,border-color,box-shadow] duration-300 ease-out [-webkit-touch-callout:none] motion-reduce:transition-none",
                 (pendingPath ? pendingPath === item.path : isActive)
                   ? "border-border bg-sidebar-accent text-sidebar-accent-foreground shadow-xs"
-                  : "border-transparent text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground active:bg-sidebar-accent/60 active:text-sidebar-accent-foreground",
+                  : "border-transparent text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
               )
             }
             draggable={false}

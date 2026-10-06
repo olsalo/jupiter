@@ -35,15 +35,6 @@ export function LanguageSwitch() {
     >
       <TabsList aria-label={t("language.label")} className="grid grid-cols-2">
         <TabsTab
-          aria-label="Suomi"
-          className="h-7 px-2 text-xs sm:h-7 sm:text-xs"
-          disabled={false}
-          title="Suomi"
-          value="fi"
-        >
-          FI
-        </TabsTab>
-        <TabsTab
           aria-label="English"
           className="h-7 px-2 text-xs sm:h-7 sm:text-xs"
           disabled={false}
@@ -51,6 +42,15 @@ export function LanguageSwitch() {
           value="en"
         >
           EN
+        </TabsTab>
+        <TabsTab
+          aria-label="Suomi"
+          className="h-7 px-2 text-xs sm:h-7 sm:text-xs"
+          disabled={false}
+          title="Suomi"
+          value="fi"
+        >
+          FI
         </TabsTab>
       </TabsList>
     </Tabs>

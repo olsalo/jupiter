@@ -1,15 +1,9 @@
-import { redirect } from "react-router"
-
 import type { Route } from "./+types/invite"
-import { joinInvitationSearchParam } from "~/lib/team-join"
+import { JoinTeamInvitation } from "~/components/join-team-invitation"
 import { requireAuthMiddleware } from "~/middleware/auth"
 
 export const middleware: Route.MiddlewareFunction[] = [requireAuthMiddleware]
 
-export function loader({ params }: Route.LoaderArgs) {
-  const searchParams = new URLSearchParams({
-    [joinInvitationSearchParam]: params.invitationId,
-  })
-
-  throw redirect(`/?${searchParams}`)
+export default function Invite({ params }: Route.ComponentProps) {
+  return <JoinTeamInvitation invitationId={params.invitationId} />
 }

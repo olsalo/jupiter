@@ -70,7 +70,7 @@
 }
 
 @layer base {
-  body:has(:is([data-slot="dialog-backdrop"], [data-slot="sheet-backdrop"]):not([hidden])) .app-page-scroll {
+  body:has(:is([data-slot="dialog-backdrop"], [data-slot="sheet-backdrop"], [data-slot="drawer-backdrop"]):not([hidden])) .app-page-scroll {
     overflow-y: hidden !important;
   }
 
@@ -235,6 +235,7 @@
     :is(
       [data-slot="dialog-backdrop"],
       [data-slot="sheet-backdrop"],
+      [data-slot="drawer-backdrop"],
       [data-slot="alert-dialog-backdrop"],
       [data-slot="command-dialog-backdrop"]
     ):not([hidden])
@@ -408,4 +409,16 @@
 html,
 body {
   @apply bg-background font-sans text-foreground;
+}
+
+[data-slot="drawer-popup"]::after {
+  background-color: #fff;
+}
+
+[data-slot="drawer-popup"]:has([data-slot="drawer-footer"])::after {
+  background-color: var(--popover);
+  background-image: linear-gradient(
+    color-mix(in oklab, var(--muted) 72%, transparent),
+    color-mix(in oklab, var(--muted) 72%, transparent)
+  );
 }

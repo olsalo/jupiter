@@ -117,6 +117,8 @@ export const auth = betterAuth({
     }),
     organization({
       async sendInvitationEmail({ id, email, organization }, request) {
+        if (request?.headers.get("x-send-invitation-email") === "false") return
+
         const inviteUrl = new URL(`/invite/${encodeURIComponent(id)}`, request?.url ?? fallbackAuthUrl).toString()
 
         if (process.env.NODE_ENV !== "production") {

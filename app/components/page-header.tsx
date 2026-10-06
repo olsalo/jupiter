@@ -50,7 +50,12 @@ export function PageHeader({
         ) : null}
       </div>
       {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div
+          className={cn(
+            "flex shrink-0 flex-wrap items-center gap-2",
+            import.meta.env.VITE_APP_LAYOUT_STYLE !== "floating" && "[&_[data-slot=button]]:rounded-lg [&_[data-slot=button]]:before:rounded-[calc(var(--radius-lg)-1px)]",
+          )}
+        >
           {actions}
         </div>
       ) : null}

@@ -157,6 +157,7 @@ model Invitation {
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   email          String
+  inviteeName    String?
   role           String?
   status         String       @default("pending")
   expiresAt      DateTime

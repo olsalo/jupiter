@@ -36,6 +36,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerPopup,
+  DrawerTitle,
+  DrawerTrigger,
+} from "~/components/ui/drawer"
 import { Input } from "~/components/ui/input"
 import {
   Menu,
@@ -64,6 +74,7 @@ import { cn } from "~/lib/utils"
 import { authClient } from "~/lib/auth/client"
 import { onboardingCountries } from "~/lib/countries"
 import { formatDateTime } from "~/lib/format-preference"
+import { useMediaQuery } from "~/lib/hooks"
 import { syncThemeColor } from "~/lib/theme"
 import { useBackgroundSetting } from "~/lib/use-background-setting"
 import {
@@ -161,6 +172,7 @@ export function SettingsModal({
   triggerSize?: ComponentProps<typeof Button>["size"]
 }) {
   const { t } = useTranslation()
+  const isMobile = useMediaQuery("max-640px")
   const rootData = useRouteLoaderData<typeof rootLoader>("root")
   const billingEnabled = rootData?.billingEnabled === true
   const visibleSettingsItems = billingEnabled
@@ -188,6 +200,12 @@ export function SettingsModal({
   const activeItem =
     visibleSettingsItems.find((item) => item.id === activeItemId) ??
     visibleSettingsItems[0]!
+  const Root = isMobile ? Drawer : Dialog
+  const Trigger = isMobile ? DrawerTrigger : DialogTrigger
+  const Header = isMobile ? DrawerHeader : DialogHeader
+  const Title = isMobile ? DrawerTitle : DialogTitle
+  const Description = isMobile ? DrawerDescription : DialogDescription
+  const Footer = isMobile ? DrawerFooter : DialogFooter
 
   const updateSettingsNavOverflow = useCallback(() => {
     const nav = settingsNavRef.current
@@ -265,7 +283,7 @@ export function SettingsModal({
   }, [billingEnabled, hashOwner])
 
   const trigger = (
-    <DialogTrigger
+    <Trigger
       aria-label={t("settings.open")}
       render={
         <Button
@@ -282,11 +300,11 @@ export function SettingsModal({
         name="settings"
         size={20}
       />
-    </DialogTrigger>
+    </Trigger>
   )
 
   return (
-    <Dialog
+    <Root
       onOpenChange={(nextOpen) => {
         if (nextOpen) {
           const itemId =
@@ -322,23 +340,19 @@ export function SettingsModal({
         trigger
       )}
 
-      <DialogPopup
-        bottomStickOnMobile={false}
-        className="grid h-[min(90vh,38rem)] w-[min(90vw,44rem)] max-w-none grid-cols-[14rem_minmax(0,1fr)] grid-rows-1 overflow-hidden rounded-2xl p-0 max-sm:row-start-1 max-sm:h-full max-sm:max-h-full max-sm:w-full max-sm:max-w-none max-sm:grid-cols-1 max-sm:grid-rows-[auto_minmax(0,1fr)]"
-        viewportClassName="max-sm:grid-rows-[minmax(0,1fr)] max-sm:p-3"
-      >
-        <DialogHeader className="min-h-0 gap-4 border-e border-border bg-muted/35 p-3.5 max-sm:border-e-0 max-sm:border-b">
+      <ResponsiveSettingsPopup isMobile={isMobile}>
+        <Header className="min-h-0 gap-4 border-e border-border bg-muted/35 p-3.5 max-sm:border-e-0">
           <div className="space-y-1">
-            <DialogTitle className="text-lg">{t("settings.title")}</DialogTitle>
-            <DialogDescription className="sr-only">
+            <Title className="text-lg">{t("settings.title")}</Title>
+            <Description className="sr-only">
               {t("settings.description")}
-            </DialogDescription>
+            </Description>
           </div>
 
           <div className="relative min-h-0 min-w-0 max-sm:-mx-3.5 max-sm:overflow-hidden">
             <nav
               aria-label={t("settings.title")}
-              className="flex max-h-full min-w-0 flex-col gap-1 overflow-y-auto overscroll-none max-sm:flex-row max-sm:overflow-x-auto max-sm:overflow-y-hidden max-sm:px-3.5 max-sm:[scrollbar-width:none] max-sm:[&::-webkit-scrollbar]:hidden"
+              className="flex max-h-full min-w-0 flex-col gap-1 overflow-y-auto overscroll-none max-sm:flex-row max-sm:touch-auto max-sm:overflow-x-auto max-sm:overflow-y-hidden max-sm:px-3.5 max-sm:[scrollbar-width:none] max-sm:[&::-webkit-scrollbar]:hidden"
               onScroll={updateSettingsNavOverflow}
               style={{ maskImage: settingsNavMask, WebkitMaskImage: settingsNavMask }}
               onWheel={(event) => {
@@ -371,7 +385,7 @@ export function SettingsModal({
                   <button
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "relative flex min-h-9 w-full min-w-0 shrink-0 items-center gap-2 overflow-hidden rounded-md px-2 text-start text-sm font-medium outline-none transition focus-visible:ring-2 focus-visible:ring-ring max-sm:w-auto max-sm:min-w-max max-sm:px-3",
+                      "relative flex min-h-9 w-full min-w-0 shrink-0 items-center gap-2 overflow-hidden rounded-md px-2 text-start text-sm font-medium outline-none transition-[background-color,color] duration-300 ease-out focus-visible:ring-2 focus-visible:ring-ring max-sm:w-auto max-sm:min-w-max max-sm:px-3 motion-reduce:transition-none",
                       isActive
                         ? "bg-[color-mix(in_oklab,var(--sidebar-accent)_97.5%,black)] text-sidebar-accent-foreground before:absolute before:-left-5 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r-sm before:bg-primary before:content-[''] max-sm:before:hidden"
                         : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -407,9 +421,9 @@ export function SettingsModal({
               />
             ) : null}
           </div>
-        </DialogHeader>
+        </Header>
 
-        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <SettingsMainSection isMobile={isMobile}>
           <DialogPanel
             className="min-h-0 flex-1 p-0"
             scrollbarClassName="max-sm:hidden"
@@ -433,6 +447,7 @@ export function SettingsModal({
               "min-h-0 flex-1 [&_[data-slot=scroll-area-content]]:min-h-full",
               activeItemId !== "billing" &&
                 "[&_[data-slot=scroll-area-content]]:h-full",
+              isMobile && "touch-auto",
             )}
           >
             <div
@@ -472,7 +487,7 @@ export function SettingsModal({
           </DialogPanel>
 
           {activeItemId === "general" && generalFormState.isDirty ? (
-            <DialogFooter className="shrink-0 rounded-b-2xl">
+            <Footer className={cn("shrink-0", !isMobile && "rounded-b-2xl")}>
               <Button
                 disabled={generalFormState.isSubmitting}
                 onClick={() => {
@@ -498,9 +513,9 @@ export function SettingsModal({
                   t("settings.save")
                 )}
               </Button>
-            </DialogFooter>
+            </Footer>
           ) : activeItemId === "profile" && profileFormState.isDirty ? (
-            <DialogFooter className="shrink-0 rounded-b-2xl">
+            <Footer className={cn("shrink-0", !isMobile && "rounded-b-2xl")}>
               <Button
                 disabled={profileFormState.isSubmitting}
                 onClick={() => {
@@ -526,7 +541,7 @@ export function SettingsModal({
                   t("settings.save")
                 )}
               </Button>
-            </DialogFooter>
+            </Footer>
           ) : null}
 
           {((activeItemId === "billing" && isBillingLoading) ||
@@ -538,9 +553,54 @@ export function SettingsModal({
               />
             </div>
           ) : null}
-        </div>
-      </DialogPopup>
-    </Dialog>
+        </SettingsMainSection>
+      </ResponsiveSettingsPopup>
+    </Root>
+  )
+}
+
+function ResponsiveSettingsPopup({
+  children,
+  isMobile,
+}: {
+  children: ReactNode
+  isMobile: boolean
+}) {
+  if (isMobile) {
+    return (
+      <DrawerPopup
+        className="grid h-[min(90dvh,44rem)] w-full grid-cols-1 grid-rows-[auto_minmax(0,1fr)] p-0"
+        showBar={true}
+      >
+        {children}
+      </DrawerPopup>
+    )
+  }
+
+  return (
+    <DialogPopup
+      bottomStickOnMobile={false}
+      className="grid h-[min(90vh,38rem)] w-[min(90vw,44rem)] max-w-none grid-cols-[14rem_minmax(0,1fr)] grid-rows-1 overflow-hidden rounded-2xl p-0 max-sm:row-start-1 max-sm:h-full max-sm:max-h-full max-sm:w-full max-sm:max-w-none max-sm:grid-cols-1 max-sm:grid-rows-[auto_minmax(0,1fr)]"
+      viewportClassName="max-sm:grid-rows-[minmax(0,1fr)] max-sm:p-3"
+    >
+      {children}
+    </DialogPopup>
+  )
+}
+
+function SettingsMainSection({
+  children,
+  isMobile,
+}: {
+  children: ReactNode
+  isMobile: boolean
+}) {
+  const className = "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+
+  return isMobile ? (
+    <DrawerContent className={className}>{children}</DrawerContent>
+  ) : (
+    <div className={className}>{children}</div>
   )
 }
 
