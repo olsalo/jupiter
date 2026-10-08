@@ -143,6 +143,8 @@ export function DrawerPopup({
   position: positionProp,
   variant = "default",
   showBar = false,
+  backdropClassName,
+  forceBackdrop = false,
   portalProps,
   ...props
 }: DrawerPrimitive.Popup.Props & {
@@ -150,6 +152,8 @@ export function DrawerPopup({
   position?: DrawerPosition;
   variant?: "default" | "straight" | "inset";
   showBar?: boolean;
+  backdropClassName?: string
+  forceBackdrop?: boolean
   portalProps?: DrawerPrimitive.Portal.Props;
 }): React.ReactElement {
   const { position: contextPosition } = useContext(DrawerContext);
@@ -157,7 +161,7 @@ export function DrawerPopup({
 
   return (
     <DrawerPortal {...portalProps}>
-      <DrawerBackdrop />
+      <DrawerBackdrop className={backdropClassName} forceRender={forceBackdrop} />
       <DrawerViewport position={position} variant={variant}>
         <DrawerPrimitive.Popup
           className={cn(
@@ -167,6 +171,8 @@ export function DrawerPopup({
               "transform-[translateY(calc(var(--drawer-snap-point-offset)+var(--drawer-swipe-movement-y)))] data-ending-style:transform-[translateY(calc(100%+env(safe-area-inset-bottom,0px)+var(--inset)))] data-starting-style:transform-[translateY(calc(100%+env(safe-area-inset-bottom,0px)+var(--inset)))] row-start-2 -mb-[max(0px,calc(var(--drawer-snap-point-offset,0px)+clamp(0,1,var(--drawer-snap-point-offset,0px)/1px)*var(--drawer-swipe-movement-y,0px)))] pb-[max(0px,calc(env(safe-area-inset-bottom,0px)+var(--drawer-snap-point-offset,0px)+clamp(0,1,var(--drawer-snap-point-offset,0px)/1px)*var(--drawer-swipe-movement-y,0px)))] not-data-starting-style:not-data-ending-style:transition-[transform,box-shadow,height,background-color,margin,padding] after:inset-x-0 after:top-full after:h-(--bleed) has-data-[slot=drawer-bar]:pt-2 data-ending-style:mb-0 data-starting-style:mb-0 data-ending-style:pb-0 data-starting-style:pb-0",
             position === "top" &&
               "data-starting-style:transform-[translateY(calc(-100%-var(--inset)))] data-ending-style:transform-[translateY(calc(-100%-var(--inset)))] transform-[translateY(var(--drawer-swipe-movement-y))] border-b after:inset-x-0 after:bottom-full after:h-(--bleed) has-data-[slot=drawer-bar]:pb-2",
+            position === "bottom" &&
+              "has-data-[slot=drawer-footer]:pb-[max(0px,calc(var(--drawer-snap-point-offset,0px)+clamp(0,1,var(--drawer-snap-point-offset,0px)/1px)*var(--drawer-swipe-movement-y,0px)))]",
             position === "left" &&
               "data-starting-style:transform-[translateX(calc(-100%-var(--inset)))] data-ending-style:transform-[translateX(calc(-100%-var(--inset)))] transform-[translateX(var(--drawer-swipe-movement-x))] w-[calc(100%-(--spacing(12)))] max-w-md border-e after:inset-y-0 after:end-full after:w-(--bleed) has-data-[slot=drawer-bar]:pe-2",
             position === "right" &&

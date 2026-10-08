@@ -38,6 +38,7 @@ type TanStackTableColumnMeta = {
   headerClassName?: string
   cellClassName?: string
   isAction?: boolean
+  mobileActionPlacement?: "top-right"
   skeleton?: "text" | "textLines" | "avatarText" | "badge" | "actions"
 }
 
@@ -297,6 +298,9 @@ export function TanStackTable<Row extends RowData>({
   }
   const leafColumns = table.getAllLeafColumns()
   const columnCount = leafColumns.length
+  const hasMobileTopRightAction = leafColumns.some((column) =>
+    column.columnDef.meta?.isAction === true && column.columnDef.meta?.mobileActionPlacement === "top-right",
+  )
   const rowGridStyle = getRowGridStyle(
     leafColumns.map((column) => column.columnDef.meta),
   )
@@ -680,7 +684,7 @@ export function TanStackTable<Row extends RowData>({
                   {skeletonRows.map((rowIndex) => (
                     <div className="min-w-0" key={rowIndex}>
                       <div className={cn(
-                        "flex min-w-0 flex-col gap-4 rounded-lg border border-border/80 bg-background p-4 shadow-xs",
+                        "relative flex min-w-0 flex-col gap-4 rounded-lg border border-border/80 bg-background p-4 shadow-xs",
                         typeof rowClassName === "string" && rowClassName,
                       )}>
                         {isMultiSelectEnabled || subtable ? (
@@ -691,6 +695,7 @@ export function TanStackTable<Row extends RowData>({
                             </div>
                           </div>
                         ) : null}
+                        {hasMobileTopRightAction ? <Skeleton className="absolute right-3 top-3 size-9 rounded-lg" /> : null}
                         <dl className="flex min-w-0 flex-col gap-3">
                           {leafColumns.filter((column) =>
                             column.id !== "__row-selection" &&
@@ -708,6 +713,7 @@ export function TanStackTable<Row extends RowData>({
                                 </dt>
                                 <dd className={cn(
                                   "min-w-0",
+                                  hasMobileTopRightAction && columnIndex === 0 && "pe-10",
                                   column.columnDef.meta?.skeleton === "textLines" && "min-h-10",
                                 )}>
                                   <TableCellSkeleton
@@ -721,7 +727,7 @@ export function TanStackTable<Row extends RowData>({
                             )
                           })}
                         </dl>
-                        {leafColumns.some((column) => column.columnDef.meta?.isAction) ? (
+                        {leafColumns.some((column) => column.columnDef.meta?.isAction) && !hasMobileTopRightAction ? (
                           <div className="w-full">
                             <TableCellSkeleton columnIndex={0} mobile={true} rowIndex={rowIndex} variant="actions" />
                           </div>
@@ -825,6 +831,7 @@ export function TanStackTable<Row extends RowData>({
                         cell.column.id === "actions" ||
                         cell.column.columnDef.meta?.isAction === true,
                     )
+                    const mobileTopRightAction = actionCell?.column.columnDef.meta?.mobileActionPlacement === "top-right"
                     const contentCells = row.getAllCells().filter(
                       (cell) =>
                         !utilityCells.includes(cell) && cell !== actionCell,
@@ -875,8 +882,14 @@ export function TanStackTable<Row extends RowData>({
                             </div>
                           ) : null}
 
+                          {mobileTopRightAction && actionCell ? (
+                            <div className="absolute right-3 top-3 z-10 flex items-center" role="cell">
+                              <table.FlexRender cell={actionCell} />
+                            </div>
+                          ) : null}
+
                           <dl className="flex min-w-0 flex-col gap-3">
-                            {contentCells.map((cell) => {
+                            {contentCells.map((cell, contentIndex) => {
                               const header = mobileHeaders.find(
                                 (item) => item.column.id === cell.column.id,
                               )
@@ -894,6 +907,7 @@ export function TanStackTable<Row extends RowData>({
                                   </dt>
                                   <dd className={cn(
                                     "min-w-0",
+                                    mobileTopRightAction && contentIndex === 0 && "pe-10",
                                     cell.column.columnDef.meta?.skeleton === "textLines" && "min-h-10",
                                   )}>
                                     <table.FlexRender cell={cell} />
@@ -903,7 +917,7 @@ export function TanStackTable<Row extends RowData>({
                             })}
                           </dl>
 
-                          {actionCell ? (
+                          {actionCell && !mobileTopRightAction ? (
                             <div
                               className="w-full [&_[data-slot=button]]:w-full"
                               role="cell"

@@ -73,6 +73,7 @@ import {
 import { cn } from "~/lib/utils"
 import { authClient } from "~/lib/auth/client"
 import { onboardingCountries } from "~/lib/countries"
+import { currencyItems } from "~/lib/currencies"
 import { formatDateTime } from "~/lib/format-preference"
 import { useMediaQuery } from "~/lib/hooks"
 import { syncThemeColor } from "~/lib/theme"
@@ -431,7 +432,7 @@ export function SettingsModal({
               <header className="relative px-5 pb-4 pt-4 max-sm:px-4">
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-0 top-0 -bottom-7 z-0 bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_45%,transparent_100%)]"
+                  className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-0 bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_45%,transparent_100%)]"
                 />
                 <div className="relative z-10">
                   <h2 className="text-xl font-semibold tracking-tight">
@@ -650,7 +651,10 @@ function BillingSettingsContent({
     trpc.billing.cancellationPortal.mutationOptions(),
   )
   const billingIntervalMutation = useMutation(
-    trpc.billing.changeInterval.mutationOptions(),
+    trpc.billing.changeInterval.mutationOptions({
+      onSuccess: () => toast.success(t("settings.billingCycleUpdated")),
+      onError: () => toast.error(t("settings.billingCycleUpdateError")),
+    }),
   )
   const canManage = organizationQuery.data?.canManage ?? false
   const paymentMethodsQuery = useQuery({
@@ -886,7 +890,6 @@ function BillingSettingsContent({
       ])
     } catch {
       setSelectedBillingInterval(currentBillingInterval)
-      toast.error(t("settings.billingActionError"))
     } finally {
       setBillingRefreshSnapshot(null)
       setPendingAction(null)
@@ -931,7 +934,6 @@ function BillingSettingsContent({
           })
         } catch {
           setSelectedBillingInterval(currentBillingInterval)
-          toast.error(t("settings.billingActionError"))
         }
       }
 
@@ -1709,7 +1711,7 @@ function ProfileSettingsFields({
   const { t } = useTranslation()
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <FormLabel
         description={t("settings.nameDescription")}
         error={form.error("name")}
@@ -1815,7 +1817,7 @@ function AppearanceSettingsContent() {
   }, [theme.value, rootData?.theme])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <FormLabel
         className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1"
         description={t("settings.themeDescription")}
@@ -1913,6 +1915,7 @@ function GeneralSettingsContent({
       className="flex flex-col gap-5"
       defaultValues={{
         businessName: settingsQuery.data.businessName,
+        currency: settingsQuery.data.currency,
         location: settingsQuery.data.location,
         timezone: settingsQuery.data.timezone,
       }}
@@ -1952,10 +1955,11 @@ function GeneralSettingsFields({
   const { t } = useTranslation()
 
   const locationField = form.getControlProps("location")
+  const currencyField = form.getControlProps("currency")
   const timezoneField = form.getControlProps("timezone")
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <FormLabel
         description={t("settings.businessNameDescription")}
         error={form.error("businessName")}
@@ -2005,6 +2009,45 @@ function GeneralSettingsFields({
             {onboardingCountries.map((country) => (
               <SelectItem key={country.code} value={country.code}>
                 {country.name}
+              </SelectItem>
+            ))}
+          </SelectPopup>
+        </Select>
+      </FormLabel>
+
+      <FormLabel
+        error={form.error("currency")}
+        label={t("settings.currency")}
+      >
+        <Select
+          disabled={!canManage}
+          items={currencyItems}
+          onValueChange={(value) => {
+            if (typeof value !== "string") {
+              return
+            }
+
+            currencyField.onChange(value)
+            form.unstable_setCustomError("currency", null)
+          }}
+          value={currencyField.value}
+        >
+          <SelectTrigger
+            aria-invalid={Boolean(form.error("currency")) || undefined}
+            onBlur={currencyField.onBlur}
+            ref={currencyField.ref}
+          >
+            <SelectValue>
+              {(value) => currencyItems.find((item) => item.value === value)?.label}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectPopup>
+            {currencyItems.map((currency) => (
+              <SelectItem key={currency.value} value={currency.value}>
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="truncate">{currency.label}</span>
+                  <span className="shrink-0 text-muted-foreground">{currency.value}</span>
+                </span>
               </SelectItem>
             ))}
           </SelectPopup>

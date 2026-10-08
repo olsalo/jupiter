@@ -8,11 +8,14 @@ import {
 } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import type { BillingNotification } from "~/lib/billing"
+import { cn } from "~/lib/utils"
 
 export function BillingNotificationBar({
   notification,
+  variant = "banner",
 }: {
   notification: BillingNotification | null | undefined
+  variant?: "banner" | "inline"
 }) {
   const { t } = useTranslation()
 
@@ -27,7 +30,10 @@ export function BillingNotificationBar({
 
   return (
     <Alert
-      className="shrink-0 items-center rounded-none border-x-0 border-t-0 p-4"
+      className={cn(
+        "shrink-0 items-center",
+        variant === "banner" ? "rounded-none border-x-0 border-t-0 p-4" : "px-3.5 py-3",
+      )}
       variant={isError ? "error" : "warning"}
     >
       <AlertTitle>{content.title}</AlertTitle>

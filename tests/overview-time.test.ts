@@ -7,7 +7,7 @@ const timeZone = "Europe/Helsinki"
 assert.equal(getGreetingPeriod(new Date("2026-10-02T08:59:00Z"), timeZone), "morning")
 assert.equal(getGreetingPeriod(new Date("2026-10-02T09:00:00Z"), timeZone), "afternoon")
 assert.equal(getGreetingPeriod(new Date("2026-10-02T14:00:00Z"), timeZone), "evening")
-assert.equal(getGreetingPeriod(new Date("2026-10-01T21:00:00Z"), timeZone), "morning")
+assert.equal(getGreetingPeriod(new Date("2026-10-01T21:00:00Z"), timeZone), "evening")
 assert.equal(getStartOfWeek(new Date("2026-10-04T20:59:59Z"), timeZone).toISOString(), "2026-09-27T21:00:00.000Z")
 assert.equal(getStartOfWeek(new Date("2026-10-04T21:00:00Z"), timeZone).toISOString(), "2026-10-04T21:00:00.000Z")
 // The week containing a DST transition starts with the offset from Monday.

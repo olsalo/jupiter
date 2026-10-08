@@ -1,49 +1,49 @@
 {
   "errors": {
-    "invalid_type": "Tarkista antamasi tieto.",
+    "invalid_type": "Tarkista antamasi tieto",
     "invalid_type_received_undefined": "Pakollinen",
     "invalid_type_received_null": "Pakollinen",
-    "invalid_literal": "Tarkista antamasi tieto.",
-    "unrecognized_keys": "Tarkista antamasi tieto.",
-    "invalid_union": "Tarkista antamasi tieto.",
+    "invalid_literal": "Tarkista antamasi tieto",
+    "unrecognized_keys": "Tarkista antamasi tieto",
+    "invalid_union": "Tarkista antamasi tieto",
     "invalid_business_id": "Syötä kelvollinen Y-tunnus",
     "invalid_tax_id": "Syötä kelvollinen ALV-tunniste",
-    "invalid_union_discriminator": "Tarkista antamasi tieto.",
-    "invalid_enum_value": "Tarkista antamasi tieto.",
-    "invalid_date": "Anna kelvollinen päivämäärä.",
-    "custom": "Tarkista antamasi tieto.",
-    "not_multiple_of": "Anna luvun {{multipleOf}} monikerta.",
-    "not_finite": "Anna kelvollinen luku.",
+    "invalid_union_discriminator": "Tarkista antamasi tieto",
+    "invalid_enum_value": "Tarkista antamasi tieto",
+    "invalid_date": "Anna kelvollinen päivämäärä",
+    "custom": "Tarkista antamasi tieto",
+    "not_multiple_of": "Anna luvun {{multipleOf}} monikerta",
+    "not_finite": "Anna kelvollinen luku",
     "invalid_string": {
-      "email": "Tarkista sähköpostiosoite.",
-      "url": "Anna kelvollinen verkko-osoite.",
-      "uuid": "Tarkista tunniste.",
-      "regex": "Tarkista antamasi tieto.",
-      "datetime": "Anna kelvollinen päivämäärä ja kellonaika.",
-      "startsWith": "Aloita tekstillä \"{{startsWith}}\".",
-      "endsWith": "Päätä tekstillä \"{{endsWith}}\"."
+      "email": "Tarkista sähköpostiosoite",
+      "url": "Anna kelvollinen verkko-osoite",
+      "uuid": "Tarkista tunniste",
+      "regex": "Tarkista antamasi tieto",
+      "datetime": "Anna kelvollinen päivämäärä ja kellonaika",
+      "startsWith": "Aloita tekstillä \"{{startsWith}}\"",
+      "endsWith": "Päätä tekstillä \"{{endsWith}}\""
     },
     "too_small": {
       "array": {
-        "exact": "Valitse {{minimum}} vaihtoehtoa.",
-        "inclusive": "Valitse vähintään {{minimum}} vaihtoehtoa.",
-        "not_inclusive": "Valitse enemmän kuin {{minimum}} vaihtoehtoa."
+        "exact": "Valitse {{minimum}} vaihtoehtoa",
+        "inclusive": "Valitse vähintään {{minimum}} vaihtoehtoa",
+        "not_inclusive": "Valitse enemmän kuin {{minimum}} vaihtoehtoa"
       },
       "string": {
-        "exact": "Kirjoita {{minimum}} merkkiä.",
+        "exact": "Kirjoita {{minimum}} merkkiä",
         "inclusive_one": "Pakollinen",
-        "inclusive_other": "Kirjoita vähintään {{count}} merkkiä.",
-        "not_inclusive": "Kirjoita enemmän kuin {{minimum}} merkkiä."
+        "inclusive_other": "Kirjoita vähintään {{count}} merkkiä",
+        "not_inclusive": "Kirjoita enemmän kuin {{minimum}} merkkiä"
       },
       "number": {
-        "exact": "Anna luvuksi {{minimum}}.",
-        "inclusive": "Anna vähintään {{minimum}}.",
-        "not_inclusive": "Anna suurempi luku kuin {{minimum}}."
+        "exact": "Anna luvuksi {{minimum}}",
+        "inclusive": "Anna vähintään {{minimum}}",
+        "not_inclusive": "Anna suurempi luku kuin {{minimum}}"
       },
       "set": {
-        "exact": "Tarkista valintasi.",
-        "inclusive": "Tarkista valintasi.",
-        "not_inclusive": "Tarkista valintasi."
+        "exact": "Tarkista valintasi",
+        "inclusive": "Tarkista valintasi",
+        "not_inclusive": "Tarkista valintasi"
       },
       "date": {
         "exact": "Valitse päivämääräksi {{- minimum, datetime}}.",
@@ -53,24 +53,24 @@
     },
     "too_big": {
       "array": {
-        "exact": "Valitse {{maximum}} vaihtoehtoa.",
-        "inclusive": "Valitse enintään {{maximum}} vaihtoehtoa.",
-        "not_inclusive": "Valitse vähemmän kuin {{maximum}} vaihtoehtoa."
+        "exact": "Valitse {{maximum}} vaihtoehtoa",
+        "inclusive": "Valitse enintään {{maximum}} vaihtoehtoa",
+        "not_inclusive": "Valitse vähemmän kuin {{maximum}} vaihtoehtoa"
       },
       "string": {
-        "exact": "Kirjoita {{maximum}} merkkiä.",
-        "inclusive": "Kirjoita enintään {{maximum}} merkkiä.",
-        "not_inclusive": "Kirjoita vähemmän kuin {{maximum}} merkkiä."
+        "exact": "Kirjoita {{maximum}} merkkiä",
+        "inclusive": "Kirjoita enintään {{maximum}} merkkiä",
+        "not_inclusive": "Kirjoita vähemmän kuin {{maximum}} merkkiä"
       },
       "number": {
-        "exact": "Anna luvuksi {{maximum}}.",
-        "inclusive": "Anna enintään {{maximum}}.",
-        "not_inclusive": "Anna pienempi luku kuin {{maximum}}."
+        "exact": "Anna luvuksi {{maximum}}",
+        "inclusive": "Anna enintään {{maximum}}",
+        "not_inclusive": "Anna pienempi luku kuin {{maximum}}"
       },
       "set": {
-        "exact": "Tarkista valintasi.",
-        "inclusive": "Tarkista valintasi.",
-        "not_inclusive": "Tarkista valintasi."
+        "exact": "Tarkista valintasi",
+        "inclusive": "Tarkista valintasi",
+        "not_inclusive": "Tarkista valintasi"
       },
       "date": {
         "exact": "Valitse päivämääräksi {{- maximum, datetime}}.",

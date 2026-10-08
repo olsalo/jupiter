@@ -84,7 +84,7 @@ export function Profile({
       <MenuTrigger
         aria-label={t("account.openMenu", { name: displayName })}
         className={cn(
-          "inline-flex size-8 shrink-0 items-center justify-center rounded-full align-middle outline-none transition-[box-shadow] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background max-md:data-popup-open:shadow-[0_0_0_4px_#dbdcdc]",
+          "inline-flex size-8 shrink-0 items-center justify-center rounded-full align-middle outline-none transition-[box-shadow] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background max-md:data-popup-open:shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-border)_70%,transparent)]",
           className,
         )}
         title={displayName}

@@ -34,7 +34,7 @@ export function OverviewTable({
       aria-label={title}
       data-overview-variant={variant}
       className={cn(
-        "table-fixed [&_tbody_tr:hover]:bg-transparent [&_td]:transition-colors [&_tbody_tr.cursor-pointer:hover>td]:bg-muted/40 [&_tbody_tr[data-state=selected]>td]:bg-muted/40",
+        "table-fixed [&_tbody_tr:hover]:bg-transparent [&_td]:transition-colors [@media(hover:hover)]:[&_tbody_tr.cursor-pointer:hover>td]:bg-muted/40 [&_tbody_tr.cursor-pointer:active>td]:bg-muted/60 [&_tbody_tr[data-state=selected]>td]:bg-muted/40",
         variant === "full-width"
           ? "border-t [&_thead_tr]:bg-muted/30 [&_thead_tr:hover]:bg-muted/30 [&_tr>:first-child]:px-5 [&_tr>:last-child]:px-5 sm:[&_tr>:first-child]:px-6 sm:[&_tr>:last-child]:px-6"
           : "border-separate border-spacing-x-0 border-spacing-y-1 [&_tr]:border-0 [&_tr:hover]:bg-transparent [&_th]:bg-muted/40 [&_th]:px-4 [&_td]:px-4 [&_tr>:first-child]:rounded-l-lg [&_tr>:last-child]:rounded-r-lg",

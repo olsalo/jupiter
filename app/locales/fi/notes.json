@@ -1,11 +1,11 @@
 {
   "meta": {
     "title": "Muistiinpanot",
-    "description": "Kirjoita ja muokkaa muistiinpanojasi."
+    "description": "Kirjoita ja muokkaa muistiinpanojasi"
   },
   "title": "Muistiinpanot",
   "loadingList": "Ladataan muistiinpanoja",
-  "description": "Pidä tärkeät asiat muistissa.",
+  "description": "Pidä tärkeät asiat muistissa",
   "selection": {
     "clear": "Tyhjennä valinta",
     "row": "Valitse {{title}}",
@@ -14,13 +14,13 @@
     "toolbar": "Muistiinpanojen valinta"
   },
   "view": {
-    "description": "Lue tai muokkaa muistiinpanoa.",
+    "description": "Lue tai muokkaa muistiinpanoa",
     "loading": "Ladataan muistiinpanoa",
-    "loadError": "Muistiinpanoa ei voitu ladata."
+    "loadError": "Muistiinpanoa ei voitu ladata"
   },
   "empty": {
     "title": "Ei vielä muistiinpanoja",
-    "description": "Lisää ensimmäinen muistiinpanosi."
+    "description": "Lisää ensimmäinen muistiinpanosi"
   },
   "form": {
     "createTitle": "Uusi muistiinpano",
@@ -40,16 +40,19 @@
     "cancel": "Peruuta"
   },
   "actions": {
+    "close": "Sulje",
     "add": "Lisää muistiinpano",
     "edit": "Muokkaa",
     "delete": "Poista",
+    "deleted": "Muistiinpano poistettu",
+    "deletedMultiple": "Muistiinpanot poistettu",
     "deleting": "Poistetaan...",
     "retry": "Yritä uudelleen"
   },
   "deleteConfirmation": {
     "title": "Poistetaanko tämä muistiinpano?",
     "titlePlural": "Poistetaanko nämä {{count}} muistiinpanoa?",
-    "description": "Muistiinpanot poistetaan pysyvästi.",
+    "description": "Muistiinpanot poistetaan pysyvästi",
     "confirm": "Poista",
     "cancel": "Peruuta"
   },
@@ -58,12 +61,12 @@
     "updated": "Päivitetty"
   },
   "errors": {
-    "load": "Muistiinpanoja ei voitu ladata.",
-    "retryDescription": "Yritä hetken kuluttua uudelleen.",
-    "refresh": "Muistiinpanoja ei voitu päivittää.",
-    "stale": "Näytetään viimeksi ladatut muistiinpanot.",
-    "create": "Muistiinpanoa ei voitu luoda.",
-    "update": "Muistiinpanoa ei voitu päivittää.",
-    "delete": "Muistiinpanoa ei voitu poistaa."
+    "load": "Muistiinpanoja ei voitu ladata",
+    "retryDescription": "Yritä hetken kuluttua uudelleen",
+    "refresh": "Muistiinpanoja ei voitu päivittää",
+    "stale": "Näytetään viimeksi ladatut muistiinpanot",
+    "create": "Muistiinpanoa ei voitu luoda",
+    "update": "Muistiinpanoa ei voitu päivittää",
+    "delete": "Muistiinpanoa ei voitu poistaa"
   }
 }

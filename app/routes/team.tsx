@@ -142,7 +142,7 @@ export default function Team() {
     {
       accessorKey: "inviteeName",
       header: t("name"),
-      cell: ({ row }) => <span className="truncate font-medium" title={row.original.inviteeName ?? undefined}>{row.original.inviteeName || "—"}</span>,
+      cell: ({ row }) => <span className="block truncate font-medium" title={row.original.inviteeName ?? undefined}>{row.original.inviteeName || "—"}</span>,
       meta: { minWidth: "9rem" },
     },
     {
@@ -196,7 +196,7 @@ export default function Team() {
           </MenuPopup>
         </Menu>
       ),
-      meta: { align: "end", width: "7rem", isAction: true },
+      meta: { align: "end", width: "7rem", isAction: true, mobileActionPlacement: "top-right" },
     },
   ], [canInvite, cancelInvitation.isPending, cancelInvitation.mutate, copyInvitationLink, formatDate, roleLabel, t])
 

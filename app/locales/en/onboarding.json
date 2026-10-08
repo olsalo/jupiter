@@ -1,10 +1,11 @@
 {
   "meta": {
     "title": "Add your business details",
-    "description": "Add your name and business details to get started."
+    "description": "Add your name and business details to get started"
   },
+  "loading": "Loading setup…",
   "title": "Add your business details",
-  "description": "Fill in these details to get started.",
+  "description": "Fill in these details to get started",
   "progress": {
     "label": "Setup steps",
     "step": "Step {{current}} of {{total}}"
@@ -25,7 +26,12 @@
     "label": "Time zone",
     "placeholder": "Choose a time zone"
   },
+  "currency": {
+    "label": "Currency",
+    "placeholder": "Choose a currency"
+  },
   "actions": {
+    "retry": "Try again",
     "create": "Continue",
     "finishSetup": "Finish setup",
     "creating": "Saving…",
@@ -44,8 +50,10 @@
     "priceUnavailable": "Price unavailable"
   },
   "errors": {
+    "load": "We couldn’t load your setup details",
+    "retryDescription": "Please try again to continue setup.",
     "create": "We couldn’t save your details. Please try again.",
-    "organizationNameTaken": "That business name is already in use.",
+    "organizationNameTaken": "That business name is already in use",
     "subscription": "We couldn’t open checkout. Please try again.",
     "billingNotConfigured": "You can't start a subscription yet. Try again later."
   }

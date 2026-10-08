@@ -1,11 +1,11 @@
 {
   "meta": {
     "title": "Notes",
-    "description": "Write and edit your notes."
+    "description": "Write and edit your notes"
   },
   "title": "Notes",
   "loadingList": "Loading notes",
-  "description": "Keep track of things you want to remember.",
+  "description": "Keep track of things you want to remember",
   "selection": {
     "clear": "Clear selection",
     "row": "Select {{title}}",
@@ -14,13 +14,13 @@
     "toolbar": "Note selection"
   },
   "view": {
-    "description": "Read or edit this note.",
+    "description": "Read or edit this note",
     "loading": "Loading note",
-    "loadError": "Could not load this note."
+    "loadError": "Could not load this note"
   },
   "empty": {
     "title": "No notes yet",
-    "description": "Add your first note."
+    "description": "Add your first note"
   },
   "form": {
     "createTitle": "New note",
@@ -40,16 +40,19 @@
     "cancel": "Cancel"
   },
   "actions": {
+    "close": "Close",
     "add": "Add note",
     "edit": "Edit",
     "delete": "Delete",
+    "deleted": "Note deleted",
+    "deletedMultiple": "Notes deleted",
     "deleting": "Deleting...",
     "retry": "Try again"
   },
   "deleteConfirmation": {
     "title": "Delete this note?",
     "titlePlural": "Delete these {{count}} notes?",
-    "description": "The notes will be permanently deleted.",
+    "description": "The notes will be permanently deleted",
     "confirm": "Delete",
     "cancel": "Cancel"
   },
@@ -58,12 +61,12 @@
     "updated": "Updated"
   },
   "errors": {
-    "load": "Could not load notes.",
-    "retryDescription": "Please try again in a moment.",
-    "refresh": "Could not refresh notes.",
-    "stale": "Showing the last loaded notes.",
-    "create": "Could not create note.",
-    "update": "Could not update note.",
-    "delete": "Could not delete note."
+    "load": "Could not load notes",
+    "retryDescription": "Please try again in a moment",
+    "refresh": "Could not refresh notes",
+    "stale": "Showing the last loaded notes",
+    "create": "Could not create note",
+    "update": "Could not update note",
+    "delete": "Could not delete note"
   }
 }

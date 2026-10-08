@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "Sivua ei löytynyt",
-    "description": "Pyydettyä sivua ei löytynyt."
+    "description": "Pyydettyä sivua ei löytynyt"
   },
   "eyebrow": "404",
   "title": "Sivua ei löytynyt",
-  "description": "Pyytämääsi sivua ei ole olemassa tai se on saattanut siirtyä.",
+  "description": "Pyytämääsi sivua ei ole olemassa tai se on saattanut siirtyä",
   "backToHome": "Takaisin etusivulle"
 }

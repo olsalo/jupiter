@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "Yleiskatsaus",
-    "description": "Paikka sovelluksesi tärkeimmille tiedoille ja viimeisimmille tapahtumille."
+    "description": "Paikka sovelluksesi tärkeimmille tiedoille ja viimeisimmille tapahtumille"
   },
   "title": "Yleiskatsaus",
-  "description": "Paikka sovelluksesi tärkeimmille tiedoille ja viimeisimmille tapahtumille.",
+  "description": "Paikka sovelluksesi tärkeimmille tiedoille ja viimeisimmille tapahtumille",
   "greeting": {
     "morningNamed": "Huomenta, {{name}}",
     "afternoonNamed": "Iltapäivää, {{name}}",
@@ -18,10 +18,10 @@
     "title": "Tee tästä oma näkymäsi",
     "description": "Lisää tähän sovelluksesi tärkeimmät luvut, kuulumiset ja pikalinkit.",
     "summary": "Yhteenveto",
-    "summaryDescription": "Tärkeimmät luvut näkyvät tässä.",
+    "summaryDescription": "Tärkeimmät luvut näkyvät tässä",
     "activity": "Viimeisimmät tapahtumat",
-    "activityDescription": "Uusimmat tapahtumat näkyvät tässä.",
+    "activityDescription": "Uusimmat tapahtumat näkyvät tässä",
     "shortcuts": "Pikalinkit",
-    "shortcutsDescription": "Lisää linkkejä useimmin käyttämiisi toimintoihin."
+    "shortcutsDescription": "Lisää linkkejä useimmin käyttämiisi toimintoihin"
   }
 }

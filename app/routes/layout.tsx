@@ -23,6 +23,7 @@ import { NavigationIcon } from "~/components/navigation-icon"
 import { PageHeader } from "~/components/page-header"
 import { Profile } from "~/components/profile"
 import { SettingsModal } from "~/components/settings-modal"
+import { WelcomeDialog } from "~/components/welcome-dialog"
 import { Button } from "~/components/ui/button"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import {
@@ -105,12 +106,12 @@ export default function Layout() {
   const location = useLocation()
   const matches = useMatches()
   const notesMatch = matches.find(
-    (match) => match.id === "routes/example",
+    (match) => match.id === "routes/example/example",
   )
   const isNoteModal = matches.some(
     (match) =>
-      match.id === "routes/example-note-modal" ||
-      match.id === "routes/example-new-note-modal",
+      match.id === "routes/example/note-modal" ||
+      match.id === "routes/example/new-note-modal",
   )
   const isOverlayRoute = isNoteModal
   const pagePathname = notesMatch?.pathname ?? location.pathname
@@ -134,7 +135,6 @@ export default function Layout() {
     : pendingPathname
   const scrollViewportRef = useRef<HTMLDivElement>(null)
   useRouteScrollRestoration(scrollViewportRef, pagePathname)
-  const headerBlurRef = useRef<HTMLDivElement>(null)
   const bottomBlurRef = useRef<HTMLDivElement>(null)
   const [hasHorizontalOverflow, setHasHorizontalOverflow] = useState(false)
   const [hasVerticalOverflow, setHasVerticalOverflow] = useState(false)
@@ -169,19 +169,11 @@ export default function Layout() {
 
     if (!viewport) return
 
-    const updateScrollFades = () => {
-      const headerBlur = headerBlurRef.current
-
+    const updateScrollOverflow = () => {
       setHasHorizontalOverflow(viewport.scrollWidth > viewport.clientWidth + 1)
       setHasVerticalOverflow(viewport.scrollHeight > viewport.clientHeight + 1)
-
-      if (headerBlur) {
-        headerBlur.style.opacity = String(
-          Math.min(1, Math.max(0, viewport.scrollTop / 48)),
-        )
-      }
     }
-    const resizeObserver = new ResizeObserver(updateScrollFades)
+    const resizeObserver = new ResizeObserver(updateScrollOverflow)
     const content = viewport.querySelector('[data-slot="scroll-area-content"]')
 
     resizeObserver.observe(viewport)
@@ -193,30 +185,33 @@ export default function Layout() {
       }
     }
 
-    viewport.addEventListener("scroll", updateScrollFades, { passive: true })
-    updateScrollFades()
+    viewport.addEventListener("scroll", updateScrollOverflow, { passive: true })
+    updateScrollOverflow()
 
     return () => {
       resizeObserver.disconnect()
-      viewport.removeEventListener("scroll", updateScrollFades)
+      viewport.removeEventListener("scroll", updateScrollOverflow)
     }
   }, [pageHeaderData?.title])
 
   if (import.meta.env.VITE_APP_LAYOUT_STYLE === "floating") {
     return (
-      <FloatingLayout
-        animatePage={animatePage}
-        billingNotification={rootData?.billingNotification}
-        isDesktop={isDesktop}
-        isElectron={isElectron}
-        isTableRoute={isTableRoute}
-        fillContent={isOverviewRoute}
-        pendingPath={pendingPath}
-        menuItems={menuItems}
-        pageHeaderData={pageHeaderData}
-        routePathname={pagePathname}
-        user={user}
-      />
+      <>
+        <WelcomeDialog />
+        <FloatingLayout
+          animatePage={animatePage}
+          billingNotification={rootData?.billingNotification}
+          isDesktop={isDesktop}
+          isElectron={isElectron}
+          isTableRoute={isTableRoute}
+          fillContent={isOverviewRoute}
+          pendingPath={pendingPath}
+          menuItems={menuItems}
+          pageHeaderData={pageHeaderData}
+          routePathname={pagePathname}
+          user={user}
+        />
+      </>
     )
   }
 
@@ -228,6 +223,7 @@ export default function Layout() {
       )}
       data-electron={isElectron}
     >
+      <WelcomeDialog />
       {isElectron ? (
         <div
           aria-hidden="true"
@@ -264,6 +260,7 @@ export default function Layout() {
                           )
                         }
                         draggable={false}
+                        onTouchStart={() => navigate(href(item.path))}
                         end={item.path === "/"}
                         defaultShouldRevalidate={false}
                         prefetch={navigationPrefetch}
@@ -319,9 +316,7 @@ export default function Layout() {
                 >
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-0 bg-background/25 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)] will-change-opacity md:bg-background/40 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_75%,transparent_100%)]"
-                    ref={headerBlurRef}
-                    style={{ opacity: 0 }}
+                    className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-0 bg-background/25 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)] md:bg-background/40 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_75%,transparent_100%)]"
                   />
                   <PageHeader
                     actions={
@@ -364,7 +359,7 @@ export default function Layout() {
                     <AppLogo aria-hidden="true" className="size-5" />
                   </Link>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <SettingsModal hashOwner={!isDesktop} />
                     <Profile user={user} />
                   </div>
@@ -405,6 +400,7 @@ export default function Layout() {
               )
             }
             draggable={false}
+            onTouchStart={() => navigate(href(item.path))}
             end={item.path === "/"}
             key={item.path}
             onContextMenu={(event) => event.preventDefault()}

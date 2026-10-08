@@ -2,11 +2,103 @@ import type { TRPCRouterRecord } from "@trpc/server"
 import { TRPCError } from "@trpc/server"
 
 import { protectedProcedure } from "../trpc"
-import { auth } from "~/lib/auth/server"
+import { auth, stripeBillingEnabled } from "~/lib/auth/server"
+import { isOnboardingCountryCode } from "~/lib/countries"
+import { isCurrencyCode } from "~/lib/currencies"
+import { defaultTimeZone } from "~/lib/format-preference"
+import { getIpLocationFromHeaders } from "~/lib/ip-location.server"
+import { proPlan } from "~/lib/plans"
+import { getStripePrice, getStripePriceId } from "~/lib/stripe.server"
 import { generateId } from "~/lib/id"
 import { onboardingFormSchema } from "~/lib/schemas/onboarding"
 
 export const onboardingRouter = {
+  status: protectedProcedure.query(async ({ ctx }) => {
+    const membership = await ctx.prisma.member.findFirst({
+      where: { userId: ctx.user.id },
+      select: {
+        organizationId: true,
+        organization: {
+          select: {
+            settings: { select: { location: true, timezone: true } },
+          },
+        },
+      },
+    })
+    const settings = membership?.organization.settings
+    const subscription = membership
+      ? await ctx.prisma.subscription.findFirst({
+          select: { id: true },
+          where: {
+            referenceId: membership.organizationId,
+            status: { in: ["active", "past_due", "trialing"] },
+          },
+        })
+      : null
+
+    return {
+      billingEnabled: stripeBillingEnabled,
+      businessComplete: Boolean(settings?.location && settings.timezone),
+      subscriptionComplete: Boolean(subscription),
+    }
+  }),
+
+  business: protectedProcedure.query(async ({ ctx }) => {
+    const [membership, ipLocation] = await Promise.all([
+      ctx.prisma.member.findFirst({
+        where: { userId: ctx.user.id },
+        select: {
+          organization: {
+            select: {
+              name: true,
+              settings: { select: { currency: true, location: true, timezone: true } },
+            },
+          },
+        },
+      }),
+      getIpLocationFromHeaders(ctx.headers),
+    ])
+    const settings = membership?.organization.settings
+    const ipCountry = ipLocation?.location.country?.toLowerCase()
+    const ipCurrency = ipLocation?.location.currency?.find(isCurrencyCode)
+
+    return {
+      businessName: membership?.organization.name ?? "",
+      currency: settings?.currency ?? ipCurrency ?? "EUR",
+      location:
+        settings?.location?.toLowerCase() ??
+        (ipCountry && isOnboardingCountryCode(ipCountry) ? ipCountry : "fi"),
+      name: ctx.user.name,
+      timezone: settings?.timezone ?? ipLocation?.location.timezone ?? defaultTimeZone,
+    }
+  }),
+
+  subscription: protectedProcedure.query(async ({ ctx }) => {
+    const membership = await ctx.prisma.member.findFirst({
+      where: { userId: ctx.user.id },
+      select: { organizationId: true },
+    })
+    const locale = ctx.locale === "fi" ? "fi" : "en"
+    const [month, year] = stripeBillingEnabled
+      ? await Promise.all([
+          getStripePrice(getStripePriceId(proPlan.id, "month")),
+          getStripePrice(getStripePriceId(proPlan.id, "year")),
+        ])
+      : [null, null]
+
+    return {
+      billingEnabled: stripeBillingEnabled,
+      organizationId: membership?.organizationId ?? null,
+      plan: {
+        features: proPlan.features[locale],
+        id: proPlan.id,
+        name: proPlan.name,
+      },
+      prices: { month, year },
+      locale,
+    }
+  }),
+
   complete: protectedProcedure
     .input(onboardingFormSchema)
     .mutation(async ({ ctx, input }) => {
@@ -42,10 +134,12 @@ export const onboardingRouter = {
           create: {
             id: generateId("orgset"),
             organizationId: organization.id,
+            currency: input.currency,
             location: input.location.toUpperCase(),
             timezone: input.timezone,
           },
           update: {
+            currency: input.currency,
             location: input.location.toUpperCase(),
             timezone: input.timezone,
           },

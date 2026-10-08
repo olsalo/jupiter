@@ -1,8 +1,10 @@
 import { isOnboardingCountryCode } from "~/lib/countries"
 import { z } from "~/lib/zod"
+import { isCurrencyCode } from "~/lib/currencies"
 
 export const organizationSettingsFormSchema = z.object({
   businessName: z.string().trim().min(1).max(100),
+  currency: z.string().trim().toUpperCase().length(3).refine(isCurrencyCode),
   location: z
     .string()
     .trim()

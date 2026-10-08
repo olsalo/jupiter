@@ -62,6 +62,9 @@ export const links: Route.LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   },
+  { rel: "manifest", href: "/manifest.webmanifest" },
+  { rel: "icon", href: "/favicon.ico", type: "image/x-icon", sizes: "48x48" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
 ]
 
 export async function loader({ context, request }: Route.LoaderArgs) {

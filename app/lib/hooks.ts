@@ -121,10 +121,11 @@ export function useDeleteConfirmation<Id>({
       return
     }
 
-    setIsOpen(false)
-
     void deleteItems(confirmation.ids)
-      .then(() => confirmation.onSuccess?.())
+      .then(() => {
+        confirmation.onSuccess?.()
+        setIsOpen(false)
+      })
       .catch(() => undefined)
   }, [confirmation, deleteItems])
 

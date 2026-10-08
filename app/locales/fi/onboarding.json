@@ -3,6 +3,7 @@
     "title": "Lisää yrityksesi tiedot",
     "description": "Lisää nimesi ja yrityksesi tiedot, niin pääset alkuun."
   },
+  "loading": "Ladataan aloitusta…",
   "title": "Lisää yrityksesi tiedot",
   "description": "Täytä nämä tiedot, niin pääset alkuun.",
   "progress": {
@@ -25,7 +26,12 @@
     "label": "Aikavyöhyke",
     "placeholder": "Valitse aikavyöhyke"
   },
+  "currency": {
+    "label": "Valuutta",
+    "placeholder": "Valitse valuutta"
+  },
   "actions": {
+    "retry": "Yritä uudelleen",
     "create": "Jatka",
     "finishSetup": "Aloita käyttö",
     "creating": "Tallennetaan…",
@@ -44,8 +50,10 @@
     "priceUnavailable": "Hinta ei ole saatavilla"
   },
   "errors": {
+    "load": "Aloitustietojen lataaminen ei onnistunut",
+    "retryDescription": "Yritä uudelleen jatkaaksesi aloitusta.",
     "create": "Tietojesi tallennus ei onnistunut. Yritä uudelleen.",
-    "organizationNameTaken": "Yrityksen nimi on jo käytössä.",
+    "organizationNameTaken": "Yrityksen nimi on jo käytössä",
     "subscription": "Maksamisen avaaminen ei onnistunut. Yritä uudelleen.",
     "billingNotConfigured": "Tilauksen tekeminen ei vielä onnistu. Yritä myöhemmin uudelleen."
   }

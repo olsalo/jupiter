@@ -35,6 +35,7 @@ export const organizationsRouter = {
         name: true,
         settings: {
           select: {
+            currency: true,
             location: true,
             timezone: true,
           },
@@ -51,6 +52,7 @@ export const organizationsRouter = {
 
     return {
       businessName: organization.name,
+      currency: organization.settings?.currency ?? "EUR",
       location: (organization.settings?.location ?? "fi").toLowerCase(),
       timezone: organization.settings?.timezone ?? "Europe/Helsinki",
       canManage: hasOwnerRole(member?.role),
@@ -75,11 +77,13 @@ export const organizationsRouter = {
         ctx.prisma.organizationSettings.upsert({
           create: {
             id: generateId("orgset"),
+            currency: input.currency,
             location: input.location,
             organizationId,
             timezone: input.timezone,
           },
           update: {
+            currency: input.currency,
             location: input.location,
             timezone: input.timezone,
           },

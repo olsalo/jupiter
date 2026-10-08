@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
+    "icons:generate": "node --experimental-strip-types scripts/generate-icons.ts",
     "dev": "react-router dev --host --port 5175",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
@@ -71,6 +72,7 @@
     "@types/react-dom": "latest",
     "dotenv": "latest",
     "prisma": "latest",
+    "sharp": "latest",
     "tailwindcss": "latest",
     "typescript": "latest",
     "vite": "latest"

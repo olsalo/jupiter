@@ -1,10 +1,9 @@
 import { dehydrate, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { inferRouterOutputs } from "@trpc/server"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import {
   Outlet,
-  useMatches,
   useNavigate,
   useRevalidator,
   useRouteLoaderData,
@@ -39,9 +38,17 @@ import { useDeleteConfirmation } from "~/lib/hooks"
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
 import { toast } from "~/lib/toast"
 import type { loader as rootLoader } from "~/root"
+import { resources } from "~/locales"
 
 type ListNotesOutput = inferRouterOutputs<AppRouter>["example"]["list"]
 type Note = ListNotesOutput[number]
+
+export function meta({ error, matches }: Route.MetaArgs) {
+  if (error) return []
+
+  const locale = matches[0]?.loaderData?.locale
+  return [{ title: resources[locale === "fi" ? "fi" : "en"].notes.title }]
+}
 
 export async function loader(loaderArgs: Route.LoaderArgs) {
   const queryClient = getQueryClient()
@@ -66,7 +73,6 @@ export const shouldRevalidate = shouldRevalidateAppRoute
 
 export default function Notes() {
   const { i18n, t } = useTranslation("notes")
-  const isNoteModal = useMatches().some((match) => match.id === "routes/example-note-modal")
   const navigate = useNavigate()
   const trpc = useTRPC()
   const rootData = useRouteLoaderData<typeof rootLoader>("root")
@@ -82,11 +88,11 @@ export default function Notes() {
   const showNotesError = notesQuery.isError && notes.length === 0
   const showRefreshError = notesQuery.isError && notes.length > 0
   const skeletonRowCount = notesQuery.data?.length ?? notesCountQuery.data
-  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null)
-
   useEffect(() => {
-    void import("./example-note-modal").catch(() => undefined)
-    void import("./example-new-note-modal").catch(() => undefined)
+    void import("./note-modal").catch(() => undefined)
+    void import("./note-view").catch(() => undefined)
+    void import("./note-edit").catch(() => undefined)
+    void import("./new-note-modal").catch(() => undefined)
   }, [])
 
   const dateTimeFormatter = useMemo(
@@ -105,14 +111,8 @@ export default function Notes() {
 
   const deleteMutation = useMutation(
     trpc.example.delete.mutationOptions({
-      onMutate: ({ id }) => {
-        setDeletingNoteId(id)
-      },
       onError: () => {
         toast.error(t("errors.delete"))
-      },
-      onSettled: () => {
-        setDeletingNoteId(null)
       },
       onSuccess: async () => {
         await Promise.all([
@@ -123,11 +123,13 @@ export default function Notes() {
     }),
   )
   const deleteItems = useCallback(
-    (noteIds: readonly string[]) =>
-      Promise.all(
+    async (noteIds: readonly string[]) => {
+      await Promise.all(
         noteIds.map((id) => deleteMutation.mutateAsync({ id })),
-      ),
-    [deleteMutation],
+      )
+      toast.success(t(noteIds.length === 1 ? "actions.deleted" : "actions.deletedMultiple"))
+    },
+    [deleteMutation, t],
   )
   const deleteConfirmation = useDeleteConfirmation({ deleteItems })
 
@@ -179,8 +181,6 @@ export default function Notes() {
         id: "actions",
         header: () => <span className="sr-only">{t("actions.delete")}</span>,
         cell: ({ row }) => {
-          const isDeleting = deletingNoteId === row.original.id
-
           return (
             <div className="flex items-center justify-end gap-1 max-md:flex-row max-md:items-center">
               <Button
@@ -209,11 +209,7 @@ export default function Notes() {
                 type="button"
                 variant="destructive-outline"
               >
-                <Icon
-                  aria-hidden="true"
-                  name={isDeleting ? "loader" : "delete"}
-                  size={16}
-                />
+                <Icon aria-hidden="true" name="delete" size={16} />
                 <span className="hidden max-md:inline">{t("actions.delete")}</span>
               </Button>
             </div>
@@ -226,24 +222,23 @@ export default function Notes() {
         },
       },
     ],
-    [dateTimeFormatter, deleteMutation, deletingNoteId, t],
+    [dateTimeFormatter, deleteMutation, t],
   )
 
   function openCreateSheet() {
-    navigate("new")
+    navigate("new", { state: { fromExampleList: true } })
   }
 
   function openEditSheet(note: Note) {
-    navigate(`${encodeURIComponent(note.id)}?mode=edit`)
+    navigate(`${encodeURIComponent(note.id)}/edit`, { state: { fromExampleList: true } })
   }
 
   function openViewSheet(note: Note) {
-    navigate(encodeURIComponent(note.id))
+    navigate(encodeURIComponent(note.id), { state: { fromExampleList: true } })
   }
 
   return (
     <TablePage>
-      {isNoteModal ? null : <title>{t("title")}</title>}
       <TablePageHeader
         actions={
           <Button
@@ -351,6 +346,7 @@ export default function Notes() {
 
       <DeleteConfirmationDialog
         cancelLabel={t("deleteConfirmation.cancel")}
+        closeOnConfirm={false}
         confirmLabel={t("deleteConfirmation.confirm")}
         description={t("deleteConfirmation.description")}
         isPending={deleteMutation.isPending}

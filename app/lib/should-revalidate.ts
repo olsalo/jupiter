@@ -4,6 +4,7 @@ function isAccountRoute(pathname: string) {
   return (
     pathname === "/auth" ||
     pathname === "/onboarding" ||
+    pathname.startsWith("/onboarding/") ||
     pathname.startsWith("/invite/")
   )
 }

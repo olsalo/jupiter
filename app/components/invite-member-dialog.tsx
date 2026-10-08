@@ -125,7 +125,9 @@ export function InviteMemberDialog() {
                   </FormLabel>
                   <FormLabel
                     className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1"
-                    description={t("invite.sendEmailDescription")}
+                    description={t(sendEmailField.value
+                      ? "invite.sendEmailOnDescription"
+                      : "invite.sendEmailOffDescription")}
                     descriptionClassName="col-start-1 row-start-2"
                     error={form.error("sendEmail")}
                     label={t("invite.sendEmail")}
@@ -179,7 +181,9 @@ export function InviteMemberDialog() {
                   </Close>
                   <Button type="submit" disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting ? <Spinner /> : null}
-                    {t(form.formState.isSubmitting ? "invite.sending" : "invite.action")}
+                    {t(form.formState.isSubmitting
+                      ? sendEmailField.value ? "invite.sending" : "invite.creating"
+                      : sendEmailField.value ? "invite.action" : "invite.createAction")}
                   </Button>
                 </Footer>
               </>

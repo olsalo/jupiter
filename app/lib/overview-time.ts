@@ -2,6 +2,7 @@ import { TZDate } from "react-day-picker"
 
 export function getGreetingPeriod(now: Date, timeZone: string) {
   const hour = new TZDate(now.getTime(), timeZone).getHours()
+  if (hour < 5) return "evening"
   if (hour < 12) return "morning"
   if (hour < 17) return "afternoon"
   return "evening"

@@ -1,13 +1,15 @@
 "use client";
 
 import { Toast } from "@base-ui/react/toast";
+import { useEffect, useRef } from "react"
 import Icon from "../icons";
 import { cn } from "@coss/ui/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import type {AppIconName } from "../icons";
-import { anchoredToastManager, toastManager } from "~/lib/toast"
+import { anchoredToastManager, toast, toastManager } from "~/lib/toast"
 import { useIsMobile } from "~/lib/hooks"
-import { useModalOpen } from "~/lib/use-modal-open"
+import { useOpenOverlayCount } from "~/lib/use-overlay-open"
+import { useSheetOpen } from "~/lib/use-sheet-open"
 
 /**
  * Mapping toast types to your Icon wrapper slugs.
@@ -39,9 +41,19 @@ function ToastProvider({
   ...props
 }: ToastProviderProps) {
   const isMobile = useIsMobile()
-  const isModalOpen = useModalOpen()
-  const resolvedPosition = position ?? (isMobile || isModalOpen ? "bottom-left" : "bottom-right")
+  const isSheetOpen = useSheetOpen()
+  const openOverlayCount = useOpenOverlayCount()
+  const previousOpenOverlayCount = useRef(0)
+  const resolvedPosition = position ?? (isMobile || isSheetOpen ? "bottom-left" : "bottom-right")
   const toastPosition = isMobile ? resolvedPosition.replace("bottom", "top") as ToastPosition : resolvedPosition
+
+  useEffect(() => {
+    if (!isMobile && openOverlayCount > previousOpenOverlayCount.current) {
+      toast.close()
+    }
+
+    previousOpenOverlayCount.current = openOverlayCount
+  }, [isMobile, openOverlayCount])
 
   return (
     <Toast.Provider timeout={timeout} toastManager={toastManager} {...props}>

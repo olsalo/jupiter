@@ -16,6 +16,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react"
+import { cn } from "~/lib/utils"
 
 type MutationError = {
   errors?: FieldErrors
@@ -142,7 +143,7 @@ export function AppForm<
 
   return (
     <FormProvider scope={form.scope()}>
-      <form {...form.getFormProps()} className={className} method="post" noValidate>
+      <form {...form.getFormProps()} className={cn("flex flex-col gap-5", className)} method="post" noValidate>
         <fieldset className="contents" disabled={!isHydrated}>
           {typeof children === "function" ? children(form) : children}
         </fieldset>

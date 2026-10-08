@@ -1,8 +1,12 @@
-import type { ReactNode } from "react"
+import { createContext, useContext, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Spinner } from "~/components/ui/spinner"
+import { BillingNotificationBar } from "~/components/billing-notification-bar"
+import type { BillingNotification } from "~/lib/billing"
 import { cn } from "~/lib/utils"
+
+export const PageBillingNotificationContext = createContext<BillingNotification | null | undefined>(null)
 
 type PageHeaderProps = {
   actions?: ReactNode
@@ -10,6 +14,7 @@ type PageHeaderProps = {
   description?: ReactNode
   refreshing?: boolean
   showDescriptionOnMobile?: boolean
+  showBillingNotification?: boolean
   title: ReactNode
 }
 
@@ -19,9 +24,11 @@ export function PageHeader({
   description,
   refreshing = false,
   showDescriptionOnMobile = false,
+  showBillingNotification = false,
   title,
 }: PageHeaderProps) {
   const { t } = useTranslation()
+  const billingNotification = useContext(PageBillingNotificationContext)
   const showRefreshSpinner = refreshing
 
   return (
@@ -29,8 +36,14 @@ export function PageHeader({
       className={cn(
         "flex flex-wrap items-start justify-between gap-4",
         className,
+        showBillingNotification && billingNotification && "md:gap-y-6",
       )}
     >
+      {showBillingNotification && billingNotification ? (
+        <div className="hidden w-full md:block">
+          <BillingNotificationBar notification={billingNotification} variant="inline" />
+        </div>
+      ) : null}
       <div className="min-w-0">
         <h1 className={cn("relative w-fit min-w-0 max-w-full text-xl font-medium", showRefreshSpinner && "pe-7")}>
           {title}

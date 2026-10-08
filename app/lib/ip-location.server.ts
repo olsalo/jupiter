@@ -8,6 +8,12 @@ export type IpLocation = {
     country?: string
     country_name?: string
     country_native?: string
+    continent?: string
+    continent_name?: string
+    capital?: string
+    phone?: number[]
+    currency?: string[]
+    languages?: string[]
     latitude?: number
     longitude?: number
     timezone?: string
@@ -77,7 +83,12 @@ function isIpLocation(value: unknown): value is IpLocation {
     return false
   }
 
-  return isRecord(value.location)
+  return (
+    isRecord(value.location) &&
+    (value.location.currency === undefined ||
+      (Array.isArray(value.location.currency) &&
+        value.location.currency.every((currency) => typeof currency === "string")))
+  )
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

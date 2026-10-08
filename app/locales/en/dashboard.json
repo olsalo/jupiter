@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "Overview",
-    "description": "A place for your app’s highlights and recent activity."
+    "description": "A place for your app’s highlights and recent activity"
   },
   "title": "Overview",
-  "description": "A place for your app’s highlights and recent activity.",
+  "description": "A place for your app’s highlights and recent activity",
   "greeting": {
     "morningNamed": "Morning, {{name}}",
     "afternoonNamed": "Afternoon, {{name}}",
@@ -18,10 +18,10 @@
     "title": "Make this space your own",
     "description": "Add the numbers, updates, and shortcuts that matter to your app.",
     "summary": "Summary",
-    "summaryDescription": "Your key numbers will appear here.",
+    "summaryDescription": "Your key numbers will appear here",
     "activity": "Recent activity",
-    "activityDescription": "Your latest updates will appear here.",
+    "activityDescription": "Your latest updates will appear here",
     "shortcuts": "Quick links",
-    "shortcutsDescription": "Add shortcuts to the things you use most."
+    "shortcutsDescription": "Add shortcuts to the things you use most"
   }
 }

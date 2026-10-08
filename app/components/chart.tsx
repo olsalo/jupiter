@@ -103,7 +103,6 @@ export default function AreaChart({
   const handlePointerDown = (event: PointerEvent<SVGSVGElement>) => {
     if (!event.isPrimary) return
     if (event.pointerType !== "mouse") {
-      event.preventDefault()
       event.currentTarget.setPointerCapture(event.pointerId)
     }
     handlePointerMove(event)
@@ -149,7 +148,7 @@ export default function AreaChart({
             <>
               <svg
                 aria-hidden={true}
-                className="block size-full touch-none overflow-visible select-none text-sky-500 dark:text-sky-400"
+                className="block size-full touch-pan-y overflow-visible select-none text-sky-500 dark:text-sky-400"
                 onPointerDown={handlePointerDown}
                 onPointerCancel={handlePointerEnd}
                 onPointerUp={handlePointerEnd}
