@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
+import { cn } from "~/lib/utils"
 
 type FormLabelProps = {
   error?: ReactNode
@@ -30,7 +31,7 @@ export default function FormLabel({
   errorClassName,
   showError = true,
 }: FormLabelProps) {
-  const errorMessage = showError && error ? <FieldError className={errorClassName} match>{error}</FieldError> : null
+  const errorMessage = showError && error ? <FieldError className={cn("shrink-0 whitespace-nowrap", errorClassName)} match={true}>{error}</FieldError> : null
   const heading = (
     <>
       <div className="flex w-full justify-between gap-3">

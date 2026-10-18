@@ -1,11 +1,11 @@
 {
   "meta": {
-    "title": "Add your business details",
+    "title": "Set up your business",
     "description": "Add your name and business details to get started"
   },
   "loading": "Loading setup…",
-  "title": "Add your business details",
-  "description": "Fill in these details to get started",
+  "title": "Set up your business",
+  "description": "You can change these details later",
   "progress": {
     "label": "Setup steps",
     "step": "Step {{current}} of {{total}}"
@@ -16,7 +16,7 @@
   },
   "businessName": {
     "label": "Business name",
-    "placeholder": "Company Oy"
+    "placeholder": "Acme Studio"
   },
   "location": {
     "label": "Country",
@@ -31,17 +31,17 @@
     "placeholder": "Choose a currency"
   },
   "actions": {
-    "retry": "Try again",
+    "retry": "Retry",
     "create": "Continue",
     "finishSetup": "Finish setup",
     "creating": "Saving…",
-    "chooseSubscription": "Start your free 14-day trial",
-    "choosingSubscription": "Preparing your trial…",
+    "chooseSubscription": "Start free trial",
+    "choosingSubscription": "Preparing…",
     "logOut": "Sign out"
   },
   "subscription": {
     "title": "Choose your plan",
-    "description": "Try it free for 14 days. Choose monthly or yearly billing. You can cancel anytime.",
+    "description": "Try free for 14 days, then pay monthly or yearly. Cancel anytime",
     "billingLabel": "Billing cycle",
     "monthly": "Monthly",
     "yearly": "Yearly",
@@ -51,10 +51,10 @@
   },
   "errors": {
     "load": "We couldn’t load your setup details",
-    "retryDescription": "Please try again to continue setup.",
-    "create": "We couldn’t save your details. Please try again.",
-    "organizationNameTaken": "That business name is already in use",
-    "subscription": "We couldn’t open checkout. Please try again.",
-    "billingNotConfigured": "You can't start a subscription yet. Try again later."
+    "retryDescription": "Try again to continue",
+    "create": "Couldn’t save details. Try again",
+    "organizationNameTaken": "Taken",
+    "subscription": "Couldn’t open checkout. Try again",
+    "billingNotConfigured": "You can't start a subscription yet. Try again later"
   }
 }

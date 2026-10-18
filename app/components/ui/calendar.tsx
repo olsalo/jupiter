@@ -43,7 +43,7 @@ function Calendar({
     range_middle: "range-middle",
     range_start: "range-start",
     today:
-      "*:after:pointer-events-none *:after:absolute *:after:bottom-1 *:after:start-1/2 *:after:z-1 *:after:size-[0px] *:after:-translate-x-1/2 *:after:rounded-full *:after:bg-primary [&[data-selected]:not(.range-middle)>*]:after:bg-background [&[data-disabled]>*]:after:bg-foreground/30 *:after:transition-colors",
+      "*:after:pointer-events-none *:after:absolute *:after:bottom-1 *:after:start-1/2 *:after:z-1 *:after:size-[3px] *:after:-translate-x-1/2 *:after:rounded-full *:after:bg-primary [&[data-selected]:not(.range-middle)>*]:after:bg-background [&[data-disabled]>*]:after:bg-foreground/30 *:after:transition-colors",
     week_number:
       "size-(--cell-size) p-0 text-xs font-medium text-muted-foreground/70",
     weekday:
@@ -63,7 +63,7 @@ function Calendar({
 
       return acc;
     },
-    { ...defaultClassNames } as typeof defaultClassNames,
+    { ...classNames, ...defaultClassNames } as typeof defaultClassNames,
   );
 
   const defaultComponents = {

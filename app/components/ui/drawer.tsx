@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "react-i18next"
+
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { Drawer as DrawerPrimitive } from "@base-ui/react/drawer";
 import { mergeProps } from "@base-ui/react/merge-props";
@@ -12,6 +14,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Icon from "~/components/icons";
+import { getDialogPopupClassName, getDialogViewportClassName } from "~/components/dialog-popup-styles"
+import { getSheetPopupClassName, getSheetViewportClassName } from "~/components/sheet-popup-styles"
 
 type DrawerPosition = "right" | "left" | "top" | "bottom";
 
@@ -93,15 +97,18 @@ export function DrawerSwipeArea({
 
 export function DrawerBackdrop({
   className,
+  presentation = "drawer",
   ...props
-}: DrawerPrimitive.Backdrop.Props): React.ReactElement {
+}: DrawerPrimitive.Backdrop.Props & { presentation?: "drawer" | "sheet" | "dialog" }): React.ReactElement {
   return (
     <DrawerPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-50 bg-black/32 opacity-[calc(1-var(--drawer-swipe-progress))] backdrop-blur-[2px] transition-opacity duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] data-ending-style:opacity-0 data-starting-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-swiping:duration-0 supports-[-webkit-touch-callout:none]:absolute",
+        presentation !== "drawer"
+          ? "fixed inset-0 z-50 bg-black/32 backdrop-blur-[2px] transition-all duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0"
+          : "fixed inset-0 z-50 bg-black/32 opacity-[calc(1-var(--drawer-swipe-progress))] backdrop-blur-[2px] transition-opacity duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] data-ending-style:opacity-0 data-starting-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] data-swiping:duration-0 supports-[-webkit-touch-callout:none]:absolute",
         className,
       )}
-      data-slot="drawer-backdrop"
+      data-slot={`${presentation}-backdrop`}
       {...props}
     />
   );
@@ -111,14 +118,16 @@ export function DrawerViewport({
   className,
   position,
   variant = "default",
+  presentation = "drawer",
   ...props
 }: DrawerPrimitive.Viewport.Props & {
   position?: DrawerPosition;
   variant?: "default" | "straight" | "inset";
+  presentation?: "drawer" | "sheet" | "dialog"
 }): React.ReactElement {
   return (
     <DrawerPrimitive.Viewport
-      className={cn(
+      className={presentation === "dialog" ? getDialogViewportClassName({ className: typeof className === "string" ? className : undefined }) : presentation === "sheet" ? getSheetViewportClassName({ className: typeof className === "string" ? className : undefined, side: position, variant: variant === "inset" ? "inset" : "default" }) : cn(
         "fixed inset-0 z-50 [--bleed:--spacing(12)] [--inset:0px]",
         "touch-none",
         position === "bottom" && "grid grid-rows-[1fr_auto] pt-12",
@@ -130,7 +139,8 @@ export function DrawerViewport({
         variant === "inset" && position !== "top" && "pb-(--inset)",
         className,
       )}
-      data-slot="drawer-viewport"
+      data-slot={`${presentation}-viewport`}
+      data-base-ui-swipe-ignore={presentation !== "drawer" ? "" : undefined}
       {...props}
     />
   );
@@ -146,6 +156,8 @@ export function DrawerPopup({
   backdropClassName,
   forceBackdrop = false,
   portalProps,
+  viewportClassName,
+  presentation = "drawer",
   ...props
 }: DrawerPrimitive.Popup.Props & {
   showCloseButton?: boolean;
@@ -155,16 +167,19 @@ export function DrawerPopup({
   backdropClassName?: string
   forceBackdrop?: boolean
   portalProps?: DrawerPrimitive.Portal.Props;
+  viewportClassName?: string
+  presentation?: "drawer" | "sheet" | "dialog"
 }): React.ReactElement {
+  const { t } = useTranslation()
   const { position: contextPosition } = useContext(DrawerContext);
   const position = positionProp ?? contextPosition;
 
   return (
     <DrawerPortal {...portalProps}>
-      <DrawerBackdrop className={backdropClassName} forceRender={forceBackdrop} />
-      <DrawerViewport position={position} variant={variant}>
+      <DrawerBackdrop className={backdropClassName} forceRender={forceBackdrop} presentation={presentation} />
+      <DrawerViewport className={viewportClassName} position={position} presentation={presentation} variant={variant}>
         <DrawerPrimitive.Popup
-          className={cn(
+          className={presentation === "dialog" ? getDialogPopupClassName({ className: cn("[--nested-dialogs:var(--nested-drawers,0)]", className) }) : presentation === "sheet" ? getSheetPopupClassName({ className: typeof className === "string" ? className : undefined, side: position, variant: variant === "inset" ? "inset" : "default" }) : cn(
             "relative flex max-h-full min-h-0 w-full min-w-0 flex-col bg-popover not-dark:bg-clip-padding text-popover-foreground shadow-lg/5 outline-none transition-[transform,box-shadow,height,background-color] duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform [--peek:calc(--spacing(6)-1px)] [--scale-base:calc(max(0,1-(var(--nested-drawers)*var(--stack-step))))] [--scale:clamp(0,calc(var(--scale-base)+(var(--stack-step)*var(--stack-progress))),1)] [--shrink:calc(1-var(--scale))] [--stack-peek-offset:max(0px,calc((var(--nested-drawers)-var(--stack-progress))*var(--peek)))] [--stack-progress:clamp(0,var(--drawer-swipe-progress),1)] [--stack-step:0.05] before:pointer-events-none before:absolute before:inset-0 after:pointer-events-none after:absolute after:bg-white data-swiping:select-none data-nested-drawer-open:overflow-hidden data-nested-drawer-open:bg-[color-mix(in_srgb,var(--popover),var(--color-black)_calc(2%*(var(--nested-drawers)-var(--stack-progress))))] data-ending-style:shadow-transparent data-starting-style:shadow-transparent data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)] dark:data-nested-drawer-open:bg-[color-mix(in_srgb,var(--popover),var(--color-black)_calc(6%*(var(--nested-drawers)-var(--stack-progress))))]",
             "touch-none",
             position === "bottom" &&
@@ -213,13 +228,13 @@ export function DrawerPopup({
               "data-nested-drawer-open:transform-[translateX(calc(var(--drawer-swipe-movement-x)-var(--stack-peek-offset)))_scale(var(--scale))] origin-left",
             className,
           )}
-          data-slot="drawer-popup"
+          data-slot={`${presentation}-popup`}
           {...props}
         >
           {children}
           {showCloseButton && (
             <DrawerPrimitive.Close
-              aria-label="Close"
+              aria-label={t("routePlaceholders.close")}
               className="absolute end-2 top-2 z-1"
               render={<Button size="icon" variant="ghost" />}
             >
@@ -269,7 +284,7 @@ export function DrawerFooter({
 }): React.ReactElement {
   const defaultProps = {
     className: cn(
-      "flex flex-col-reverse gap-2 px-6 pb-(--safe-area-inset-bottom,0px) sm:flex-row sm:justify-end",
+      "keyboard-focusable flex flex-col-reverse gap-2 px-6 pb-(--safe-area-inset-bottom,0px) sm:flex-row sm:justify-end",
       !allowSelection && "cursor-default",
       variant === "default" &&
         "border-t bg-muted/72 pt-4 pb-[calc(env(safe-area-inset-bottom,0px)+--spacing(4))]",

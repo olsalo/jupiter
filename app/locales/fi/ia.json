@@ -1,0 +1,362 @@
+{
+  "preview": "MVP-suunnitelma",
+  "title": "Tietorakenne",
+  "entry": "Sijainti",
+  "actions": "Suunnitellut toiminnot",
+  "ownership": "Miten se liittyy kokonaisuuteen",
+  "calendar": {
+    "purpose": "Näe ajanvaraukset, hallitse aikatauluasi ja määritä milloin sinut voi varata",
+    "access": "Kaikki",
+    "entry": "Kalenteri → Päivä / Viikko / Lista",
+    "actions": [
+      "Uusi ajanvaraus",
+      "Estä aika",
+      "Muokkaa saatavuutta"
+    ],
+    "sections": [
+      {
+        "title": "Aikataulu",
+        "surface": "Päänäkymä",
+        "items": [
+          "Päivä-, viikko- ja listanäkymät",
+          "Oma tai tiimin aikataulu",
+          "Päivämäärän valinta ja Tänään",
+          "Suodatus palvelun ja toimipaikan mukaan",
+          "Yrityksen ja toimipaikan sulkupäivät"
+        ]
+      },
+      {
+        "title": "Ajanvaraus",
+        "surface": "Sivupaneeli",
+        "items": [
+          "Asiakas, palvelut ja osallistujat",
+          "Aika, työntekijä ja toimipaikka",
+          "Tila ja varauksen vastaukset",
+          "Muistiinpanot ja tapahtumat",
+          "Siirrä, peru ja merkitse valmiiksi"
+        ]
+      },
+      {
+        "title": "Saatavuus",
+        "surface": "Paneeli tai ikkuna",
+        "items": [
+          "Viikoittaiset työajat",
+          "Poissaolot",
+          "Lisäsaatavuus",
+          "Estetyt ajat",
+          "Toimipaikkakohtaiset työajat tarvittaessa"
+        ]
+      },
+      {
+        "title": "Aikataulun käyttö",
+        "surface": "Roolin ja varattavuuden mukaan",
+        "items": [
+          "Varattava käyttäjä aloittaa omasta aikataulustaan",
+          "Oman saatavuuden asetukset näkyvät varattaville käyttäjille",
+          "Ylläpitäjät ja omistajat näkevät tiimin aikataulut",
+          "Listanäkymä kokoaa ajanvaraukset"
+        ]
+      }
+    ],
+    "note": "Omaa saatavuutta hallitaan täällä eikä Tiimissä tai käyttäjävalikossa"
+  },
+  "customers": {
+    "purpose": "Löydä asiakkaat ja näe heidän tietonsa, ajanvarauksensa ja muistiinpanonsa yhdessä paikassa",
+    "access": "Kaikki",
+    "entry": "Asiakkaat → Asiakas → Yleiskatsaus / Ajanvaraukset / Muistiinpanot",
+    "actions": [
+      "Uusi asiakas",
+      "Hae asiakkaita",
+      "Muokkaa asiakasta"
+    ],
+    "sections": [
+      {
+        "title": "Asiakaslista",
+        "surface": "Päänäkymä",
+        "items": [
+          "Haku asiakkaan tiedoilla",
+          "Nimi ja yhteystiedot",
+          "Viimeisin ja seuraava käynti"
+        ]
+      },
+      {
+        "title": "Yleiskatsaus",
+        "surface": "Asiakkaan tiedot",
+        "items": [
+          "Nimi, sähköposti ja puhelin",
+          "Yritys ja osoite tarvittaessa",
+          "Tunnisteet ja tärkeät muistiinpanot",
+          "Seuraava ja viimeisin ajanvaraus"
+        ]
+      },
+      {
+        "title": "Ajanvaraukset",
+        "surface": "Asiakkaan välilehti",
+        "items": [
+          "Tulevat ajanvaraukset",
+          "Ajanvaraushistoria",
+          "Perutut ajat ja saapumatta jättämiset tarvittaessa"
+        ]
+      },
+      {
+        "title": "Muistiinpanot",
+        "surface": "Asiakkaan välilehti",
+        "items": [
+          "Henkilökunnan kirjoittamat muistiinpanot",
+          "Hyödylliset tiedot tulevia käyntejä varten"
+        ]
+      }
+    ],
+    "note": "Muistiinpanot ja tunnisteet kuuluvat asiakkaan tietoihin"
+  },
+  "services": {
+    "purpose": "Määritä mitä asiakkaat voivat varata ja kuka tarjoaa kutakin palvelua",
+    "access": "Ylläpitäjä / Omistaja",
+    "entry": "Palvelut → Palvelu",
+    "actions": [
+      "Uusi palvelu",
+      "Muokkaa palvelua",
+      "Järjestä kategoriat"
+    ],
+    "sections": [
+      {
+        "title": "Perustiedot",
+        "surface": "Palvelun osio",
+        "items": [
+          "Nimi ja kuvaus",
+          "Kesto ja väliaika",
+          "Hinta, toteutustapa ja kapasiteetti",
+          "Väri ja kuva",
+          "Aktiivinen tai piilotettu"
+        ]
+      },
+      {
+        "title": "Tiimi ja toimipaikat",
+        "surface": "Palvelun osio",
+        "items": [
+          "Palvelua tarjoavat tiimin jäsenet",
+          "Toimipaikat joissa palvelua tarjotaan"
+        ]
+      },
+      {
+        "title": "Varaaminen",
+        "surface": "Palvelun osio",
+        "items": [
+          "Varauksen vähimmäisennakko ja enimmäisaika",
+          "Perumisen ja siirtämisen aikarajat",
+          "Vahvistuksen tarve",
+          "Jonotuslista vain kun se on käytössä"
+        ]
+      },
+      {
+        "title": "Asiakaskysymykset",
+        "surface": "Palvelun osio",
+        "items": [
+          "Varauksen yhteydessä vastattavat kysymykset",
+          "Palvelukohtaiset varausvastaukset"
+        ]
+      },
+      {
+        "title": "Lisäasetukset",
+        "surface": "Vain tarvittaessa",
+        "items": [
+          "Tarvittavat resurssit",
+          "Palvelun erityistoiminnot"
+        ]
+      }
+    ],
+    "note": "Kategoriat ryhmittelevät palvelut, ja palvelun varaussäännöt ohittavat vastaavat yrityksen oletusasetukset"
+  },
+  "bookingPage": {
+    "purpose": "Valmistele, esikatsele ja jaa sivu jolla asiakkaasi varaavat ajan",
+    "access": "Ylläpitäjä / Omistaja",
+    "entry": "Varaussivu → Ulkoasu / Palvelut / Tiimi / Toimipaikka / Varauspolku",
+    "actions": [
+      "Esikatsele sivua",
+      "Kopioi linkki",
+      "Avaa sivu",
+      "Julkaise"
+    ],
+    "sections": [
+      {
+        "title": "Ulkoasu",
+        "surface": "Sivun asetukset",
+        "items": [
+          "Otsikko ja kuvaus",
+          "Yrityksen logo",
+          "Onnistumisviesti"
+        ]
+      },
+      {
+        "title": "Palvelut",
+        "surface": "Sivun asetukset",
+        "items": [
+          "Näkyvät palvelut",
+          "Palvelujen järjestys"
+        ]
+      },
+      {
+        "title": "Tiimi ja toimipaikka",
+        "surface": "Sivun asetukset",
+        "items": [
+          "Näkyvät työntekijät",
+          "Voiko asiakas valita työntekijän",
+          "Oletustoimipaikka",
+          "Voiko asiakas valita toimipaikan"
+        ]
+      },
+      {
+        "title": "Varauspolku",
+        "surface": "Sivun asetukset",
+        "items": [
+          "Pakollinen palvelun valinta",
+          "Valinnainen työntekijän ja toimipaikan valinta",
+          "Yhteenveto tai linkki palvelun kysymyksiin",
+          "Julkaisutila ja julkinen varauslinkki"
+        ]
+      }
+    ],
+    "note": "MVP sisältää yhden varaussivun, ja varauskysymyksiä hallitaan kyseisen palvelun asetuksissa"
+  },
+  "locations": {
+    "purpose": "Hallitse toimipaikkoja joissa yrityksesi tarjoaa palveluja sekä niiden aukioloaikoja",
+    "access": "Ylläpitäjä / Omistaja",
+    "entry": "Asetukset → Toimipaikat → Toimipaikka",
+    "actions": [
+      "Lisää toimipaikka",
+      "Muokkaa toimipaikkaa"
+    ],
+    "sections": [
+      {
+        "title": "Toimipaikat",
+        "surface": "Lista",
+        "items": [
+          "Toimipaikan nimi ja osoite",
+          "Aktiivinen tai piilotettu"
+        ]
+      },
+      {
+        "title": "Perustiedot",
+        "surface": "Toimipaikan tiedot",
+        "items": [
+          "Osoite ja yhteystiedot",
+          "Aikavyöhyke ja varausohjeet",
+          "Aktiivinen tai piilotettu"
+        ]
+      },
+      {
+        "title": "Saatavuus",
+        "surface": "Toimipaikan osio",
+        "items": [
+          "Tavalliset aukioloajat",
+          "Toimipaikan sulkupäivät",
+          "Lyhennetyt aukiolopäivät",
+          "Poikkeavat aukioloajat"
+        ]
+      },
+      {
+        "title": "Palvelut ja tiimi",
+        "surface": "Toimipaikan osiot",
+        "items": [
+          "Täällä tarjottavat palvelut",
+          "Toimipaikassa työskentelevät tiimin jäsenet",
+          "Resurssit vain tarvittaessa"
+        ]
+      }
+    ],
+    "note": "Toimipaikan sulkupäivät koskevat yhtä toimipaikkaa ja näkyvät Kalenterissa yrityksen sulkupäivien rinnalla"
+  },
+  "booking": {
+    "purpose": "Määritä koko yritystä koskevat varaussäännöt",
+    "access": "Ylläpitäjä / Omistaja",
+    "entry": "Asetukset → Varaaminen",
+    "actions": [
+      "Ota verkkovaraus käyttöön",
+      "Muokkaa varauksen oletusasetuksia"
+    ],
+    "sections": [
+      {
+        "title": "Varausaika",
+        "surface": "Yrityksen oletusasetukset",
+        "items": [
+          "Verkkovaraus käytössä tai pois käytöstä",
+          "Varauksen vähimmäisennakko",
+          "Kuinka pitkälle etukäteen voi varata"
+        ]
+      },
+      {
+        "title": "Muutokset",
+        "surface": "Yrityksen oletusasetukset",
+        "items": [
+          "Voiko asiakas perua",
+          "Perumisen aikaraja",
+          "Voiko asiakas siirtää varausta",
+          "Siirtämisen aikaraja"
+        ]
+      },
+      {
+        "title": "Vahvistus",
+        "surface": "Yrityksen oletusasetukset",
+        "items": [
+          "Vahvista automaattisesti",
+          "Vaadi vahvistus"
+        ]
+      },
+      {
+        "title": "Asiakastiedot",
+        "surface": "Yrityksen oletusasetukset",
+        "items": [
+          "Vaadi sähköposti",
+          "Vaadi puhelinnumero"
+        ]
+      }
+    ],
+    "note": "Yrityksen oletusasetuksia käytetään ellei palvelulle ole määritetty omia asetuksia"
+  },
+  "communications": {
+    "purpose": "Valitse mitä ajanvarausviestejä asiakkaasi saavat",
+    "access": "Ylläpitäjä / Omistaja",
+    "entry": "Asetukset → Viestit",
+    "actions": [
+      "Ota viestit käyttöön",
+      "Aseta muistutuksen ajoitus",
+      "Muokkaa viestiä kun tuettu"
+    ],
+    "sections": [
+      {
+        "title": "Ajanvarausviestit",
+        "surface": "Viestiasetukset",
+        "items": [
+          "Varausvahvistus",
+          "Perumisviesti",
+          "Siirtämisviesti",
+          "Ajanvarausmuistutus"
+        ]
+      },
+      {
+        "title": "Muistutuksen ajoitus",
+        "surface": "Viestiasetukset",
+        "items": [
+          "Kuinka kauan ennen ajanvarausta muistutus lähetetään"
+        ]
+      },
+      {
+        "title": "Lähettäjä",
+        "surface": "Viestiasetukset",
+        "items": [
+          "Lähettäjän nimi",
+          "Vastausosoite"
+        ]
+      },
+      {
+        "title": "Viestin sisältö",
+        "surface": "Valinnainen viestieditori",
+        "items": [
+          "Avaa viestityyppi muokataksesi sisältöä",
+          "Viestipohjien muokkaus vain jos se kuuluu MVP:hen"
+        ]
+      }
+    ],
+    "note": "Asiakasviestit kuuluvat Viesteihin ilman erillisiä ilmoitus- tai viestipohjasivuja"
+  }
+}

@@ -3,7 +3,7 @@ import { useLayoutEffect, useRef, useState, type ComponentProps } from "react"
 import { DrawerPopup } from "~/components/ui/drawer"
 import { cn } from "~/lib/utils"
 
-export function AnimatedDrawerPopup({ children, className, ...props }: Omit<ComponentProps<typeof DrawerPopup>, "ref">) {
+export function AnimatedDrawerPopup({ children, className, enabled = true, ...props }: Omit<ComponentProps<typeof DrawerPopup>, "ref"> & { enabled?: boolean }) {
   const [popup, setPopup] = useState<HTMLDivElement | null>(null)
   const previousHeight = useRef<number | null>(null)
   const previousFooterHeight = useRef<number | null>(null)
@@ -11,7 +11,11 @@ export function AnimatedDrawerPopup({ children, className, ...props }: Omit<Comp
   // Keep the saved height across route rerenders. Reattaching on child changes
   // would measure the new layout during cleanup and erase the starting height.
   useLayoutEffect(() => {
-    if (!popup) return
+    if (!popup || !enabled) {
+      previousHeight.current = null
+      previousFooterHeight.current = null
+      return
+    }
 
     let animation: Animation | null = null
     let footerAnimation: Animation | null = null
@@ -98,12 +102,12 @@ export function AnimatedDrawerPopup({ children, className, ...props }: Omit<Comp
       animation?.cancel()
       popup.removeAttribute("data-resizing")
     }
-  }, [popup])
+  }, [popup, enabled])
 
   return (
     <DrawerPopup
       {...props}
-      className={cn("data-resizing:overflow-clip **:data-[slot=drawer-footer]:shrink-0 **:data-[slot=drawer-footer]:overflow-clip", className)}
+      className={cn(enabled && "data-resizing:overflow-clip **:data-[slot=drawer-footer]:shrink-0 **:data-[slot=drawer-footer]:overflow-clip", className)}
       ref={setPopup}
     >
       {children}

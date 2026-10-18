@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "react-i18next"
+
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
 import {
   createContext,
@@ -174,6 +176,7 @@ function SheetPopup({
   viewportClassName?: string
   forceBackdrop?: boolean
 }) {
+  const { t } = useTranslation()
   const isClosing = useContext(SheetClosingContext)
   const previousChildrenRef = useRef(children)
 
@@ -195,7 +198,7 @@ function SheetPopup({
           {isClosing ? previousChildrenRef.current : children}
           {showCloseButton && (
             <SheetPrimitive.Close
-              aria-label="Close"
+              aria-label={t("routePlaceholders.close")}
               className="absolute inset-e-2 top-2"
               render={<Button size="icon" variant="ghost" />}
             >
@@ -231,7 +234,7 @@ function SheetFooter({
   return (
     <div
       className={cn(
-        "flex flex-col-reverse gap-2 px-6 sm:flex-row sm:justify-end border-border",
+        "keyboard-focusable flex flex-col-reverse gap-2 px-6 sm:flex-row sm:justify-end border-border",
         variant === "default" && "border-t bg-muted/72 py-4",
         variant === "bare" &&
           "in-[[data-slot=sheet-popup]:has([data-slot=sheet-panel])]:pt-3 pt-4 pb-6",

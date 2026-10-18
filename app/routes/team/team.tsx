@@ -1,21 +1,22 @@
-import { dehydrate, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { dehydrate, useQuery } from "@tanstack/react-query"
 import type { inferRouterOutputs } from "@trpc/server"
-import { useCallback, useMemo } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useRevalidator, useRouteLoaderData } from "react-router"
+import { Link, Outlet, useLocation, useNavigate, useRevalidator, useRouteLoaderData, useSearchParams } from "react-router"
 
 import type { Route } from "./+types/team"
 import type { AppRouter } from "~/.server/main"
 import type { loader as rootLoader } from "~/root"
 import Icon from "~/components/icons"
-import { InviteMemberDialog } from "~/components/invite-member-dialog"
+import { InvitationActionsMenu } from "~/components/invitation-actions-menu"
 import { TablePage, TablePageHeader } from "~/components/table-page"
 import { TanStackTable, type TanStackTableColumn } from "~/components/tanstack-table"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
-import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "~/components/ui/menu"
+import { Input } from "~/components/ui/input"
+import { Select, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "~/components/ui/select"
 import {
   Empty,
   EmptyDescription,
@@ -25,12 +26,11 @@ import {
 } from "~/components/ui/empty"
 import { Tabs, TabsList, TabsPanel, TabsTab } from "~/components/ui/tabs"
 import { formatDateTime } from "~/lib/format-preference"
-import { clearMobileNavigationQuery } from "~/lib/mobile-navigation"
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
-import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
+import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { toast } from "~/lib/toast"
 import { hasOrganizationRole } from "~/lib/utils"
+import { useCurrentOrganizationRole } from "~/lib/use-organization-access"
 
 type TeamListOutput = inferRouterOutputs<AppRouter>["team"]["list"]
 
@@ -41,6 +41,7 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   const team = await queryClient.fetchQuery(trpc.team.list.queryOptions()).catch(() => undefined)
   const counts = {
     members: team?.members.length ?? 0,
+    people: team?.people.length ?? 0,
     invitations: team?.invitations.length ?? 0,
   }
   if (team) {
@@ -50,40 +51,32 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   return { queryClient: dehydrate(queryClient) }
 }
 
-export function clientLoader({ request }: Route.ClientLoaderArgs) {
-  const { queryClient, trpc } = getClientTRPC()
-  clearMobileNavigationQuery(queryClient, trpc.team.list.queryKey(), request, "/team")
-
+export function clientLoader() {
+  // Client queries own fetching and freshness after the initial server render.
   return null
 }
+
+export const handle = { workspace: true }
 
 export const shouldRevalidate = shouldRevalidateAppRoute
 
 export default function Team() {
   const { t } = useTranslation("team")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [search, setSearch] = useState("")
+  const [filter, setFilter] = useState("all")
+  const navigate = useNavigate()
+  const location = useLocation()
   const root = useRouteLoaderData<typeof rootLoader>("root")
   const trpc = useTRPC()
-  const queryClient = useQueryClient()
   const team = useQuery(trpc.team.list.queryOptions())
   const counts = useQuery({ ...trpc.team.count.queryOptions(), enabled: false })
-  const cancelInvitation = useMutation(trpc.team.cancelInvitation.mutationOptions({
-    onSuccess: async () => {
-      toast.success(t("invite.cancelled"))
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: trpc.team.list.queryKey() }),
-        queryClient.invalidateQueries({ queryKey: trpc.team.count.queryKey() }),
-      ])
-    },
-    onError: () => toast.error(t("invite.cancelFailed")),
-  }))
   const showTeamError = team.isError && team.data === undefined
   const showRefreshError = team.isError && team.data !== undefined
-  const memberCount = team.data?.members.length ?? counts.data?.members
+  const personCount = team.data?.people.length ?? counts.data?.people
   const invitationCount = team.data?.invitations.length ?? counts.data?.invitations
-  const organizationRole = root?.organizations.find((organization) => organization.id === root.org?.id)?.role
-  const canInvite = team.data?.canInvite ?? (
-    hasOrganizationRole(organizationRole, "owner") || hasOrganizationRole(organizationRole, "admin")
-  )
+  const organizationRole = useCurrentOrganizationRole()
+  const canInvite = organizationRole === "owner" || organizationRole === "admin"
   const formatDate = useCallback((value: Date) => formatDateTime(value, {
     formatPreference: root?.formatPreference ?? "eu",
     language: root?.locale === "fi" ? "fi" : "en",
@@ -94,50 +87,23 @@ export default function Team() {
     const key = value.trim()
     return key === "owner" || key === "admin" || key === "member" ? t(`roles.${key}`) : key
   }).join(", "), [t])
-  const copyInvitationLink = useCallback(async (invitationId: string, email: string) => {
-    try {
-      const inviteUrl = new URL(`/invite/${encodeURIComponent(invitationId)}`, window.location.origin)
-      inviteUrl.searchParams.set("email", email)
-      await navigator.clipboard.writeText(inviteUrl.href)
-      toast.success(t("invite.linkCopied"))
-    } catch {
-      toast.error(t("invite.copyFailed"))
-    }
-  }, [t])
-  const memberColumns = useMemo<TanStackTableColumn<TeamListOutput["members"][number]>[]>(() => [
+  const peopleColumns = useMemo<TanStackTableColumn<TeamListOutput["people"][number]>[]>(() => [
     {
-      id: "member",
-      header: t("member"),
-      cell: ({ row: { original: member } }) => (
-        <div className="flex min-w-0 items-center gap-3">
-          <Avatar>
-            {member.user.image ? <AvatarImage src={member.user.image} alt="" /> : null}
-            <AvatarFallback>{(member.user.name || member.user.email).slice(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <div className="grid min-w-0 gap-1.5">
-            <span className="truncate font-medium" title={member.user.name || member.user.email}>
-              {member.user.name || member.user.email}
-              {member.user.id === root?.user?.id ? <span className="ml-2 font-normal text-muted-foreground">{t("you")}</span> : null}
-            </span>
-            <span className="truncate text-xs text-muted-foreground" title={member.user.email}>{member.user.email}</span>
-          </div>
-        </div>
-      ),
-      meta: { grow: 2, minWidth: "16rem", skeleton: "avatarText" },
+      id: "person", header: t("people.person"),
+      cell: ({ row: { original: person } }) => <div className="flex min-w-0 items-center gap-3">
+        <Avatar>{person.image ? <AvatarImage src={person.image} alt="" /> : null}<AvatarFallback>{person.name.slice(0, 2).toUpperCase()}</AvatarFallback></Avatar>
+        <div className="grid min-w-0 gap-1.5"><span className="truncate font-medium">{person.name}{person.member?.user.id === root?.user?.id ? <span className="ml-2 font-normal text-muted-foreground">{t("you")}</span> : null}</span><span className="truncate text-xs text-muted-foreground">{person.email || person.phone || t("people.noContact")}</span></div>
+      </div>, meta: { grow: 2, minWidth: "16rem", skeleton: "avatarText" },
     },
-    {
-      accessorKey: "role",
-      header: t("permissionLevel"),
-      cell: ({ row }) => <Badge variant="outline">{roleLabel(row.original.role)}</Badge>,
-      meta: { minWidth: "8rem", skeleton: "badge" },
-    },
-    {
-      accessorKey: "createdAt",
-      header: t("joined"),
-      cell: ({ row }) => <span className="whitespace-nowrap text-muted-foreground">{formatDate(row.original.createdAt)}</span>,
-      meta: { align: "end", minWidth: "9rem" },
-    },
-  ], [formatDate, roleLabel, root?.user?.id, t])
+    { id: "access", header: t("people.appAccess"), cell: ({ row }) => <Badge variant={row.original.member ? "secondary" : "outline"}>{t(row.original.member ? "people.accessActive" : row.original.invitation ? "people.accessInvited" : "people.accessNone")}</Badge>, meta: { minWidth: "9rem", skeleton: "badge" } },
+    { id: "role", header: t("permissionLevel"), cell: ({ row }) => row.original.member ? <Badge variant="outline">{roleLabel(row.original.member.role)}</Badge> : <span className="text-muted-foreground">—</span>, meta: { minWidth: "8rem", skeleton: "badge" } },
+    { id: "bookable", header: t("people.takesAppointments"), cell: ({ row }) => <Badge variant="outline">{t(row.original.staff?.isActive && row.original.staff.acceptsAppointments ? "people.bookable" : "people.notBookable")}</Badge>, meta: { minWidth: "10rem", skeleton: "badge" } },
+    { id: "services", header: t("people.services"), cell: ({ row }) => <span className="line-clamp-2 text-sm text-muted-foreground">{row.original.staff?.staffServices.filter((link) => link.isActive).map((link) => link.service.name).join(", ") || "—"}</span>, meta: { grow: 1.2, minWidth: "12rem" } },
+  ], [roleLabel, root?.user?.id, t])
+  const people = (team.data?.people ?? []).filter((person) => {
+    const bookable = Boolean(person.staff?.isActive && person.staff.acceptsAppointments)
+    return (filter === "all" || (filter === "bookable" ? bookable : !bookable)) && [person.name, person.email, person.phone].some((value) => value?.toLowerCase().includes(search.toLowerCase()))
+  })
   const inviteColumns = useMemo<TanStackTableColumn<TeamListOutput["invitations"][number]>[]>(() => [
     {
       accessorKey: "inviteeName",
@@ -167,38 +133,15 @@ export default function Team() {
       id: "actions",
       header: "",
       cell: ({ row: { original: invitation } }) => (
-        <Menu>
-          <MenuTrigger
-            aria-label={t("invite.actionsFor", { email: invitation.email })}
-            render={<Button disabled={cancelInvitation.isPending} size="icon" type="button" variant="ghost" />}
-          >
-            <Icon aria-hidden="true" name="dotsVertical" size={18} />
-          </MenuTrigger>
-          <MenuPopup align="end" className="min-w-48" sideOffset={6}>
-            <MenuItem closeOnClick={true} onClick={() => void copyInvitationLink(invitation.id, invitation.email)}>
-              <Icon aria-hidden="true" name="copy" />
-              {t("invite.copyLink")}
-            </MenuItem>
-            {canInvite ? (
-              <>
-                <MenuSeparator />
-                <MenuItem
-                  closeOnClick={true}
-                  disabled={cancelInvitation.isPending}
-                  onClick={() => cancelInvitation.mutate({ invitationId: invitation.id })}
-                  variant="destructive"
-                >
-                  <Icon aria-hidden="true" name="delete" />
-                  {t("invite.cancel")}
-                </MenuItem>
-              </>
-            ) : null}
-          </MenuPopup>
-        </Menu>
+        <InvitationActionsMenu
+          canInvite={canInvite}
+          email={invitation.email}
+          invitationId={invitation.id}
+        />
       ),
       meta: { align: "end", width: "7rem", isAction: true, mobileActionPlacement: "top-right" },
     },
-  ], [canInvite, cancelInvitation.isPending, cancelInvitation.mutate, copyInvitationLink, formatDate, roleLabel, t])
+  ], [canInvite, formatDate, roleLabel, t])
 
   return (
     <TablePage>
@@ -207,7 +150,11 @@ export default function Team() {
         title={t("title")}
         refreshing={team.isRefetching}
         description={t("description")}
-        actions={canInvite ? <InviteMemberDialog /> : undefined}
+        showDescriptionOnMobile={true}
+        actions={<div className="flex items-center gap-2">
+          <Button render={<Link to="/team-v2" />} type="button" variant="outline"><span className="sm:hidden">V2</span><span className="hidden sm:inline">{t("v2.detailView")}</span></Button>
+          {canInvite ? <Button render={<Link to="new" state={{ returnTo: `${location.pathname}${location.search}` }} />} type="button"><Icon aria-hidden={true} name="add" size={18} />{t("people.addAction")}</Button> : null}
+        </div>}
       />
       {showRefreshError ? (
         <Alert variant="warning">
@@ -243,30 +190,41 @@ export default function Team() {
           </AlertAction>
         </Alert>
       ) : (
-        <Tabs className="min-h-0 flex-1 gap-4" defaultValue="members">
+        <Tabs className="min-h-0 flex-1 gap-4" value={searchParams.get("tab") === "invites" ? "invites" : "people"} onValueChange={(value) => setSearchParams((previous) => {
+          const next = new URLSearchParams(previous)
+          if (value === "invites") next.set("tab", "invites")
+          else next.delete("tab")
+          return next
+        }, { replace: true })}>
           <TabsList aria-label={t("title")} className="grid shrink-0 grid-cols-2">
-            <TabsTab value="members">
-              {t("tabs.members")}
-              <Badge className="min-w-5 justify-center tabular-nums" variant="secondary">{memberCount}</Badge>
+            <TabsTab value="people">
+              {t("tabs.people")}
+              <Badge className="min-w-5 justify-center tabular-nums" variant="secondary">{personCount}</Badge>
             </TabsTab>
             <TabsTab value="invites">
               {t("tabs.invites")}
               <Badge className="min-w-5 justify-center tabular-nums" variant="secondary">{invitationCount}</Badge>
             </TabsTab>
           </TabsList>
-          <TabsPanel className="flex min-h-0 flex-col" value="members">
+          <TabsPanel className="flex min-h-0 flex-col gap-4" value="people">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Input aria-label={t("people.search")} className="sm:max-w-sm" onChange={(event) => setSearch(event.target.value)} placeholder={t("people.search")} type="search" value={search} />
+              <Select items={[{ label: t("people.all"), value: "all" }, { label: t("people.bookable"), value: "bookable" }, { label: t("people.notBookable"), value: "notBookable" }]} value={filter} onValueChange={(value) => { if (value) setFilter(value) }}>
+                <SelectTrigger aria-label={t("people.filter")} className="sm:w-52"><SelectValue /></SelectTrigger><SelectPopup><SelectItem value="all">{t("people.all")}</SelectItem><SelectItem value="bookable">{t("people.bookable")}</SelectItem><SelectItem value="notBookable">{t("people.notBookable")}</SelectItem></SelectPopup>
+              </Select>
+            </div>
             <TanStackTable
               ariaLabel={t("members")}
               className="h-auto min-h-[24rem] md:min-h-0"
-              columns={memberColumns}
-              data={team.data?.members ?? []}
+              columns={peopleColumns}
+              data={people}
               emptyContent={
                 <Empty className="min-h-0 w-full border-0 bg-transparent">
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
                       <Icon aria-hidden="true" name="users" size={18} />
                     </EmptyMedia>
-                    <EmptyTitle>{t("noMembers")}</EmptyTitle>
+                    <EmptyTitle>{t(search || filter !== "all" ? "people.noMatches" : "noMembers")}</EmptyTitle>
                     <EmptyDescription>{t("noMembersDescription")}</EmptyDescription>
                   </EmptyHeader>
                 </Empty>
@@ -274,10 +232,11 @@ export default function Team() {
               enableMultiSelect={false}
               enablePagination={false}
               fillHeight={true}
-              getRowId={(member) => member.id}
+              getRowId={(person) => person.id}
+              onRowClick={(person) => navigate(`/team/${encodeURIComponent(person.id)}`, { state: { returnTo: `${location.pathname}${location.search}` } })}
               loading={team.isLoading}
               loadingLabel={t("loading")}
-              skeletonRowCount={memberCount}
+              skeletonRowCount={personCount}
             />
           </TabsPanel>
           <TabsPanel className="flex min-h-0 flex-col" value="invites">
@@ -308,6 +267,7 @@ export default function Team() {
           </TabsPanel>
         </Tabs>
       )}
+      <Outlet />
     </TablePage>
   )
 }

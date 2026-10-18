@@ -2,6 +2,7 @@ import { createContext, useContext, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Spinner } from "~/components/ui/spinner"
+import { Separator } from "~/components/ui/separator"
 import { BillingNotificationBar } from "~/components/billing-notification-bar"
 import type { BillingNotification } from "~/lib/billing"
 import { cn } from "~/lib/utils"
@@ -10,6 +11,7 @@ export const PageBillingNotificationContext = createContext<BillingNotification 
 
 type PageHeaderProps = {
   actions?: ReactNode
+  controls?: ReactNode
   className?: string
   description?: ReactNode
   refreshing?: boolean
@@ -20,6 +22,7 @@ type PageHeaderProps = {
 
 export function PageHeader({
   actions,
+  controls,
   className,
   description,
   refreshing = false,
@@ -36,6 +39,7 @@ export function PageHeader({
       className={cn(
         "flex flex-wrap items-start justify-between gap-4",
         className,
+        controls && "max-md:flex-wrap",
         showBillingNotification && billingNotification && "md:gap-y-6",
       )}
     >
@@ -44,7 +48,7 @@ export function PageHeader({
           <BillingNotificationBar notification={billingNotification} variant="inline" />
         </div>
       ) : null}
-      <div className="min-w-0">
+      <div className={cn("min-w-0", controls && "flex-1")}>
         <h1 className={cn("relative w-fit min-w-0 max-w-full text-xl font-medium", showRefreshSpinner && "pe-7")}>
           {title}
           {showRefreshSpinner ? (
@@ -54,7 +58,7 @@ export function PageHeader({
         {description ? (
           <span
             className={cn(
-              "max-w-2xl text-xs text-muted-foreground",
+              "mt-1 block max-w-2xl text-xs leading-4 text-muted-foreground",
               !showDescriptionOnMobile && "max-md:hidden",
             )}
           >
@@ -62,13 +66,16 @@ export function PageHeader({
           </span>
         ) : null}
       </div>
+      {controls ? <div className="order-3 flex w-full min-w-0 items-center gap-2 md:order-2 md:w-auto">{controls}</div> : null}
       {actions ? (
         <div
           className={cn(
             "flex shrink-0 flex-wrap items-center gap-2",
+            controls && "order-2 md:order-3 md:gap-4",
             import.meta.env.VITE_APP_LAYOUT_STYLE !== "floating" && "[&_[data-slot=button]]:rounded-lg [&_[data-slot=button]]:before:rounded-[calc(var(--radius-lg)-1px)]",
           )}
         >
+          {controls ? <Separator className="hidden h-9 self-center md:block" orientation="vertical" /> : null}
           {actions}
         </div>
       ) : null}

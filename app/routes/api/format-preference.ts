@@ -1,3 +1,4 @@
+import { getSafeSettingsHash } from "~/lib/settings-navigation"
 import { redirect } from "react-router"
 
 import type { Route } from "./+types/format-preference"
@@ -10,7 +11,7 @@ export async function action({ request }: Route.ActionArgs) {
   const nextFormatPreference = isFormatPreference(formatPreference)
     ? formatPreference
     : "eu"
-  const settingsHash = getSettingsHash(formData.get("settingsHash"))
+  const settingsHash = getSafeSettingsHash(formData.get("settingsHash"))
 
   return redirect(getRedirectPath(request, settingsHash), {
     headers: {
@@ -44,14 +45,4 @@ function getRedirectPath(request: Request, settingsHash = "") {
   }
 
   return `${refererUrl.pathname}${refererUrl.search}${settingsHash}`
-}
-
-function getSettingsHash(value: FormDataEntryValue | null) {
-  return typeof value === "string" && isSettingsHash(value) ? value : ""
-}
-
-function isSettingsHash(value: string) {
-  return /^#settings(?:\/(?:profile|notifications|appearance|billing))?$/.test(
-    value,
-  )
 }

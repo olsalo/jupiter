@@ -1,0 +1,107 @@
+import { useTranslation } from "react-i18next"
+import { memo, useMemo } from "react"
+import { TZDate } from "react-day-picker"
+
+import { Button } from "~/components/ui/button"
+import { Separator } from "~/components/ui/separator"
+import { Tooltip, TooltipPopup, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip"
+import { UserAvatar } from "~/components/user-avatar"
+import { defaultTimeZone, type FormatPreference } from "~/lib/format-preference"
+import { cn } from "~/lib/utils"
+
+type BookingSlot = { startsAt: string; endsAt: string; staffMemberId: string; locationId: string | null }
+type BookingMember = { id: string; name: string; image?: string | null }
+type SlotItem = { key: string; member: BookingMember; label: string; time: string; locationName?: string }
+
+const dayPeriods = [
+  { key: "night", from: 0, to: 6 },
+  { key: "morning", from: 6, to: 12 },
+  { key: "afternoon", from: 12, to: 17 },
+  { key: "evening", from: 17, to: 24 },
+] as const
+
+export const bookingSlotKey = (slot: Pick<BookingSlot, "startsAt" | "staffMemberId" | "locationId">) => `${slot.startsAt}/${slot.staffMemberId}/${slot.locationId ?? ""}`
+
+export function BookingSlotList({ days, members, locations, selection, invalid, format, onSelect, showDateHeadings = true, timeZone = defaultTimeZone, formatPreference = "eu" }: {
+  days: { date: string; slots: BookingSlot[] }[]
+  members: BookingMember[]
+  locations: { id: string; name: string }[]
+  selection: string
+  invalid: boolean
+  showDateHeadings?: boolean
+  timeZone?: string
+  formatPreference?: FormatPreference
+  format: (value: string, includeDate?: boolean, includeTime?: boolean, includeWeekday?: boolean) => string
+  onSelect: (value: string) => void
+}) {
+  const { t } = useTranslation()
+  const slotDays = useMemo(() => {
+    const memberMap = new Map(members.map((member) => [member.id, member]))
+    const locationMap = new Map(locations.map((location) => [location.id, location]))
+    const memberFor = (id: string): BookingMember => memberMap.get(id) ?? { id, name: t("routeTitles.staffMember") }
+
+    return days.filter((day) => day.slots.length > 0).map((day) => {
+      const chronological = [...day.slots].sort((a, b) => a.startsAt.localeCompare(b.startsAt) || memberFor(a.staffMemberId).name.localeCompare(memberFor(b.staffMemberId).name, "fi") || bookingSlotKey(a).localeCompare(bookingSlotKey(b)))
+      const periods = dayPeriods.map((period) => ({ ...period, slots: [] as SlotItem[] }))
+      for (const slot of chronological) {
+        const hour = new TZDate(new Date(slot.startsAt), timeZone).getHours()
+        const period = periods.find((item) => hour >= item.from && hour < item.to)
+        if (!period) continue
+        const member = memberFor(slot.staffMemberId)
+        const location = slot.locationId ? locationMap.get(slot.locationId) : undefined
+        const startTime = format(slot.startsAt, false)
+        const endTime = format(slot.endsAt, false)
+        period.slots.push({
+          key: bookingSlotKey(slot), member, locationName: location?.name,
+          label: `${member.name} · ${startTime} – ${endTime}${location ? ` · ${location.name}` : ""}`,
+          time: `${startTime} – ${endTime}`,
+        })
+      }
+      return { date: day.date, label: showDateHeadings ? format(day.slots[0].startsAt, true, false, true) : "", periods: periods.filter((period) => period.slots.length > 0) }
+    })
+  }, [days, members, locations, format, timeZone, showDateHeadings, t])
+
+  return <TooltipProvider><div className="flex w-full min-w-0 flex-col gap-5" data-slot="booking-slot-list">
+    {slotDays.map((day) => <section className="flex min-w-0 flex-col gap-4" data-slot="booking-slot-day" key={day.date}>
+      {showDateHeadings ? <h3 className="border-b pb-2 text-sm font-semibold"><time dateTime={day.date}>{day.label}</time></h3> : null}
+      {day.periods.map((period) => <div className="flex min-w-0 flex-col gap-3" data-slot="booking-slot-period" key={period.key}>
+        <h4 className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+          <Separator className="min-w-0 flex-1" />
+          <span className="shrink-0">{t(`bookingForm.periods.${period.key}`)}</span>
+          <Separator className="min-w-0 flex-1" />
+        </h4>
+        <div className={cn("grid w-full min-w-0 gap-3", formatPreference === "us" ? "grid-cols-2" : "grid-cols-3")} data-slot="booking-slots-by-time">
+          {period.slots.map((slot) => <BookingSlotButton invalid={invalid} key={slot.key} onSelect={onSelect} selected={selection === slot.key} slot={slot} />)}
+        </div>
+      </div>)}
+    </section>)}
+  </div></TooltipProvider>
+}
+
+const BookingSlotButton = memo(function BookingSlotButton({ slot, selected, invalid, onSelect }: {
+  slot: SlotItem
+  selected: boolean
+  invalid: boolean
+  onSelect: (value: string) => void
+}) {
+    return <Tooltip disableHoverablePopup={true}>
+      <TooltipTrigger render={<Button
+      aria-invalid={invalid}
+      aria-label={slot.label}
+      aria-pressed={selected}
+      className="h-auto min-h-10 w-full min-w-0 touch-manipulation justify-start gap-2 px-1.5 py-2 text-xs whitespace-nowrap tabular-nums sm:text-xs"
+      onClick={() => onSelect(slot.key)}
+      type="button"
+      variant={selected ? "default" : "outline"}
+      />}>
+      <UserAvatar className="size-4 shrink-0 text-[8px]" decorative={true} name={slot.member.name} src={slot.member.image} stableId={slot.member.id} />
+      <span className="flex min-w-0 flex-1 flex-col gap-1 text-center">
+        <span className="text-xs leading-4 whitespace-nowrap">
+          {slot.time}
+        </span>
+        {slot.locationName ? <span className="truncate text-[10px] font-normal opacity-80">{slot.locationName}</span> : null}
+      </span>
+      </TooltipTrigger>
+      <TooltipPopup className="pointer-events-none" side="top" sideOffset={6}>{slot.label}</TooltipPopup>
+    </Tooltip>
+})

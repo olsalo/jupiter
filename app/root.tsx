@@ -29,6 +29,7 @@ import {
 import { getFormatPreferenceFromRequest } from "./lib/format-preference.server"
 import { defaultTheme, isTheme, syncThemeColor } from "./lib/theme"
 import { ToastProvider } from "./components/ui/toast"
+import { TooltipProvider } from "./components/ui/tooltip"
 import { AppStatusDialog } from "./components/app-status-dialog"
 import { TRPCReactProvider } from "./lib/trpc/client"
 import { toast } from "./lib/toast"
@@ -264,10 +265,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
 
   return (
     <ToastProvider>
-      <TRPCReactProvider>
-        <AppStatusDialog />
-        <Outlet />
-      </TRPCReactProvider>
+      <TooltipProvider>
+        <TRPCReactProvider>
+          <AppStatusDialog />
+          <Outlet />
+        </TRPCReactProvider>
+      </TooltipProvider>
     </ToastProvider>
   )
 }

@@ -17,6 +17,7 @@ const formFocusableSelector = [
   "[contenteditable=\"true\"]",
 ].join(",")
 
+const formSelectTriggerSelector = '[data-slot="select-trigger"], [data-slot="select-button"]'
 const optInSelector = ".keyboard-focusable, #keyboard-focusable"
 const originalTabIndexAttribute = "data-pluto-original-tabindex"
 
@@ -30,12 +31,14 @@ export function restrictKeyboardFocus() {
     ]
 
     elements.forEach((element) => {
-      const isFormControl = element.matches(formFocusableSelector)
-      const isFormButton =
-        element.matches("button") && element.closest("form") !== null
-      const isOptedIn = element.matches(optInSelector)
+      const isFormControl =
+        element.matches(formFocusableSelector) ||
+        (element.matches(formSelectTriggerSelector) &&
+          element.closest("form") !== null)
+      const isOptedIn =
+        element.matches(optInSelector) || element.closest(optInSelector) !== null
 
-      if (isFormControl || isFormButton || isOptedIn) {
+      if (isFormControl || isOptedIn) {
         return
       }
 

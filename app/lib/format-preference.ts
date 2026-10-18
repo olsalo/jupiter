@@ -34,6 +34,7 @@ type FormatDateTimeOptions = {
   includeDate?: boolean
   includeTime?: boolean
   includeYear?: boolean
+  includeWeekday?: boolean
   language: "en" | "fi"
   timeZone?: string
 }
@@ -70,6 +71,7 @@ export function formatDateTime(
     includeDate = true,
     includeTime = true,
     includeYear = true,
+    includeWeekday = false,
     language,
     timeZone,
   }: FormatDateTimeOptions,
@@ -80,9 +82,13 @@ export function formatDateTime(
     return "-"
   }
 
-  const dateLabel = includeDate
+  const datePart = includeDate
     ? formatDatePart(date, formatPreference, includeYear, timeZone)
     : null
+  const weekday = includeDate && includeWeekday
+    ? new Intl.DateTimeFormat(language === "fi" ? "fi-FI" : "en-US", { weekday: "long", timeZone }).format(date)
+    : null
+  const dateLabel = weekday ? `${weekday} ${datePart}` : datePart
 
   if (!includeTime) {
     return dateLabel ?? "-"

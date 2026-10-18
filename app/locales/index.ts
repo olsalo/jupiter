@@ -1,3 +1,7 @@
+import enServices from "./en/services.json"
+import fiServices from "./fi/services.json"
+import enIa from "./en/ia.json"
+import fiIa from "./fi/ia.json"
 import enCommon from "./en/common.json"
 import enAuth from "./en/auth.json"
 import enDashboard from "./en/dashboard.json"
@@ -19,6 +23,7 @@ export const supportedLanguages = ["en", "fi"] as const
 export const fallbackLanguage = "en"
 export const namespaces = [
   "common",
+  "ia",
   "auth",
   "dashboard",
   "notes",
@@ -26,11 +31,13 @@ export const namespaces = [
   "onboarding",
   "zod",
   "team",
+  "services",
 ] as const
 
 export const resources = {
   en: {
     common: enCommon,
+    ia: enIa,
     auth: enAuth,
     dashboard: enDashboard,
     notes: enNotes,
@@ -38,9 +45,11 @@ export const resources = {
     onboarding: enOnboarding,
     zod: enZod,
     team: enTeam,
+    services: enServices,
   },
   fi: {
     common: fiCommon,
+    ia: fiIa,
     auth: fiAuth,
     dashboard: fiDashboard,
     notes: fiNotes,
@@ -48,5 +57,6 @@ export const resources = {
     onboarding: fiOnboarding,
     zod: fiZod,
     team: fiTeam,
+    services: fiServices,
   },
 }

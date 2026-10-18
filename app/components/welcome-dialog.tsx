@@ -87,7 +87,7 @@ export function WelcomeDialog() {
         </DialogFooter>
         <div
           aria-hidden="true"
-          className="absolute inset-y-0 right-0 hidden w-1/2 border-l bg-neutral-100 bg-[url('/mockup.png')] bg-size-[90%_auto] bg-bottom-right bg-no-repeat md:block dark:bg-neutral-900"
+          className="absolute inset-y-0 right-0 hidden w-1/2 border-l bg-neutral-100 bg-[url('/mockup-light.avif')] bg-size-[90%_auto] bg-bottom-right bg-no-repeat md:block dark:bg-neutral-900 dark:bg-[url('/mockup-dark.avif')]"
         />
       </ServerRenderedDialogPopup>
     </Dialog>

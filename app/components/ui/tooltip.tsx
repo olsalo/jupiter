@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
 export const TooltipCreateHandle: typeof TooltipPrimitive.createHandle =
   TooltipPrimitive.createHandle;
 
-export const TooltipProvider: typeof TooltipPrimitive.Provider =
-  TooltipPrimitive.Provider;
+export function TooltipProvider({ delay = 100, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>): React.ReactElement {
+  return <TooltipPrimitive.Provider delay={delay} {...props} />
+}
 
 export const Tooltip: typeof TooltipPrimitive.Root = TooltipPrimitive.Root;
 

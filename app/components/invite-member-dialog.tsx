@@ -1,6 +1,6 @@
 import type { FormApi } from "@rvf/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import type { ReactNode } from "react"
+import type { ReactElement, ReactNode } from "react"
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -17,7 +17,7 @@ import {
   DialogPanel, DialogPopup, DialogTitle, DialogTrigger,
 } from "~/components/ui/dialog"
 import { Input } from "~/components/ui/input"
-import { Radio, RadioGroup } from "~/components/ui/radio-group"
+import { PermissionLevelSelect } from "~/components/team/permission-level-select"
 import { Spinner } from "~/components/ui/spinner"
 import { Switch } from "~/components/ui/switch"
 import { useMediaQuery } from "~/lib/hooks"
@@ -25,7 +25,7 @@ import { inviteFormSchema, type InviteFormValues } from "~/lib/schemas/team"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 
-export function InviteMemberDialog() {
+export function InviteMemberDialog({ staffMemberId, name = "", email = "", trigger }: { staffMemberId?: string; name?: string; email?: string; trigger?: ReactElement }) {
   const { t } = useTranslation("team")
   const isMobile = useMediaQuery("max-640px")
   const trpc = useTRPC()
@@ -34,10 +34,6 @@ export function InviteMemberDialog() {
   const [open, setOpen] = useState(false)
   const [formKey, setFormKey] = useState(0)
   const invitation = useMutation(trpc.team.invite.mutationOptions())
-  const roleItems = [
-    { label: t("roles.member"), description: t("invite.standardDescription"), value: "member" },
-    { label: t("roles.admin"), description: t("invite.adminDescription"), value: "admin" },
-  ]
   const Root = isMobile ? Drawer : Dialog
   const Trigger = isMobile ? DrawerTrigger : DialogTrigger
   const Header = isMobile ? DrawerHeader : DialogHeader
@@ -59,10 +55,10 @@ export function InviteMemberDialog() {
         setOpen(nextOpen)
       }}
     >
-      <Trigger render={<Button aria-label={t("invite.action")} className={import.meta.env.VITE_APP_LAYOUT_STYLE === "floating" ? "electron-no-drag h-9 rounded-xl max-md:w-9 max-md:px-0" : "electron-no-drag h-9 rounded-lg before:rounded-[calc(var(--radius-lg)-1px)] max-md:w-9 max-md:px-0"} size="lg" type="button" />}>
+      {trigger ? <Trigger render={trigger} /> : <Trigger render={<Button aria-label={t(staffMemberId ? "people.inviteToApp" : "invite.open")} className={import.meta.env.VITE_APP_LAYOUT_STYLE === "floating" ? "electron-no-drag h-9 rounded-xl max-md:w-9 max-md:px-0" : "electron-no-drag h-9 rounded-lg before:rounded-[calc(var(--radius-lg)-1px)] max-md:w-9 max-md:px-0"} size="lg" type="button" />}>
         <Icon aria-hidden="true" name="add" size={20} />
-        <span className="max-md:sr-only">{t("invite.action")}</span>
-      </Trigger>
+        <span className="max-md:sr-only">{t(staffMemberId ? "people.inviteToApp" : "invite.open")}</span>
+      </Trigger>}
       <ResponsiveInvitePopup isMobile={isMobile}>
         <Header>
           <Title>{t("invite.title")}</Title>
@@ -71,7 +67,7 @@ export function InviteMemberDialog() {
         <AppForm
           key={formKey}
           className="contents"
-          defaultValues={{ name: "", email: "", role: "member", sendEmail: true }}
+          defaultValues={{ name, email, role: "member", sendEmail: true, staffMemberId }}
           ref={formApi}
           schema={inviteFormSchema}
           onBeforeSubmit={() => formApi.current?.unstable_setCustomError("email", null)}
@@ -82,14 +78,18 @@ export function InviteMemberDialog() {
                 formApi.current?.unstable_setCustomError("email", t(`invite.${result.error}`))
                 return
               }
-              setOpen(false)
-              toast.success(t(values.sendEmail ? "invite.sent" : "invite.created"))
               await Promise.all([
-                queryClient.invalidateQueries({ queryKey: trpc.team.list.queryKey() }),
-                queryClient.invalidateQueries({ queryKey: trpc.team.count.queryKey() }),
+                queryClient.invalidateQueries(trpc.team.list.queryFilter()),
+                queryClient.invalidateQueries(trpc.team.count.queryFilter()),
+                queryClient.invalidateQueries(trpc.team.getPerson.queryFilter()),
+                queryClient.invalidateQueries(trpc.staff.list.queryFilter()),
               ])
+              setOpen(false)
+              toast.success(t(result.linked ? "people.accessLinked" : staffMemberId && values.sendEmail ? "people.inviteQueued" : values.sendEmail ? "invite.sent" : "invite.created"))
             } catch (error) {
-              toast.error(t("invite.failed"))
+              const appCode = (error as { data?: { appCode?: string } }).data?.appCode
+              if (appCode && ["alreadyMember", "alreadyInvited", "alreadyLinked", "staffEmailMismatch"].includes(appCode)) formApi.current?.unstable_setCustomError("email", t(appCode === "alreadyLinked" ? "people.alreadyLinked" : appCode === "staffEmailMismatch" ? "people.staffEmailMismatch" : `invite.${appCode}`))
+              else toast.error(t("invite.failed"))
               throw error
             }
           }}
@@ -105,7 +105,7 @@ export function InviteMemberDialog() {
                     <Input
                       {...form.getInputProps("name")}
                       aria-invalid={Boolean(form.error("name"))}
-                      autoComplete="name"
+                      autoComplete="off"
                       placeholder={t("invite.namePlaceholder")}
                       type="text"
                     />
@@ -148,31 +148,18 @@ export function InviteMemberDialog() {
                     error={form.error("role")}
                     label={t("permissionLevel")}
                   >
-                    <RadioGroup
-                      aria-invalid={Boolean(form.error("role")) || undefined}
-                      className="w-full gap-2"
+                    <PermissionLevelSelect
+                      name={roleField.name}
+                      value={roleField.value}
+                      disabled={form.formState.isSubmitting}
+                      invalid={Boolean(form.error("role"))}
                       onBlur={roleField.onBlur}
+                      ref={roleField.ref}
                       onValueChange={(value) => {
-                        if (value !== "member" && value !== "admin") return
                         roleField.onChange(value)
                         form.unstable_setCustomError("role", null)
                       }}
-                      inputRef={roleField.ref}
-                      value={roleField.value}
-                    >
-                      {roleItems.map((item) => (
-                        <label
-                          className="flex w-full cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-background p-3 transition-colors hover:bg-muted/40 has-data-[checked]:border-primary has-data-[checked]:bg-primary/5 has-data-[focus-visible]:ring-2 has-data-[focus-visible]:ring-ring"
-                          key={item.value}
-                        >
-                          <Radio aria-invalid={Boolean(form.error("role")) || undefined} className="mt-0.5" value={item.value} />
-                          <span className="grid gap-1">
-                            <span className="text-sm font-medium">{item.label}</span>
-                            <span className="text-xs leading-4 text-muted-foreground">{item.description}</span>
-                          </span>
-                        </label>
-                      ))}
-                    </RadioGroup>
+                    />
                   </FormLabel>
                 </Panel>
                 <Footer>
@@ -200,11 +187,11 @@ function ResponsiveInvitePopup({ children, isMobile }: {
   isMobile: boolean
 }) {
   return isMobile ? (
-    <DrawerPopup showBar>
+    <DrawerPopup forceBackdrop={true} showBar={true}>
       {children}
     </DrawerPopup>
   ) : (
-    <DialogPopup className="sm:max-w-sm">
+    <DialogPopup forceBackdrop={true} className="sm:max-w-sm">
       {children}
     </DialogPopup>
   )

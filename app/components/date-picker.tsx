@@ -1,4 +1,5 @@
 import { useState, type Ref } from "react"
+import { TZDate } from "react-day-picker"
 import { enUS, fi } from "react-day-picker/locale"
 
 import Icon from "~/components/icons"
@@ -13,7 +14,11 @@ type DatePickerProps = {
   className?: string
   clearLabel: string
   disabled: boolean
+  disablePast?: boolean
   formatPreference: FormatPreference
+  includeWeekday?: boolean
+  defaultMonth?: Date
+  weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6
   inputRef?: Ref<HTMLButtonElement>
   invalid: boolean
   label: string
@@ -25,9 +30,11 @@ type DatePickerProps = {
   value: string | null | undefined
 }
 
-export function DatePicker({ className, clearLabel, disabled, formatPreference, inputRef, invalid, label, language, onBlur, onChange, placeholder, timeZone, value }: DatePickerProps) {
+export function DatePicker({ className, clearLabel, disabled, disablePast = false, formatPreference, includeWeekday = false, defaultMonth, weekStartsOn = 1, inputRef, invalid, label, language, onBlur, onChange, placeholder, timeZone, value }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const selected = value ? calendarDateFromValue(value, timeZone) : undefined
+  const today = calendarDateFromValue(calendarDateToValue(new TZDate(new Date(), timeZone)), timeZone)
+  const initialMonth = selected ?? defaultMonth
 
   return (
     <div className={cn("relative w-full min-w-0", className)}>
@@ -43,23 +50,25 @@ export function DatePicker({ className, clearLabel, disabled, formatPreference, 
         >
           <Icon aria-hidden="true" name="calendar" size={16} />
           <span className={cn("truncate", !value && "text-muted-foreground")}>
-            {selected ? formatDateTime(selected, { formatPreference, language, timeZone, includeTime: false }) : placeholder}
+            {selected ? formatDateTime(selected, { formatPreference, language, timeZone, includeTime: false, includeWeekday }) : placeholder}
           </span>
         </PopoverTrigger>
         <PopoverPopup align="start">
           <PopoverTitle className="sr-only">{label}</PopoverTitle>
           <Calendar
-            defaultMonth={selected}
-            disabled={disabled}
+            defaultMonth={disablePast && initialMonth && initialMonth < today ? today : initialMonth}
+            disabled={disabled || (disablePast ? { before: today } : false)}
             locale={language === "fi" ? fi : enUS}
             mode="single"
             onSelect={(date) => {
+              if (disablePast && date && date < today) return
               onChange(date ? calendarDateToValue(date) : null)
               setOpen(false)
             }}
             selected={selected}
             timeZone={timeZone}
-            weekStartsOn={1}
+            today={today}
+            weekStartsOn={weekStartsOn}
           />
         </PopoverPopup>
       </Popover>

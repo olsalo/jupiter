@@ -1,81 +1,81 @@
 {
   "errors": {
-    "invalid_type": "Check what you entered",
+    "invalid_type": "Invalid",
     "invalid_type_received_undefined": "Required",
     "invalid_type_received_null": "Required",
-    "invalid_literal": "Check what you entered",
-    "unrecognized_keys": "Check what you entered",
-    "invalid_union": "Check what you entered",
-    "invalid_business_id": "Enter a valid business ID",
-    "invalid_tax_id": "Enter a valid VAT ID",
-    "invalid_union_discriminator": "Check what you entered",
-    "invalid_enum_value": "Check what you entered",
-    "invalid_date": "Enter a valid date",
-    "custom": "Check what you entered",
-    "not_multiple_of": "Enter a multiple of {{multipleOf}}",
-    "not_finite": "Enter a valid number",
+    "invalid_literal": "Invalid",
+    "unrecognized_keys": "Invalid",
+    "invalid_union": "Invalid",
+    "invalid_business_id": "Invalid",
+    "invalid_tax_id": "Invalid",
+    "invalid_union_discriminator": "Invalid",
+    "invalid_enum_value": "Invalid",
+    "invalid_date": "Invalid",
+    "custom": "Invalid",
+    "not_multiple_of": "Multiple of {{multipleOf}}",
+    "not_finite": "Invalid",
     "invalid_string": {
-      "email": "Check your email address",
-      "url": "Enter a valid web address",
-      "uuid": "Check the identifier",
-      "regex": "Check what you entered",
-      "datetime": "Enter a valid date and time",
+      "email": "Invalid",
+      "url": "Invalid",
+      "uuid": "Invalid",
+      "regex": "Invalid",
+      "datetime": "Invalid",
       "startsWith": "Start with \"{{startsWith}}\"",
       "endsWith": "End with \"{{endsWith}}\""
     },
     "too_small": {
       "array": {
-        "exact": "Choose exactly {{minimum}} options",
-        "inclusive": "Choose at least {{minimum}} options",
-        "not_inclusive": "Choose more than {{minimum}} options"
+        "exact": "Select {{minimum}}",
+        "inclusive": "Min. {{minimum}}",
+        "not_inclusive": "More than {{minimum}}"
       },
       "string": {
-        "exact": "Enter exactly {{minimum}} characters",
+        "exact": "Use {{minimum}} characters",
         "inclusive_one": "Required",
-        "inclusive_other": "Enter at least {{count}} characters",
-        "not_inclusive": "Enter more than {{minimum}} characters"
+        "inclusive_other": "Too short",
+        "not_inclusive": "Too short"
       },
       "number": {
-        "exact": "Enter {{minimum}}",
-        "inclusive": "Enter {{minimum}} or more",
-        "not_inclusive": "Enter a number greater than {{minimum}}"
+        "exact": "Must be {{minimum}}",
+        "inclusive": "Min. {{minimum}}",
+        "not_inclusive": "Above {{minimum}}"
       },
       "set": {
-        "exact": "Check your selection",
-        "inclusive": "Check your selection",
-        "not_inclusive": "Check your selection"
+        "exact": "Select {{minimum}}",
+        "inclusive": "Min. {{minimum}}",
+        "not_inclusive": "More than {{minimum}}"
       },
       "date": {
-        "exact": "Choose {{- minimum, datetime}}.",
-        "inclusive": "Choose {{- minimum, datetime}} or a later date.",
-        "not_inclusive": "Choose a date after {{- minimum, datetime}}."
+        "exact": "Use {{- minimum, datetime}}",
+        "inclusive": "From {{- minimum, datetime}}",
+        "not_inclusive": "From {{- minimum, datetime}} (exclusive)"
       }
     },
     "too_big": {
       "array": {
-        "exact": "Choose exactly {{maximum}} options",
-        "inclusive": "Choose no more than {{maximum}} options",
-        "not_inclusive": "Choose fewer than {{maximum}} options"
+        "exact": "Select {{maximum}}",
+        "inclusive": "Max. {{maximum}}",
+        "not_inclusive": "Fewer than {{maximum}}"
       },
       "string": {
-        "exact": "Enter exactly {{maximum}} characters",
-        "inclusive": "Enter no more than {{maximum}} characters",
-        "not_inclusive": "Enter fewer than {{maximum}} characters"
+        "exact": "Use {{maximum}} characters",
+        "inclusive": "Too long",
+        "not_inclusive": "Too long"
       },
       "number": {
-        "exact": "Enter {{maximum}}",
-        "inclusive": "Enter {{maximum}} or less",
-        "not_inclusive": "Enter a number smaller than {{maximum}}"
+        "exact": "Must be {{maximum}}",
+        "inclusive": "Max. {{maximum}}",
+        "not_inclusive": "Below {{maximum}}"
       },
       "set": {
-        "exact": "Check your selection",
-        "inclusive": "Check your selection",
-        "not_inclusive": "Check your selection"
+        "exact": "Select {{maximum}}",
+        "inclusive": "Max. {{maximum}}",
+        "not_inclusive": "Fewer than {{maximum}}"
       },
       "date": {
-        "exact": "Choose {{- maximum, datetime}}.",
-        "inclusive": "Choose {{- maximum, datetime}} or an earlier date.",
-        "not_inclusive": "Choose a date before {{- maximum, datetime}}."
+        "exact": "Use {{- maximum, datetime}}",
+        "inclusive": "Until {{- maximum, datetime}}",
+        "not_inclusive": "Until {{- maximum, datetime}} (exclusive)"
       }
     }
   },

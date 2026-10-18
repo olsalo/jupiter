@@ -134,13 +134,13 @@ export default function AreaChart({
       aria-label={label}
       aria-busy={points.length > 0 && size === null}
       aria-roledescription="chart"
-      className={cn("keyboard-focusable relative h-64 w-full rounded-lg outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring md:h-72", className)}
+      className={cn("relative h-64 w-full rounded-lg outline-offset-4 focus-visible:outline-2 focus-visible:outline-ring md:h-72", className)}
       onBlur={() => setActiveIndex(null)}
       onFocus={() => setActiveIndex(points.length ? points.length - 1 : null)}
       onKeyDown={handleKeyDown}
       ref={containerRef}
       role="group"
-      tabIndex={points.length && size ? 0 : undefined}
+      tabIndex={points.length && size ? -1 : undefined}
     >
       {points.length ? (
         <>

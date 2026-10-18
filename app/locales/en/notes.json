@@ -16,7 +16,7 @@
   "view": {
     "description": "Read or edit this note",
     "loading": "Loading note",
-    "loadError": "Could not load this note"
+    "loadError": "Couldn’t load note"
   },
   "empty": {
     "title": "No notes yet",
@@ -31,12 +31,12 @@
     },
     "body": {
       "label": "Note",
-      "placeholder": "Write the note details"
+      "placeholder": "Write your note"
     },
     "create": "Create",
-    "creating": "Creating...",
+    "creating": "Creating…",
     "save": "Save",
-    "saving": "Saving...",
+    "saving": "Saving…",
     "cancel": "Cancel"
   },
   "actions": {
@@ -46,8 +46,8 @@
     "delete": "Delete",
     "deleted": "Note deleted",
     "deletedMultiple": "Notes deleted",
-    "deleting": "Deleting...",
-    "retry": "Try again"
+    "deleting": "Deleting…",
+    "retry": "Retry"
   },
   "deleteConfirmation": {
     "title": "Delete this note?",
@@ -61,12 +61,12 @@
     "updated": "Updated"
   },
   "errors": {
-    "load": "Could not load notes",
-    "retryDescription": "Please try again in a moment",
-    "refresh": "Could not refresh notes",
+    "load": "Couldn’t load notes",
+    "retryDescription": "Try again in a moment",
+    "refresh": "Couldn’t refresh notes",
     "stale": "Showing the last loaded notes",
-    "create": "Could not create note",
-    "update": "Could not update note",
-    "delete": "Could not delete note"
+    "create": "Couldn’t create note",
+    "update": "Couldn’t save note",
+    "delete": "Couldn’t delete note"
   }
 }

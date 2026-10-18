@@ -11,7 +11,6 @@ export function useBottomScrollFade(
 
     if (!pageViewport || !fade) return
 
-    const mobileViewport = window.matchMedia("(max-width: 767px)")
     const resizeObserver = new ResizeObserver(updateFade)
     const observed = new Set<Element>()
 
@@ -52,11 +51,6 @@ export function useBottomScrollFade(
     function updateFade() {
       if (!pageViewport || !fade) return
 
-      if (mobileViewport.matches) {
-        fade.style.opacity = "1"
-        return
-      }
-
       const viewport = getTableViewport() ?? pageViewport
       const remaining = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop
 
@@ -74,14 +68,12 @@ export function useBottomScrollFade(
       subtree: true,
     })
     pageViewport.addEventListener("scroll", updateFade, { capture: true, passive: true })
-    mobileViewport.addEventListener("change", updateFade)
     updateFade()
 
     return () => {
       mutationObserver.disconnect()
       resizeObserver.disconnect()
       pageViewport.removeEventListener("scroll", updateFade, true)
-      mobileViewport.removeEventListener("change", updateFade)
     }
   }, [viewportRef, fadeRef, useTableScroll])
 }

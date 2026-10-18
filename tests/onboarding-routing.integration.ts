@@ -5,6 +5,8 @@ import { createServer } from "vite"
 
 // Enable the subscription step without making Stripe or database requests.
 process.env.NODE_ENV = "test"
+const demoBypassEnabled = process.argv.includes("--demo")
+process.env.DEMO_BYPASS_ONBOARDING_PAYMENT = String(demoBypassEnabled)
 process.env.STRIPE_SECRET_KEY = "sk_test_onboarding_routing"
 process.env.STRIPE_WEBHOOK_SECRET = "whsec_onboarding_routing"
 process.env.STRIPE_PRO_PRICE_ID = "price_onboarding_routing"
@@ -36,11 +38,13 @@ try {
 
   const originalFindMember = prisma.member.findFirst
   const originalFindSubscription = prisma.subscription.findFirst
+  let businessComplete = true
+  let subscriptionComplete = false
   prisma.member.findFirst = (async () => ({
     organizationId: "onboarding-routing-org",
-    organization: { settings: { location: "FI", timezone: "Europe/Helsinki" } },
+    organization: { settings: businessComplete ? { location: "FI", timezone: "Europe/Helsinki" } : null },
   })) as unknown as typeof prisma.member.findFirst
-  prisma.subscription.findFirst = (async () => null) as typeof prisma.subscription.findFirst
+  prisma.subscription.findFirst = (async () => subscriptionComplete ? { id: "onboarding-subscription" } : null) as typeof prisma.subscription.findFirst
 
   try {
     for (const search of ["", "?billing=year"]) {
@@ -67,7 +71,43 @@ try {
       error.headers.get("Location") === "/onboarding/subscription?billing=year"
     ))
 
-    console.info("PASS onboarding data requests do not redirect to themselves, and entry redirects preserve billing")
+    const loadStep = (stepId: "business" | "subscription") => loader({
+      request: new Request(`http://localhost:5174/onboarding/${stepId}.data?billing=year&step=2`),
+      url: new URL(`http://localhost:5174/onboarding/${stepId}?billing=year&step=2`),
+      params: {},
+      context,
+      pattern: `/onboarding/${stepId}`,
+    })
+
+    if (demoBypassEnabled) {
+      for (const complete of [false, true]) {
+        businessComplete = complete
+        subscriptionComplete = complete
+        for (const stepId of ["business", "subscription"] as const) {
+          const result = await loadStep(stepId)
+          assert.equal(result.data.stepId, stepId)
+          assert.equal(result.data.step, stepId === "business" ? 1 : 2)
+          assert.equal(result.data.totalSteps, 2)
+          assert.equal(result.data.nextStep, stepId === "business" ? "subscription" : null)
+        }
+      }
+    } else {
+      await assert.rejects(() => loadStep("business"), (error: unknown) => (
+        error instanceof Response &&
+        error.headers.get("Location") === "/onboarding/subscription?billing=year"
+      ))
+      businessComplete = false
+      await assert.rejects(() => loadStep("subscription"), (error: unknown) => (
+        error instanceof Response &&
+        error.headers.get("Location") === "/onboarding/business?billing=year"
+      ))
+      subscriptionComplete = true
+      await assert.rejects(() => loadStep("business"), (error: unknown) => (
+        error instanceof Response && error.headers.get("Location") === "/"
+      ))
+    }
+
+    console.info(`PASS onboarding routing with demo bypass ${demoBypassEnabled ? "enabled" : "disabled"}`)
   } finally {
     queryCacheOptions.gcTime = originalGcTime
     prisma.member.findFirst = originalFindMember

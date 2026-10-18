@@ -1,10 +1,8 @@
 import { useTranslation } from "react-i18next"
 
 import FormLabel from "~/components/form-label"
-import Icon from "~/components/icons"
-import { Button } from "~/components/ui/button"
 import { Skeleton } from "~/components/ui/skeleton"
-import { ResponsiveSheetDescription, ResponsiveSheetFooter, ResponsiveSheetHeader, ResponsiveSheetPanel, ResponsiveSheetTitle } from "~/components/responsive-sheet"
+import { ResponsiveSheetDescription, ResponsiveSheetHeader, ResponsiveSheetPanel, ResponsiveSheetTitle } from "~/components/responsive-sheet"
 
 export function NoteModalSkeleton({ descriptionId, isEditing, titleId }: { descriptionId: string, isEditing: boolean, titleId: string }) {
   const { t } = useTranslation("notes")
@@ -58,20 +56,6 @@ export function NoteModalSkeleton({ descriptionId, isEditing, titleId }: { descr
           </>
         )}
       </ResponsiveSheetPanel>
-      <ResponsiveSheetFooter>
-        {isEditing ? (
-          <>
-            <Button disabled={true} type="button" variant="ghost">{t("form.cancel")}</Button>
-            <Button disabled={true} type="button">{t("form.save")}</Button>
-          </>
-        ) : (
-          <Button disabled={true} type="button">
-            <Icon aria-hidden={true} name="edit" size={16} />
-            {t("actions.edit")}
-          </Button>
-        )}
-      </ResponsiveSheetFooter>
     </>
   )
 }
-

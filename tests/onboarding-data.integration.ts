@@ -4,6 +4,8 @@ import { createServer } from "vite"
 
 // Exercise query callers with a fake database and billing disabled.
 process.env.NODE_ENV = "test"
+const demoBypassEnabled = process.argv.includes("--demo")
+process.env.DEMO_BYPASS_ONBOARDING_PAYMENT = String(demoBypassEnabled)
 process.env.STRIPE_SECRET_KEY = ""
 process.env.LOCATION_API = "onboarding-test-key"
 const originalFetch = globalThis.fetch
@@ -28,6 +30,8 @@ try {
   } | null = null
   let activeSubscription: { id: string } | null = null
   let savedCurrency: string | undefined
+  let savedBusinessName: string | undefined
+  let existingSettings: { location: string, timezone: string } | null = null
   const context = {
     headers: new Headers(),
     user: { id: "onboarding-user", name: "Matti Meikäläinen" },
@@ -35,14 +39,23 @@ try {
     organizationId: null,
     locale: "fi",
     prisma: {
-      organizationSettings: { findUnique: async () => null },
+      organizationSettings: { findUnique: async () => existingSettings },
       $transaction: async (callback: (transaction: {
         user: { update: () => Promise<void> }
+        organization: {
+          update: (args: { data: { name: string }, where: { id: string } }) => Promise<void>
+        }
         organizationSettings: {
           upsert: (args: { create: { currency: string }, update: { currency: string } }) => Promise<void>
         }
       }) => Promise<void>) => callback({
         user: { update: async () => undefined },
+        organization: {
+          update: async ({ data, where }) => {
+            assert.equal(where.id, membership?.organizationId)
+            savedBusinessName = data.name
+          },
+        },
         organizationSettings: {
           upsert: async ({ create, update }) => {
             assert.equal(create.currency, update.currency)
@@ -70,8 +83,9 @@ try {
   const caller = router.createCaller(context as unknown as Context)
 
   assert.deepEqual(await caller.status(), {
-    billingEnabled: false,
+    billingEnabled: demoBypassEnabled,
     businessComplete: false,
+    demoOnboardingPaymentBypassEnabled: demoBypassEnabled,
     subscriptionComplete: false,
   })
 
@@ -133,6 +147,28 @@ try {
     timezone: "Europe/Stockholm",
   })
   assert.equal(savedCurrency, "SEK")
+  existingSettings = { location: "SE", timezone: "Europe/Stockholm" }
+  const updatedDetails = {
+    businessName: "Uusi Yritys Oy",
+    currency: "eur",
+    location: "fi",
+    name: "Matti Meikäläinen",
+    timezone: "Europe/Helsinki",
+  }
+  if (demoBypassEnabled) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const result = await caller.complete(updatedDetails)
+      assert.equal(result.organizationId, "onboarding-org")
+      assert.equal(savedCurrency, "EUR")
+      assert.equal(savedBusinessName, updatedDetails.businessName)
+    }
+  } else {
+    await assert.rejects(() => caller.complete(updatedDetails), (error: unknown) => (
+      error instanceof Error && "code" in error && error.code === "CONFLICT"
+    ))
+    assert.equal(savedCurrency, "SEK")
+    assert.equal(savedBusinessName, undefined)
+  }
   await assert.rejects(() => caller.complete({
     ...defaults,
     businessName: "Yritys Oy",
@@ -160,7 +196,7 @@ try {
     ))
   }
 
-  console.info("PASS onboarding status, currency validation and saving, defaults, localized plans, and query authentication")
+  console.info(`PASS onboarding data and repeated business saves with demo bypass ${demoBypassEnabled ? "enabled" : "disabled"}`)
 } finally {
   globalThis.fetch = originalFetch
   await vite.close()

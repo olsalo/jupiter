@@ -1,10 +1,10 @@
 {
   "meta": {
     "title": "Overview",
-    "description": "A place for your app’s highlights and recent activity"
+    "description": "Your appointments and recent updates at a glance"
   },
   "title": "Overview",
-  "description": "A place for your app’s highlights and recent activity",
+  "description": "Your appointments and recent updates at a glance",
   "greeting": {
     "morningNamed": "Morning, {{name}}",
     "afternoonNamed": "Afternoon, {{name}}",
@@ -14,14 +14,14 @@
     "evening": "Good evening"
   },
   "placeholder": {
-    "label": "Placeholder content",
-    "title": "Make this space your own",
-    "description": "Add the numbers, updates, and shortcuts that matter to your app.",
+    "label": "Coming soon",
+    "title": "Your day at a glance",
+    "description": "Appointment totals and recent updates will appear here",
     "summary": "Summary",
     "summaryDescription": "Your key numbers will appear here",
     "activity": "Recent activity",
     "activityDescription": "Your latest updates will appear here",
     "shortcuts": "Quick links",
-    "shortcutsDescription": "Add shortcuts to the things you use most"
+    "shortcutsDescription": "Shortcuts to the pages you use most will appear here"
   }
 }

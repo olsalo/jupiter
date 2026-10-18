@@ -13,8 +13,8 @@ export function createInvitationEmailTemplate({
     ? `Sinut on kutsuttu tiimiin ${organizationName}`
     : `You're invited to join ${organizationName}`
   const description = locale === "fi"
-    ? "Avaa alla oleva linkki ja kirjaudu sisään tällä sähköpostiosoitteella liittyäksesi tiimiin. Kutsu on voimassa 48 tuntia."
-    : "Open the link below and sign in with this email address to join the team. This invitation expires in 48 hours."
+    ? "Avaa alla oleva linkki ja kirjaudu sisään tällä sähköpostiosoitteella liittyäksesi tiimiin. Kutsu on voimassa kaksi viikkoa."
+    : "Open the link below and sign in with this email address to join the team. This invitation expires in two weeks."
   const action = locale === "fi" ? "Liity tiimiin" : "Join the team"
 
   return {

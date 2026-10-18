@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "react-i18next"
+
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import {
   createContext,
@@ -162,6 +164,7 @@ function DialogPopup({
   renderBackdrop?: boolean
   viewportClassName?: string
 }) {
+  const { t } = useTranslation()
   const isClosing = useContext(DialogClosingContext)
   const previousChildrenRef = useRef(children)
 
@@ -193,7 +196,7 @@ function DialogPopup({
           {isClosing ? previousChildrenRef.current : children}
           {showCloseButton && (
             <DialogPrimitive.Close
-              aria-label="Close"
+              aria-label={t("routePlaceholders.close")}
               className="absolute end-2 top-2 z-50"
               render={<Button size="icon" variant="ghost" />}
             >
@@ -229,7 +232,7 @@ function DialogFooter({
   return (
     <div
       className={cn(
-        "flex flex-col-reverse gap-2 px-6 sm:flex-row sm:justify-end sm:rounded-b-[calc(var(--radius-2xl)-1px)]",
+        "keyboard-focusable flex flex-col-reverse gap-2 px-6 sm:flex-row sm:justify-end sm:rounded-b-[calc(var(--radius-2xl)-1px)]",
         variant === "default" && "border-t border-border bg-muted/72 py-4",
         variant === "bare" &&
           "in-[[data-slot=dialog-popup]:has([data-slot=dialog-panel])]:pt-3 pt-4 pb-6",

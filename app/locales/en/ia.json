@@ -1,0 +1,362 @@
+{
+  "preview": "MVP plan",
+  "title": "Information architecture",
+  "entry": "Where it lives",
+  "actions": "Planned actions",
+  "ownership": "How it fits",
+  "calendar": {
+    "purpose": "See appointments, manage your schedule and set when you can be booked",
+    "access": "Everyone",
+    "entry": "Calendar → Day / Week / Agenda",
+    "actions": [
+      "New appointment",
+      "Block time",
+      "Edit availability"
+    ],
+    "sections": [
+      {
+        "title": "Schedule",
+        "surface": "Main view",
+        "items": [
+          "Day, Week and Agenda views",
+          "My schedule or a team schedule",
+          "Date navigation and Today",
+          "Filter by service and location",
+          "Business and location closures"
+        ]
+      },
+      {
+        "title": "Appointment",
+        "surface": "Side drawer",
+        "items": [
+          "Customer, services and attendees",
+          "Time, staff member and location",
+          "Status and booking answers",
+          "Notes and activity",
+          "Reschedule, cancel and complete"
+        ]
+      },
+      {
+        "title": "Availability",
+        "surface": "Drawer or modal",
+        "items": [
+          "Weekly hours",
+          "Time off",
+          "Extra availability",
+          "Blocked time",
+          "Location-specific hours when needed"
+        ]
+      },
+      {
+        "title": "Schedule access",
+        "surface": "Based on role and bookability",
+        "items": [
+          "Bookable users start with their own schedule",
+          "Own availability controls appear only for bookable users",
+          "Admins and owners can view other team schedules",
+          "Agenda provides the appointment list"
+        ]
+      }
+    ],
+    "note": "Personal availability belongs here rather than in Team or the user menu"
+  },
+  "customers": {
+    "purpose": "Find customers and see their details, appointments and notes in one place",
+    "access": "Everyone",
+    "entry": "Customers → Customer → Overview / Appointments / Notes",
+    "actions": [
+      "New customer",
+      "Search customers",
+      "Edit customer"
+    ],
+    "sections": [
+      {
+        "title": "Customer list",
+        "surface": "Main view",
+        "items": [
+          "Search by customer details",
+          "Name and contact information",
+          "Last visit and next visit"
+        ]
+      },
+      {
+        "title": "Overview",
+        "surface": "Customer detail",
+        "items": [
+          "Name, email and phone",
+          "Company and address when relevant",
+          "Tags and key notes",
+          "Next and recent appointment"
+        ]
+      },
+      {
+        "title": "Appointments",
+        "surface": "Customer tab",
+        "items": [
+          "Upcoming appointments",
+          "Appointment history",
+          "Cancelled appointments and no-shows when useful"
+        ]
+      },
+      {
+        "title": "Notes",
+        "surface": "Customer tab",
+        "items": [
+          "Staff-created customer notes",
+          "Useful context for future visits"
+        ]
+      }
+    ],
+    "note": "Customer notes and tags stay inside the customer record"
+  },
+  "services": {
+    "purpose": "Define what customers can book and who provides each service",
+    "access": "Admin / Owner",
+    "entry": "Services → Service",
+    "actions": [
+      "New service",
+      "Edit service",
+      "Organize categories"
+    ],
+    "sections": [
+      {
+        "title": "General",
+        "surface": "Service section",
+        "items": [
+          "Name and description",
+          "Duration and buffer time",
+          "Price, delivery type and capacity",
+          "Color and image",
+          "Active or inactive"
+        ]
+      },
+      {
+        "title": "Staff & locations",
+        "surface": "Service section",
+        "items": [
+          "Team members who provide the service",
+          "Locations where the service is offered"
+        ]
+      },
+      {
+        "title": "Booking",
+        "surface": "Service section",
+        "items": [
+          "Minimum notice and maximum advance booking",
+          "Cancellation and reschedule notice",
+          "Confirmation requirement",
+          "Waitlist only when included and enabled"
+        ]
+      },
+      {
+        "title": "Customer questions",
+        "surface": "Service section",
+        "items": [
+          "Questions answered during booking",
+          "Service-specific booking answers"
+        ]
+      },
+      {
+        "title": "Advanced",
+        "surface": "Only when needed",
+        "items": [
+          "Resource requirements",
+          "Specialized service behavior"
+        ]
+      }
+    ],
+    "note": "Categories organize the service list, while service rules override relevant business booking defaults"
+  },
+  "bookingPage": {
+    "purpose": "Prepare, preview and share the page your customers use to book",
+    "access": "Admin / Owner",
+    "entry": "Booking page → Appearance / Services / Staff / Location / Customer flow",
+    "actions": [
+      "Preview page",
+      "Copy link",
+      "Open page",
+      "Publish"
+    ],
+    "sections": [
+      {
+        "title": "Appearance",
+        "surface": "Page settings",
+        "items": [
+          "Title and description",
+          "Business logo",
+          "Success message"
+        ]
+      },
+      {
+        "title": "Services",
+        "surface": "Page settings",
+        "items": [
+          "Visible services",
+          "Service ordering"
+        ]
+      },
+      {
+        "title": "Staff & location",
+        "surface": "Page settings",
+        "items": [
+          "Visible staff",
+          "Whether customers choose staff",
+          "Default location",
+          "Whether customers choose a location"
+        ]
+      },
+      {
+        "title": "Customer flow",
+        "surface": "Page settings",
+        "items": [
+          "Required service selection",
+          "Optional staff and location selection",
+          "Summary or link to service questions",
+          "Live status and public booking link"
+        ]
+      }
+    ],
+    "note": "The MVP has one Booking page, and booking questions are managed in the relevant Service"
+  },
+  "locations": {
+    "purpose": "Manage places where your business offers services and their opening hours",
+    "access": "Admin / Owner",
+    "entry": "Settings → Locations → Location",
+    "actions": [
+      "Add location",
+      "Edit location"
+    ],
+    "sections": [
+      {
+        "title": "Locations",
+        "surface": "List",
+        "items": [
+          "Location name and address",
+          "Active or inactive"
+        ]
+      },
+      {
+        "title": "General",
+        "surface": "Location detail",
+        "items": [
+          "Address and contact information",
+          "Timezone and booking instructions",
+          "Active or inactive"
+        ]
+      },
+      {
+        "title": "Availability",
+        "surface": "Location section",
+        "items": [
+          "Regular opening hours",
+          "Location closures",
+          "Shortened opening days",
+          "Special one-off opening hours"
+        ]
+      },
+      {
+        "title": "Services & team",
+        "surface": "Location sections",
+        "items": [
+          "Services offered here",
+          "Team members who work here",
+          "Resources only when needed"
+        ]
+      }
+    ],
+    "note": "Location closures affect one location and appear in Calendar alongside business-wide closures"
+  },
+  "booking": {
+    "purpose": "Set the booking rules that apply across your business",
+    "access": "Admin / Owner",
+    "entry": "Settings → Booking",
+    "actions": [
+      "Enable online booking",
+      "Update booking defaults"
+    ],
+    "sections": [
+      {
+        "title": "Booking window",
+        "surface": "Business defaults",
+        "items": [
+          "Online booking on or off",
+          "Minimum booking notice",
+          "Maximum advance booking"
+        ]
+      },
+      {
+        "title": "Changes",
+        "surface": "Business defaults",
+        "items": [
+          "Allow customers to cancel",
+          "Cancellation notice",
+          "Allow customers to reschedule",
+          "Reschedule notice"
+        ]
+      },
+      {
+        "title": "Confirmation",
+        "surface": "Business defaults",
+        "items": [
+          "Confirm automatically",
+          "Require confirmation"
+        ]
+      },
+      {
+        "title": "Customer information",
+        "surface": "Business defaults",
+        "items": [
+          "Require email",
+          "Require phone"
+        ]
+      }
+    ],
+    "note": "Business defaults apply unless the relevant service supplies its own override"
+  },
+  "communications": {
+    "purpose": "Choose which appointment messages your customers receive",
+    "access": "Admin / Owner",
+    "entry": "Settings → Communications",
+    "actions": [
+      "Enable messages",
+      "Set reminder timing",
+      "Edit message when supported"
+    ],
+    "sections": [
+      {
+        "title": "Appointment messages",
+        "surface": "Message settings",
+        "items": [
+          "Booking confirmation",
+          "Cancellation email",
+          "Reschedule email",
+          "Appointment reminder"
+        ]
+      },
+      {
+        "title": "Reminder timing",
+        "surface": "Message settings",
+        "items": [
+          "How long before an appointment to send a reminder"
+        ]
+      },
+      {
+        "title": "Sender",
+        "surface": "Message settings",
+        "items": [
+          "Sender name",
+          "Reply-to email"
+        ]
+      },
+      {
+        "title": "Message content",
+        "surface": "Optional message editor",
+        "items": [
+          "Open a communication type to edit its message",
+          "Template editing only when included in MVP"
+        ]
+      }
+    ],
+    "note": "Customer messages stay in Communications without separate notification or template destinations"
+  }
+}

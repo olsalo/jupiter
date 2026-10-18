@@ -1,10 +1,10 @@
-import { useRef, type ComponentProps } from "react"
+import { useRef, type ComponentProps, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import { Link, NavLink, Outlet, href, useNavigate } from "react-router"
+import { Link, NavLink, Outlet, href } from "react-router"
 
 import { AppLogo } from "~/components/app-logo"
 import { BillingNotificationBar } from "~/components/billing-notification-bar"
-import Icon, { type AppIconName } from "~/components/icons"
+import Icon from "~/components/icons"
 import { NavigationIcon } from "~/components/navigation-icon"
 import { PageBillingNotificationContext, PageHeader } from "~/components/page-header"
 import { Profile } from "~/components/profile"
@@ -17,18 +17,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip"
+import type { AppNavigationItem } from "~/lib/app-navigation"
 import { cn } from "~/lib/utils"
 import { useBottomScrollFade } from "~/lib/use-bottom-scroll-fade"
 import { useRouteScrollRestoration } from "~/lib/use-route-scroll-restoration"
 
-type NavigationItem = {
-  activeIcon?: AppIconName
-  icon: AppIconName
-  labelKey: "nav.overview" | "nav.notes" | "nav.team"
-  path: "/" | "/example" | "/team"
-}
+type NavigationItem = AppNavigationItem
 
 type FloatingLayoutProps = {
+  headerControls?: ReactNode
+  headerActions?: ReactNode
   animatePage: boolean
   billingNotification: ComponentProps<
     typeof BillingNotificationBar
@@ -36,6 +34,7 @@ type FloatingLayoutProps = {
   isDesktop: boolean
   isElectron: boolean
   isTableRoute: boolean
+  containedContent?: boolean
   fillContent: boolean
   menuItems: readonly NavigationItem[]
   pendingPath?: string
@@ -53,11 +52,14 @@ type FloatingLayoutProps = {
 const floatingPopupGap = 8
 
 export function FloatingLayout({
+  headerControls,
+  headerActions,
   animatePage,
   billingNotification,
   isDesktop,
   isElectron,
   isTableRoute,
+  containedContent = false,
   fillContent,
   menuItems,
   pendingPath,
@@ -66,7 +68,6 @@ export function FloatingLayout({
   user,
 }: FloatingLayoutProps) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const centerContent = import.meta.env.VITE_APP_CENTER_CONTENT === "true"
   const scrollViewportRef = useRef<HTMLDivElement>(null)
   useRouteScrollRestoration(scrollViewportRef, routePathname)
@@ -87,7 +88,7 @@ export function FloatingLayout({
         <ScrollArea
           className={cn(
             "h-full w-full",
-            isTableRoute && "max-md:[&_[data-slot=scroll-area-content]]:h-auto",
+            isTableRoute && !containedContent && "max-md:[&_[data-slot=scroll-area-content]]:h-auto",
           )}
           fill={isTableRoute}
           scrollbarClassName={cn(
@@ -95,7 +96,7 @@ export function FloatingLayout({
             isTableRoute && "md:[&[data-orientation=vertical]]:hidden",
           )}
           viewportProps={{
-            className: cn("app-page-scroll !overflow-x-hidden", isTableRoute && "md:!overflow-y-hidden"),
+            className: cn("app-page-scroll !overflow-x-hidden", isTableRoute && "md:!overflow-y-hidden", containedContent && "!overflow-y-hidden"),
             ref: scrollViewportRef,
           }}
         >
@@ -103,6 +104,7 @@ export function FloatingLayout({
             className={cn(
               "flex min-h-dvh flex-col",
               isTableRoute && "md:h-full md:min-h-0",
+              containedContent && "h-full min-h-0",
               isElectron && "pt-7",
             )}
           >
@@ -115,6 +117,7 @@ export function FloatingLayout({
                   ? "md:min-h-0 md:pt-0 md:[--table-page-header-gap:0.75rem] [&_.table-page-header]:pt-[var(--page-header-top-padding,0.875rem)] [&_.table-page-header]:pb-3 [&_.table-page-header_h1]:text-2xl [&_.table-page-header_h1]:font-semibold [&_.table-page-header_h1]:tracking-normal [&_.table-page-header_span]:leading-4"
                   : "md:pt-0",
                 "md:[--table-page-top-space:6rem]",
+                containedContent && "min-h-0",
               )}
             >
               <div className="flex shrink-0 items-center justify-between pt-5 md:hidden">
@@ -139,22 +142,23 @@ export function FloatingLayout({
 
               {pageHeaderData?.title && !isTableRoute ? (
                 <div
-                  className="sticky top-0 z-10 mt-8 shrink-0 md:mt-0 md:mb-3"
+                  className="sticky top-0 z-10 mt-8 shrink-0 md:mt-0"
                   key={`header-${routePathname}`}
                 >
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute top-0 bottom-0 md:-bottom-3 left-1/2 w-screen -translate-x-1/2 bg-background/25 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)] md:bg-background/40 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_75%,transparent_100%)]"
+                    className="pointer-events-none absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-background/40 backdrop-blur-[40px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_75%,transparent_100%)]"
                   />
                   <PageHeader
+                    controls={headerControls}
                     showBillingNotification={true}
                     actions={
-                      pageHeaderData.actionLabel &&
+                      headerActions ?? (pageHeaderData.actionLabel &&
                       pageHeaderData.actionHref ? (
                         <Button
                           aria-label={pageHeaderData.actionLabel}
                           className="electron-no-drag h-9 rounded-xl max-md:w-9 max-md:px-0"
-                          render={<Link to={pageHeaderData.actionHref} />}
+                          render={<Link to={pageHeaderData.actionHref} state={{ returnTo: `${routePathname}${location.search}` }} />}
                           size="lg"
                         >
                           <Icon aria-hidden="true" name="add" size={20} />
@@ -162,10 +166,10 @@ export function FloatingLayout({
                             {pageHeaderData.actionLabel}
                           </span>
                         </Button>
-                      ) : undefined
+                      ) : undefined)
                     }
                     className={cn(
-                      "relative items-start gap-2 pt-[var(--page-header-top-padding,0.875rem)] pb-3 max-md:flex-nowrap max-md:items-center max-md:gap-2 max-md:[&_h1]:truncate [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-normal [&_span]:leading-4",
+                      "relative items-start gap-2 pt-[var(--page-header-top-padding,0.875rem)] pb-6 max-md:flex-nowrap max-md:items-center max-md:gap-2 max-md:[&_h1]:truncate [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-normal [&_span]:leading-4",
                       animatePage && "route-enter",
                     )}
                     description={pageHeaderData.description}
@@ -178,10 +182,12 @@ export function FloatingLayout({
 
               <section
                 className={cn(
-                  "mt-3 flex min-w-0 flex-1 flex-col md:mt-0",
+                  "flex min-w-0 flex-1 flex-col md:mt-0",
+                  !pageHeaderData?.title && "mt-3",
+                  containedContent && "min-h-0",
                   isTableRoute
                     ? "max-md:mt-0 md:min-h-0"
-                    : fillContent
+                    : fillContent || containedContent
                       ? "md:min-h-0"
                       : "md:flex-none",
                   animatePage && "route-enter",
@@ -191,7 +197,7 @@ export function FloatingLayout({
                 <Outlet />
               </section>
 
-              {!isTableRoute && !fillContent ? (
+              {!isTableRoute && !fillContent && !containedContent ? (
                 <div aria-hidden="true" className="hidden md:block md:min-h-3 md:flex-1" />
               ) : null}
             </div>
@@ -218,8 +224,9 @@ export function FloatingLayout({
         <div
           aria-hidden="true"
           className={cn(
-            "pointer-events-none fixed inset-x-0 bottom-0 z-10 h-[calc(112px+env(safe-area-inset-bottom))] bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_top,black_0%,black_45%,transparent_100%)] will-change-opacity max-md:!opacity-100 md:h-8",
+            "pointer-events-none fixed inset-x-0 bottom-0 z-10 h-[calc(112px+env(safe-area-inset-bottom))] bg-linear-to-t from-background/75 from-50% to-transparent will-change-opacity md:h-8",
             isTableRoute && "md:hidden",
+            containedContent && "hidden",
           )}
           ref={bottomFadeRef}
         />
@@ -240,7 +247,7 @@ export function FloatingLayout({
         <TooltipProvider delay={0}>
           <nav
             aria-label={t("appName")}
-            className="electron-no-drag fixed bottom-[max(20px,env(safe-area-inset-bottom))] left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border bg-background p-1 shadow-[0_0_4px_rgba(0,0,0,0.1)] md:top-1/2 md:bottom-auto md:left-3.5 md:-translate-x-0 md:-translate-y-1/2 md:flex-col"
+            className="electron-no-drag fixed bottom-[max(20px,env(safe-area-inset-bottom))] left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border bg-background p-1 shadow-[0_0_4px_rgba(0,0,0,0.1)] md:top-1/2 md:bottom-auto md:left-3.5 md:-translate-x-0 md:-translate-y-1/2 md:flex-col max-md:max-w-[calc(100vw-2rem)] max-md:overflow-x-auto md:max-h-[calc(100dvh-12rem)] md:overflow-y-auto"
           >
             {menuItems.map((item) => (
               <Tooltip key={item.path}>
@@ -250,15 +257,14 @@ export function FloatingLayout({
                       aria-label={t(item.labelKey)}
                       className={({ isActive }) =>
                         cn(
-                          "flex size-11 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-ring max-md:[-webkit-touch-callout:none] md:size-9",
+                          "flex size-11 shrink-0 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-ring max-md:[-webkit-touch-callout:none] md:size-9",
                           (pendingPath ? pendingPath === item.path : isActive)
                             ? "bg-foreground text-background"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground",
                         )
                       }
                       draggable={false}
-                      onTouchStart={() => navigate(href(item.path))}
-                      end={item.path === "/"}
+                      end={false}
                       onContextMenu={(event) => {
                         if (window.matchMedia("(max-width: 767px)").matches) {
                           event.preventDefault()

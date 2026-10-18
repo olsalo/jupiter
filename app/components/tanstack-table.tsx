@@ -973,7 +973,7 @@ export function TanStackTable<Row extends RowData>({
             <div
               aria-hidden="true"
               className={cn(
-                "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-8 items-center justify-center bg-gradient-to-t from-background via-background/80 to-transparent",
+                "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex h-8 items-center justify-center bg-linear-to-t from-background/75 from-50% to-transparent",
                 fillHeight && "max-md:hidden",
               )}
             >

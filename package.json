@@ -3,11 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "react-router build",
+    "build": "react-router build && npm run build:appointment-jobs",
     "icons:generate": "node --experimental-strip-types scripts/generate-icons.ts",
+    "mockups:generate": "node --experimental-strip-types scripts/generate-mockups.ts",
     "dev": "react-router dev --host --port 5175",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
+    "test:settings": "node --experimental-strip-types tests/settings-navigation.integration.ts",
+    "test:permissions": "node --experimental-strip-types tests/role-permissions.integration.ts",
     "test:team": "node --experimental-strip-types tests/team.integration.ts",
     "db:gen": "prisma generate",
     "db:val": "prisma validate",
@@ -20,7 +23,12 @@
     "db:mig:reset": "prisma migrate reset",
     "db:mig:status": "prisma migrate status",
     "db:studio": "prisma studio",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "test:appointments": "node --experimental-strip-types tests/appointment-availability.test.ts && node --experimental-strip-types tests/appointments.integration.ts",
+    "jobs:appointments": "node --env-file-if-exists=.env build/jobs/runner.js",
+    "build:appointment-jobs": "vite build --config vite.jobs.config.ts",
+    "test:appointment-settings": "node --experimental-strip-types tests/organization-settings.integration.ts",
+    "test:team-people": "node --experimental-strip-types tests/team-people.integration.ts && node --experimental-strip-types tests/team-people-ssr.integration.ts"
   },
   "dependencies": {
     "@base-ui/react": "latest",
@@ -30,6 +38,8 @@
     "@dnd-kit/abstract": "latest",
     "@dnd-kit/dom": "latest",
     "@dnd-kit/react": "latest",
+    "@js-temporal/polyfill": "latest",
+    "@kitlangton/rolling-number": "latest",
     "@prisma/adapter-pg": "latest",
     "@prisma/client": "latest",
     "@react-router/node": "latest",

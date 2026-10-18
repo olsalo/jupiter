@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query"
 import type { ComponentProps } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { href, useNavigate, useRouteLoaderData } from "react-router"
 
@@ -49,9 +50,13 @@ export function Profile({
   const navigate = useNavigate()
   const trpc = useTRPC()
   const rootData = useRouteLoaderData<typeof rootLoader>("root")
+  const [menuOpen, setMenuOpen] = useState(false)
   const organizations = rootData?.organizations ?? []
   const setActive = useMutation(trpc.organizations.setActive.mutationOptions({
-    onSuccess: () => window.location.replace("/"),
+    onSuccess: () => {
+      setMenuOpen(false)
+      window.location.replace("/")
+    },
     onError: () => toast.error(t("account.switchBusinessError")),
   }))
   const displayName = user?.name || user?.email || t("account.fallbackName")
@@ -60,7 +65,7 @@ export function Profile({
   const businessSummary = (
     <>
       <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-foreground ring-1 ring-border">
-        <Icon aria-hidden="true" name="building" size={16} />
+        <Icon aria-hidden="true" name="buildingStore" size={16} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col leading-tight">
         <span className="truncate font-medium">{displayName}</span>
@@ -69,20 +74,25 @@ export function Profile({
     </>
   )
 
-  const logOut = async () => {
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          navigate(href("/auth"), { replace: true })
-        },
-      },
-    })
-  }
+  const logOut = useMutation({
+    mutationFn: async () => {
+      const result = await authClient.signOut()
+      if (result.error) throw new Error(result.error.message ?? t("account.logOutError"))
+    },
+    onSuccess: async () => {
+      setMenuOpen(false)
+      toast.success(t("account.loggedOut"))
+      await navigate(href("/auth"), { replace: true })
+    },
+    onError: () => toast.error(t("account.logOutError")),
+  })
+  const isPending = setActive.isPending || logOut.isPending
 
   return (
-    <Menu>
+    <Menu open={menuOpen} onOpenChange={setMenuOpen}>
       <MenuTrigger
         aria-label={t("account.openMenu", { name: displayName })}
+        disabled={isPending}
         className={cn(
           "inline-flex size-8 shrink-0 items-center justify-center rounded-full align-middle outline-none transition-[box-shadow] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background max-md:data-popup-open:shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-border)_70%,transparent)]",
           className,
@@ -119,6 +129,7 @@ export function Profile({
                 <MenuSubTrigger
                   aria-label={`${t("account.switchBusiness")}: ${displayName}, ${activeBusinessName}`}
                   className="min-h-12 gap-3 whitespace-nowrap px-3 py-2 sm:text-base"
+                  disabled={logOut.isPending}
                 >
                   {businessSummary}
                 </MenuSubTrigger>
@@ -138,7 +149,7 @@ export function Profile({
                         aria-current={isActive ? "true" : undefined}
                         className="min-h-11 gap-3 whitespace-nowrap px-3 py-2 sm:text-base"
                         closeOnClick={false}
-                        disabled={isActive || setActive.isPending}
+                        disabled={isActive || isPending}
                         key={organization.id}
                         onClick={() => setActive.mutate({ organizationId: organization.id })}
                       >
@@ -146,7 +157,9 @@ export function Profile({
                           <span className="min-w-0 truncate">{organization.name}</span>
                           <Badge size="sm" variant="secondary">{roleLabel}</Badge>
                         </span>
-                        {isSwitching ? <Spinner aria-label={t("account.switchingBusiness")} /> : isActive ? <Icon aria-hidden="true" name="check" /> : null}
+                        <span className="-mx-0.5 flex size-4.5 shrink-0 items-center justify-center sm:size-4 [&>svg]:size-full [&>svg]:opacity-80">
+                          {isSwitching ? <Spinner aria-label={t("account.switchingBusiness")} /> : isActive ? <Icon aria-hidden={true} name="check" /> : null}
+                        </span>
                       </MenuItem>
                     )
                   })}
@@ -160,8 +173,13 @@ export function Profile({
             <MenuSeparator />
           </>
         ) : null}
-        <MenuItem className="min-h-11 gap-3 whitespace-nowrap px-3 py-2 sm:text-base" onClick={logOut}>
-          <Icon name="logOut" />
+        <MenuItem
+          className="min-h-11 gap-3 whitespace-nowrap px-3 py-2 sm:text-base"
+          closeOnClick={false}
+          disabled={isPending}
+          onClick={() => logOut.mutate()}
+        >
+          {logOut.isPending ? <Spinner aria-label={t("account.loggingOut")} /> : <Icon aria-hidden={true} name="logOut" />}
           {t("account.logOut")}
         </MenuItem>
       </MenuPopup>

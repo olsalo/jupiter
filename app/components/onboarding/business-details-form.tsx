@@ -6,6 +6,7 @@ import type { FormApi } from "@rvf/react"
 
 import { AppForm } from "~/components/app-form"
 import FormLabel from "~/components/form-label"
+import Icon from "~/components/icons"
 import { Button } from "~/components/ui/button"
 import { InputGroup, InputGroupInput } from "~/components/ui/input-group"
 import {
@@ -48,7 +49,7 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
           queryKey: trpc.onboarding.pathKey(),
           refetchType: "none",
         })
-        navigate(nextStep ? `/onboarding/${nextStep}` : "/?welcome=true", {
+        await navigate(nextStep ? `/onboarding/${nextStep}` : "/?welcome=true", {
           replace: true,
         })
       },
@@ -91,7 +92,9 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
       >
         {(form) => {
           const isSubmitting =
-            form.formState.isSubmitting || navigation.state !== "idle"
+            form.formState.isSubmitting ||
+            completeMutation.isPending ||
+            navigation.state !== "idle"
           const locationField = form.getControlProps("location")
           const currencyField = form.getControlProps("currency")
           const timezoneField = form.getControlProps("timezone")
@@ -103,7 +106,7 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                   <InputGroupInput
                     {...form.getInputProps("name", {
                       "aria-invalid": Boolean(form.error("name")) || undefined,
-                      autoComplete: "name",
+                      autoComplete: "off",
                       onChange: () => {
                         form.unstable_setCustomError("name", null)
                       },
@@ -125,7 +128,7 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                     {...form.getInputProps("businessName", {
                       "aria-invalid":
                         Boolean(form.error("businessName")) || undefined,
-                      autoComplete: "organization",
+                      autoComplete: "off",
                       onChange: () => {
                         form.unstable_setCustomError("businessName", null)
                       },
@@ -243,14 +246,17 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                 </Select>
               </FormLabel>
 
-              <Button disabled={isSubmitting} type="submit">
+              <Button className="keyboard-focusable" disabled={isSubmitting} type="submit">
                 {isSubmitting ? (
                   <>
                     <Spinner className="size-4" />
                     {t("actions.creating")}
                   </>
                 ) : (
-                  t(isFinalStep ? "actions.finishSetup" : "actions.create")
+                  <>
+                    {t(isFinalStep ? "actions.finishSetup" : "actions.create")}
+                    <Icon aria-hidden={true} name="chevronRight" size={16} />
+                  </>
                 )}
               </Button>
             </>

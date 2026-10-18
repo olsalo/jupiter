@@ -57,7 +57,8 @@ try {
         assert.ok(element)
         assert.equal(/\shidden(?:=|\s|>)/.test(element), false, `${slot} must be visible before hydration`)
       }
-      assert.ok(html.includes("/mockup.png"))
+      assert.ok(html.includes("/mockup-light.avif"))
+      assert.ok(html.includes("/mockup-dark.avif"))
     }
   }
   console.info("PASS welcome query parameter renders one accessible server dialog in English and Finnish, with visible backdrop and content")

@@ -12,6 +12,9 @@ import { getStripePrice, getStripePriceId } from "~/lib/stripe.server"
 import { generateId } from "~/lib/id"
 import { onboardingFormSchema } from "~/lib/schemas/onboarding"
 
+const demoOnboardingPaymentBypassEnabled =
+  process.env.DEMO_BYPASS_ONBOARDING_PAYMENT === "true"
+
 export const onboardingRouter = {
   status: protectedProcedure.query(async ({ ctx }) => {
     const membership = await ctx.prisma.member.findFirst({
@@ -37,8 +40,9 @@ export const onboardingRouter = {
       : null
 
     return {
-      billingEnabled: stripeBillingEnabled,
+      billingEnabled: stripeBillingEnabled || demoOnboardingPaymentBypassEnabled,
       businessComplete: Boolean(settings?.location && settings.timezone),
+      demoOnboardingPaymentBypassEnabled,
       subscriptionComplete: Boolean(subscription),
     }
   }),
@@ -88,6 +92,7 @@ export const onboardingRouter = {
 
     return {
       billingEnabled: stripeBillingEnabled,
+      demoOnboardingPaymentBypassEnabled,
       organizationId: membership?.organizationId ?? null,
       plan: {
         features: proPlan.features[locale],
@@ -113,7 +118,11 @@ export const onboardingRouter = {
           where: { organizationId: existingMembership.organizationId },
         })
 
-        if (existingSettings?.location && existingSettings.timezone) {
+        if (
+          existingSettings?.location &&
+          existingSettings.timezone &&
+          !demoOnboardingPaymentBypassEnabled
+        ) {
           throw new TRPCError({ code: "CONFLICT" })
         }
       }
@@ -126,6 +135,13 @@ export const onboardingRouter = {
           })
 
       await ctx.prisma.$transaction(async (transaction) => {
+        if (existingMembership && demoOnboardingPaymentBypassEnabled) {
+          await transaction.organization.update({
+            data: { name: input.businessName },
+            where: { id: organization.id },
+          })
+        }
+
         await transaction.user.update({
           data: { name: input.name },
           where: { id: ctx.user.id },

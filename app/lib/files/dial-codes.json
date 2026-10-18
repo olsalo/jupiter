@@ -1,0 +1,786 @@
+[
+  {
+    "dialCode": "+1",
+    "countries": [
+      "us", "ca", "ag", "ai", "as", "bb", "bm", "bs", "dm", "do",
+      "gd", "gu", "jm", "kn", "ky", "lc", "mp", "ms", "pr", "sx",
+      "tc", "tt", "vc", "vg", "vi"
+    ]
+  },
+  {
+    "dialCode": "+7",
+    "countries": ["ru", "kz"]
+  },
+  {
+    "dialCode": "+20",
+    "countries": ["eg"]
+  },
+  {
+    "dialCode": "+27",
+    "countries": ["za"]
+  },
+  {
+    "dialCode": "+30",
+    "countries": ["gr"]
+  },
+  {
+    "dialCode": "+31",
+    "countries": ["nl"]
+  },
+  {
+    "dialCode": "+32",
+    "countries": ["be"]
+  },
+  {
+    "dialCode": "+33",
+    "countries": ["fr"]
+  },
+  {
+    "dialCode": "+34",
+    "countries": ["es"]
+  },
+  {
+    "dialCode": "+36",
+    "countries": ["hu"]
+  },
+  {
+    "dialCode": "+39",
+    "countries": ["it"]
+  },
+  {
+    "dialCode": "+40",
+    "countries": ["ro"]
+  },
+  {
+    "dialCode": "+41",
+    "countries": ["ch"]
+  },
+  {
+    "dialCode": "+43",
+    "countries": ["at"]
+  },
+  {
+    "dialCode": "+44",
+    "countries": ["gb"]
+  },
+  {
+    "dialCode": "+45",
+    "countries": ["dk"]
+  },
+  {
+    "dialCode": "+46",
+    "countries": ["se"]
+  },
+  {
+    "dialCode": "+47",
+    "countries": ["no"]
+  },
+  {
+    "dialCode": "+48",
+    "countries": ["pl"]
+  },
+  {
+    "dialCode": "+49",
+    "countries": ["de"]
+  },
+  {
+    "dialCode": "+51",
+    "countries": ["pe"]
+  },
+  {
+    "dialCode": "+52",
+    "countries": ["mx"]
+  },
+  {
+    "dialCode": "+53",
+    "countries": ["cu"]
+  },
+  {
+    "dialCode": "+54",
+    "countries": ["ar"]
+  },
+  {
+    "dialCode": "+55",
+    "countries": ["br"]
+  },
+  {
+    "dialCode": "+56",
+    "countries": ["cl"]
+  },
+  {
+    "dialCode": "+57",
+    "countries": ["co"]
+  },
+  {
+    "dialCode": "+58",
+    "countries": ["ve"]
+  },
+  {
+    "dialCode": "+60",
+    "countries": ["my"]
+  },
+  {
+    "dialCode": "+61",
+    "countries": ["au"]
+  },
+  {
+    "dialCode": "+62",
+    "countries": ["id"]
+  },
+  {
+    "dialCode": "+63",
+    "countries": ["ph"]
+  },
+  {
+    "dialCode": "+64",
+    "countries": ["nz"]
+  },
+  {
+    "dialCode": "+65",
+    "countries": ["sg"]
+  },
+  {
+    "dialCode": "+66",
+    "countries": ["th"]
+  },
+  {
+    "dialCode": "+81",
+    "countries": ["jp"]
+  },
+  {
+    "dialCode": "+82",
+    "countries": ["kr"]
+  },
+  {
+    "dialCode": "+84",
+    "countries": ["vn"]
+  },
+  {
+    "dialCode": "+86",
+    "countries": ["cn"]
+  },
+  {
+    "dialCode": "+90",
+    "countries": ["tr"]
+  },
+  {
+    "dialCode": "+91",
+    "countries": ["in"]
+  },
+  {
+    "dialCode": "+92",
+    "countries": ["pk"]
+  },
+  {
+    "dialCode": "+93",
+    "countries": ["af"]
+  },
+  {
+    "dialCode": "+94",
+    "countries": ["lk"]
+  },
+  {
+    "dialCode": "+95",
+    "countries": ["mm"]
+  },
+  {
+    "dialCode": "+98",
+    "countries": ["ir"]
+  },
+  {
+    "dialCode": "+212",
+    "countries": ["ma"]
+  },
+  {
+    "dialCode": "+213",
+    "countries": ["dz"]
+  },
+  {
+    "dialCode": "+216",
+    "countries": ["tn"]
+  },
+  {
+    "dialCode": "+218",
+    "countries": ["ly"]
+  },
+  {
+    "dialCode": "+221",
+    "countries": ["sn"]
+  },
+  {
+    "dialCode": "+222",
+    "countries": ["mr"]
+  },
+  {
+    "dialCode": "+223",
+    "countries": ["ml"]
+  },
+  {
+    "dialCode": "+224",
+    "countries": ["gn"]
+  },
+  {
+    "dialCode": "+225",
+    "countries": ["ci"]
+  },
+  {
+    "dialCode": "+226",
+    "countries": ["bf"]
+  },
+  {
+    "dialCode": "+227",
+    "countries": ["ne"]
+  },
+  {
+    "dialCode": "+228",
+    "countries": ["tg"]
+  },
+  {
+    "dialCode": "+229",
+    "countries": ["bj"]
+  },
+  {
+    "dialCode": "+230",
+    "countries": ["mu"]
+  },
+  {
+    "dialCode": "+231",
+    "countries": ["lr"]
+  },
+  {
+    "dialCode": "+232",
+    "countries": ["sl"]
+  },
+  {
+    "dialCode": "+233",
+    "countries": ["gh"]
+  },
+  {
+    "dialCode": "+234",
+    "countries": ["ng"]
+  },
+  {
+    "dialCode": "+235",
+    "countries": ["td"]
+  },
+  {
+    "dialCode": "+236",
+    "countries": ["cf"]
+  },
+  {
+    "dialCode": "+237",
+    "countries": ["cm"]
+  },
+  {
+    "dialCode": "+238",
+    "countries": ["cv"]
+  },
+  {
+    "dialCode": "+240",
+    "countries": ["gq"]
+  },
+  {
+    "dialCode": "+241",
+    "countries": ["ga"]
+  },
+  {
+    "dialCode": "+242",
+    "countries": ["cg"]
+  },
+  {
+    "dialCode": "+243",
+    "countries": ["cd"]
+  },
+  {
+    "dialCode": "+244",
+    "countries": ["ao"]
+  },
+  {
+    "dialCode": "+245",
+    "countries": ["gw"]
+  },
+  {
+    "dialCode": "+246",
+    "countries": ["io"]
+  },
+  {
+    "dialCode": "+247",
+    "countries": ["ac"]
+  },
+  {
+    "dialCode": "+248",
+    "countries": ["sc"]
+  },
+  {
+    "dialCode": "+249",
+    "countries": ["sd"]
+  },
+  {
+    "dialCode": "+250",
+    "countries": ["rw"]
+  },
+  {
+    "dialCode": "+251",
+    "countries": ["et"]
+  },
+  {
+    "dialCode": "+253",
+    "countries": ["dj"]
+  },
+  {
+    "dialCode": "+254",
+    "countries": ["ke"]
+  },
+  {
+    "dialCode": "+255",
+    "countries": ["tz"]
+  },
+  {
+    "dialCode": "+256",
+    "countries": ["ug"]
+  },
+  {
+    "dialCode": "+257",
+    "countries": ["bi"]
+  },
+  {
+    "dialCode": "+260",
+    "countries": ["zm"]
+  },
+  {
+    "dialCode": "+261",
+    "countries": ["mg"]
+  },
+  {
+    "dialCode": "+262",
+    "countries": ["re", "yt"]
+  },
+  {
+    "dialCode": "+263",
+    "countries": ["zw"]
+  },
+  {
+    "dialCode": "+264",
+    "countries": ["na"]
+  },
+  {
+    "dialCode": "+265",
+    "countries": ["mw"]
+  },
+  {
+    "dialCode": "+266",
+    "countries": ["ls"]
+  },
+  {
+    "dialCode": "+267",
+    "countries": ["bw"]
+  },
+  {
+    "dialCode": "+268",
+    "countries": ["sz"]
+  },
+  {
+    "dialCode": "+269",
+    "countries": ["km"]
+  },
+  {
+    "dialCode": "+291",
+    "countries": ["er"]
+  },
+  {
+    "dialCode": "+297",
+    "countries": ["aw"]
+  },
+  {
+    "dialCode": "+298",
+    "countries": ["fo"]
+  },
+  {
+    "dialCode": "+299",
+    "countries": ["gl"]
+  },
+  {
+    "dialCode": "+350",
+    "countries": ["gi"]
+  },
+  {
+    "dialCode": "+351",
+    "countries": ["pt"]
+  },
+  {
+    "dialCode": "+352",
+    "countries": ["lu"]
+  },
+  {
+    "dialCode": "+353",
+    "countries": ["ie"]
+  },
+  {
+    "dialCode": "+354",
+    "countries": ["is"]
+  },
+  {
+    "dialCode": "+355",
+    "countries": ["al"]
+  },
+  {
+    "dialCode": "+356",
+    "countries": ["mt"]
+  },
+  {
+    "dialCode": "+358",
+    "countries": ["fi", "ax"]
+  },
+  {
+    "dialCode": "+359",
+    "countries": ["bg"]
+  },
+  {
+    "dialCode": "+370",
+    "countries": ["lt"]
+  },
+  {
+    "dialCode": "+371",
+    "countries": ["lv"]
+  },
+  {
+    "dialCode": "+372",
+    "countries": ["ee"]
+  },
+  {
+    "dialCode": "+373",
+    "countries": ["md"]
+  },
+  {
+    "dialCode": "+374",
+    "countries": ["am"]
+  },
+  {
+    "dialCode": "+375",
+    "countries": ["by"]
+  },
+  {
+    "dialCode": "+376",
+    "countries": ["ad"]
+  },
+  {
+    "dialCode": "+377",
+    "countries": ["mc"]
+  },
+  {
+    "dialCode": "+378",
+    "countries": ["sm"]
+  },
+  {
+    "dialCode": "+380",
+    "countries": ["ua"]
+  },
+  {
+    "dialCode": "+381",
+    "countries": ["rs"]
+  },
+  {
+    "dialCode": "+382",
+    "countries": ["me"]
+  },
+  {
+    "dialCode": "+383",
+    "countries": ["xk"]
+  },
+  {
+    "dialCode": "+385",
+    "countries": ["hr"]
+  },
+  {
+    "dialCode": "+386",
+    "countries": ["si"]
+  },
+  {
+    "dialCode": "+387",
+    "countries": ["ba"]
+  },
+  {
+    "dialCode": "+389",
+    "countries": ["mk"]
+  },
+  {
+    "dialCode": "+420",
+    "countries": ["cz"]
+  },
+  {
+    "dialCode": "+421",
+    "countries": ["sk"]
+  },
+  {
+    "dialCode": "+423",
+    "countries": ["li"]
+  },
+  {
+    "dialCode": "+500",
+    "countries": ["fk"]
+  },
+  {
+    "dialCode": "+501",
+    "countries": ["bz"]
+  },
+  {
+    "dialCode": "+502",
+    "countries": ["gt"]
+  },
+  {
+    "dialCode": "+503",
+    "countries": ["sv"]
+  },
+  {
+    "dialCode": "+504",
+    "countries": ["hn"]
+  },
+  {
+    "dialCode": "+505",
+    "countries": ["ni"]
+  },
+  {
+    "dialCode": "+506",
+    "countries": ["cr"]
+  },
+  {
+    "dialCode": "+507",
+    "countries": ["pa"]
+  },
+  {
+    "dialCode": "+509",
+    "countries": ["ht"]
+  },
+  {
+    "dialCode": "+590",
+    "countries": ["gp", "bl", "mf"]
+  },
+  {
+    "dialCode": "+591",
+    "countries": ["bo"]
+  },
+  {
+    "dialCode": "+593",
+    "countries": ["ec"]
+  },
+  {
+    "dialCode": "+594",
+    "countries": ["gf"]
+  },
+  {
+    "dialCode": "+595",
+    "countries": ["py"]
+  },
+  {
+    "dialCode": "+596",
+    "countries": ["mq"]
+  },
+  {
+    "dialCode": "+597",
+    "countries": ["sr"]
+  },
+  {
+    "dialCode": "+598",
+    "countries": ["uy"]
+  },
+  {
+    "dialCode": "+599",
+    "countries": ["cw", "bq"]
+  },
+  {
+    "dialCode": "+670",
+    "countries": ["tl"]
+  },
+  {
+    "dialCode": "+672",
+    "countries": ["nf", "aq"]
+  },
+  {
+    "dialCode": "+673",
+    "countries": ["bn"]
+  },
+  {
+    "dialCode": "+674",
+    "countries": ["nr"]
+  },
+  {
+    "dialCode": "+675",
+    "countries": ["pg"]
+  },
+  {
+    "dialCode": "+676",
+    "countries": ["to"]
+  },
+  {
+    "dialCode": "+677",
+    "countries": ["sb"]
+  },
+  {
+    "dialCode": "+678",
+    "countries": ["vu"]
+  },
+  {
+    "dialCode": "+680",
+    "countries": ["pw"]
+  },
+  {
+    "dialCode": "+681",
+    "countries": ["wf"]
+  },
+  {
+    "dialCode": "+682",
+    "countries": ["ck"]
+  },
+  {
+    "dialCode": "+683",
+    "countries": ["nu"]
+  },
+  {
+    "dialCode": "+686",
+    "countries": ["ki"]
+  },
+  {
+    "dialCode": "+687",
+    "countries": ["nc"]
+  },
+  {
+    "dialCode": "+688",
+    "countries": ["tv"]
+  },
+  {
+    "dialCode": "+689",
+    "countries": ["pf"]
+  },
+  {
+    "dialCode": "+690",
+    "countries": ["tk"]
+  },
+  {
+    "dialCode": "+691",
+    "countries": ["fm"]
+  },
+  {
+    "dialCode": "+692",
+    "countries": ["mh"]
+  },
+  {
+    "dialCode": "+850",
+    "countries": ["kp"]
+  },
+  {
+    "dialCode": "+852",
+    "countries": ["hk"]
+  },
+  {
+    "dialCode": "+853",
+    "countries": ["mo"]
+  },
+  {
+    "dialCode": "+855",
+    "countries": ["kh"]
+  },
+  {
+    "dialCode": "+856",
+    "countries": ["la"]
+  },
+  {
+    "dialCode": "+880",
+    "countries": ["bd"]
+  },
+  {
+    "dialCode": "+886",
+    "countries": ["tw"]
+  },
+  {
+    "dialCode": "+960",
+    "countries": ["mv"]
+  },
+  {
+    "dialCode": "+961",
+    "countries": ["lb"]
+  },
+  {
+    "dialCode": "+962",
+    "countries": ["jo"]
+  },
+  {
+    "dialCode": "+963",
+    "countries": ["sy"]
+  },
+  {
+    "dialCode": "+964",
+    "countries": ["iq"]
+  },
+  {
+    "dialCode": "+965",
+    "countries": ["kw"]
+  },
+  {
+    "dialCode": "+966",
+    "countries": ["sa"]
+  },
+  {
+    "dialCode": "+967",
+    "countries": ["ye"]
+  },
+  {
+    "dialCode": "+968",
+    "countries": ["om"]
+  },
+  {
+    "dialCode": "+970",
+    "countries": ["ps"]
+  },
+  {
+    "dialCode": "+971",
+    "countries": ["ae"]
+  },
+  {
+    "dialCode": "+972",
+    "countries": ["il"]
+  },
+  {
+    "dialCode": "+973",
+    "countries": ["bh"]
+  },
+  {
+    "dialCode": "+974",
+    "countries": ["qa"]
+  },
+  {
+    "dialCode": "+975",
+    "countries": ["bt"]
+  },
+  {
+    "dialCode": "+976",
+    "countries": ["mn"]
+  },
+  {
+    "dialCode": "+977",
+    "countries": ["np"]
+  },
+  {
+    "dialCode": "+992",
+    "countries": ["tj"]
+  },
+  {
+    "dialCode": "+993",
+    "countries": ["tm"]
+  },
+  {
+    "dialCode": "+994",
+    "countries": ["az"]
+  },
+  {
+    "dialCode": "+995",
+    "countries": ["ge"]
+  },
+  {
+    "dialCode": "+996",
+    "countries": ["kg"]
+  },
+  {
+    "dialCode": "+998",
+    "countries": ["uz"]
+  }
+]

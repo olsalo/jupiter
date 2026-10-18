@@ -7,26 +7,151 @@ datasource db {
   provider = "postgresql"
 }
 
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum AppointmentSource {
+  PUBLIC_BOOKING
+  ADMIN
+  STAFF
+  API
+  IMPORT
+}
+
+enum AttendanceStatus {
+  BOOKED
+  CONFIRMED
+  CANCELLED
+  ATTENDED
+  NO_SHOW
+}
+
+enum ServiceDeliveryType {
+  IN_PERSON
+  ONLINE
+  PHONE
+  FLEXIBLE
+}
+
+enum PaymentRequirement {
+  NONE
+  OPTIONAL
+  FULL
+  DEPOSIT
+}
+
+enum PaymentStatus {
+  PENDING
+  REQUIRES_ACTION
+  AUTHORIZED
+  PAID
+  PARTIALLY_REFUNDED
+  REFUNDED
+  FAILED
+  CANCELLED
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  SCHEDULED
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum NotificationKind {
+  BOOKING_CONFIRMATION
+  REMINDER
+  CANCELLATION
+  RESCHEDULE
+  FOLLOW_UP
+  WAITLIST_OFFER
+  CUSTOM
+}
+
+enum QuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  EMAIL
+  PHONE
+  NUMBER
+  BOOLEAN
+  SINGLE_SELECT
+  MULTI_SELECT
+  DATE
+  DATETIME
+}
+
+enum WaitlistStatus {
+  WAITING
+  OFFERED
+  BOOKED
+  EXPIRED
+  CANCELLED
+}
+
+enum ResourceType {
+  ROOM
+  EQUIPMENT
+  OTHER
+}
+
+enum IntegrationType {
+  CALENDAR
+  VIDEO_CONFERENCING
+  PAYMENT
+  CRM
+  OTHER
+}
+
+enum AppointmentEventType {
+  CREATED
+  CONFIRMED
+  RESCHEDULED
+  CANCELLED
+  CHECKED_IN
+  STARTED
+  COMPLETED
+  NO_SHOW
+  NOTE_ADDED
+  PAYMENT_UPDATED
+  REMINDER_SENT
+}
+
 model User {
-  id               String   @id @default(nanoid())
+  id               String       @id @default(nanoid())
   name             String
   email            String
-  emailVerified    Boolean  @default(false)
+  emailVerified    Boolean      @default(false)
   image            String?
   locale           String?
-  newResponseEmail Boolean  @default(false)
   stripeCustomerId String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  sessions    Session[]
-  accounts    Account[]
-  members     Member[]
-  invitations Invitation[]
-
-  // Admin-created forms.
-  // Respondents are never User records.
-  formsCreated Form[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  sessions         Session[]
+  accounts         Account[]
+  members          Member[]
+  invitations      Invitation[]
 
   @@unique([email])
   @@map("user")
@@ -102,30 +227,52 @@ model Organization {
   createdAt        DateTime
   metadata         String?
   stripeCustomerId String?
+  members          Member[]
+  invitations      Invitation[]
+  notes            Note[]
+  settings         OrganizationSettings?
 
-  members     Member[]
-  invitations Invitation[]
-  notes       Note[]
-  settings    OrganizationSettings?
-
-  forms Form[]
+  locations             Location[]
+  serviceCategories     ServiceCategory[]
+  services              Service[]
+  staffMembers          StaffMember[]
+  customers             Customer[]
+  customerNotes         CustomerNote[]
+  customerTags          CustomerTag[]
+  availabilityRules     AvailabilityRule[]
+  availabilityOverrides AvailabilityOverride[]
+  blockedTimes          BlockedTime[]
+  appointments          Appointment[]
+  appointmentSeries     AppointmentSeries[]
+  appointmentEvents     AppointmentEvent[]
+  payments              Payment[]
+  refunds               Refund[]
+  notificationTemplates NotificationTemplate[]
+  notifications         Notification[]
+  bookingQuestions      BookingQuestion[]
+  integrations          Integration[]
+  resources             Resource[]
+  waitlistEntries       WaitlistEntry[]
+  bookingPages          BookingPage[]
+  webhookEndpoints      WebhookEndpoint[]
+  auditLogs             AuditLog[]
 
   @@unique([slug])
   @@map("organization")
 }
 
 model Subscription {
-  id                   String   @id @default(nanoid())
+  id                   String    @id @default(nanoid())
   plan                 String
   referenceId          String
   stripeCustomerId     String?
   stripeSubscriptionId String?
-  status               String   @default("incomplete")
+  status               String    @default("incomplete")
   periodStart          DateTime?
   periodEnd            DateTime?
   trialStart           DateTime?
   trialEnd             DateTime?
-  cancelAtPeriodEnd    Boolean? @default(false)
+  cancelAtPeriodEnd    Boolean?  @default(false)
   cancelAt             DateTime?
   canceledAt           DateTime?
   endedAt              DateTime?
@@ -147,6 +294,9 @@ model Member {
   role           String       @default("member")
   createdAt      DateTime
 
+  staffProfile StaffMember?
+
+  @@unique([organizationId, userId])
   @@index([organizationId])
   @@index([userId])
   @@map("member")
@@ -158,6 +308,8 @@ model Invitation {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   email          String
   inviteeName    String?
+  staffMemberId  String?
+  staffMember    StaffMember? @relation(fields: [staffMemberId], references: [id], onDelete: SetNull)
   role           String?
   status         String       @default("pending")
   expiresAt      DateTime
@@ -181,481 +333,1156 @@ model OrganizationSettings {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  bookingEnabled              Boolean @default(true)
+  allowSimultaneousBookings   Boolean @default(false)
+  weekStartsOn                Int     @default(1)
+  defaultSlotIntervalMinutes  Int     @default(15)
+  minBookingNoticeMinutes     Int     @default(0)
+  maxBookingAdvanceDays       Int?
+  cancellationNoticeMinutes   Int     @default(0)
+  rescheduleNoticeMinutes     Int     @default(0)
+  requireCustomerEmail        Boolean @default(true)
+  requireCustomerPhone        Boolean @default(false)
+  allowCustomerCancellation   Boolean @default(true)
+  allowCustomerRescheduling   Boolean @default(true)
+  autoConfirmAppointments     Boolean @default(true)
+  sendBookingConfirmations    Boolean @default(true)
+  sendCancellationEmails      Boolean @default(true)
+  sendRescheduleEmails        Boolean @default(true)
+
+  defaultLocationId String?
+  defaultLocation Location? @relation("OrganizationDefaultLocation", fields: [defaultLocationId], references: [id], onDelete: SetNull)
+  defaultTimezone String?
+  defaultBookingPageId String?
+  defaultBookingPage BookingPage? @relation("OrganizationDefaultBookingPage", fields: [defaultBookingPageId], references: [id], onDelete: SetNull)
+
+  defaultCalendarView String @default("week")
+  defaultStartHour Int @default(8)
+  defaultEndHour Int @default(18)
+  showWeekends Boolean @default(true)
+  showCancelledAppointments Boolean @default(true)
+  calendarSlotIntervalMinutes Int @default(30)
+
+  enableAppointmentReminders Boolean @default(true)
+  reminderOffsetsMinutes Int[] @default([1440])
+  senderName String?
+  replyToAddress String?
+
+
   @@map("organization_settings")
 }
 
-//
-// Form builder
-//
-
-model Form {
+model Location {
   id             String       @id @default(nanoid())
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  createdById String?
-  createdBy   User?   @relation(fields: [createdById], references: [id], onDelete: SetNull)
-
-  title       String  @default("Untitled")
+  name        String
+  slug        String
   description String?
 
-  // Public URL: /f/:slug
-  slug String @unique @default(nanoid())
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String?
 
-  status FormStatus @default(DRAFT)
+  phone String?
+  email String?
 
-  // Live availability, independent of draft edits and published versions.
-  enabled Boolean @default(true)
+  timezone String?
 
-  //
-  // Submission settings
-  //
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
 
-  submitButtonText String @default("Submit")
-  successMessage   String @default("Thanks for your response!")
-  redirectUrl      String?
-
-  startsAt      DateTime?
-  closesAt      DateTime?
-  responseLimit Int?
-
-  // NONE     = anonymous
-  // OPTIONAL = optional respondent email
-  // REQUIRED = respondent email required
-  emailCollection FormEmailCollection @default(NONE)
-
-  // Application must enforce:
-  // emailCollection = REQUIRED when this is true.
-  limitOneResponsePerEmail Boolean @default(false)
-
-  //
-  // Appearance
-  //
-
-  theme               FormTheme @default(LIGHT)
-  accentColor         String?
-  logo                String?
-  showProgressBar     Boolean   @default(false)
-  showQuestionNumbers Boolean   @default(false)
-
-  //
-  // Publishing
-  //
-
-  // Latest published FormVersion.version.
-  publishedVersion Int?
-  publishedAt      DateTime?
-
-  // Increment whenever the mutable editor state changes.
-  draftRevision Int @default(0)
+  bookingInstructions String?
+  isActive            Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sections    FormSection[]
-  logicRules  FormLogicRule[]
-  versions    FormVersion[]
-  submissions FormSubmission[]
+  staffLocations        StaffLocation[]
+  serviceLocations      ServiceLocation[]
+  availabilityRules     AvailabilityRule[]
+  availabilityOverrides AvailabilityOverride[]
+  blockedTimes          BlockedTime[]
+  appointments          Appointment[]
+  resources             Resource[]
+  waitlistEntries       WaitlistEntry[]
 
-  @@index([organizationId])
-  @@index([organizationId, status])
-  @@index([organizationId, updatedAt])
-  @@index([createdById])
-  @@map("form")
+  defaultBookingPages BookingPage[] @relation("BookingPageDefaultLocation")
+  defaultForOrganizations OrganizationSettings[] @relation("OrganizationDefaultLocation")
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, isActive])
+  @@map("location")
 }
 
-model FormSection {
-  id     String @id @default(nanoid())
-  formId String
-  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+model ServiceCategory {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
+  name        String
+  description String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  services Service[]
+
+  @@index([organizationId, sortOrder])
+  @@map("service_category")
+}
+
+  model Service {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  categoryId String?
+  category   ServiceCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  name        String
+  slug        String
+  description String?
+
+  durationMinutes     Int
+  bufferBeforeMinutes Int @default(0)
+  bufferAfterMinutes  Int @default(0)
+
+  price    Decimal? @db.Decimal(12, 2)
+  currency String  @default("EUR")
+
+  deliveryType ServiceDeliveryType @default(IN_PERSON)
+
+  paymentRequirement PaymentRequirement @default(NONE)
+  depositAmount      Decimal?           @db.Decimal(12, 2)
+
+  maxAttendees Int @default(1)
+
+  minBookingNoticeMinutes   Int @default(0)
+  maxBookingAdvanceDays     Int?
+  cancellationNoticeMinutes Int?
+  rescheduleNoticeMinutes   Int?
+
+  requiresConfirmation Boolean @default(false)
+  allowWaitlist        Boolean @default(false)
+  isActive             Boolean @default(true)
+
+  color String?
+  image String?
+
+  sortOrder Int @default(0)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  staffServices        StaffService[]
+  serviceLocations     ServiceLocation[]
+  appointmentServices  AppointmentService[]
+  bookingQuestions     BookingQuestion[]
+  waitlistEntries      WaitlistEntry[]
+  bookingPageServices  BookingPageService[]
+  resourceRequirements ServiceResource[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, isActive])
+  @@index([organizationId, deletedAt])
+  @@index([categoryId])
+  @@map("service")
+}
+
+model StaffMember {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  memberId String? @unique
+  member   Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  name  String
+  email String?
+  phone String?
+  image String?
+  bio   String?
+
+  timezone String?
+
+  isActive          Boolean @default(true)
+  acceptsAppointments Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invitations           Invitation[]
+  staffServices         StaffService[]
+  staffLocations        StaffLocation[]
+  availabilityRules     AvailabilityRule[]
+  availabilityOverrides AvailabilityOverride[]
+  blockedTimes          BlockedTime[]
+  appointments          Appointment[]
+  appointmentServices   AppointmentService[]
+  externalCalendars     ExternalCalendar[]
+  waitlistEntries       WaitlistEntry[]
+  bookingPageStaff      BookingPageStaff[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId, isActive])
+  @@map("staff_member")
+}
+
+model StaffService {
+  id String @id @default(nanoid())
+
+  staffMemberId String
+  staffMember   StaffMember @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  isActive Boolean @default(true)
+
+  durationMinutes Int?
+  price           Decimal? @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([staffMemberId, serviceId])
+  @@index([serviceId])
+  @@map("staff_service")
+}
+
+model StaffLocation {
+  id String @id @default(nanoid())
+
+  staffMemberId String
+  staffMember   StaffMember @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@unique([staffMemberId, locationId])
+  @@index([locationId])
+  @@map("staff_location")
+}
+
+model ServiceLocation {
+  id String @id @default(nanoid())
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@unique([serviceId, locationId])
+  @@index([locationId])
+  @@map("service_location")
+}
+
+model Customer {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  firstName String
+  lastName  String?
+  email     String?
+  phone     String?
+
+  timezone String?
+  locale   String?
+
+  dateOfBirth DateTime?
+
+  company String?
+  jobTitle String?
+
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String?
+
+  marketingConsent Boolean @default(false)
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments Appointment[]
+  attendees    AppointmentAttendee[]
+  notes        CustomerNote[]
+  tags         CustomerTagAssignment[]
+  waitlist     WaitlistEntry[]
+  payments     Payment[]
+
+  @@index([organizationId, email])
+  @@index([organizationId, phone])
+  @@index([organizationId, firstName, lastName])
+  @@map("customer")
+}
+
+model CustomerNote {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  body String
+
+  authorUserId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([customerId, createdAt])
+  @@map("customer_note")
+}
+
+model CustomerTag {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name  String
+  color String?
+
+  createdAt DateTime @default(now())
+
+  assignments CustomerTagAssignment[]
+
+  @@unique([organizationId, name])
+  @@map("customer_tag")
+}
+
+model CustomerTagAssignment {
+  id String @id @default(nanoid())
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  tagId String
+  tag   CustomerTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([customerId, tagId])
+  @@index([tagId])
+  @@map("customer_tag_assignment")
+}
+
+/// Weekly recurring availability.
+///
+/// dayOfWeek should use 0-6 where:
+/// 0 = Sunday
+/// 1 = Monday
+/// ...
+/// 6 = Saturday
+///
+/// startMinute/endMinute are minutes from local midnight.
+/// Example: 09:30 = 570.
+model AvailabilityRule {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  staffMemberId String?
+  staffMember   StaffMember? @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  dayOfWeek  Int
+  startMinute Int
+  endMinute   Int
+
+  timezone String
+
+  validFrom  DateTime?
+  validUntil DateTime?
+
+  isActive Boolean @default(true)
+  isBreak Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, dayOfWeek])
+  @@index([staffMemberId, dayOfWeek])
+  @@index([locationId, dayOfWeek])
+  @@map("availability_rule")
+}
+
+/// One-off availability changes.
+///
+/// Use `isAvailable = false` for holidays, closures or time off.
+/// Use `isAvailable = true` for extra availability outside normal hours.
+model AvailabilityOverride {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  staffMemberId String?
+  staffMember   StaffMember? @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  startsAt DateTime
+  endsAt   DateTime
+
+  isAvailable Boolean @default(false)
+  reason      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, startsAt, endsAt])
+  @@index([staffMemberId, startsAt, endsAt])
+  @@index([locationId, startsAt, endsAt])
+  @@map("availability_override")
+}
+
+model BlockedTime {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  staffMemberId String?
+  staffMember   StaffMember? @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  startsAt DateTime
+  endsAt   DateTime
+
+  title  String?
+  reason String?
+  recurrence Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, startsAt, endsAt])
+  @@index([staffMemberId, startsAt, endsAt])
+  @@index([locationId, startsAt, endsAt])
+  @@map("blocked_time")
+}
+
+model AppointmentSeries {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name String?
+
+  /// RFC 5545 RRULE, e.g. FREQ=WEEKLY;INTERVAL=1
+  recurrenceRule String
+
+  timezone String
+
+  startsAt DateTime
+  endsAt   DateTime?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  appointments Appointment[]
+
+  @@index([organizationId, isActive])
+  @@map("appointment_series")
+}
+
+model Appointment {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  bookingCode String @unique
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  staffMemberId String?
+  staffMember   StaffMember? @relation(fields: [staffMemberId], references: [id], onDelete: SetNull)
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  seriesId String?
+  series   AppointmentSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+
+  rescheduledFromId String?
+  rescheduledFrom   Appointment?  @relation("AppointmentReschedule", fields: [rescheduledFromId], references: [id], onDelete: SetNull)
+  rescheduledTo     Appointment[] @relation("AppointmentReschedule")
+
+  status AppointmentStatus @default(PENDING)
+  source AppointmentSource @default(PUBLIC_BOOKING)
+
+  startsAt DateTime
+  endsAt   DateTime
+  timezone String
+
+  customerNotes String?
+  internalNotes String?
+
+  meetingUrl String?
+
+  cancellationReason String?
+  cancelledAt        DateTime?
+  confirmedAt        DateTime?
+  checkedInAt        DateTime?
+  startedAt          DateTime?
+  completedAt        DateTime?
+
+  expiresAt DateTime?
+
+  currency String @default("EUR")
+
+  subtotalAmount Decimal @default(0) @db.Decimal(12, 2)
+  discountAmount Decimal @default(0) @db.Decimal(12, 2)
+  taxAmount      Decimal @default(0) @db.Decimal(12, 2)
+  totalAmount    Decimal @default(0) @db.Decimal(12, 2)
+  paidAmount     Decimal @default(0) @db.Decimal(12, 2)
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  services          AppointmentService[]
+  attendees         AppointmentAttendee[]
+  resources         AppointmentResource[]
+  answers           BookingAnswer[]
+  payments          Payment[]
+  notifications     Notification[]
+  events            AppointmentEvent[]
+  externalEvents    ExternalCalendarEvent[]
+
+  @@index([organizationId, startsAt])
+  @@index([organizationId, status, startsAt])
+  @@index([staffMemberId, startsAt, endsAt])
+  @@index([locationId, startsAt, endsAt])
+  @@index([customerId, startsAt])
+  @@index([seriesId])
+  @@index([rescheduledFromId])
+  @@map("appointment")
+}
+
+model AppointmentService {
+  id String @id @default(nanoid())
+
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  staffMemberId String?
+  staffMember   StaffMember? @relation(fields: [staffMemberId], references: [id], onDelete: SetNull)
+
+  /// Snapshot fields preserve historical appointment information
+  /// if the underlying service later changes.
+  name            String
+  durationMinutes Int
+
+  quantity Int @default(1)
+
+  unitPrice Decimal @default(0) @db.Decimal(12, 2)
+  totalPrice Decimal @default(0) @db.Decimal(12, 2)
+
+  bufferBeforeMinutes Int @default(0)
+  bufferAfterMinutes  Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([appointmentId])
+  @@index([serviceId])
+  @@index([staffMemberId])
+  @@map("appointment_service")
+}
+
+model AppointmentAttendee {
+  id String @id @default(nanoid())
+
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  name  String
+  email String?
+  phone String?
+
+  status AttendanceStatus @default(BOOKED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([appointmentId])
+  @@index([customerId])
+  @@map("appointment_attendee")
+}
+
+model AppointmentEvent {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  type AppointmentEventType
+
+  actorUserId String?
+
+  message  String?
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([appointmentId, createdAt])
+  @@index([organizationId, createdAt])
+  @@map("appointment_event")
+}
+
+model Resource {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  name        String
+  description String?
+
+  type ResourceType @default(OTHER)
+
+  capacity Int @default(1)
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  serviceRequirements ServiceResource[]
+  appointments        AppointmentResource[]
+
+  @@index([organizationId, isActive])
+  @@index([locationId])
+  @@map("resource")
+}
+
+model ServiceResource {
+  id String @id @default(nanoid())
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  resourceId String
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  quantity Int @default(1)
+
+  createdAt DateTime @default(now())
+
+  @@unique([serviceId, resourceId])
+  @@index([resourceId])
+  @@map("service_resource")
+}
+
+model AppointmentResource {
+  id String @id @default(nanoid())
+
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  resourceId String
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Restrict)
+
+  quantity Int @default(1)
+
+  createdAt DateTime @default(now())
+
+  @@unique([appointmentId, resourceId])
+  @@index([resourceId])
+  @@map("appointment_resource")
+}
+
+model BookingQuestion {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  label       String
+  description String?
+
+  type QuestionType
+
+  placeholder String?
+
+  /// JSON array for SINGLE_SELECT / MULTI_SELECT options.
+  options Json?
+
+  required  Boolean @default(false)
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  answers BookingAnswer[]
+
+  @@index([organizationId, isActive, sortOrder])
+  @@index([serviceId])
+  @@map("booking_question")
+}
+
+model BookingAnswer {
+  id String @id @default(nanoid())
+
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  questionId String
+  question   BookingQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  /// JSON supports strings, booleans, numbers and arrays.
+  value Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([appointmentId, questionId])
+  @@index([questionId])
+  @@map("booking_answer")
+}
+
+model WaitlistEntry {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  staffMemberId String?
+  staffMember   StaffMember? @relation(fields: [staffMemberId], references: [id], onDelete: SetNull)
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  preferredStartsAt DateTime?
+  preferredEndsAt   DateTime?
+
+  status WaitlistStatus @default(WAITING)
+
+  notes String?
+
+  offeredAt DateTime?
+  expiresAt DateTime?
+  bookedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status])
+  @@index([serviceId, status])
+  @@index([staffMemberId, status])
+  @@index([customerId])
+  @@map("waitlist_entry")
+}
+
+model Payment {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  provider String
+
+  providerPaymentId String?
+  providerCustomerId String?
+
+  status PaymentStatus @default(PENDING)
+
+  amount   Decimal @db.Decimal(12, 2)
+  currency String
+
+  description String?
+
+  paidAt DateTime?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refunds Refund[]
+
+  @@unique([provider, providerPaymentId])
+  @@index([organizationId, createdAt])
+  @@index([appointmentId])
+  @@index([customerId])
+  @@index([status])
+  @@map("payment")
+}
+
+model Refund {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  providerRefundId String?
+
+  amount Decimal @db.Decimal(12, 2)
+
+  status RefundStatus @default(PENDING)
+
+  reason String?
+
+  refundedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, createdAt])
+  @@index([paymentId])
+  @@map("refund")
+}
+
+model NotificationTemplate {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name    String
+  kind    NotificationKind
+  channel NotificationChannel
+
+  subject String?
+  body    String
+
+  /// For reminder templates.
+  offsetMinutes Int?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notifications Notification[]
+
+  @@index([organizationId, kind, channel])
+  @@map("notification_template")
+}
+
+model Notification {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  appointmentId String?
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  templateId String?
+  template   NotificationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  kind    NotificationKind
+  channel NotificationChannel
+  status  NotificationStatus @default(PENDING)
+
+  recipient String
+
+  subject String?
+  body    String
+
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  failedAt    DateTime?
+
+  providerMessageId String?
+  errorMessage      String?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, status, scheduledAt])
+  @@index([appointmentId])
+  @@index([templateId])
+  @@map("notification")
+}
+
+model Integration {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  type     IntegrationType
+  provider String
+
+  name String?
+
+  externalAccountId String?
+
+  accessTokenEncrypted  String?
+  refreshTokenEncrypted String?
+  tokenExpiresAt        DateTime?
+
+  scopes String?
+
+  metadata Json?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  externalCalendars ExternalCalendar[]
+
+  @@index([organizationId, type, provider])
+  @@map("integration")
+}
+
+model ExternalCalendar {
+  id String @id @default(nanoid())
+
+  integrationId String
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  staffMemberId String
+  staffMember   StaffMember @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+
+  providerCalendarId String
+
+  name String?
+
+  isPrimary Boolean @default(false)
+
+  /// If true, events on this calendar block booking availability.
+  blocksAvailability Boolean @default(true)
+
+  /// If true, appointments are written to this calendar.
+  writeAppointments Boolean @default(true)
+
+  syncEnabled Boolean @default(true)
+
+  syncToken String?
+
+  lastSyncedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events ExternalCalendarEvent[]
+
+  @@unique([integrationId, providerCalendarId])
+  @@index([staffMemberId])
+  @@map("external_calendar")
+}
+
+model ExternalCalendarEvent {
+  id String @id @default(nanoid())
+
+  externalCalendarId String
+  externalCalendar   ExternalCalendar @relation(fields: [externalCalendarId], references: [id], onDelete: Cascade)
+
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  externalEventId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([externalCalendarId, externalEventId])
+  @@unique([externalCalendarId, appointmentId])
+  @@index([appointmentId])
+  @@map("external_calendar_event")
+}
+
+model BookingPage {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  slug String
+
+  name        String
   title       String?
   description String?
 
-  sortOrder Int @default(0)
+  logo String?
 
-  settings Json? @db.JsonB
+  defaultLocationId String?
+  defaultLocation   Location? @relation("BookingPageDefaultLocation", fields: [defaultLocationId], references: [id], onDelete: SetNull)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive Boolean @default(true)
 
-  items FormItem[]
+  requireServiceSelection Boolean @default(true)
+  allowStaffSelection     Boolean @default(true)
+  allowLocationSelection  Boolean @default(true)
 
-  incomingLogicRules FormLogicRule[] @relation("LogicTargetSection")
+  successMessage String?
 
-  @@index([formId, sortOrder])
-  @@map("form_section")
-}
-
-model FormItem {
-  id        String      @id @default(nanoid())
-  sectionId String
-  section   FormSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-
-  type FormItemType
-
-  // Input: question title
-  // HEADING: heading text
-  // IMAGE/TEXT_BLOCK: optional title
-  label String?
-
-  description String?
-  placeholder String?
-
-  // Content-only items should always have required = false.
-  required Boolean @default(false)
-
-  // Canonical semantic order inside the section.
-  sortOrder Int @default(0)
-
-  //
-  // Desktop layout
-  //
-
-  row    Int @default(0)
-  column Int @default(0)
-  width  Int @default(12)
-
-  //
-  // Type-specific data
-  //
-
-  defaultValue Json? @db.JsonB
-
-  validation Json? @db.JsonB
-
-  settings Json? @db.JsonB
+  metadata Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  options FormItemOption[]
+  services BookingPageService[]
+  staff    BookingPageStaff[]
+  defaultForOrganizations OrganizationSettings[] @relation("OrganizationDefaultBookingPage")
 
-  logicRules FormLogicRule[] @relation("LogicSourceItem")
-
-  @@index([sectionId])
-  @@index([sectionId, sortOrder])
-  @@index([sectionId, row, column])
-  @@map("form_item")
+  @@unique([organizationId, slug])
+  @@index([organizationId, isActive])
+  @@map("booking_page")
 }
 
-model FormItemOption {
-  id     String   @id @default(nanoid())
-  itemId String
-  item   FormItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+model BookingPageService {
+  id String @id @default(nanoid())
 
-  // OPTION = normal choice
-  // ROW    = grid row
-  // COLUMN = grid column
-  kind FormItemOptionKind @default(OPTION)
+  bookingPageId String
+  bookingPage   BookingPage @relation(fields: [bookingPageId], references: [id], onDelete: Cascade)
 
-  label String
-
-  // Stable machine value independent from label.
-  value String @default(nanoid())
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   sortOrder Int @default(0)
 
+  @@unique([bookingPageId, serviceId])
+  @@index([serviceId])
+  @@map("booking_page_service")
+}
+
+model BookingPageStaff {
+  id String @id @default(nanoid())
+
+  bookingPageId String
+  bookingPage   BookingPage @relation(fields: [bookingPageId], references: [id], onDelete: Cascade)
+
+  staffMemberId String
+  staffMember   StaffMember @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+
+  sortOrder Int @default(0)
+
+  @@unique([bookingPageId, staffMemberId])
+  @@index([staffMemberId])
+  @@map("booking_page_staff")
+}
+
+model WebhookEndpoint {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  url String
+
+  secret String
+
+  /// JSON array containing subscribed event names.
+  events Json
+
+  isActive Boolean @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([itemId, value])
-  @@index([itemId, kind, sortOrder])
-  @@map("form_item_option")
+  deliveries WebhookDelivery[]
+
+  @@index([organizationId, isActive])
+  @@map("webhook_endpoint")
 }
 
-model FormLogicRule {
-  id     String @id @default(nanoid())
-  formId String
-  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+model WebhookDelivery {
+  id String @id @default(nanoid())
 
-  // Must point to an answerable FormItem.
-  sourceItemId String
-  sourceItem   FormItem @relation("LogicSourceItem", fields: [sourceItemId], references: [id], onDelete: Cascade)
+  endpointId String
+  endpoint   WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
 
-  operator FormLogicOperator
+  eventId   String
+  eventType String
 
-  // Examples:
-  //
-  // "yes"
-  // "option-id"
-  // 10
-  // ["option-a", "option-b"]
-  comparisonValue Json? @db.JsonB
+  payload Json
 
-  action FormLogicAction
+  responseStatus Int?
+  responseBody   String?
 
-  // Required when action = GO_TO_SECTION.
-  // Null when action = SUBMIT_FORM.
-  targetSectionId String?
-  targetSection   FormSection? @relation("LogicTargetSection", fields: [targetSectionId], references: [id], onDelete: SetNull)
+  attempts Int @default(0)
 
-  priority Int @default(0)
+  deliveredAt DateTime?
+  nextAttemptAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([formId, priority])
-  @@index([sourceItemId])
-  @@index([targetSectionId])
-  @@map("form_logic_rule")
+  @@index([endpointId, deliveredAt])
+  @@index([nextAttemptAt])
+  @@map("webhook_delivery")
 }
 
-model FormVersion {
-  id     String @id @default(nanoid())
-  formId String
-  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+model AuditLog {
+  id             String       @id @default(nanoid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  version Int
+  actorUserId String?
 
-  // Immutable published representation.
-  //
-  // Contains everything required for rendering:
-  // - form settings
-  // - appearance
-  // - sections
-  // - items
-  // - options
-  // - validation
-  // - layout
-  // - logic rules
-  snapshot Json @db.JsonB
+  action String
+
+  entityType String
+  entityId   String?
+
+  data Json?
+
+  ipAddress String?
+  userAgent String?
 
   createdAt DateTime @default(now())
 
-  submissions FormSubmission[]
-
-  @@unique([formId, version])
-  @@index([formId])
-  @@map("form_version")
-}
-
-model FormSubmission {
-  id     String @id @default(nanoid())
-  formId String
-  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
-
-  // Exact published version shown to respondent.
-  formVersionId String
-  formVersion   FormVersion @relation(fields: [formVersionId], references: [id], onDelete: Cascade)
-
-  //
-  // Respondent identity
-  //
-
-  // Null = anonymous.
-  //
-  // If present, normalize before storage:
-  // trim + lowercase.
-  respondentEmail String?
-
-  // Populate only when limitOneResponsePerEmail = true.
-  //
-  // Set to normalized respondentEmail.
-  //
-  // Otherwise leave null.
-  dedupeKey String?
-
-  status FormSubmissionStatus @default(SUBMITTED)
-
-  // Examples:
-  // public
-  // embed
-  // api
-  source String?
-
-  // UTM/referrer/etc.
-  metadata Json? @db.JsonB
-
-  submittedAt DateTime @default(now())
-
-  answers FormAnswer[]
-
-  @@unique([formId, dedupeKey])
-
-  @@index([formId])
-  @@index([formId, submittedAt])
-  @@index([formId, respondentEmail])
-  @@index([formVersionId])
-
-  @@map("form_submission")
-}
-
-model FormAnswer {
-  id           String         @id @default(nanoid())
-  submissionId String
-  submission   FormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-
-  // Intentionally not a FK to FormItem.
-  //
-  // The mutable draft can change or delete the original item
-  // without breaking historical responses.
-  itemId String
-
-  itemLabel String?
-
-  itemType FormItemType
-
-  // Examples:
-  //
-  // "Olli"
-  //
-  // 5
-  //
-  // true
-  //
-  // "option-value"
-  //
-  // ["option-a", "option-b"]
-  //
-  // "2026-10-01"
-  //
-  // Grid:
-  //
-  // {
-  //   "row-a": "column-b",
-  //   "row-b": "column-a"
-  // }
-  value Json? @db.JsonB
-
-  createdAt DateTime @default(now())
-
-  files FormSubmissionFile[]
-
-  @@unique([submissionId, itemId])
-  @@index([submissionId])
-  @@map("form_answer")
-}
-
-model FormSubmissionFile {
-  id       String     @id @default(nanoid())
-  answerId String
-  answer   FormAnswer @relation(fields: [answerId], references: [id], onDelete: Cascade)
-
-  // S3 / R2 object key.
-  storageKey String @unique
-
-  fileName String
-  mimeType String
-  size     Int
-
-  createdAt DateTime @default(now())
-
-  @@index([answerId])
-  @@map("form_submission_file")
-}
-
-//
-// Enums
-//
-
-enum FormStatus {
-  DRAFT
-  PUBLISHED
-  CLOSED
-  ARCHIVED
-}
-
-enum FormTheme {
-  SYSTEM
-  LIGHT
-  DARK
-}
-
-enum FormEmailCollection {
-  NONE
-  OPTIONAL
-  REQUIRED
-}
-
-enum FormItemType {
-  //
-  // Content-only
-  //
-
-  HEADING
-  TEXT_BLOCK
-  DIVIDER
-  IMAGE
-
-  //
-  // Text
-  //
-
-  SHORT_TEXT
-  LONG_TEXT
-  EMAIL
-  PHONE
-  URL
-
-  //
-  // Numeric
-  //
-
-  NUMBER
-  LINEAR_SCALE
-  RATING
-
-  //
-  // Date/time
-  //
-
-  DATE
-  TIME
-  DATETIME
-
-  //
-  // Choice
-  //
-
-  SINGLE_CHOICE
-  MULTIPLE_CHOICE
-  DROPDOWN
-  CHECKBOX
-
-  //
-  // Grid
-  //
-
-  MULTIPLE_CHOICE_GRID
-  CHECKBOX_GRID
-
-  //
-  // Upload
-  //
-
-  FILE
-}
-
-enum FormItemOptionKind {
-  OPTION
-  ROW
-  COLUMN
-}
-
-enum FormLogicOperator {
-  EQUALS
-  NOT_EQUALS
-
-  CONTAINS
-  NOT_CONTAINS
-
-  GREATER_THAN
-  GREATER_THAN_OR_EQUAL
-
-  LESS_THAN
-  LESS_THAN_OR_EQUAL
-
-  IS_EMPTY
-  IS_NOT_EMPTY
-}
-
-enum FormLogicAction {
-  GO_TO_SECTION
-  SUBMIT_FORM
-}
-
-enum FormSubmissionStatus {
-  SUBMITTED
-  SPAM
+  @@index([organizationId, createdAt])
+  @@index([entityType, entityId])
+  @@index([actorUserId])
+  @@map("audit_log")
 }

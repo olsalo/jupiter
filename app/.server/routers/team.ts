@@ -1,9 +1,11 @@
+import { createPerson, inviteStaff, linkInvitationStaff, personData, teamData, updatePerson } from "../services/team"
+import { isManager } from "../services/scheduling"
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server"
 import { APIError } from "better-auth/api"
 
-import { protectedProcedure, publicProcedure } from "../trpc"
+import { adminProcedure, protectedProcedure, publicProcedure } from "../trpc"
 import { auth } from "~/lib/auth/server"
-import { inviteFormSchema } from "~/lib/schemas/team"
+import { addPersonSchema, updatePersonSchema, personIdSchema, memberRoleSchema, inviteFormSchema } from "~/lib/schemas/team"
 import { z } from "~/lib/zod"
 
 export const teamRouter = {
@@ -30,7 +32,7 @@ export const teamRouter = {
       }
     }),
 
-  count: protectedProcedure.query(async ({ ctx }) => {
+  count: adminProcedure.query(async ({ ctx }) => {
     if (!ctx.organizationId) {
       throw new TRPCError({ code: "FORBIDDEN" })
     }
@@ -48,53 +50,40 @@ export const teamRouter = {
       }),
     ])
 
-    return { members, invitations }
+    const staffOnly = await ctx.prisma.staffMember.count({ where: { organizationId: ctx.organizationId, memberId: null } })
+    return { members, invitations, people: members + staffOnly }
   }),
 
-  list: protectedProcedure.query(async ({ ctx }) => {
+  list: adminProcedure.query(({ ctx }) => {
+    if (!ctx.organizationId) throw new TRPCError({ code: "FORBIDDEN" })
+    return teamData(ctx.prisma, ctx.organizationId, ctx.user.id)
+  }),
+  getPerson: adminProcedure.input(personIdSchema).query(async ({ ctx, input }) => {
+    if (!ctx.organizationId) throw new TRPCError({ code: "FORBIDDEN" })
+    const member = await ctx.prisma.member.findFirst({ where: { organizationId: ctx.organizationId, userId: ctx.user.id } })
+    if (!member) throw new TRPCError({ code: "FORBIDDEN" })
+    return personData(ctx.prisma, ctx.organizationId, input.id)
+  }),
+  addPerson: adminProcedure.input(addPersonSchema).mutation(({ ctx, input }) =>
+    createPerson(ctx.prisma, ctx.organizationId, ctx.user.id, input, process.env.BETTER_AUTH_URL ?? "http://localhost:5175", ctx.locale)),
+  updatePerson: adminProcedure.input(updatePersonSchema).mutation(({ ctx, input }) => updatePerson(ctx.prisma, ctx.organizationId, input)),
+  setRole: adminProcedure.input(memberRoleSchema).mutation(async ({ ctx, input }) => {
+    const target = await ctx.prisma.member.findFirst({ where: { id: input.memberId, organizationId: ctx.organizationId } })
+    if (!target || target.userId === ctx.user.id || target.role.split(",").some((role) => role.trim() === "owner")) throw new TRPCError({ code: "FORBIDDEN" })
+    await auth.api.updateMemberRole({ headers: ctx.headers, body: { memberId: input.memberId, organizationId: ctx.organizationId, role: input.role } })
+    return { id: target.id }
+  }),
+
+  invite: adminProcedure.input(inviteFormSchema).mutation(async ({ ctx, input }) => {
     if (!ctx.organizationId) {
       throw new TRPCError({ code: "FORBIDDEN" })
     }
 
-    const [members, invitations] = await Promise.all([
-      ctx.prisma.member.findMany({
-        where: { organizationId: ctx.organizationId },
-        select: {
-          id: true,
-          role: true,
-          createdAt: true,
-          user: { select: { id: true, name: true, email: true, image: true } },
-        },
-        orderBy: { createdAt: "asc" },
-      }),
-      ctx.prisma.invitation.findMany({
-        where: {
-          organizationId: ctx.organizationId,
-          status: "pending",
-          expiresAt: { gt: new Date() },
-        },
-        select: { id: true, email: true, inviteeName: true, role: true, expiresAt: true },
-        orderBy: { createdAt: "desc" },
-      }),
-    ])
-    const member = members.find((member) => member.user.id === ctx.user.id)
-
-    if (!member) {
-      throw new TRPCError({ code: "FORBIDDEN" })
+    if (input.staffMemberId) {
+      const member = await ctx.prisma.member.findFirst({ where: { organizationId: ctx.organizationId, userId: ctx.user.id } })
+      if (!member || !isManager(member)) throw new TRPCError({ code: "FORBIDDEN" })
+      return inviteStaff(ctx.prisma, ctx.organizationId, ctx.user.id, { ...input, staffMemberId: input.staffMemberId }, process.env.BETTER_AUTH_URL ?? "http://localhost:5175", ctx.locale)
     }
-
-    return {
-      members,
-      invitations,
-      canInvite: member.role.split(",").some((role) => ["owner", "admin"].includes(role.trim())),
-    }
-  }),
-
-  invite: protectedProcedure.input(inviteFormSchema).mutation(async ({ ctx, input }) => {
-    if (!ctx.organizationId) {
-      throw new TRPCError({ code: "FORBIDDEN" })
-    }
-
     try {
       // Better Auth checks the sender's membership and invitation permissions.
       const { name, sendEmail, ...invitationInput } = input
@@ -115,7 +104,7 @@ export const teamRouter = {
         data: { inviteeName: name },
       })
 
-      return { error: null, id: invitation.id }
+      return { error: null, id: invitation.id, linked: false }
     } catch (error) {
       if (error instanceof APIError) {
         if (error.body?.code === "USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION") {
@@ -132,7 +121,7 @@ export const teamRouter = {
     }
   }),
 
-  cancelInvitation: protectedProcedure
+  cancelInvitation: adminProcedure
     .input(z.object({ invitationId: z.string().min(1).max(200) }))
     .mutation(async ({ ctx, input }) => {
       if (!ctx.organizationId) {
@@ -165,6 +154,48 @@ export const teamRouter = {
       }
 
       return { id: invitation.id }
+    }),
+
+  removeMember: adminProcedure
+    .input(z.object({ memberId: z.string().min(1).max(200) }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.organizationId) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      const member = await ctx.prisma.member.findFirst({
+        where: { id: input.memberId, organizationId: ctx.organizationId },
+        select: { id: true, userId: true },
+      })
+
+      if (!member) {
+        throw new TRPCError({ code: "NOT_FOUND" })
+      }
+      if (member.userId === ctx.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST" })
+      }
+
+      try {
+        await auth.api.removeMember({
+          headers: ctx.headers,
+          body: {
+            memberIdOrEmail: member.id,
+            organizationId: ctx.organizationId,
+          },
+        })
+      } catch (error) {
+        if (error instanceof APIError) {
+          if (error.statusCode === 403) {
+            throw new TRPCError({ code: "FORBIDDEN", cause: error })
+          }
+          if (error.statusCode < 500) {
+            throw new TRPCError({ code: "BAD_REQUEST", cause: error })
+          }
+        }
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", cause: error })
+      }
+
+      return { id: member.id }
     }),
 
   acceptInvitation: protectedProcedure
@@ -224,6 +255,9 @@ export const teamRouter = {
           }
         }
       }
+
+      const acceptedMember = await ctx.prisma.member.findFirst({ where: { organizationId: invitation.organizationId, userId: ctx.user.id } })
+      if (acceptedMember) await linkInvitationStaff(ctx.prisma, invitation.id, acceptedMember.id)
 
       if (ctx.user.createdAt >= invitation.createdAt && invitation.inviteeName) {
         await ctx.prisma.user.update({

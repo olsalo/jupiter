@@ -2,6 +2,7 @@ import { createContext, redirect, type MiddlewareFunction } from "react-router"
 
 import { auth } from "~/lib/auth/server"
 import { prisma } from "~/lib/prisma.server"
+import { getRoutePermissions, hasOrganizationPermission } from "~/lib/auth/permissions"
 import { hasOwnerRole } from "~/lib/utils"
 
 type AuthSession = typeof auth.$Infer.Session
@@ -41,6 +42,7 @@ export const authMiddleware: MiddlewareFunction<Response> = async ({
       where: { id: session.session.id },
       data: { activeOrganizationId: organization.id },
     })
+    session.session.activeOrganizationId = organization.id
   }
 
   const membership =
@@ -101,6 +103,13 @@ export const requireOwnerMiddleware: MiddlewareFunction<Response> = async ({
   }
 }
 
+export const requireRoutePermissionsMiddleware: MiddlewareFunction<Response> = async ({ context, url }) => {
+  const membership = context.get(membershipContext)
+  const permissions = getRoutePermissions(url.pathname)
+  if (permissions && !hasOrganizationPermission(membership?.role, permissions)) throw redirect("/calendar")
+
+}
+
 function hasSessionCookie(headers: Headers) {
   const cookieHeader = headers.get("cookie")
 
@@ -124,7 +133,7 @@ async function getActiveMembership({
   userId: string
 }) {
   return prisma.member.findFirst({
-    select: { role: true },
+    select: { role: true, staffProfile: { select: { id: true, isActive: true, acceptsAppointments: true } } },
     where: {
       organizationId,
       userId,

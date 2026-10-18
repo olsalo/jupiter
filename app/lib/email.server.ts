@@ -10,6 +10,7 @@ import {
 
 export interface EmailMessage {
   html: string
+  senderName?: string
   replyTo?: string
   subject: string
   text: string
@@ -148,7 +149,7 @@ async function sendWithPlunk({
   const response = await fetch("https://next-api.useplunk.com/v1/send", {
     body: JSON.stringify({
       body: message.html,
-      from,
+      from: message.senderName ? { name: message.senderName, email: getSenderAddress(from) } : from,
       reply: message.replyTo,
       subject: message.subject,
       to: recipients,
@@ -180,7 +181,7 @@ async function sendWithResend({
   recipients: string | string[]
 }) {
   const { error } = await new Resend(apiKey).emails.send({
-    from,
+    from: message.senderName ? `${JSON.stringify(message.senderName)} <${getSenderAddress(from)}>` : from,
     html: message.html,
     replyTo: message.replyTo,
     subject: message.subject,
@@ -241,4 +242,8 @@ function isSupportedLocale(locale: unknown): locale is EmailLocale {
     typeof locale === "string" &&
     supportedLanguages.includes(locale as EmailLocale)
   )
+}
+
+function getSenderAddress(from: string) {
+  return from.match(/<([^<>]+)>\s*$/)?.[1] ?? from.trim()
 }

@@ -111,7 +111,9 @@
   :where(
     *:not(input):not(textarea):not(select):not([contenteditable="true"]):not(
         [role="textbox"]
-      ):not(form button):not(.keyboard-focusable):not(#keyboard-focusable)
+      ):not(.keyboard-focusable):not(#keyboard-focusable):not(.keyboard-focusable *):not(
+        #keyboard-focusable *
+      )
   ):focus-visible {
     outline: none !important;
     box-shadow: none !important;
@@ -125,20 +127,20 @@
       top: 0;
       z-index: 10;
       margin-inline: -1.5rem;
-      padding: 0.75rem 1.5rem;
+      padding: 1.5rem;
       isolation: isolate;
     }
 
     .route-mobile-header::before {
       position: absolute;
       z-index: -1;
-      inset: -0.75rem 0 -1.75rem;
-      background: color-mix(in oklab, var(--background) 75%, transparent);
-      backdrop-filter: blur(28px) saturate(150%);
+      inset: 0;
+      background: color-mix(in oklab, var(--background) 40%, transparent);
+      backdrop-filter: blur(40px) saturate(150%);
       mask-image: linear-gradient(
         to bottom,
         black 0%,
-        black 45%,
+        black 75%,
         transparent 100%
       );
       pointer-events: none;
@@ -409,6 +411,11 @@
 html,
 body {
   @apply bg-background font-sans text-foreground;
+}
+
+@keyframes calendar-draft-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
 }
 
 [data-slot="drawer-popup"]::after {

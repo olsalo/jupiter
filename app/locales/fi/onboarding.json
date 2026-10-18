@@ -1,11 +1,11 @@
 {
   "meta": {
-    "title": "Lisää yrityksesi tiedot",
-    "description": "Lisää nimesi ja yrityksesi tiedot, niin pääset alkuun."
+    "title": "Määritä yrityksen tiedot",
+    "description": "Lisää nimesi ja yrityksesi tiedot, niin pääset alkuun"
   },
   "loading": "Ladataan aloitusta…",
-  "title": "Lisää yrityksesi tiedot",
-  "description": "Täytä nämä tiedot, niin pääset alkuun.",
+  "title": "Määritä yrityksen tiedot",
+  "description": "Voit muuttaa näitä tietoja myöhemmin",
   "progress": {
     "label": "Aloituksen vaiheet",
     "step": "Vaihe {{current}} / {{total}}"
@@ -16,7 +16,7 @@
   },
   "businessName": {
     "label": "Yrityksen nimi",
-    "placeholder": "Yritys Oy"
+    "placeholder": "Esimerkkistudio"
   },
   "location": {
     "label": "Maa",
@@ -35,13 +35,13 @@
     "create": "Jatka",
     "finishSetup": "Aloita käyttö",
     "creating": "Tallennetaan…",
-    "chooseSubscription": "Aloita maksuton 14 päivän kokeilu",
-    "choosingSubscription": "Valmistellaan kokeilua…",
+    "chooseSubscription": "Aloita maksuton kokeilu",
+    "choosingSubscription": "Valmistellaan…",
     "logOut": "Kirjaudu ulos"
   },
   "subscription": {
     "title": "Valitse tilauksesi",
-    "description": "Kokeile maksutta 14 päivää. Valitse kuukausi- tai vuosilaskutus. Voit perua milloin tahansa.",
+    "description": "Kokeile maksutta 14 päivää ja maksa sitten kuukausittain tai vuosittain. Voit perua milloin tahansa",
     "billingLabel": "Laskutusväli",
     "monthly": "Kuukausittain",
     "yearly": "Vuosittain",
@@ -51,10 +51,10 @@
   },
   "errors": {
     "load": "Aloitustietojen lataaminen ei onnistunut",
-    "retryDescription": "Yritä uudelleen jatkaaksesi aloitusta.",
-    "create": "Tietojesi tallennus ei onnistunut. Yritä uudelleen.",
-    "organizationNameTaken": "Yrityksen nimi on jo käytössä",
-    "subscription": "Maksamisen avaaminen ei onnistunut. Yritä uudelleen.",
-    "billingNotConfigured": "Tilauksen tekeminen ei vielä onnistu. Yritä myöhemmin uudelleen."
+    "retryDescription": "Yritä uudelleen jatkaaksesi",
+    "create": "Tietojen tallennus epäonnistui. Yritä uudelleen",
+    "organizationNameTaken": "Jo käytössä",
+    "subscription": "Maksusivun avaus epäonnistui. Yritä uudelleen",
+    "billingNotConfigured": "Tilauksen tekeminen ei vielä onnistu. Yritä myöhemmin uudelleen"
   }
 }

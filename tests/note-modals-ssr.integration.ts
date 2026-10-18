@@ -43,6 +43,15 @@ try {
 
   const i18n = createInstance()
   await i18n.init({ lng: "en", resources, defaultNS: "notes", interpolation: { escapeValue: false } })
+  const { NoteModalSkeleton } = await vite.ssrLoadModule("/app/components/notes/note-modal-skeleton.tsx") as typeof import("../app/components/notes/note-modal-skeleton")
+  const { ResponsiveSheet, ResponsiveSheetPopup } = await vite.ssrLoadModule("/app/components/responsive-sheet.tsx") as typeof import("../app/components/responsive-sheet")
+  for (const isEditing of [true, false]) {
+    const skeleton = createElement(NoteModalSkeleton, { descriptionId: "loading-description", titleId: "loading-title", isEditing })
+    const popup = createElement(ResponsiveSheetPopup, { open: true, closeLabel: i18n.t("actions.close"), descriptionId: "loading-description", titleId: "loading-title", children: skeleton })
+    const loading = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(ResponsiveSheet, { open: true, children: popup })))
+    assert.match(loading, /aria-busy="true"/)
+    assert.doesNotMatch(loading, /data-slot="(?:sheet|drawer)-footer"/)
+  }
   let renderSheet = true
   const Root = () => createElement(Fragment, null, createElement(Meta), createElement(Outlet))
   const frameworkContext = {

@@ -1,7 +1,7 @@
 "use client";
 
 import { Toast } from "@base-ui/react/toast";
-import { useEffect, useRef } from "react"
+import { useLayoutEffect, useRef } from "react"
 import Icon from "../icons";
 import { cn } from "@coss/ui/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { anchoredToastManager, toast, toastManager } from "~/lib/toast"
 import { useIsMobile } from "~/lib/hooks"
 import { useOpenOverlayCount } from "~/lib/use-overlay-open"
 import { useSheetOpen } from "~/lib/use-sheet-open"
+import { useLocation } from "react-router"
 
 /**
  * Mapping toast types to your Icon wrapper slugs.
@@ -44,26 +45,34 @@ function ToastProvider({
   const isSheetOpen = useSheetOpen()
   const openOverlayCount = useOpenOverlayCount()
   const previousOpenOverlayCount = useRef(0)
-  const resolvedPosition = position ?? (isMobile || isSheetOpen ? "bottom-left" : "bottom-right")
+  const previousIsFormEditor = useRef(false)
+  const { pathname } = useLocation()
+  const isFormEditor = /^\/forms\/[^/]+\/edit\/?$/.test(pathname)
+  const dismissImmediately = !isMobile && (openOverlayCount > 0 || isFormEditor)
+  const resolvedPosition = position ?? (isMobile || isSheetOpen || isFormEditor ? "bottom-left" : "bottom-right")
   const toastPosition = isMobile ? resolvedPosition.replace("bottom", "top") as ToastPosition : resolvedPosition
 
-  useEffect(() => {
-    if (!isMobile && openOverlayCount > previousOpenOverlayCount.current) {
+  useLayoutEffect(() => {
+    const openedOverlay = openOverlayCount > previousOpenOverlayCount.current
+    const openedFormEditor = isFormEditor && !previousIsFormEditor.current
+
+    if (!isMobile && (openedOverlay || openedFormEditor)) {
       toast.close()
     }
 
     previousOpenOverlayCount.current = openOverlayCount
-  }, [isMobile, openOverlayCount])
+    previousIsFormEditor.current = isFormEditor
+  }, [isFormEditor, isMobile, openOverlayCount])
 
   return (
     <Toast.Provider timeout={timeout} toastManager={toastManager} {...props}>
       {children}
-      <Toasts position={toastPosition} />
+      <Toasts dismissImmediately={dismissImmediately} position={toastPosition} />
     </Toast.Provider>
   );
 }
 
-function Toasts({ position = "bottom-left" }: { position: ToastPosition }) {
+function Toasts({ dismissImmediately, position = "bottom-left" }: { dismissImmediately: boolean; position: ToastPosition }) {
   const { toasts } = Toast.useToastManager();
   const isTop = position.startsWith("top");
 
@@ -116,6 +125,7 @@ function Toasts({ position = "bottom-left" }: { position: ToastPosition }) {
                 "data-expanded:data-ending-style:data-[swipe-direction=right]:transform-[translateX(calc(var(--toast-swipe-movement-x)+100%+var(--toast-inset)))_translateY(var(--toast-calc-offset-y))]",
                 "data-expanded:data-ending-style:data-[swipe-direction=up]:transform-[translateY(calc(var(--toast-swipe-movement-y)-100%-var(--toast-inset)))]",
                 "data-expanded:data-ending-style:data-[swipe-direction=down]:transform-[translateY(calc(var(--toast-swipe-movement-y)+100%+var(--toast-inset)))]",
+                dismissImmediately && "data-ending-style:transition-none",
               )}
               data-position={position}
               key={toast.id}

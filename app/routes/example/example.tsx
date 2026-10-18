@@ -31,8 +31,7 @@ import {
   createDateTimeFormatter,
   defaultTimeZone,
 } from "~/lib/format-preference"
-import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
-import { clearMobileNavigationQuery } from "~/lib/mobile-navigation"
+import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { useDeleteConfirmation } from "~/lib/hooks"
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
@@ -62,10 +61,8 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   }
 }
 
-export function clientLoader({ request }: Route.ClientLoaderArgs) {
-  const { queryClient, trpc } = getClientTRPC()
-  clearMobileNavigationQuery(queryClient, trpc.example.list.queryKey(), request, "/example")
-
+export function clientLoader() {
+  // Client queries own fetching and freshness after the initial server render.
   return null
 }
 
@@ -200,7 +197,6 @@ export default function Notes() {
               <Button
                 aria-label={t("actions.delete")}
                 className="max-md:flex-1 max-md:w-full max-md:border-transparent max-md:bg-secondary max-md:text-secondary-foreground max-md:shadow-none max-md:hover:border-transparent max-md:hover:bg-secondary/90 max-md:data-pressed:border-transparent max-md:data-pressed:bg-secondary/90"
-                disabled={deleteMutation.isPending}
                 onClick={(event) => {
                   event.stopPropagation()
                   deleteConfirmation.requestDelete([row.original.id])
@@ -222,7 +218,7 @@ export default function Notes() {
         },
       },
     ],
-    [dateTimeFormatter, deleteMutation, t],
+    [dateTimeFormatter, t],
   )
 
   function openCreateSheet() {
@@ -253,6 +249,7 @@ export default function Notes() {
           </Button>
         }
         description={t("description")}
+        showDescriptionOnMobile={true}
         refreshing={notesQuery.isRefetching}
         title={t("title")}
       />

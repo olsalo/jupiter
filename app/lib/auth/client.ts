@@ -1,3 +1,4 @@
+import { organizationAccessControl, organizationRoles } from "~/lib/auth/permissions"
 import { createAuthClient } from "better-auth/react"
 import { i18nClient } from "@better-auth/i18n/client"
 import { stripeClient } from "@better-auth/stripe/client"
@@ -10,7 +11,7 @@ export const authClient = createAuthClient({
   plugins: [
     i18nClient(),
     emailOTPClient(),
-    organizationClient(),
+    organizationClient({ ac: organizationAccessControl, roles: organizationRoles }),
     stripeClient({ subscription: true }),
   ],
 })

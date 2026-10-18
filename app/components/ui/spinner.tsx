@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next"
 import { cn } from "@coss/ui/lib/utils";
 import Icon from "../icons";
 
@@ -9,10 +10,11 @@ interface SpinnerProps extends Omit<React.ComponentProps<typeof Icon>, "name"> {
 }
 
 function Spinner({ className, ...props }: SpinnerProps) {
+  const { t } = useTranslation()
   return (
     <Icon
       name="loader"
-      aria-label="Loading"
+      aria-label={t("loading")}
       className={cn("animate-spin", className)}
       role="status"
       {...props}

@@ -1,5 +1,8 @@
+import { hasOrganizationPermission, organizationAccessControl, organizationRoles } from "~/lib/auth/permissions"
 import { i18n } from "@better-auth/i18n"
 import { stripe } from "@better-auth/stripe"
+import { APIError } from "better-auth/api"
+import { linkInvitationStaff } from "~/.server/services/team"
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { emailOTP, organization } from "better-auth/plugins"
@@ -19,10 +22,10 @@ import {
 } from "~/lib/email.server"
 import { createInvitationEmailTemplate } from "~/lib/email-templates/invitation"
 import { prisma } from "~/lib/prisma.server"
-import { hasOwnerRole } from "~/lib/utils"
 
 const fallbackAuthUrl = process.env.BETTER_AUTH_URL || "http://localhost:5174"
 const oneYearInSeconds = 60 * 60 * 24 * 365
+const twoWeeksInSeconds = 60 * 60 * 24 * 14
 
 const developmentAllowedHosts = [
   "localhost:*",
@@ -116,6 +119,32 @@ export const auth = betterAuth({
       },
     }),
     organization({
+      ac: organizationAccessControl,
+      roles: organizationRoles,
+      requireEmailVerificationOnInvitation: true,
+      schema: { invitation: { additionalFields: {
+        staffMemberId: { type: "string", required: false },
+        inviteeName: { type: "string", required: false },
+      } } },
+      organizationHooks: {
+        async beforeCreateInvitation({ invitation }) {
+          if (typeof invitation.staffMemberId !== "string") return
+          const staff = await prisma.staffMember.findFirst({ where: { id: invitation.staffMemberId, organizationId: invitation.organizationId, isActive: true } })
+          if (!staff || staff.memberId || (staff.email && staff.email.toLowerCase() !== invitation.email.toLowerCase())) {
+            throw new APIError("BAD_REQUEST", { message: "This staff profile cannot be invited" })
+          }
+        },
+        async beforeAcceptInvitation({ invitation, user }) {
+          if (!user.emailVerified) throw new APIError("FORBIDDEN", { message: "Verify your email before accepting" })
+          if (typeof invitation.staffMemberId !== "string") return
+          const staff = await prisma.staffMember.findFirst({ where: { id: invitation.staffMemberId, organizationId: invitation.organizationId }, include: { member: true } })
+          if (!staff || (staff.member && staff.member.userId !== user.id)) throw new APIError("BAD_REQUEST", { message: "This invitation is no longer available" })
+        },
+        async afterAcceptInvitation({ invitation, member }) {
+          await linkInvitationStaff(prisma, invitation.id, member.id)
+        },
+      },
+      invitationExpiresIn: twoWeeksInSeconds,
       async sendInvitationEmail({ id, email, organization }, request) {
         if (request?.headers.get("x-send-invitation-email") === "false") return
 
@@ -206,7 +235,7 @@ function createStripePlugin() {
           },
         })
 
-        return hasOwnerRole(member?.role)
+        return hasOrganizationPermission(member?.role, { billing: ["manage"] })
       },
     },
     organization: {

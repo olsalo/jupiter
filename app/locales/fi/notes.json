@@ -16,14 +16,14 @@
   "view": {
     "description": "Lue tai muokkaa muistiinpanoa",
     "loading": "Ladataan muistiinpanoa",
-    "loadError": "Muistiinpanoa ei voitu ladata"
+    "loadError": "Muistiinpanon lataus epäonnistui"
   },
   "empty": {
     "title": "Ei vielä muistiinpanoja",
     "description": "Lisää ensimmäinen muistiinpanosi"
   },
   "form": {
-    "createTitle": "Uusi muistiinpano",
+    "createTitle": "Lisää muistiinpano",
     "editTitle": "Muokkaa muistiinpanoa",
     "title": {
       "label": "Otsikko",
@@ -31,12 +31,12 @@
     },
     "body": {
       "label": "Sisältö",
-      "placeholder": "Kirjoita muistiinpanon tiedot"
+      "placeholder": "Kirjoita muistiinpano"
     },
     "create": "Luo",
-    "creating": "Luodaan...",
+    "creating": "Luodaan…",
     "save": "Tallenna",
-    "saving": "Tallennetaan...",
+    "saving": "Tallennetaan…",
     "cancel": "Peruuta"
   },
   "actions": {
@@ -46,7 +46,7 @@
     "delete": "Poista",
     "deleted": "Muistiinpano poistettu",
     "deletedMultiple": "Muistiinpanot poistettu",
-    "deleting": "Poistetaan...",
+    "deleting": "Poistetaan…",
     "retry": "Yritä uudelleen"
   },
   "deleteConfirmation": {
@@ -61,12 +61,12 @@
     "updated": "Päivitetty"
   },
   "errors": {
-    "load": "Muistiinpanoja ei voitu ladata",
+    "load": "Muistiinpanojen lataus epäonnistui",
     "retryDescription": "Yritä hetken kuluttua uudelleen",
-    "refresh": "Muistiinpanoja ei voitu päivittää",
+    "refresh": "Muistiinpanojen päivitys epäonnistui",
     "stale": "Näytetään viimeksi ladatut muistiinpanot",
-    "create": "Muistiinpanoa ei voitu luoda",
-    "update": "Muistiinpanoa ei voitu päivittää",
-    "delete": "Muistiinpanoa ei voitu poistaa"
+    "create": "Muistiinpanon luonti epäonnistui",
+    "update": "Muistiinpanon tallennus epäonnistui",
+    "delete": "Muistiinpanon poisto epäonnistui"
   }
 }

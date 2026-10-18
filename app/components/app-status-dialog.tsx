@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from "react"
+import { useSyncExternalStore } from "react"
 import { useTranslation } from "react-i18next"
 
 import Icon from "~/components/icons"
@@ -51,13 +51,6 @@ export function AppStatusDialog() {
   )
   const isOffline = !isOnline
   const isBlocked = isOffline || isNarrowViewport
-
-  useEffect(() => {
-    if (!isOffline) return
-
-    const interval = window.setInterval(() => window.location.reload(), 5_000)
-    return () => window.clearInterval(interval)
-  }, [isOffline])
 
   return (
     <Dialog disablePointerDismissal open={isBlocked}>

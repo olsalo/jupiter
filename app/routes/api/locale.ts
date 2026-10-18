@@ -1,3 +1,4 @@
+import { getSafeSettingsHash } from "~/lib/settings-navigation"
 import { redirect } from "react-router"
 
 import type { Route } from "./+types/locale"
@@ -13,7 +14,7 @@ export async function action({ request }: Route.ActionArgs) {
     typeof locale === "string" && isSupportedLocale(locale)
       ? locale
       : fallbackLanguage
-  const settingsHash = getSettingsHash(formData.get("settingsHash"))
+  const settingsHash = getSafeSettingsHash(formData.get("settingsHash"))
 
   const session = await auth.api.getSession({
     headers: request.headers,
@@ -55,16 +56,6 @@ function getRedirectPath(request: Request, settingsHash = "") {
   }
 
   return `${refererUrl.pathname}${refererUrl.search}${settingsHash}`
-}
-
-function getSettingsHash(value: FormDataEntryValue | null) {
-  return typeof value === "string" && isSettingsHash(value) ? value : ""
-}
-
-function isSettingsHash(value: string) {
-  return /^#settings(?:\/(?:profile|notifications|appearance|billing))?$/.test(
-    value,
-  )
 }
 
 function isSupportedLocale(locale: string): locale is "en" | "fi" {

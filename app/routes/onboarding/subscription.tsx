@@ -1,7 +1,7 @@
 import { dehydrate, useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useSearchParams } from "react-router"
+import { useNavigate, useSearchParams } from "react-router"
 
 import type { Route } from "./+types/subscription"
 import { OnboardingStepError, OnboardingStepLoading } from "~/components/onboarding/step-state"
@@ -41,6 +41,7 @@ export default function SubscriptionStep() {
   const subscription = useQuery(trpc.onboarding.subscription.queryOptions())
   const subscriptionData = subscription.data
   const { i18n, t } = useTranslation("onboarding")
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [selectedBillingInterval, setSelectedBillingInterval] = useState<BillingInterval>(
     () => searchParams.get("billing") === "year" ? "year" : "month",
@@ -68,6 +69,12 @@ export default function SubscriptionStep() {
   }, [])
 
   const chooseSubscription = async () => {
+    if (subscriptionData?.demoOnboardingPaymentBypassEnabled) {
+      setIsChoosingSubscription(true)
+      await navigate("/?welcome=true", { replace: true })
+      return
+    }
+
     if (!subscriptionData?.organizationId || !subscriptionData.billingEnabled) {
       toast.error(t("errors.billingNotConfigured"))
       return

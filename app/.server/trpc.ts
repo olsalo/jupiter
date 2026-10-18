@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from "@trpc/server"
 import { createInstance } from "i18next"
 import superjson from "superjson"
 
+import { hasOrganizationPermission, type OrganizationPermissions } from "~/lib/auth/permissions"
 import { auth } from "~/lib/auth/server"
 import { hasActiveOrganizationSubscription } from "~/lib/billing.server"
 import {
@@ -82,6 +83,7 @@ const t = initTRPC.context<Context>().create({
     data: {
       ...shape.data,
       zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
+      appCode: error.cause && "appCode" in error.cause ? error.cause.appCode : null,
     },
   }),
 })
@@ -123,6 +125,28 @@ export const subscribedProcedure = protectedProcedure.use(async ({ ctx, next }) 
 
   return next()
 })
+
+export const organizationProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const organizationId = ctx.session?.activeOrganizationId
+  if (!organizationId || organizationId !== ctx.organizationId) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Choose a business first" })
+  }
+  const member = await ctx.prisma.member.findFirst({
+    where: { organizationId, userId: ctx.user.id },
+    include: { organization: { include: { settings: true } }, staffProfile: true },
+  })
+  if (!member || !member.role.split(",").some((role) => ["owner", "admin", "member"].includes(role.trim()))) throw new TRPCError({ code: "FORBIDDEN" })
+  return next({ ctx: { organizationId, organization: member.organization, member } })
+})
+
+export const permissionProcedure = (permissions: OrganizationPermissions) => organizationProcedure.use(({ ctx, next }) => {
+  if (!hasOrganizationPermission(ctx.member.role, permissions)) {
+    throw new TRPCError({ code: "FORBIDDEN" })
+  }
+  return next()
+})
+
+export const adminProcedure = permissionProcedure({ team: ["manage"] })
 
 async function getActiveOrganization({
   organizationId,

@@ -74,6 +74,7 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
   const rootData = useRouteLoaderData<typeof rootLoader>("root")
   const isElectron = Boolean(rootData?.isElectron)
   const [step, setStep] = useState<"email" | "otp">("email")
+  const [isSigningIn, setIsSigningIn] = useState(false)
   const [searchParams] = useSearchParams()
   const formApi = useRef<FormApi<AuthFormValues>>(null)
   const navigate = useNavigate()
@@ -120,9 +121,11 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
       otp: data.otp,
       fetchOptions: {
         onSuccess: () => {
+          setIsSigningIn(true)
           navigate(getAuthRedirect(searchParams), { replace: true })
         },
         onError: (ctx: AuthErrorContext) => {
+          setIsSigningIn(false)
           formApi.current?.unstable_setCustomError("otp", ctx.error.message)
           toast.error(t("toasts.otpError"))
         },
@@ -199,7 +202,9 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
             >
               {(form) => {
                 const isSubmitting =
-                  form.formState.isSubmitting || navigation.state !== "idle"
+                  form.formState.isSubmitting ||
+                  isSigningIn ||
+                  navigation.state !== "idle"
 
                 return (
                   <>
@@ -300,7 +305,12 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
                   ) : null}
 
                   <div className="mt-1 flex flex-col gap-3">
-                    <Button disabled={isSubmitting} type="submit">
+                    <Button
+                      className="keyboard-focusable"
+                      disabled={isSubmitting}
+                      tabIndex={0}
+                      type="submit"
+                    >
                       {isSubmitting ? (
                         <>
                           <Spinner className="size-4" />
@@ -329,7 +339,7 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
                           form.resetField("otp")
                         }}
                         type="button"
-                        variant="secondary"
+                        variant="outline"
                       >
                         {t("actions.resend")}
                       </Button>
@@ -349,7 +359,7 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
 
       <section className="hidden flex-1 md:flex">
         <div
-          className="min-w-0 flex-1 bg-neutral-100 bg-[url('/mockup.png')] bg-size-[90%_auto] bg-bottom-right bg-no-repeat dark:bg-neutral-900"
+          className="min-w-0 flex-1 bg-neutral-100 bg-[url('/mockup-light.avif')] bg-size-[90%_auto] bg-bottom-right bg-no-repeat dark:bg-neutral-900 dark:bg-[url('/mockup-dark.avif')]"
         />
       </section>
     </main>

@@ -8,8 +8,16 @@ import {
   useRouteLoaderData,
 } from "react-router"
 
+import { RouteInformationArchitecture } from "~/components/information-architecture/route-information-architecture"
+import { getSettingsItemIdFromHash, getVisibleSettingsItems, isSettingsHash, type SettingsItemId } from "~/lib/settings-navigation"
+import { ProfilePreferences } from "~/components/profile-preferences"
+import { SettingsFormFooter } from "~/components/settings-form-footer"
+import type { PersonFormFields } from "~/lib/schemas/team"
+import { ProfileSettingsHeader } from "~/components/profile-settings-header"
+import { BusinessSettingsHeader } from "~/components/business-settings-header"
+import { TeamPersonForm, type SettingsPersonFormState } from "~/components/team/team-person-form"
 import { AppForm, type AppFormState } from "~/components/app-form"
-import Icon, { type AppIconName } from "~/components/icons"
+import Icon from "~/components/icons"
 import FormLabel from "~/components/form-label"
 import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
@@ -63,7 +71,7 @@ import {
 import { Separator } from "~/components/ui/separator"
 import { Radio, RadioGroup } from "~/components/ui/radio-group"
 import { Spinner } from "~/components/ui/spinner"
-import { Tabs, TabsList, TabsTab } from "~/components/ui/tabs"
+import { Tabs } from "~/components/ui/tabs"
 import {
   Tooltip,
   TooltipPopup,
@@ -76,79 +84,26 @@ import { onboardingCountries } from "~/lib/countries"
 import { currencyItems } from "~/lib/currencies"
 import { formatDateTime } from "~/lib/format-preference"
 import { useMediaQuery } from "~/lib/hooks"
-import { syncThemeColor } from "~/lib/theme"
-import { useBackgroundSetting } from "~/lib/use-background-setting"
 import {
   organizationSettingsFormSchema,
   type OrganizationSettingsFormInput,
 } from "~/lib/schemas/organization"
-import { profileFormSchema, type ProfileFormInput } from "~/lib/schemas/profile"
 import { timezoneItems } from "~/lib/timezones"
 import { useTRPC } from "~/lib/trpc/client"
 import { toast } from "~/lib/toast"
+import { hasOrganizationPermission, isBookableStaff } from "~/lib/auth/permissions"
+import { useCurrentOrganizationRole } from "~/lib/use-organization-access"
 import type { loader as rootLoader } from "~/root"
 
 type GeneralFormState = AppFormState
 
 const generalFormId = "organization-general-form"
 const profileFormId = "profile-form"
-const settingsItems = [
-  {
-    descriptionKey: "settings.generalDescription",
-    icon: "settings" as AppIconName,
-    id: "general",
-    labelKey: "settings.general",
-  },
-  {
-    descriptionKey: "settings.billingDescription",
-    icon: "creditCard" as AppIconName,
-    id: "billing",
-    labelKey: "settings.billing",
-  },
-  {
-    descriptionKey: "settings.profileDescription",
-    icon: "user" as AppIconName,
-    id: "profile",
-    labelKey: "settings.profile",
-  },
-  {
-    descriptionKey: "settings.appearanceDescription",
-    icon: "palette" as AppIconName,
-    id: "appearance",
-    labelKey: "settings.appearance",
-  },
-] as const
-
-type SettingsItemId = (typeof settingsItems)[number]["id"]
-
 const settingsHashChangeEvent = "settings-hash-change"
-
-function getSettingsItemIdFromHash(
-  hash: string,
-  items: readonly { id: string }[] = settingsItems,
-): SettingsItemId | null {
-  if (hash === "#settings" || hash === "#settings/") {
-    return "general"
-  }
-
-  if (!hash.startsWith("#settings/")) {
-    return null
-  }
-
-  const itemId = hash.slice("#settings/".length)
-
-  return items.some((item) => item.id === itemId)
-    ? (itemId as SettingsItemId)
-    : "general"
-}
-
-function isSettingsHash(hash: string) {
-  return hash === "#settings" || hash.startsWith("#settings/")
-}
 
 function updateSettingsHash(itemId: SettingsItemId) {
   const url = new URL(window.location.href)
-  url.hash = itemId === "general" ? "settings" : `settings/${itemId}`
+  url.hash = `settings/${itemId}`
   window.history.replaceState(window.history.state, "", url)
   window.dispatchEvent(new Event(settingsHashChangeEvent))
 }
@@ -175,21 +130,31 @@ export function SettingsModal({
   const { t } = useTranslation()
   const isMobile = useMediaQuery("max-640px")
   const rootData = useRouteLoaderData<typeof rootLoader>("root")
-  const billingEnabled = rootData?.billingEnabled === true
-  const visibleSettingsItems = billingEnabled
-    ? settingsItems
-    : settingsItems.filter((item) => item.id !== "billing")
+  const organizationRole = useCurrentOrganizationRole()
+  const visibleSettingsItems = getVisibleSettingsItems(organizationRole)
   const [open, setOpen] = useState(false)
-  const [activeItemId, setActiveItemId] = useState<SettingsItemId>("general")
+  const [selectedItemId, setActiveItemId] = useState<SettingsItemId>("profile")
+  const activeItemId = visibleSettingsItems.find((item) => item.id === selectedItemId)?.id ?? "profile"
+  const [profileTab, setProfileTab] = useState("general")
+  const [teamPending, setTeamPending] = useState(false)
+  const trpc = useTRPC()
+  const profilePerson = useQuery({ ...trpc.profile.getTeamProfile.queryOptions(), enabled: open && activeItemId === "profile" })
+  useEffect(() => {
+    if (open && profilePerson.data && !isBookableStaff(profilePerson.data.staff) && ["availability", "breaks", "time-off"].includes(profileTab)) {
+      setProfileTab("general")
+    }
+  }, [open, profilePerson.data, profileTab])
+  const { t: tTeam } = useTranslation("team")
   const [isBillingLoading, setIsBillingLoading] = useState(false)
   const [isGeneralLoading, setIsGeneralLoading] = useState(false)
   const [generalFormState, setGeneralFormState] = useState<GeneralFormState>({
     isDirty: false,
     isSubmitting: false,
   })
-  const [profileFormState, setProfileFormState] = useState<GeneralFormState>({
+  const [profileFormState, setProfileFormState] = useState<SettingsPersonFormState>({
     isDirty: false,
     isSubmitting: false,
+    canSubmit: false,
   })
   const [settingsNavOverflow, setSettingsNavOverflow] = useState({
     left: false,
@@ -197,16 +162,16 @@ export function SettingsModal({
   })
   const settingsNavRef = useRef<HTMLElement>(null)
   const generalFormApi = useRef<FormApi<OrganizationSettingsFormInput>>(null)
-  const profileFormApi = useRef<FormApi<ProfileFormInput>>(null)
-  const activeItem =
-    visibleSettingsItems.find((item) => item.id === activeItemId) ??
-    visibleSettingsItems[0]!
+  const profileResetRef = useRef<(() => void) | null>(null)
+  const profileFormApi = useRef<FormApi<PersonFormFields>>(null)
+  const activeItem = visibleSettingsItems.find((item) => item.id === activeItemId) ?? visibleSettingsItems[0]!
   const Root = isMobile ? Drawer : Dialog
   const Trigger = isMobile ? DrawerTrigger : DialogTrigger
   const Header = isMobile ? DrawerHeader : DialogHeader
   const Title = isMobile ? DrawerTitle : DialogTitle
   const Description = isMobile ? DrawerDescription : DialogDescription
   const Footer = isMobile ? DrawerFooter : DialogFooter
+  const viewLoading = (activeItemId === "billing" && isBillingLoading) || (activeItemId === "business" && isGeneralLoading) || (activeItemId === "profile" && profilePerson.isPending)
 
   const updateSettingsNavOverflow = useCallback(() => {
     const nav = settingsNavRef.current
@@ -243,25 +208,18 @@ export function SettingsModal({
     updateSettingsNavOverflow()
 
     return () => resizeObserver.disconnect()
-  }, [billingEnabled, open, updateSettingsNavOverflow])
-
-  useEffect(() => {
-    if (visibleSettingsItems.some((item) => item.id === activeItemId)) {
-      return
-    }
-
-    setActiveItemId("general")
-  }, [activeItemId, billingEnabled])
+  }, [organizationRole, open, updateSettingsNavOverflow])
 
   useEffect(() => {
     if (!hashOwner) {
+      setOpen(false)
       return
     }
 
     const syncWithHash = () => {
       const itemId = getSettingsItemIdFromHash(
         window.location.hash,
-        visibleSettingsItems,
+        organizationRole,
       )
 
       if (!itemId) {
@@ -271,6 +229,7 @@ export function SettingsModal({
 
       setActiveItemId(itemId)
       setOpen(true)
+      if (window.location.hash !== `#settings/${itemId}`) updateSettingsHash(itemId)
     }
 
     syncWithHash()
@@ -281,7 +240,7 @@ export function SettingsModal({
       window.removeEventListener("hashchange", syncWithHash)
       window.removeEventListener(settingsHashChangeEvent, syncWithHash)
     }
-  }, [billingEnabled, hashOwner])
+  }, [organizationRole, hashOwner])
 
   const trigger = (
     <Trigger
@@ -311,8 +270,8 @@ export function SettingsModal({
           const itemId =
             getSettingsItemIdFromHash(
               window.location.hash,
-              visibleSettingsItems,
-            ) ?? "general"
+              organizationRole,
+            ) ?? visibleSettingsItems[0]!.id
 
           setActiveItemId(itemId)
           setOpen(hashOwner)
@@ -353,7 +312,7 @@ export function SettingsModal({
           <div className="relative min-h-0 min-w-0 max-sm:-mx-3.5 max-sm:overflow-hidden">
             <nav
               aria-label={t("settings.title")}
-              className="flex max-h-full min-w-0 flex-col gap-1 overflow-y-auto overscroll-none max-sm:flex-row max-sm:touch-auto max-sm:overflow-x-auto max-sm:overflow-y-hidden max-sm:px-3.5 max-sm:[scrollbar-width:none] max-sm:[&::-webkit-scrollbar]:hidden"
+              className="flex max-h-full min-w-0 flex-col gap-1 overflow-y-auto overscroll-none max-sm:flex-row max-sm:touch-auto max-sm:overflow-x-auto max-sm:overflow-y-hidden max-sm:px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               onScroll={updateSettingsNavOverflow}
               style={{ maskImage: settingsNavMask, WebkitMaskImage: settingsNavMask }}
               onWheel={(event) => {
@@ -424,26 +383,24 @@ export function SettingsModal({
           </div>
         </Header>
 
+        <Tabs className="contents" value={profileTab} onValueChange={(value) => { if (!teamPending && !profileFormState.isSubmitting) setProfileTab(String(value)) }}>
         <SettingsMainSection isMobile={isMobile}>
           <DialogPanel
             className="min-h-0 flex-1 p-0"
-            scrollbarClassName="max-sm:hidden"
-            stickyHeader={
-              <header className="relative px-5 pb-4 pt-4 max-sm:px-4">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-0 top-0 bottom-0 z-0 bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_45%,transparent_100%)]"
-                />
-                <div className="relative z-10">
-                  <h2 className="text-xl font-semibold tracking-tight">
-                    {t(activeItem.labelKey)}
-                  </h2>
-                  <p className="mt-1 max-w-md text-sm leading-6 text-muted-foreground">
-                    {t(activeItem.descriptionKey)}
-                  </p>
+            scrollbarClassName="hidden"
+            stickyHeader={activeItemId === "profile" ? (
+              <ProfileSettingsHeader disabled={profilePerson.isPending || teamPending || profileFormState.isSubmitting} person={profilePerson.data ?? (rootData?.user ? { name: rootData.user.name, image: rootData.user.image ?? null } : undefined)} />
+            ) : activeItemId === "business" ? (
+              <BusinessSettingsHeader name={rootData?.org?.name} />
+            ) : (
+              <header className="relative px-5 py-4 max-sm:px-4">
+                <div aria-hidden={true} className="pointer-events-none absolute inset-0 bg-background/85 backdrop-blur-[28px] backdrop-saturate-150" />
+                <div className="relative">
+                  <h2 className="text-xl font-semibold tracking-tight sm:pe-11">{t(activeItem.labelKey)}</h2>
+                  <p className="mt-1 max-w-md text-sm leading-6 text-muted-foreground">{t(activeItem.descriptionKey)}</p>
                 </div>
               </header>
-            }
+            )}
             scrollAreaClassName={cn(
               "min-h-0 flex-1 [&_[data-slot=scroll-area-content]]:min-h-full",
               activeItemId !== "billing" &&
@@ -457,27 +414,23 @@ export function SettingsModal({
                 activeItemId !== "billing" && "h-full",
               )}
             >
-              <div className="relative flex min-h-[18rem] flex-1 flex-col gap-4 px-5 pb-5 max-sm:min-h-[14rem] max-sm:px-4 max-sm:pb-4">
-                {activeItemId === "general" ? (
+              <div className={cn("relative flex min-h-[18rem] flex-1 flex-col gap-4 px-5 pb-5 max-sm:min-h-[14rem] max-sm:px-4 max-sm:pb-4", (activeItemId === "profile" || activeItemId === "business") && "pt-5 max-sm:pt-4")}>
+                {activeItemId === "business" ? (
                   <GeneralSettingsContent
                     formApi={generalFormApi}
                     onLoadingChange={setIsGeneralLoading}
                     onFormStateChange={setGeneralFormState}
                   />
                 ) : activeItemId === "profile" ? (
-                  <ProfileSettingsContent
-                    formApi={profileFormApi}
-                    onFormStateChange={setProfileFormState}
-                  />
+                  profilePerson.isPending ? null : profilePerson.isError ? <Alert variant="error"><AlertTitle>{tTeam("people.loadFailed")}</AlertTitle><AlertDescription>{tTeam("retryDescription")}</AlertDescription><Button disabled={profilePerson.isFetching} onClick={() => void profilePerson.refetch()} size="sm" type="button" variant="outline">{tTeam("retry")}</Button></Alert> : (
+                    <TeamPersonForm key={profilePerson.data.member?.id ?? profilePerson.data.id} person={profilePerson.data} selfSettings={true} settingsTab={profileTab} onSettingsTabChange={setProfileTab} settingsFormApi={profileFormApi} settingsResetRef={profileResetRef} settingsFormId={profileFormId} onSettingsFormStateChange={setProfileFormState} generalContent={<ProfilePreferences />} close={() => {}} onPendingChange={setTeamPending} />
+                  )
                 ) : activeItemId === "billing" ? (
                   <BillingSettingsContent onLoadingChange={setIsBillingLoading} />
-                ) : activeItemId === "appearance" ? (
-                  <AppearanceSettingsContent />
                 ) : (
-                  <PreviewSettingsContent />
+                  <div className="@container min-w-0"><RouteInformationArchitecture section={activeItemId} icon={activeItem.icon} /></div>
                 )}
-                {((activeItemId === "billing" && isBillingLoading) ||
-                  (activeItemId === "general" && isGeneralLoading)) ? (
+                {viewLoading ? (
                   <div
                     aria-hidden="true"
                     className="absolute inset-0 z-10 bg-background"
@@ -487,7 +440,7 @@ export function SettingsModal({
             </div>
           </DialogPanel>
 
-          {activeItemId === "general" && generalFormState.isDirty ? (
+          {!viewLoading && activeItemId === "business" && generalFormState.isDirty ? (
             <Footer className={cn("shrink-0", !isMobile && "rounded-b-2xl")}>
               <Button
                 disabled={generalFormState.isSubmitting}
@@ -515,38 +468,11 @@ export function SettingsModal({
                 )}
               </Button>
             </Footer>
-          ) : activeItemId === "profile" && profileFormState.isDirty ? (
-            <Footer className={cn("shrink-0", !isMobile && "rounded-b-2xl")}>
-              <Button
-                disabled={profileFormState.isSubmitting}
-                onClick={() => {
-                  profileFormApi.current?.resetForm()
-                  setProfileFormState({ isDirty: false, isSubmitting: false })
-                }}
-                type="button"
-                variant="ghost"
-              >
-                {t("settings.cancel")}
-              </Button>
-              <Button
-                disabled={profileFormState.isSubmitting}
-                form={profileFormId}
-                type="submit"
-              >
-                {profileFormState.isSubmitting ? (
-                  <>
-                    <Spinner className="size-4" />
-                    {t("settings.saving")}
-                  </>
-                ) : (
-                  t("settings.save")
-                )}
-              </Button>
-            </Footer>
+          ) : !viewLoading && activeItemId === "profile" ? (
+            <SettingsFormFooter formId={profileFormId} isMobile={isMobile} state={profileFormState} onCancel={() => profileResetRef.current?.()} />
           ) : null}
 
-          {((activeItemId === "billing" && isBillingLoading) ||
-            (activeItemId === "general" && isGeneralLoading)) ? (
+          {viewLoading ? (
             <div className="absolute inset-0 z-20 flex items-center justify-center">
               <Spinner
                 aria-label={t("settings.loading")}
@@ -555,6 +481,7 @@ export function SettingsModal({
             </div>
           ) : null}
         </SettingsMainSection>
+        </Tabs>
       </ResponsiveSettingsPopup>
     </Root>
   )
@@ -581,7 +508,7 @@ function ResponsiveSettingsPopup({
   return (
     <DialogPopup
       bottomStickOnMobile={false}
-      className="grid h-[min(90vh,38rem)] w-[min(90vw,44rem)] max-w-none grid-cols-[14rem_minmax(0,1fr)] grid-rows-1 overflow-hidden rounded-2xl p-0 max-sm:row-start-1 max-sm:h-full max-sm:max-h-full max-sm:w-full max-sm:max-w-none max-sm:grid-cols-1 max-sm:grid-rows-[auto_minmax(0,1fr)]"
+      className="grid h-[min(90vh,42rem)] w-[min(90vw,48rem)] max-w-none grid-cols-[14rem_minmax(0,1fr)] grid-rows-1 overflow-hidden rounded-2xl p-0 max-sm:row-start-1 max-sm:h-full max-sm:max-h-full max-sm:w-full max-sm:max-w-none max-sm:grid-cols-1 max-sm:grid-rows-[auto_minmax(0,1fr)]"
       viewportClassName="max-sm:grid-rows-[minmax(0,1fr)] max-sm:p-3"
     >
       {children}
@@ -656,7 +583,7 @@ function BillingSettingsContent({
       onError: () => toast.error(t("settings.billingCycleUpdateError")),
     }),
   )
-  const canManage = organizationQuery.data?.canManage ?? false
+  const canManage = hasOrganizationPermission(useCurrentOrganizationRole(), { billing: ["manage"] })
   const paymentMethodsQuery = useQuery({
     ...trpc.billing.paymentMethods.queryOptions(),
     enabled: Boolean(rootData?.billingEnabled && organizationId && canManage),
@@ -1390,7 +1317,7 @@ function BillingSettingsContent({
 
       <Card className="shrink-0 border-0 p-0 shadow-none">
         <CardHeader className="flex flex-row flex-nowrap items-center justify-between gap-3 p-0">
-          <CardTitle className="min-w-0 text-base">
+            <CardTitle className="min-w-0 text-base">
             {t("settings.billingRecentTransactions")}
           </CardTitle>
           <Button
@@ -1602,256 +1529,6 @@ function formatInvoiceStatusVariant(
     default:
       return "info"
   }
-}
-
-function PreviewSettingsContent() {
-  const { t } = useTranslation()
-
-  return (
-    <div className="flex h-full min-h-full flex-1 items-center justify-center rounded-xl border border-dashed bg-muted/20 p-6 text-center">
-      <div className="max-w-xs space-y-1">
-        <h3 className="font-medium">{t("settings.previewTitle")}</h3>
-        <p className="text-sm text-muted-foreground">
-          {t("settings.previewDescription")}
-        </p>
-      </div>
-    </div>
-  )
-}
-
-function ProfileSettingsContent({
-  formApi,
-  onFormStateChange,
-}: {
-  formApi: { current: FormApi<ProfileFormInput> | null }
-  onFormStateChange: (state: GeneralFormState) => void
-}) {
-  const { i18n, t } = useTranslation()
-  const trpc = useTRPC()
-  const revalidator = useRevalidator()
-  const rootData = useRouteLoaderData<typeof rootLoader>("root")
-  const updateMutation = useMutation(
-    trpc.profile.updateName.mutationOptions({
-      onError: () => {
-        toast.error(t("settings.profileSaveError"))
-      },
-    }),
-  )
-  const preferenceMutation = useMutation(trpc.profile.updatePreferences.mutationOptions())
-  const language = useBackgroundSetting<"en" | "fi">(
-    `${rootData?.user?.id}:language`, i18n.resolvedLanguage === "fi" ? "fi" : "en",
-  )
-  const format = useBackgroundSetting<"eu" | "us">(
-    `${rootData?.user?.id}:format`, rootData?.formatPreference ?? "eu",
-  )
-  const savePreference = async (input: { locale?: "en" | "fi", formatPreference?: "eu" | "us" }) => {
-    await preferenceMutation.mutateAsync(input)
-    await revalidator.revalidate()
-  }
-  const languageItems = {
-    en: t("language.english"),
-    fi: t("language.finnish"),
-  }
-
-  return (
-    <AppForm<ProfileFormInput, ProfileFormInput, unknown>
-      className="flex flex-col gap-5"
-      defaultValues={{ name: rootData?.user?.name ?? "" }}
-      id={profileFormId}
-      onSubmitSuccess={async () => {
-        const values = formApi.current?.transient.value()
-
-        if (values) {
-          formApi.current?.resetForm(values)
-        }
-
-        await revalidator.revalidate()
-      }}
-      ref={formApi}
-      schema={profileFormSchema}
-      onFormStateChange={onFormStateChange}
-      submitFn={(input) => updateMutation.mutateAsync(input)}
-    >
-      {(form) => (
-        <ProfileSettingsFields
-          currentLanguage={language.value}
-          email={rootData?.user?.email ?? ""}
-          form={form}
-          formatPreference={format.value}
-          onLanguageChange={(locale) => {
-            void language.set(locale, () => savePreference({ locale }), () => toast.error(t("settings.profileSaveError")))
-          }}
-          onFormatChange={(formatPreference) => {
-            void format.set(formatPreference, () => savePreference({ formatPreference }), () => toast.error(t("settings.profileSaveError")))
-          }}
-          languageItems={languageItems}
-        />
-      )}
-    </AppForm>
-  )
-}
-
-function ProfileSettingsFields({
-  currentLanguage,
-  email,
-  form,
-  formatPreference,
-  onLanguageChange,
-  onFormatChange,
-  languageItems,
-}: {
-  currentLanguage: "en" | "fi"
-  email: string
-  form: FormApi<ProfileFormInput>
-  formatPreference: "eu" | "us"
-  onLanguageChange: (locale: "en" | "fi") => void
-  onFormatChange: (format: "eu" | "us") => void
-  languageItems: Record<string, string>
-}) {
-  const { t } = useTranslation()
-
-  return (
-    <div className="flex flex-col gap-5">
-      <FormLabel
-        description={t("settings.nameDescription")}
-        error={form.error("name")}
-        label={t("settings.name")}
-      >
-        <Input
-          {...form.getInputProps("name", {
-            "aria-invalid": Boolean(form.error("name")) || undefined,
-            autoComplete: "off",
-            onChange: () => {
-              form.unstable_setCustomError("name", null)
-            },
-          })}
-        />
-      </FormLabel>
-
-      <FormLabel
-        description={t("settings.emailDescription")}
-        label={t("settings.email")}
-      >
-        <Input
-          autoComplete="email"
-          disabled={true}
-          type="email"
-          value={email}
-        />
-      </FormLabel>
-
-      <Separator />
-
-      <FormLabel
-        description={t("settings.languageDescription")}
-        label={t("language.label")}
-      >
-        <Select
-          disabled={false}
-          items={languageItems}
-          onValueChange={(value) => {
-            if ((value !== "en" && value !== "fi") || value === currentLanguage) {
-              return
-            }
-
-            onLanguageChange(value)
-          }}
-          value={currentLanguage}
-        >
-          <SelectTrigger aria-label={t("language.label")}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectPopup>
-            <SelectItem value="en">{t("language.english")}</SelectItem>
-            <SelectItem value="fi">{t("language.finnish")}</SelectItem>
-          </SelectPopup>
-        </Select>
-      </FormLabel>
-
-      <FormLabel
-        className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1"
-        description={t("settings.regionalFormatDescription")}
-        descriptionClassName="col-start-1 row-start-2"
-        label={t("settings.regionalFormat")}
-        labelGroupClassName="col-start-1 row-start-1"
-      >
-        <Tabs
-          aria-label={t("settings.regionalFormat")}
-          className="col-start-2 row-span-2 row-start-1"
-          onValueChange={(value) => {
-            if (
-              (value !== "eu" && value !== "us") ||
-              value === formatPreference
-            ) {
-              return
-            }
-
-            onFormatChange(value)
-          }}
-          value={formatPreference}
-        >
-          <TabsList className="grid grid-cols-2">
-            <TabsTab disabled={false} value="eu">
-              {t("settings.regionalFormatEu")}
-            </TabsTab>
-            <TabsTab disabled={false} value="us">
-              {t("settings.regionalFormatUs")}
-            </TabsTab>
-          </TabsList>
-        </Tabs>
-      </FormLabel>
-    </div>
-  )
-}
-
-function AppearanceSettingsContent() {
-  const { t } = useTranslation()
-  const rootData = useRouteLoaderData<typeof rootLoader>("root")
-  const trpc = useTRPC()
-  const revalidator = useRevalidator()
-  const mutation = useMutation(trpc.profile.updatePreferences.mutationOptions())
-  const theme = useBackgroundSetting<"light" | "dark">(`${rootData?.user?.id}:theme`, rootData?.theme ?? "light")
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme.value === "dark")
-    syncThemeColor()
-  }, [theme.value, rootData?.theme])
-
-  return (
-    <div className="flex flex-col gap-5">
-      <FormLabel
-        className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1"
-        description={t("settings.themeDescription")}
-        descriptionClassName="col-start-1 row-start-2"
-        label={t("settings.theme")}
-        labelGroupClassName="col-start-1 row-start-1"
-      >
-        <Tabs
-          aria-label={t("settings.theme")}
-          className="col-start-2 row-span-2 row-start-1"
-          onValueChange={(value) => {
-            if ((value !== "light" && value !== "dark") || value === theme.value) {
-              return
-            }
-
-            void theme.set(value, async () => {
-              await mutation.mutateAsync({ theme: value })
-              await revalidator.revalidate()
-            }, () => toast.error(t("settings.profileSaveError")))
-          }}
-          value={theme.value}
-        >
-          <TabsList className="grid grid-cols-2">
-            <TabsTab disabled={false} value="light">
-              {t("settings.themeLight")}
-            </TabsTab>
-            <TabsTab disabled={false} value="dark">
-              {t("settings.themeDark")}
-            </TabsTab>
-          </TabsList>
-        </Tabs>
-      </FormLabel>
-    </div>
-  )
 }
 
 function GeneralSettingsContent({

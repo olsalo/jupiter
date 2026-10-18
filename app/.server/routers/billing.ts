@@ -13,7 +13,7 @@ import {
   listOrganizationSubscriptions,
   setOrganizationDefaultPaymentMethod,
 } from "~/lib/auth/server"
-import { hasOwnerRole } from "~/lib/utils"
+import { hasOrganizationPermission } from "~/lib/auth/permissions"
 
 export const billingRouter = {
   subscriptions: protectedProcedure.query(async ({ ctx }) => {
@@ -26,7 +26,7 @@ export const billingRouter = {
       },
     })
 
-    if (!hasOwnerRole(member?.role)) {
+    if (!hasOrganizationPermission(member?.role, { billing: ["manage"] })) {
       throw new TRPCError({ code: "FORBIDDEN" })
     }
 
@@ -43,7 +43,7 @@ export const billingRouter = {
       },
     })
 
-    if (!hasOwnerRole(member?.role)) {
+    if (!hasOrganizationPermission(member?.role, { billing: ["manage"] })) {
       throw new TRPCError({ code: "FORBIDDEN" })
     }
 
@@ -62,7 +62,7 @@ export const billingRouter = {
         },
       })
 
-      if (!hasOwnerRole(member?.role)) {
+      if (!hasOrganizationPermission(member?.role, { billing: ["manage"] })) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
@@ -103,7 +103,7 @@ export const billingRouter = {
       },
     })
 
-    if (!hasOwnerRole(member?.role)) {
+    if (!hasOrganizationPermission(member?.role, { billing: ["manage"] })) {
       throw new TRPCError({ code: "FORBIDDEN" })
     }
 
@@ -122,7 +122,7 @@ export const billingRouter = {
         },
       })
 
-      if (!hasOwnerRole(member?.role)) {
+      if (!hasOrganizationPermission(member?.role, { billing: ["manage"] })) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
@@ -160,7 +160,7 @@ export const billingRouter = {
       },
     })
 
-    if (!hasOwnerRole(member?.role)) {
+    if (!hasOrganizationPermission(member?.role, { billing: ["manage"] })) {
       throw new TRPCError({ code: "FORBIDDEN" })
     }
 
@@ -184,7 +184,7 @@ export const billingRouter = {
         },
       })
 
-      if (!hasOwnerRole(member?.role)) {
+      if (!hasOrganizationPermission(member?.role, { billing: ["manage"] })) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
@@ -219,7 +219,7 @@ export const billingRouter = {
         },
       })
 
-      if (!hasOwnerRole(member?.role)) {
+      if (!hasOrganizationPermission(member?.role, { billing: ["manage"] })) {
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 

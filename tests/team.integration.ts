@@ -72,6 +72,7 @@ try {
     },
   })
   orgIds.push(organization.id)
+  await prisma.session.updateMany({ where: { userId: owner.user.id }, data: { activeOrganizationId: organization.id } })
   const ownerCaller = await caller(owner.headers)
   const recipientCaller = await caller(recipient.headers)
   const otherCaller = await caller(other.headers)
@@ -131,7 +132,7 @@ try {
   assert.equal((await auth.api.getSession({ headers: recipient.headers }))?.session.activeOrganizationId, organization.id)
   assert.equal((await ownerCaller.team.list()).invitations.length, 0)
   const joinedCaller = await caller(recipient.headers)
-  assert.equal((await joinedCaller.team.list()).canInvite, false)
+  await assert.rejects(joinedCaller.team.list(), { code: "FORBIDDEN" })
   await assert.rejects(joinedCaller.team.invite({ name: "Invitee", email: emails[2] }), { code: "FORBIDDEN" })
   console.info("PASS acceptance, repeat visit, active organization, member invite permissions")
 
@@ -155,7 +156,7 @@ try {
   console.info("PASS business switch selects memberships and rejects non-members")
   await switchedCaller.team.acceptInvitation(input)
   assert.equal((await auth.api.getSession({ headers: recipient.headers }))?.session.activeOrganizationId, organization.id)
-  assert.equal((await (await caller(recipient.headers)).team.list()).members.length, 2)
+  await assert.rejects((await caller(recipient.headers)).team.list(), { code: "FORBIDDEN" })
   console.info("PASS acceptance switches from another organization")
 
   await prisma.member.deleteMany({ where: { organizationId: organization.id, userId: recipient.user.id } })

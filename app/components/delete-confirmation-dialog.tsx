@@ -12,6 +12,7 @@ import {
 import { Button } from "~/components/ui/button"
 
 export type DeleteConfirmationDialogProps = {
+  forceBackdrop?: boolean
   cancelLabel: ReactNode
   confirmLabel: ReactNode
   description: ReactNode
@@ -24,6 +25,7 @@ export type DeleteConfirmationDialogProps = {
 }
 
 export function DeleteConfirmationDialog({
+  forceBackdrop = false,
   cancelLabel,
   confirmLabel,
   description,
@@ -41,7 +43,7 @@ export function DeleteConfirmationDialog({
       }}
       open={open}
     >
-      <AlertDialogPopup>
+      <AlertDialogPopup forceBackdrop={forceBackdrop}>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>

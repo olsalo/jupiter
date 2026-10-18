@@ -52,14 +52,16 @@ function AlertDialogPopup({
   className,
   bottomStickOnMobile = false,
   centered = true,
+  forceBackdrop = false,
   ...props
 }: AlertDialogPrimitive.Popup.Props & {
   bottomStickOnMobile?: boolean;
   centered?: boolean
+  forceBackdrop?: boolean
 }) {
   return (
     <AlertDialogPortal>
-      <AlertDialogBackdrop />
+      <AlertDialogBackdrop forceRender={forceBackdrop} />
       <AlertDialogViewport
         className={cn(
           !centered && "grid-rows-[1fr_auto_3fr]",
@@ -108,7 +110,7 @@ function AlertDialogFooter({
   return (
     <div
       className={cn(
-        "flex flex-col-reverse gap-2 px-6 sm:flex-row sm:justify-end sm:rounded-b-[calc(var(--radius-2xl)-1px)]",
+        "keyboard-focusable flex flex-col-reverse gap-2 px-6 sm:flex-row sm:justify-end sm:rounded-b-[calc(var(--radius-2xl)-1px)]",
         variant === "default" && "border-t bg-muted/72 py-4",
         variant === "bare" && "pb-6",
         className,

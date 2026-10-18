@@ -1,71 +1,100 @@
+import "dotenv/config"
 import assert from "node:assert/strict"
-import { QueryClient, QueryObserver } from "@tanstack/react-query"
-import { clearMobileNavigationQuery } from "../app/lib/mobile-navigation.ts"
+import { QueryObserver, type QueryKey } from "@tanstack/react-query"
+import { createServer } from "vite"
 
-const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window")
-let desktop = false
-Object.defineProperty(globalThis, "window", {
-  configurable: true,
-  value: { matchMedia: () => ({ matches: desktop }) },
+const appPath = new URL("../app", import.meta.url).pathname
+const vite = await createServer({
+  configFile: false,
+  appType: "custom",
+  resolve: { alias: {
+    "~": appPath,
+    "@": appPath,
+    "@coss/ui/components": `${appPath}/components/ui`,
+    "@coss/ui/lib": `${appPath}/lib`,
+  } },
+  server: { middlewareMode: true, ws: false, hmr: false, watch: null },
 })
-
-const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 60_000 } } })
+const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window")
 
 try {
-  for (const pathname of ["/example", "/team"]) {
-    const key = [pathname, "list"]
-    const countKey = [pathname, "count"]
-    client.setQueryData(key, ["cached"])
-    client.setQueryData(countKey, 1)
+  const { getClientTRPC } = await vite.ssrLoadModule("/app/lib/trpc/client.tsx") as typeof import("../app/lib/trpc/client")
+  type ClientLoader = (args: { request: Request }) => unknown
+  const routes: { path: string; clientLoader: ClientLoader }[] = []
+  for (const [path, module] of [
+    ["/example", "/app/routes/example/example.tsx"],
+    ["/team", "/app/routes/team/team.tsx"],
+    ["/team-v2", "/app/routes/team-v2/team.tsx"],
+    ["/services", "/app/routes/services/services.tsx"],
+  ]) {
+    const { clientLoader } = await vite.ssrLoadModule(module) as { clientLoader: ClientLoader }
+    routes.push({ path, clientLoader })
+  }
 
-    desktop = true
-    clearMobileNavigationQuery(client, key, new Request(`https://example.test${pathname}`), pathname)
-    assert.deepEqual(client.getQueryData(key), ["cached"], "Desktop keeps its fresh cache")
-
-    desktop = false
-    clearMobileNavigationQuery(client, key, new Request(`https://example.test${pathname}?search=test`), pathname)
-    assert.equal(client.getQueryData(key), undefined)
-    assert.equal(client.getQueryData(countKey), 1, "Mobile retains skeleton counts")
-
-    let fetches = 0
-    let finishFetch: (data: string[]) => void = () => {}
-    const observer = new QueryObserver(client, {
-      queryKey: key,
-      queryFn: () => {
-        fetches += 1
-        return new Promise<string[]>((resolve) => { finishFetch = resolve })
-      },
+  for (const desktop of [false, true]) {
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: { matchMedia: () => ({ matches: desktop }) },
     })
-    const unsubscribe = observer.subscribe(() => {})
-    assert.equal(observer.getCurrentResult().isLoading, true, "Destination mounts with loading UI")
-    assert.equal(observer.getCurrentResult().data, undefined)
-    assert.equal(fetches, 1, "Even a fresh cached page fetches on mobile revisit")
-    finishFetch(["fresh"])
-    await client.getQueryCache().find({ queryKey: key })?.promise
-    assert.deepEqual(client.getQueryData(key), ["fresh"])
+    const { queryClient, trpc } = getClientTRPC()
+    try {
+      for (const { path, clientLoader } of routes) {
+        const keys: QueryKey[] = path === "/services"
+          ? [trpc.service.list.queryKey(), trpc.service.categories.queryKey()]
+          : [path === "/example" ? trpc.example.list.queryKey() : trpc.team.list.queryKey()]
 
-    clearMobileNavigationQuery(client, key, new Request(`https://example.test${pathname}`), pathname)
-    assert.deepEqual(client.getQueryData(key), ["fresh"], "Active lists remain intact")
-    unsubscribe()
+        for (const queryKey of keys) {
+          let fetches = 0
+          const options = {
+            queryKey,
+            queryFn: async () => {
+              fetches += 1
+              return ["fresh"]
+            },
+            retry: false,
+          }
+          const navigate = (suffix = "") => clientLoader({
+            request: new Request(`https://example.test${path}${suffix}`),
+          })
+          const mount = async () => {
+            const observer = new QueryObserver(queryClient, options)
+            const unsubscribe = observer.subscribe(() => {})
+            await queryClient.getQueryCache().find({ queryKey, exact: true })?.promise
+            unsubscribe()
+          }
+
+          queryClient.setQueryData(queryKey, ["cached"])
+          for (const suffix of ["", "?search=test", "/", "/new", "/person-id", ""]) {
+            await navigate(suffix)
+            await mount()
+            assert.deepEqual(queryClient.getQueryData(queryKey), ["cached"], `${path} retains fresh cache`)
+            assert.equal(fetches, 0, `${path} does not refetch on fresh revisits`)
+          }
+
+          queryClient.setQueryData(queryKey, ["stale"], { updatedAt: Date.now() - 61_000 })
+          await navigate()
+          assert.deepEqual(queryClient.getQueryData(queryKey), ["stale"], "Stale content stays visible while refreshing")
+          await mount()
+          assert.equal(fetches, 1, "Stale pages refresh on mount")
+
+          await queryClient.invalidateQueries({ queryKey, exact: true })
+          await navigate()
+          await mount()
+          assert.equal(fetches, 2, "Mutation invalidation still refreshes the page")
+
+          queryClient.removeQueries({ queryKey, exact: true })
+          await navigate()
+          await mount()
+          assert.equal(fetches, 3, "Uncached pages still fetch")
+        }
+      }
+    } finally {
+      queryClient.clear()
+    }
   }
-
-  const notesKey = ["/example", "list"]
-  for (const path of ["/example/note-id", "/example/new"]) {
-    clearMobileNavigationQuery(client, notesKey, new Request(`https://example.test${path}`), "/example")
-    assert.deepEqual(client.getQueryData(notesKey), ["fresh"], "Dialogs preserve the underlying list")
-  }
-
-  clearMobileNavigationQuery(client, notesKey, new Request("https://example.test/example/"), "/example")
-  assert.equal(client.getQueryData(notesKey), undefined, "Trailing slashes count as main navigation")
-
-  Reflect.deleteProperty(globalThis, "window")
-  client.setQueryData(notesKey, ["server"])
-  clearMobileNavigationQuery(client, notesKey, new Request("https://example.test/example"), "/example")
-  assert.deepEqual(client.getQueryData(notesKey), ["server"], "Server rendering keeps its data")
-
-  console.info("PASS mobile navigation fetches fresh data with loading UI and preserves desktop, counts, active lists, dialogs, and SSR")
+  console.info("PASS mobile and desktop navigation reuse fresh cache and refresh stale, invalidated, and uncached pages")
 } finally {
-  client.clear()
   if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow)
   else Reflect.deleteProperty(globalThis, "window")
+  await vite.close()
 }

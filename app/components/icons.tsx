@@ -32,6 +32,10 @@ export const iconMap = {
   infoCircle: TablerIcons.IconInfoCircle,
 
   calendar: TablerIcons.IconCalendar,
+  calendarEvent: TablerIcons.IconCalendarEvent,
+  calendarOff: TablerIcons.IconCalendarOff,
+  coffee: TablerIcons.IconCoffee,
+  clock: TablerIcons.IconClock,
   logOut: TablerIcons.IconLogout,
   trash: TablerIcons.IconTrash,
   // Actions
@@ -43,7 +47,10 @@ export const iconMap = {
   user: TablerIcons.IconUser,
   users: TablerIcons.IconUsers,
   building: TablerIcons.IconBuilding,
+  buildingStore: TablerIcons.IconBuildingStore,
   mail: TablerIcons.IconMail,
+  lock: TablerIcons.IconLock,
+  phone: TablerIcons.IconPhone,
   bell: TablerIcons.IconBell,
   palette: TablerIcons.IconPalette,
   sun: TablerIcons.IconSun,
