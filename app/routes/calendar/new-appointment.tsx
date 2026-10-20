@@ -1,17 +1,18 @@
+import type { CalendarDragSelection } from "~/lib/calendar/types"
 import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation } from "react-router"
 
 import { CalendarSidePanel } from "~/components/calendar/calendar-side-panel"
-import type { CalendarDragSelection } from "~/components/calendar/calendar-drag-selection"
+
 import { CalendarBookingForm } from "~/components/calendar/calendar-booking-form"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { useCalendarState } from "~/components/calendar/use-calendar-state"
-import { getCalendarBookingDragSelection } from "~/lib/calendar-booking-drag-selection"
-import { calendarDateFromValue } from "~/lib/calendar-date"
+import { getCalendarBookingDragSelection } from "~/lib/calendar/booking-drag-selection"
+import { calendarDateFromValue } from "~/lib/calendar/date"
 import { formatDateTime } from "~/lib/format-preference"
 
-export default function New() {
+export default function NewAppointmentRoute() {
   const { t, i18n } = useTranslation()
   const { dragUpdate } = useCalendarBookingPreview()
 

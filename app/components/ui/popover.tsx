@@ -2,11 +2,19 @@
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
+import { useRef } from "react"
+import { useDrawerDropdownDismiss } from "~/components/drawer-dropdown-state"
+
 import { cn } from "@coss/ui/lib/utils";
 
 const PopoverCreateHandle = PopoverPrimitive.createHandle;
 
-const Popover = PopoverPrimitive.Root;
+function Popover<Payload = unknown>(props: PopoverPrimitive.Root.Props<Payload>) {
+  const actionsRef = useRef<PopoverPrimitive.Root.Actions | null>(null)
+  const actions = props.actionsRef ?? actionsRef
+  useDrawerDropdownDismiss(() => actions.current?.close())
+  return <PopoverPrimitive.Root {...props} actionsRef={actions} />
+}
 
 function PopoverTrigger({
   className,

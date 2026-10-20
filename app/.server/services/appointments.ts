@@ -4,13 +4,14 @@ import { TRPCError } from "@trpc/server"
 import type { z } from "~/lib/zod"
 import type { createBookingInput, createAppointmentInput, createAppointmentWithCustomerInput } from "~/lib/schemas/appointments"
 import type { PrismaClient, AppointmentStatus, AppointmentEventType } from "../../../generated/prisma/client"
+import { Prisma } from "../../../generated/prisma/client"
 import { getAvailableSlots } from "./availability"
 import { resolveBookingPage } from "./booking-page"
 import { cancelOutdatedNotifications, cancelReminders, queueNotification } from "./notifications"
 import { notFound, schedulingLock, slotUnavailable, type Database } from "./scheduling"
 
 type CreateInput = z.infer<typeof createAppointmentInput> | z.infer<typeof createBookingInput> | z.infer<typeof createAppointmentWithCustomerInput>
-const detailInclude = { services: { include: { service: { select: { color: true } } } }, customer: true, staffMember: { select: { id: true, name: true } }, location: { select: { id: true, name: true } }, events: { orderBy: { createdAt: "asc" as const } } }
+const detailInclude = { services: { include: { service: { select: { color: true, durationMinutes: true } } } }, customer: true, staffMember: { select: { id: true, name: true } }, location: { select: { id: true, name: true } }, events: { orderBy: { createdAt: "asc" as const } } }
 export async function getAppointment(db: Database, organizationId: string, id: string, scope: { staffMemberId?: string } = {}) {
   const appointment = await db.appointment.findFirst({ where: { id, organizationId, ...scope }, include: detailInclude })
   if (!appointment) notFound()
@@ -24,6 +25,15 @@ export async function publicAppointment(db: Database, bookingCode: string) {
   } })
   if (!appointment) notFound()
   return { ...appointment, totalAmount: appointment.totalAmount.toString() }
+}
+
+export async function deleteAppointment(db: PrismaClient, organizationId: string, id: string) {
+  return db.$transaction(async (tx) => {
+    await schedulingLock(tx, organizationId)
+    const result = await tx.appointment.deleteMany({ where: { id, organizationId } })
+    if (!result.count) notFound()
+    return { id }
+  })
 }
 
 async function validateAnswers(tx: Database, organizationId: string, serviceId: string, answers: z.infer<typeof createBookingInput>["answers"]) {
@@ -73,7 +83,7 @@ export async function createAppointment(db: PrismaClient, organizationId: string
     if (!service) notFound()
     const durationMinutes = !isPublic && "durationMinutes" in input ? input.durationMinutes : undefined
     const locationId = bookingPage?.locationId ?? input.locationId
-    const slots = await getAvailableSlots(tx, organizationId, { serviceId: input.serviceId, staffMemberId: input.staffMemberId, locationId, from: input.startsAt, to: new Date(+input.startsAt + 1) }, { allowedStaffIds: bookingPage?.allowedStaffIds, durationMinutes })
+    const slots = await getAvailableSlots(tx, organizationId, { serviceId: input.serviceId, staffMemberId: input.staffMemberId, locationId, from: input.startsAt, to: new Date(+input.startsAt + 1) }, { allowPast: !isPublic, allowBreakOverlapStart: !isPublic && "allowBreakOverlap" in input && input.allowBreakOverlap ? +input.startsAt : undefined, allowedStaffIds: bookingPage?.allowedStaffIds, durationMinutes })
     const slot = slots.days.flatMap((day) => day.slots).find((slot) => slot.startsAt === input.startsAt.toISOString())
     if (!slot) slotUnavailable()
     let customer
@@ -117,7 +127,7 @@ export function assertTransition(current: AppointmentStatus, next: AppointmentSt
   if (!transitions[current]?.includes(next)) throw new TRPCError({ code: "BAD_REQUEST", message: "This appointment cannot be changed that way" })
 }
 
-export async function changeAppointment(db: PrismaClient, organizationId: string, input: { id: string; status?: AppointmentStatus; startsAt?: Date; durationMinutes?: number; staffMemberId?: string; reason?: string; customerId?: string; customerNotes?: string | null; internalNotes?: string | null }, options: { actorUserId?: string; public?: boolean; staffMemberId?: string } = {}) {
+export async function changeAppointment(db: PrismaClient, organizationId: string, input: { id: string; status?: AppointmentStatus; startsAt?: Date; durationMinutes?: number; allowBreakOverlap?: boolean; serviceId?: string; staffMemberId?: string; reason?: string; customerId?: string; customerNotes?: string | null; internalNotes?: string | null }, options: { actorUserId?: string; public?: boolean; staffMemberId?: string } = {}) {
   return db.$transaction(async (tx) => {
     await schedulingLock(tx, organizationId)
     const appointment = await getAppointment(tx, organizationId, input.id, options.staffMemberId ? { staffMemberId: options.staffMemberId } : {})
@@ -128,7 +138,7 @@ export async function changeAppointment(db: PrismaClient, organizationId: string
     const snapshot = appointment.services[0]
     const service = snapshot ? await tx.service.findFirst({ where: { id: snapshot.serviceId, organizationId } }) : null
     if (options.public) {
-      if (input.durationMinutes !== undefined || input.staffMemberId !== undefined) throw new TRPCError({ code: "FORBIDDEN" })
+      if (input.durationMinutes !== undefined || input.staffMemberId !== undefined || input.serviceId !== undefined) throw new TRPCError({ code: "FORBIDDEN" })
       const cancellation = input.status === "CANCELLED"
       if (!cancellation && !input.startsAt) throw new TRPCError({ code: "FORBIDDEN" })
       const allowed = cancellation ? settings?.allowCustomerCancellation : settings?.allowCustomerRescheduling
@@ -139,16 +149,30 @@ export async function changeAppointment(db: PrismaClient, organizationId: string
     const data: import("../../../generated/prisma/client").Prisma.AppointmentUpdateInput = {}
     const targetStart = input.startsAt ?? appointment.startsAt
     const targetMemberId = input.staffMemberId ?? appointment.staffMemberId
-    if (input.startsAt || input.durationMinutes !== undefined || input.staffMemberId !== undefined) {
-      if ((input.durationMinutes !== undefined || input.staffMemberId !== undefined) && appointment.services.length !== 1) throw new TRPCError({ code: "BAD_REQUEST", message: "This booking length cannot be changed" })
+    const replacingService = Boolean(input.serviceId && input.serviceId !== snapshot?.serviceId)
+    if (input.startsAt || input.durationMinutes !== undefined || input.staffMemberId !== undefined || replacingService) {
+      if ((input.durationMinutes !== undefined || input.staffMemberId !== undefined || replacingService) && appointment.services.length !== 1) throw new TRPCError({ code: "BAD_REQUEST", message: "This booking length cannot be changed" })
       if (!["PENDING", "CONFIRMED"].includes(appointment.status) || !snapshot || !targetMemberId) throw new TRPCError({ code: "BAD_REQUEST", message: "This appointment cannot be rescheduled" })
-      const available = await getAvailableSlots(tx, organizationId, { serviceId: snapshot.serviceId, staffMemberId: targetMemberId, locationId: appointment.locationId ?? undefined, from: targetStart, to: new Date(+targetStart + 1) }, { excludeAppointmentId: appointment.id, snapshot, durationMinutes: input.durationMinutes ?? (input.staffMemberId !== undefined ? snapshot.durationMinutes : undefined), useOrganizationDefaults: false, purpose: "reschedule" })
+      const replacement = replacingService ? await tx.service.findFirst({ where: { id: input.serviceId, organizationId, deletedAt: null, isActive: true } }) : null
+      if (replacingService && !replacement) notFound()
+      const durationMinutes = input.durationMinutes ?? replacement?.durationMinutes ?? (input.staffMemberId !== undefined ? snapshot.durationMinutes : undefined)
+      const available = await getAvailableSlots(tx, organizationId, { serviceId: replacement?.id ?? snapshot.serviceId, staffMemberId: targetMemberId, locationId: appointment.locationId ?? undefined, from: targetStart, to: new Date(+targetStart + 1) }, { allowPast: !options.public, allowBreakOverlapStart: !options.public && input.allowBreakOverlap ? +targetStart : undefined, excludeAppointmentId: appointment.id, snapshot: replacement ?? snapshot, replacingService, durationMinutes, useOrganizationDefaults: false, purpose: "reschedule" })
       const slot = available.days.flatMap((day) => day.slots).find((slot) => slot.startsAt === targetStart.toISOString() && slot.locationId === appointment.locationId)
       if (!slot) slotUnavailable()
       data.startsAt = targetStart
       data.endsAt = new Date(slot.endsAt)
       if (input.staffMemberId !== undefined) data.staffMember = { connect: { id: slot.staffMemberId } }
-      if (input.durationMinutes !== undefined || input.staffMemberId !== undefined) data.services = { update: { where: { id: snapshot.id }, data: { durationMinutes: input.durationMinutes ?? snapshot.durationMinutes, staffMemberId: slot.staffMemberId } } }
+      if (input.durationMinutes !== undefined || input.staffMemberId !== undefined || replacement) data.services = { update: { where: { id: snapshot.id }, data: {
+        durationMinutes: durationMinutes ?? snapshot.durationMinutes, staffMemberId: slot.staffMemberId,
+        ...(replacement ? { serviceId: replacement.id, name: replacement.name, unitPrice: replacement.price ?? "0", totalPrice: new Prisma.Decimal(replacement.price ?? 0).mul(snapshot.quantity), bufferBeforeMinutes: replacement.bufferBeforeMinutes, bufferAfterMinutes: replacement.bufferAfterMinutes } : {}),
+      } } }
+      if (replacement) {
+        if (replacement.currency !== appointment.currency && [appointment.paidAmount, appointment.discountAmount, appointment.taxAmount].some((amount) => new Prisma.Decimal(amount).isPositive())) throw new TRPCError({ code: "BAD_REQUEST", message: "This booking currency cannot be changed" })
+        const subtotal = new Prisma.Decimal(replacement.price ?? 0).mul(snapshot.quantity)
+        data.currency = replacement.currency
+        data.subtotalAmount = subtotal
+        data.totalAmount = Prisma.Decimal.max(0, subtotal.minus(appointment.discountAmount).plus(appointment.taxAmount))
+      }
       type = "RESCHEDULED"
     } else if (input.status) {
       assertTransition(appointment.status, input.status)
@@ -173,7 +197,7 @@ export async function changeAppointment(db: PrismaClient, organizationId: string
     data.customerNotes = input.customerNotes
     data.internalNotes = input.internalNotes
     await tx.appointment.update({ where: { id: appointment.id, organizationId }, data })
-    await tx.appointmentEvent.create({ data: { organizationId, appointmentId: appointment.id, type, actorUserId: options.actorUserId, metadata: type === "RESCHEDULED" ? { previousStartsAt: appointment.startsAt.toISOString(), startsAt: targetStart.toISOString(), previousStaffMemberId: appointment.staffMemberId, staffMemberId: targetMemberId, previousEndsAt: appointment.endsAt.toISOString(), endsAt: (data.endsAt as Date).toISOString() } : undefined } })
+    await tx.appointmentEvent.create({ data: { organizationId, appointmentId: appointment.id, type, actorUserId: options.actorUserId, metadata: type === "RESCHEDULED" ? { previousStartsAt: appointment.startsAt.toISOString(), startsAt: targetStart.toISOString(), previousStaffMemberId: appointment.staffMemberId, staffMemberId: targetMemberId, previousServiceId: snapshot?.serviceId, serviceId: input.serviceId ?? snapshot?.serviceId, previousEndsAt: appointment.endsAt.toISOString(), endsAt: (data.endsAt as Date).toISOString() } : undefined } })
     if (["CANCELLED", "RESCHEDULED"].includes(type)) await cancelOutdatedNotifications(tx, organizationId, appointment.id)
     if (["COMPLETED", "NO_SHOW"].includes(type)) await cancelReminders(tx, organizationId, appointment.id)
     if (type === "CANCELLED") await queueNotification(tx, organizationId, appointment.id, "CANCELLATION")

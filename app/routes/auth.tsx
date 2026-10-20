@@ -62,7 +62,7 @@ export async function loader(args: Route.LoaderArgs) {
 
   const queryClient = getQueryClient()
   const trpc = await createTRPC(args)
-  const invitation = await queryClient.fetchQuery(
+  const invitation = await queryClient.query(
     trpc.team.invitationPreview.queryOptions({ invitationId }),
   )
 

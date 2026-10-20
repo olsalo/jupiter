@@ -510,7 +510,7 @@ export function TanStackTable<Row extends RowData>({
           "flex min-h-0 min-w-0 w-full flex-1 flex-col",
           !fillHeight && "md:h-auto md:flex-none",
           className,
-          "min-h-0 md:min-h-[max(20rem,calc(100dvh-18rem))]",
+          !fillHeight && "min-h-0 md:min-h-[max(20rem,calc(100dvh-18rem))]",
         )}
       >
         {emptyContent}
@@ -526,7 +526,7 @@ export function TanStackTable<Row extends RowData>({
           "flex min-h-0 min-w-0 w-full flex-1 items-center justify-center",
           !fillHeight && "md:h-auto md:flex-none",
           className,
-          "max-md:!min-h-0 md:min-h-[max(20rem,calc(100dvh-18rem))]",
+          !fillHeight && "max-md:!min-h-0 md:min-h-[max(20rem,calc(100dvh-18rem))]",
         )}
         role="status"
       >
@@ -544,7 +544,7 @@ export function TanStackTable<Row extends RowData>({
       className={cn(
         "relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col rounded-md text-sm",
         !fillHeight && "md:h-auto md:flex-none",
-        hasVisualRows && "max-md:h-auto max-md:min-h-full max-md:flex-none",
+        hasVisualRows && !fillHeight && "max-md:h-auto max-md:min-h-full max-md:flex-none",
         className,
         !hasRows && !loading && "md:min-h-96",
       )}
@@ -554,8 +554,8 @@ export function TanStackTable<Row extends RowData>({
         className={cn(
           "relative flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden rounded-md border border-border/80 bg-background shadow-xs",
           !fillHeight && "md:h-auto md:flex-none",
-          hasVisualRows &&
-            "max-md:h-auto max-md:min-h-full max-md:flex-none max-md:overflow-visible max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none",
+          hasVisualRows && "max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:shadow-none",
+          hasVisualRows && !fillHeight && "max-md:h-auto max-md:min-h-full max-md:flex-none max-md:overflow-visible",
           !hasRows && !loading && emptyContainerClassName,
         )}
       >
@@ -609,7 +609,7 @@ export function TanStackTable<Row extends RowData>({
           className={cn(
             "relative isolate min-h-0 min-w-0 max-w-full flex-1 overflow-hidden [clip-path:inset(0)] [contain:paint]",
             !fillHeight && "md:h-auto md:flex-none",
-            hasVisualRows &&
+            hasVisualRows && !fillHeight &&
               "max-md:flex-none max-md:overflow-visible max-md:[clip-path:none] max-md:[contain:none]",
           )}
         >
@@ -617,14 +617,14 @@ export function TanStackTable<Row extends RowData>({
             className={cn(
               "min-h-0 min-w-0 max-w-full overflow-hidden rounded-none [&_[data-slot=scroll-area-scrollbar]]:hidden",
               !fillHeight && "md:h-auto md:flex-none",
-              hasVisualRows &&
+              hasVisualRows && !fillHeight &&
                 "max-md:h-auto max-md:overflow-visible max-md:[&_[data-slot=scroll-area-content]]:h-auto max-md:[&_[data-slot=scroll-area-viewport]]:h-auto max-md:[&_[data-slot=scroll-area-viewport]]:overflow-visible",
             )}
             fill={fillHeight}
             scrollFade={false}
             viewportProps={{
               className: cn(
-                "max-md:!overflow-visible max-md:overscroll-auto",
+                !fillHeight && "max-md:!overflow-visible max-md:overscroll-auto",
                 !fillHeight && "md:h-auto md:overflow-y-hidden",
               ),
               onScroll: syncTableScroll,

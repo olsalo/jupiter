@@ -2,7 +2,8 @@ import { useTranslation } from "react-i18next"
 
 import Icon, { type AppIconName } from "~/components/icons"
 import { JoinedTeamDialog } from "~/components/joined-team-dialog"
-import { PageHeader } from "~/components/page-header"
+import { RouteHeader } from "~/components/route-header"
+import { ScrollPage } from "~/components/page-layout"
 import { Badge } from "~/components/ui/badge"
 import { Card, CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
@@ -29,15 +30,13 @@ export default function Overview() {
   const greeting = useOverviewGreeting()
 
   return (
-    <section className="flex w-full flex-1 flex-col gap-6">
+    <ScrollPage contentClassName="gap-6" header={<RouteHeader
+      description={t("description")}
+      showDescriptionOnMobile={false}
+      title={greeting}
+    />}>
       <title>{t("title")}</title>
       <JoinedTeamDialog />
-      <PageHeader
-        className="route-mobile-header md:hidden"
-        description={t("description")}
-        showDescriptionOnMobile={true}
-        title={greeting}
-      />
       <Card className="flex-1 border-dashed shadow-none">
         <CardHeader className="flex-1 content-center justify-items-center gap-4 py-12 text-center sm:py-16">
           <div className="flex size-12 items-center justify-center rounded-xl border bg-muted/50">
@@ -61,6 +60,6 @@ export default function Overview() {
           </Card>
         ))}
       </div>
-    </section>
+    </ScrollPage>
   )
 }

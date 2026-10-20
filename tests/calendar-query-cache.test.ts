@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { mock } from "node:test"
 
-import { calendarBookingsQueryOptions, calendarAvailabilityQueryOptions, calendarPanelQueryOptions, calendarReferenceQueryOptions } from "../app/lib/calendar-query.ts"
+import { calendarBookingsQueryOptions, calendarAvailabilityQueryOptions, calendarPanelQueryOptions, calendarReferenceQueryOptions } from "../app/lib/calendar/query-options.ts"
 import { queryCacheOptions } from "../app/lib/query-cache.ts"
 
 // Enable QueryObserver's browser timers without a DOM or a running app
@@ -19,7 +19,7 @@ try {
   const availability = { ...query("availability"), ...calendarAvailabilityQueryOptions }
   const panel = { ...query("panel"), ...calendarPanelQueryOptions }
   const calendar = { ...query("calendar"), ...calendarBookingsQueryOptions(false) }
-  for (const options of [reference, availability, panel, calendar]) await client.fetchQuery(options)
+  for (const options of [reference, availability, panel, calendar]) await client.query(options)
   for (let index = 0; index < 8; index += 1) unsubscribers.push(new QueryObserver(client, reference).subscribe(() => {}))
   const availabilityObserver = new QueryObserver(client, availability)
   let unsubscribeAvailability = availabilityObserver.subscribe(() => {})

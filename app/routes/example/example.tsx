@@ -13,7 +13,8 @@ import type { AppRouter } from "~/.server/main"
 import type { Route } from "./+types/example"
 import { DeleteConfirmationDialog } from "~/components/delete-confirmation-dialog"
 import Icon from "~/components/icons"
-import { TablePage, TablePageHeader } from "~/components/table-page"
+import { ViewportPage } from "~/components/page-layout"
+import { RouteHeader } from "~/components/route-header"
 import {
   TanStackTable,
   type TanStackTableColumn,
@@ -65,6 +66,8 @@ export function clientLoader() {
   // Client queries own fetching and freshness after the initial server render.
   return null
 }
+
+export const handle = { workspace: true, pageLayout: "viewport" }
 
 export const shouldRevalidate = shouldRevalidateAppRoute
 
@@ -234,8 +237,8 @@ export default function Notes() {
   }
 
   return (
-    <TablePage>
-      <TablePageHeader
+    <ViewportPage header={
+      <RouteHeader
         actions={
           <Button
             aria-label={t("actions.add")}
@@ -249,11 +252,11 @@ export default function Notes() {
           </Button>
         }
         description={t("description")}
-        showDescriptionOnMobile={true}
+        showDescriptionOnMobile={false}
         refreshing={notesQuery.isRefetching}
         title={t("title")}
       />
-
+    }>
       {showRefreshError ? (
         <Alert variant="warning">
           <AlertTitle>{t("errors.refresh")}</AlertTitle>
@@ -291,7 +294,7 @@ export default function Notes() {
       ) : (
         <TanStackTable
           ariaLabel={t("title")}
-          className="h-auto min-h-[24rem] md:min-h-0"
+          className="min-h-0"
           columns={columns}
           data={notes}
           enablePagination={false}
@@ -358,7 +361,7 @@ export default function Notes() {
               })
         }
       />
-    </TablePage>
+    </ViewportPage>
   )
 }
 
@@ -367,12 +370,13 @@ export function ErrorBoundary() {
   const revalidator = useRevalidator()
 
   return (
-    <TablePage>
-      <title>{t("title")}</title>
-      <TablePageHeader
+    <ViewportPage header={
+      <RouteHeader
         description={t("description")}
         title={t("title")}
       />
+    }>
+      <title>{t("title")}</title>
       <Alert variant="error">
         <AlertTitle>{t("errors.load")}</AlertTitle>
         <AlertDescription>{t("errors.retryDescription")}</AlertDescription>
@@ -388,6 +392,6 @@ export function ErrorBoundary() {
           </Button>
         </AlertAction>
       </Alert>
-    </TablePage>
+    </ViewportPage>
   )
 }

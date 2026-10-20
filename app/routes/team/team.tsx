@@ -9,7 +9,8 @@ import type { AppRouter } from "~/.server/main"
 import type { loader as rootLoader } from "~/root"
 import Icon from "~/components/icons"
 import { InvitationActionsMenu } from "~/components/invitation-actions-menu"
-import { TablePage, TablePageHeader } from "~/components/table-page"
+import { ViewportPage } from "~/components/page-layout"
+import { RouteHeader } from "~/components/route-header"
 import { TanStackTable, type TanStackTableColumn } from "~/components/tanstack-table"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
@@ -38,7 +39,7 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   const queryClient = getQueryClient()
   const trpc = await createTRPC(loaderArgs)
 
-  const team = await queryClient.fetchQuery(trpc.team.list.queryOptions()).catch(() => undefined)
+  const team = await queryClient.query(trpc.team.list.queryOptions()).catch(() => undefined)
   const counts = {
     members: team?.members.length ?? 0,
     people: team?.people.length ?? 0,
@@ -56,7 +57,7 @@ export function clientLoader() {
   return null
 }
 
-export const handle = { workspace: true }
+export const handle = { workspace: true, pageLayout: "viewport" }
 
 export const shouldRevalidate = shouldRevalidateAppRoute
 
@@ -144,18 +145,19 @@ export default function Team() {
   ], [canInvite, formatDate, roleLabel, t])
 
   return (
-    <TablePage>
-      <title>{t("title")}</title>
-      <TablePageHeader
+    <ViewportPage header={
+      <RouteHeader
         title={t("title")}
         refreshing={team.isRefetching}
         description={t("description")}
-        showDescriptionOnMobile={true}
+        showDescriptionOnMobile={false}
         actions={<div className="flex items-center gap-2">
-          <Button render={<Link to="/team-v2" />} type="button" variant="outline"><span className="sm:hidden">V2</span><span className="hidden sm:inline">{t("v2.detailView")}</span></Button>
-          {canInvite ? <Button render={<Link to="new" state={{ returnTo: `${location.pathname}${location.search}` }} />} type="button"><Icon aria-hidden={true} name="add" size={18} />{t("people.addAction")}</Button> : null}
+          <Button aria-label={t("v2.detailView")} className="max-md:size-9 max-md:p-0" render={<Link to="/team-v2" />} type="button" variant="outline"><Icon aria-hidden={true} className="md:hidden" name="layoutSidebarInactive" size={18} /><span className="hidden md:inline">{t("v2.detailView")}</span></Button>
+          {canInvite ? <Button aria-label={t("people.addAction")} className="max-md:size-9 max-md:p-0" render={<Link to="new" state={{ returnTo: `${location.pathname}${location.search}` }} />} type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("people.addAction")}</span></Button> : null}
         </div>}
       />
+    }>
+      <title>{t("title")}</title>
       {showRefreshError ? (
         <Alert variant="warning">
           <AlertTitle>{t("refreshError")}</AlertTitle>
@@ -215,7 +217,7 @@ export default function Team() {
             </div>
             <TanStackTable
               ariaLabel={t("members")}
-              className="h-auto min-h-[24rem] md:min-h-0"
+              className="min-h-0"
               columns={peopleColumns}
               data={people}
               emptyContent={
@@ -242,7 +244,7 @@ export default function Team() {
           <TabsPanel className="flex min-h-0 flex-col" value="invites">
             <TanStackTable
               ariaLabel={t("pending")}
-              className="h-auto min-h-[24rem] md:min-h-0"
+              className="min-h-0"
               columns={inviteColumns}
               data={team.data?.invitations ?? []}
               emptyContent={
@@ -268,7 +270,7 @@ export default function Team() {
         </Tabs>
       )}
       <Outlet />
-    </TablePage>
+    </ViewportPage>
   )
 }
 
@@ -277,12 +279,13 @@ export function ErrorBoundary() {
   const revalidator = useRevalidator()
 
   return (
-    <TablePage>
-      <title>{t("title")}</title>
-      <TablePageHeader
+    <ViewportPage header={
+      <RouteHeader
         description={t("description")}
         title={t("title")}
       />
+    }>
+      <title>{t("title")}</title>
       <Alert variant="error">
         <AlertTitle>{t("loadError")}</AlertTitle>
         <AlertDescription>{t("retryDescription")}</AlertDescription>
@@ -298,6 +301,6 @@ export function ErrorBoundary() {
           </Button>
         </AlertAction>
       </Alert>
-    </TablePage>
+    </ViewportPage>
   )
 }

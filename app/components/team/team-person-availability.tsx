@@ -6,9 +6,10 @@ import type { loader as rootLoader } from "~/root"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { formatDateTime } from "~/lib/format-preference"
+import { currentScheduleDate, scheduleAt, type ScheduleRule } from "~/lib/calendar/availability"
 import { useTRPC } from "~/lib/trpc/client"
 import { TeamWorkingHoursWeek } from "./team-working-hours-week"
-import { TeamPanelLoading } from "./team-panel-loading"
+import { TeamPersonSection } from "./team-person-section"
 import { TeamScheduleViewHeader } from "./team-schedule-view-header"
 import { useBusinessWorkingHours } from "./use-business-working-hours"
 import type { TeamPerson } from "./team-types"
@@ -19,8 +20,9 @@ export function TeamPersonAvailability({ staff }: { staff: NonNullable<TeamPerso
   const trpc = useTRPC()
   const rules = useQuery(trpc.availability.getRules.queryOptions({ staffMemberId: staff.id }))
   const businessHours = useBusinessWorkingHours()
-  const useDefaults = rules.isSuccess && rules.data.length === 0
-  const displayedRules = useDefaults ? businessHours.hours : rules.data ?? []
+  const personalRules = rules.data?.filter((rule) => rule.locationId === null) ?? []
+  const useDefaults = rules.isSuccess && personalRules.length === 0
+  const displayedRules = scheduleAt<ScheduleRule>(useDefaults ? businessHours.hours : personalRules, currentScheduleDate(businessHours.timezone))
   const pending = rules.isPending || (useDefaults && businessHours.isPending)
   const failed = rules.isError || (useDefaults && businessHours.isError)
   const formatTime = (minute: number) => formatDateTime(new Date(Date.UTC(2000, 0, 1, 0, minute)), {
@@ -32,9 +34,8 @@ export function TeamPersonAvailability({ staff }: { staff: NonNullable<TeamPerso
   const options = { formatPreference: root?.formatPreference ?? "eu", language: root?.locale === "fi" ? "fi" as const : "en" as const }
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col gap-4">
-      <TeamScheduleViewHeader title={t("people.availability")} description={t("people.hoursDescription")} />
-      {pending ? <TeamPanelLoading label={t("people.loadingAvailability")} /> : failed ? (
+    <TeamPersonSection loadingLabel={pending ? t("people.loadingAvailability") : undefined} header={<TeamScheduleViewHeader title={t("people.availability")} description={t("people.hoursDescription")} />}>
+      {failed ? (
         <Alert variant="error">
           <AlertTitle>{t("people.availabilityError")}</AlertTitle>
           <AlertDescription>{t("retryDescription")}</AlertDescription>
@@ -48,6 +49,6 @@ export function TeamPersonAvailability({ staff }: { staff: NonNullable<TeamPerso
             </div>
         )} />
       )}
-    </div>
+    </TeamPersonSection>
   )
 }

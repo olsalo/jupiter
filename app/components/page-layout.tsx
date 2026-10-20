@@ -1,49 +1,52 @@
-import type { ComponentProps, ReactNode } from "react"
+import type { ReactNode } from "react"
 
-import { PageHeader } from "~/components/page-header"
-import { ScrollArea } from "~/components/ui/scroll-area"
 import { cn } from "~/lib/utils"
 
-type PageLayoutProps = Pick<ComponentProps<typeof PageHeader>, "actions" | "description" | "title"> & {
+export type PageLayoutProps = {
   children: ReactNode
+  header: ReactNode
+  className?: string
+  contentClassName?: string
 }
 
-export function PageLayout({ actions, children, description, title }: PageLayoutProps) {
+export function ViewportPage(props: PageLayoutProps) {
+  return <PageFrame {...props} contained={true} />
+}
+
+export function ScrollPage(props: PageLayoutProps) {
+  return <PageFrame {...props} contained={false} />
+}
+
+function PageFrame({ children, header, className, contentClassName, contained }: PageLayoutProps & { contained: boolean }) {
+  const isFloatingLayout = import.meta.env.VITE_APP_LAYOUT_STYLE === "floating"
   const centerContent = import.meta.env.VITE_APP_CENTER_CONTENT === "true"
 
-  return (
-    <ScrollArea
-      className="h-0 min-h-0 flex-1 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:h-auto [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col"
-      fill={true}
-      scrollbarClassName="z-20 data-[orientation=horizontal]:hidden"
-      viewportProps={{ className: "!overflow-x-hidden" }}
-    >
-      <div className="flex w-full min-w-0 flex-1 flex-col pb-6">
-        <div
-          aria-hidden="true"
-          className={cn("hidden md:block", centerContent ? "md:min-h-24 md:flex-1" : "md:h-24 md:shrink-0")}
-        />
-
-        <div className="sticky top-0 z-10 mt-6 shrink-0 md:mt-0 md:mb-3">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 bottom-0 md:-bottom-3 bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)] md:bg-background/95 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_75%,transparent_100%)]"
-          />
-          <PageHeader
-            actions={actions}
-            className="relative mx-auto w-full max-w-180 items-start gap-2 px-6 pt-3 pb-3 max-md:flex-nowrap max-md:items-center max-md:[&_h1]:truncate [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:tracking-normal [&_span]:leading-4"
-            description={description}
-            showDescriptionOnMobile={false}
-            title={title}
-          />
-        </div>
-
-        <section className="mx-auto mt-3 flex w-full min-w-0 max-w-180 shrink-0 flex-col px-6 md:mt-0">
-          {children}
-        </section>
-
-        <div aria-hidden="true" className="hidden md:block md:min-h-3 md:flex-1" />
+  return <section
+    className={cn(
+      "flex min-w-0 w-full flex-1 flex-col",
+      contained ? "h-full min-h-0 overflow-hidden" : "min-h-full",
+      isFloatingLayout && "md:grid md:grid-cols-1",
+      isFloatingLayout && (centerContent && !contained
+        ? "md:grid-rows-[minmax(6rem,1fr)_auto_minmax(0.75rem,1fr)]"
+        : contained
+          ? "md:grid-rows-[6rem_minmax(0,1fr)]"
+          : "md:grid-rows-[6rem_auto]"),
+      className,
+    )}
+    data-slot={contained ? "viewport-page" : "scroll-page"}
+  >
+    <div className={cn("flex min-w-0 flex-1 flex-col md:row-start-2", contained && "min-h-0")}>
+      {header}
+      <div
+        className={cn(
+          "relative isolate z-0 flex min-w-0 flex-1 flex-col gap-4",
+          contained && "h-0 min-h-0 overflow-hidden",
+          contentClassName,
+        )}
+        data-slot="page-content"
+      >
+        {children}
       </div>
-    </ScrollArea>
-  )
+    </div>
+  </section>
 }

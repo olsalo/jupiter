@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { timeOffIntervals, timeOffSchema, type TimeOffValues } from "../app/lib/team-time-off.ts"
+import { upcomingTimeOff, timeOffIntervals, timeOffSchema, type TimeOffValues } from "../app/lib/team-time-off.ts"
 
 const schema = timeOffSchema()
 const base: TimeOffValues = { title: "Holiday", startDate: "2026-10-10", endDate: "2026-10-10", allDay: true, startTime: "09:00", endTime: "17:00", repeat: "none", repeatUntil: "" }
@@ -46,4 +46,16 @@ assert.equal(indefiniteMonthly[0].startsAt.toISOString(), "2040-02-29T00:00:00.0
 assert.equal(indefiniteMonthly[0].endsAt.toISOString(), "2040-03-03T00:00:00.000Z", "Multi-day repeats preserve their calendar-day duration")
 const expired = timeOffIntervals(yearlyValues, "Europe/Helsinki", { from: new Date("2060-02-01"), to: new Date("2060-03-01") })
 assert.equal(expired.length, 0, "Repeats with an end date stop blocking dates after it")
+const upcomingNow = new Date("2030-10-20T10:00:00Z")
+const upcomingEntries = upcomingTimeOff([
+  { id: "past", startsAt: new Date("2020-01-01"), endsAt: new Date("2020-01-02"), recurrence: null },
+  { id: "future", startsAt: new Date("2031-01-01"), endsAt: new Date("2031-01-02"), recurrence: null },
+  { id: "ongoing", startsAt: new Date("2030-10-19"), endsAt: new Date("2030-10-21"), recurrence: null },
+  { id: "repeating", startsAt: new Date("2026-10-09T21:00:00Z"), endsAt: new Date("2026-10-10T21:00:00Z"), recurrence: { ...base, repeat: "weekly", repeatUntil: "", timezone: "Europe/Helsinki" } },
+  { id: "finished-series", startsAt: yearly[0].startsAt, endsAt: yearly[0].endsAt, recurrence: { ...yearlyValues, timezone: "Europe/Helsinki" } },
+], upcomingNow)
+assert.deepEqual(upcomingEntries.map((entry) => entry.id), ["ongoing", "repeating", "future"], "Upcoming blocks exclude finished absences and sort by their next occurrence")
+assert.equal(upcomingEntries[1].startsAt.toISOString(), "2030-10-25T21:00:00.000Z", "A series that started in the past shows its next occurrence")
+const farFuture = upcomingTimeOff([{ id: "future-series", startsAt: new Date("2090-01-01"), endsAt: new Date("2090-01-02"), recurrence: { ...base, startDate: "2090-01-01", endDate: "2090-01-01", repeat: "yearly", repeatUntil: "", timezone: "UTC" } }], upcomingNow)
+assert.equal(farFuture[0].startsAt.toISOString(), "2090-01-01T00:00:00.000Z", "Future series are listed even beyond the next year")
 console.log("Time off validation and timezone tests passed")

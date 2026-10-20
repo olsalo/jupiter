@@ -10,15 +10,15 @@ import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
 
 const appPath = new URL("../app", import.meta.url).pathname
-const vite = await createServer({ configFile: false, appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, ws: false, hmr: false, watch: null } })
+const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/team-people-ssr", appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, ws: false, hmr: false, watch: null } })
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } })
 try {
   const { default: Team } = await vite.ssrLoadModule("/app/routes/team/team.tsx") as typeof import("../app/routes/team/team")
   const { default: TeamV2 } = await vite.ssrLoadModule("/app/routes/team-v2/team.tsx") as typeof import("../app/routes/team-v2/team")
-  const { default: PersonDetail } = await vite.ssrLoadModule("/app/routes/team-v2/person-detail.tsx") as typeof import("../app/routes/team-v2/person-detail")
-  const { default: PersonViewV2 } = await vite.ssrLoadModule("/app/routes/team-v2/person-view.tsx") as typeof import("../app/routes/team-v2/person-view")
-  const { default: PersonEditV2 } = await vite.ssrLoadModule("/app/routes/team-v2/person-edit.tsx") as typeof import("../app/routes/team-v2/person-edit")
-  const { default: NewPersonV2 } = await vite.ssrLoadModule("/app/routes/team-v2/new-person.tsx") as typeof import("../app/routes/team-v2/new-person")
+  const { default: MemberLayout } = await vite.ssrLoadModule("/app/routes/team-v2/member-layout.tsx") as typeof import("../app/routes/team-v2/member-layout")
+  const { default: MemberProfile } = await vite.ssrLoadModule("/app/routes/team-v2/member-profile.tsx") as typeof import("../app/routes/team-v2/member-profile")
+  const { default: EditMember } = await vite.ssrLoadModule("/app/routes/team-v2/member-edit.tsx") as typeof import("../app/routes/team-v2/member-edit")
+  const { default: NewMember } = await vite.ssrLoadModule("/app/routes/team-v2/new-member.tsx") as typeof import("../app/routes/team-v2/new-member")
   const { default: NewPerson, clientLoader: newClientLoader } = await vite.ssrLoadModule("/app/routes/team/new-person.tsx") as typeof import("../app/routes/team/new-person")
   const { default: PersonSheet, clientLoader: personClientLoader } = await vite.ssrLoadModule("/app/routes/team/person-sheet.tsx") as typeof import("../app/routes/team/person-sheet")
   const { default: PersonView, clientLoader: viewClientLoader } = await vite.ssrLoadModule("/app/routes/team/person-view.tsx") as typeof import("../app/routes/team/person-view")
@@ -38,16 +38,16 @@ try {
   const options = createTRPCOptionsProxy({ client: trpc, queryClient })
   const now = new Date()
   const member = { id: "mem-owner", role: "owner", userId: "usr-owner", createdAt: now, user: { id: "usr-owner", name: "Owner", email: "owner@example.invalid", image: null } }
-  const staff = { id: "staff-1", organizationId: "org", name: "Raya", email: "raya@example.invalid", phone: "+358401234567", image: null, memberId: null, bio: "Appointments specialist", timezone: "Europe/Helsinki", acceptsAppointments: true, isActive: true, createdAt: now, updatedAt: now, staffServices: [{ id: "ss-1", staffMemberId: "staff-1", createdAt: now, updatedAt: now, durationMinutes: null, price: null, isActive: true, serviceId: "service-1", service: { id: "service-1", name: "Consultation" } }], staffLocations: [{ id: "sl-1", staffMemberId: "staff-1", createdAt: now, isActive: true, locationId: "location-1", location: { id: "location-1", name: "Office" } }] }
+  const staff = { id: "staff-1", organizationId: "org", name: "Raya", email: "raya@example.invalid", phone: "+358401234567", image: null, memberId: null, bio: "Appointments specialist", timezone: "Europe/Helsinki", acceptsAppointments: true, isActive: true, createdAt: now, updatedAt: now, staffServices: [{ id: "ss-1", staffMemberId: "staff-1", createdAt: now, updatedAt: now, durationMinutes: null, price: null, isActive: true, serviceId: "service-1", service: { id: "service-1", name: "Consultation", durationMinutes: 30, deliveryType: "ONLINE" as const, color: "#8f49b5", isActive: true, price: null, currency: "EUR", description: "A short consultation" } }], staffLocations: [{ id: "sl-1", staffMemberId: "staff-1", createdAt: now, isActive: true, locationId: "location-1", location: { id: "location-1", name: "Office" } }] }
   const staffPerson = { id: staff.id, name: staff.name, email: staff.email, phone: staff.phone, image: null, staff, member: null, invitation: null }
   const ownerPerson = { id: member.id, name: member.user.name, email: member.user.email, phone: null, image: null, member, staff: null, invitation: null }
   queryClient.setQueryData([...options.team.list.queryKey()], { members: [member], people: [ownerPerson, staffPerson], invitations: [], canInvite: true })
   queryClient.setQueryData([...options.team.count.queryKey()], { members: 1, people: 2, invitations: 0 })
   queryClient.setQueryData([...options.team.getPerson.queryKey({ id: staff.id })], staffPerson)
-  queryClient.setQueryData([...options.service.list.queryKey()], [{ id: "service-1", name: "Consultation", isActive: true }])
+  queryClient.setQueryData([...options.service.list.queryKey()], [staff.staffServices[0].service])
   queryClient.setQueryData([...options.location.list.queryKey()], [{ id: "location-1", name: "Office", isActive: true }])
   queryClient.setQueryData([...options.organizations.general.queryKey()], { location: "GB" })
-  queryClient.setQueryData(options.availability.getRules.queryKey({ staffMemberId: staff.id }), [{ id: "hours-1", organizationId: "org", staffMemberId: staff.id, createdAt: now, updatedAt: now, dayOfWeek: 1, startMinute: 540, endMinute: 1020, timezone: "Europe/Helsinki", isBreak: false, isActive: true, locationId: "location-1", validFrom: null, validUntil: null }])
+  queryClient.setQueryData(options.availability.getRules.queryKey({ staffMemberId: staff.id }), [{ id: "hours-1", organizationId: "org", staffMemberId: staff.id, createdAt: now, updatedAt: now, dayOfWeek: 1, startMinute: 540, endMinute: 1020, timezone: "Europe/Helsinki", isBreak: false, isActive: true, locationId: null, validFrom: null, validUntil: null }])
   const businessRules = [1, 2, 3, 4, 5].map((dayOfWeek) => ({ id: `business-${dayOfWeek}`, organizationId: "org", staffMemberId: null, locationId: null, createdAt: now, updatedAt: now, dayOfWeek, startMinute: 615, endMinute: 1005, timezone: "Europe/Helsinki", isBreak: false, isActive: true, validFrom: null, validUntil: null }))
   queryClient.setQueryData(options.availability.getRules.queryKey({}), businessRules)
   queryClient.setQueryData([...options.organizations.getCurrent.queryKey()], { settings: { defaultStartHour: 7, defaultEndHour: 19, timezone: "Europe/Helsinki" } })
@@ -62,7 +62,7 @@ try {
     const tab = new URLSearchParams(location.search).get("tab") ?? "general"
     return createElement(Tabs, { value: tab, children: [createElement(ProfileSettingsHeader, { key: "header", disabled: false, person: staffPerson }), createElement(TeamPersonForm, { key: "form", person: { ...staffPerson, member }, selfSettings: true, settingsFormId: "own-profile-form", generalContent: createElement(ProfilePreferences), settingsTab: tab, close: () => {}, onPendingChange: () => {} })] })
   }
-  const handler = createStaticHandler([{ id: "root", path: "/", Component: Outlet, loader: () => ({ locale: i18n.language, user: member.user, org: { id: "org" }, organizations: [{ id: "org", role: viewerRole }], formatPreference, organizationTimezone: "Europe/Helsinki" }), children: [{ path: "team-v2", Component: TeamV2, handle: { workspace: true }, children: [{ path: "new", Component: NewPersonV2 }, { path: ":personId", Component: () => createElement(PersonDetail, { params: { personId: staff.id } } as Parameters<typeof PersonDetail>[0]), children: [{ path: "", Component: PersonViewV2, children: [{ path: "new", Component: NewPersonV2, handle: { overlay: true } }] }, { path: "edit", Component: PersonEditV2, handle: { teamMode: "edit" }, children: [{ path: "new", Component: NewPersonV2, handle: { overlay: true } }] }] }] }, { path: "own-settings", Component: OwnSettingsTest }, { id: "routes/team/team", path: "team", Component: Team, handle: { workspace: true }, children: [{ path: "new", Component: NewPerson }, { path: ":personId", Component: () => createElement(PersonSheet, { params: { personId: staff.id } } as Parameters<typeof PersonSheet>[0]), children: [{ index: true, Component: PersonView }, { path: "edit", Component: PersonEdit, handle: { teamMode: "edit" } }] }] }] }])
+  const handler = createStaticHandler([{ id: "root", path: "/", Component: Outlet, loader: () => ({ locale: i18n.language, user: member.user, org: { id: "org" }, organizations: [{ id: "org", role: viewerRole }], formatPreference, organizationTimezone: "Europe/Helsinki" }), children: [{ path: "team-v2", Component: TeamV2, handle: { workspace: true }, children: [{ path: "new", Component: NewMember }, { path: ":memberId", Component: () => createElement(MemberLayout, { params: { memberId: staff.id } } as Parameters<typeof MemberLayout>[0]), children: [{ path: "", Component: MemberProfile, children: [{ path: "new", Component: NewMember, handle: { overlay: true } }] }, { path: "edit", Component: EditMember, handle: { teamMode: "edit" }, children: [{ path: "new", Component: NewMember, handle: { overlay: true } }] }] }] }, { path: "own-settings", Component: OwnSettingsTest }, { id: "routes/team/team", path: "team", Component: Team, handle: { workspace: true }, children: [{ path: "new", Component: NewPerson }, { path: ":personId", Component: () => createElement(PersonSheet, { params: { personId: staff.id } } as Parameters<typeof PersonSheet>[0]), children: [{ index: true, Component: PersonView }, { path: "edit", Component: PersonEdit, handle: { teamMode: "edit" } }] }] }] }])
   async function render(pathname: string) {
     const context = await handler.query(new Request(`https://example.invalid${pathname}`))
     assert.ok(!(context instanceof Response))
@@ -86,6 +86,11 @@ try {
   const staffTabs = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(Tabs, { value: "general", children: createElement(ProfileSettingsTabs, { bookable: true, disabled: false }) })))
   assert.match(staffTabs, /Working hours/)
   assert.match(staffTabs, /Breaks/)
+  const loadingProfileHeader = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(Tabs, { value: "general", children: createElement(ProfileSettingsHeader, { disabled: false, person: { name: member.user.name, image: null } }) })))
+  for (const label of ["General", "Appointments", "Working hours", "Breaks", "Time off"]) {
+    assert.ok(loadingProfileHeader.includes(`aria-label="${label}"`), `${label} is available before the team profile loads`)
+  }
+  assert.doesNotMatch(loadingProfileHeader, /disabled=""/)
   const permissionMarkup = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(PermissionLevelSelect, { value: "member", name: "role", onValueChange: () => {} })))
   assert.match(permissionMarkup, /Standard/)
   assert.match(permissionMarkup, /Can manage appointments and customers/)
@@ -196,8 +201,11 @@ try {
   const detail = await render("/team/staff-1")
   assert.match(detail, /data-slot="person-profile-header"/)
   assert.match(detail, /data-slot="avatar"/)
-  assert.match(detail, /mailto:raya@example.invalid/)
-  assert.match(detail, /tel:\+358401234567/)
+  assert.doesNotMatch(detail, /mailto:|tel:/)
+  assert.match(detail, /raya@example.invalid/)
+  assert.match(detail, /\+358401234567/)
+  assert.match(detail, /aria-label="Copy email"/)
+  assert.match(detail, /aria-label="Copy phone number"/)
   assert.match(detail, /Working hours/)
   assert.match(detail, /Contact details and team profile/)
   assert.match(detail, /Appointments specialist/)
@@ -214,7 +222,7 @@ try {
   assert.match(ownSettings, /whitespace-nowrap text-center/)
   assert.match(ownSettings, /grow-0 shrink-0 basis-auto/)
   assert.match(ownSettings, /size-12 text-base/)
-  assert.match(ownSettings, /w-fit max-w-full/)
+  assert.match(ownSettings, /overflow-x-auto overflow-y-hidden/)
   assert.match(ownSettings, /overflow-x-auto/)
   assert.match(ownSettings, />General</)
   assert.match(ownSettings, />Appointments</)
@@ -232,8 +240,7 @@ try {
   const ownAppointments = await render("/own-settings?tab=appointments")
   assert.match(ownAppointments, /Takes appointments/)
   assert.match(ownAppointments, /Introduction/)
-  assert.match(ownAppointments, /Locations/)
-  assert.match(ownAppointments, /Office/)
+  assert.doesNotMatch(ownAppointments, /Choose locations|name="locationIds"|>Locations</)
   assert.doesNotMatch(ownSettings, /aria-label="Services"/)
   const cleanFooter = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(SettingsFormFooter, { formId: "own-profile-form", isMobile: false, onCancel: () => {}, state: { isDirty: false, isSubmitting: false, canSubmit: true } })))
   for (const isMobile of [true, false]) {
@@ -249,7 +256,9 @@ try {
   const ownNameInput = ownSettings.match(/<input[^>]*name="name"[^>]*>/)?.[0] ?? ""
   assert.match(ownNameInput, /value="Raya"/)
   assert.doesNotMatch(ownNameInput, /value="Owner"/)
-  assert.doesNotMatch(ownSettings, /<h3/)
+  assert.match(ownSettings, /<h3[^>]*>Working hours<\/h3>/)
+  assert.match(ownSettings, /<h3[^>]*>Breaks<\/h3>/)
+  assert.match(ownSettings, /<h3[^>]*>Time off<\/h3>/)
   assert.match(ownSettings, /name="phone"/)
   assert.doesNotMatch(ownSettings, /data-slot="sheet-popup"|data-slot="person-edit-header"/)
   assert.doesNotMatch(ownSettings, /href="\/team\/staff-1/)
@@ -283,6 +292,12 @@ try {
   queryClient.setQueryData(options.availability.getTimeOff.queryKey({ staffMemberId: staff.id }), [])
   const servicesProfile = await render("/team/staff-1?profileTab=services")
   assert.match(servicesProfile, /Consultation/)
+  assert.match(servicesProfile, /30 min/)
+  assert.match(servicesProfile, /Online/)
+  assert.match(servicesProfile, /A short consultation/)
+  assert.match(servicesProfile, /color:#8f49b5/)
+  assert.match(servicesProfile, /data-slot="badge"/)
+  assert.doesNotMatch(servicesProfile, /Move Consultation|Actions for Consultation/)
   assert.match(servicesProfile, /aria-label="Edit"/)
   assert.doesNotMatch(detail, /<dt[^>]*>Timezone<\/dt>/)
   assert.match(detail, /href="\/team\/staff-1\/edit"/)
@@ -309,6 +324,35 @@ try {
   assert.match(usHours, /9:00 AM/)
   assert.match(usHours, /5:00 PM/)
   formatPreference = "eu"
+  const currentHours = queryClient.getQueryData(options.availability.getRules.queryKey({ staffMemberId: staff.id }))![0]
+  const futureDate = new Date("2090-01-01T22:00:00Z")
+  queryClient.setQueryData(options.availability.getRules.queryKey({ staffMemberId: staff.id }), [
+    { ...currentHours, validUntil: futureDate },
+    { ...currentHours, id: "future-hours", startMinute: 660, validFrom: futureDate },
+    { ...currentHours, id: "past-hours", startMinute: 420, validUntil: new Date("2000-01-01T00:00:00Z") },
+    { ...currentHours, id: "location-hours", locationId: "location-1", startMinute: 360 },
+  ])
+  for (const pathname of ["/team-v2/staff-1/edit?editTab=availability", "/own-settings?tab=availability"]) {
+    const markup = await render(pathname)
+    const hoursInputs = markup.match(/<input[^>]*name="workingHours\[\d+\]\.startMinute"[^>]*>/g) ?? []
+    assert.equal(hoursInputs.length, 1, "Team and settings edit only the current personal schedule")
+    assert.match(hoursInputs[0], /value="540"/)
+  }
+  const currentHoursView = await render("/team-v2/staff-1?profileTab=availability")
+  assert.match(currentHoursView, /9:00 – 17:00/)
+  assert.doesNotMatch(currentHoursView, />11:00|>7:00|>6:00/)
+  const currentBreak = { ...currentHours, id: "current-break", isBreak: true, startMinute: 720, endMinute: 750, validUntil: futureDate }
+  queryClient.setQueryData(options.availability.getBreaks.queryKey({ staffMemberId: staff.id }), [currentBreak, { ...currentBreak, id: "future-break", startMinute: 780, endMinute: 810, validFrom: futureDate, validUntil: null }])
+  for (const pathname of ["/team-v2/staff-1/edit?editTab=breaks", "/own-settings?tab=breaks"]) {
+    const markup = await render(pathname)
+    const breakInputs = markup.match(/<input[^>]*name="breaks\[\d+\]\.startMinute"[^>]*>/g) ?? []
+    assert.equal(breakInputs.length, 1, "Team and settings exclude upcoming breaks from the current schedule")
+    assert.match(breakInputs[0], /value="720"/)
+  }
+  const currentBreaksView = await render("/team-v2/staff-1?profileTab=breaks")
+  assert.match(currentBreaksView, /12:00 – 12:30/)
+  assert.doesNotMatch(currentBreaksView, /13:00/)
+  queryClient.setQueryData(options.availability.getBreaks.queryKey({ staffMemberId: staff.id }), [])
   queryClient.setQueryData(options.availability.getRules.queryKey({ staffMemberId: staff.id }), [])
   const emptyHours = await render("/team/staff-1?profileTab=availability")
   assert.doesNotMatch(emptyHours, /No personal working hours yet|Business and location schedules may still apply/)
@@ -434,6 +478,11 @@ try {
   assert.match(editServices, /<button(?=[^>]*aria-label="Services")(?=[^>]*aria-selected="true")[^>]*>/)
   assert.match(editServices, /href="\/team\/staff-1\?profileTab=services"/)
   assert.match(editServices, /value="Raya"/)
+  assert.match(editServices, /aria-label="Search services"/)
+  assert.match(editServices, /Select all/)
+  assert.match(editServices, /1 service selected/)
+  assert.match(editServices, /data-checked=""[^>]*data-slot="checkbox"/)
+  assert.match(editServices, /30 min/)
   assert.match(editServices, /<button(?=[^>]*disabled="")(?=[^>]*type="submit")[^>]*>Save<\/button>/)
   const editHours = await render("/team/staff-1/edit?editTab=availability")
   assert.match(editHours, /<button(?=[^>]*aria-label="Working hours")(?=[^>]*aria-selected="true")[^>]*>/)
@@ -553,12 +602,13 @@ try {
   const coldCreate = await render("/team/new")
   assert.match(coldCreate, /Add member/)
   assert.match(coldCreate, /Loading services/)
-  assert.match(coldCreate, /Loading locations/)
+  assert.doesNotMatch(coldCreate, /Loading locations/)
   queryClient.setQueryData([...options.service.list.queryKey()], [])
   queryClient.setQueryData([...options.location.list.queryKey()], [])
   const emptyOptions = await render("/team/new")
-  assert.match(emptyOptions, /Choose services/)
-  assert.match(emptyOptions, /Choose locations/)
+  assert.match(emptyOptions, /No services yet/)
+  assert.match(emptyOptions, /Add service/)
+  assert.doesNotMatch(emptyOptions, /Choose locations/)
   assert.doesNotMatch(emptyOptions, /Loading services|Loading locations/)
   console.info("PASS profile header, about/services/working hours tabs, services management, direct invitation button and access visibility, saved hours and empty/loading states, read-only permissions, member-only profiles, create/edit forms, one sheet during editing and Finnish labels")
 } finally {

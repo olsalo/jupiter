@@ -223,6 +223,8 @@
     "addAction": "Lisää jäsen"
   },
   "timeOff": {
+    "upcoming": "Tulevat poissaolot",
+    "emptyUpcoming": "Ei tulevia poissaoloja",
     "tab": "Poissaolot",
     "add": "Lisää",
     "description": "Estä varaukset poissaolon ajaksi",

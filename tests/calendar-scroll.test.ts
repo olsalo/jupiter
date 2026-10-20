@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 
-import { getCalendarBookingScrollPosition, getCalendarBookingRevealScrollLeft, getCalendarTodayScrollLeft } from "../app/lib/calendar-scroll.ts"
+import { getCalendarTimeScrollLeft, getCalendarBookingScrollPosition, getCalendarBookingRevealScrollLeft, getCalendarBookingRevealScrollPosition, getCalendarTodayScrollLeft } from "../app/lib/calendar/scroll.ts"
 
 const bounds = (left: number, top: number, width: number, height: number) => ({ left, top, width, height })
 const viewport = {
@@ -50,3 +50,17 @@ assert.equal(getCalendarBookingRevealScrollLeft({ ...narrowed, scrollLeft: 0 }, 
 assert.equal(getCalendarBookingRevealScrollLeft({ ...narrowed, scrollLeft: 1300 }, bounds(1800, 300, 152, 40)), 1308, "Revealing a booking respects the final scroll position")
 assert.equal(getCalendarBookingRevealScrollLeft({ ...narrowed, clientWidth: 2240, scrollLeft: 0 }, bounds(170, 300, 2100, 40)), 0, "A responsive day view that fits does not move")
 console.info("PASS reveal only clipped bookings, minimum scrolling, existing view preservation and scroll bounds")
+
+const scrolled = { ...viewport, scrollLeft: 400, scrollTop: 300 }
+assert.deepEqual(getCalendarBookingRevealScrollPosition(scrolled, bounds(300, 300, 150, 60)), { left: 400, top: 300 }, "Regular edits leave a fully visible preview and both scroll offsets untouched")
+assert.equal(getCalendarBookingRevealScrollPosition(scrolled, bounds(300, 750, 150, 60)).top, 422, "Editing to a later time scrolls only far enough to reveal the block's end")
+assert.equal(getCalendarBookingRevealScrollPosition(scrolled, bounds(300, 150, 150, 60)).top, 218, "Editing to an earlier time reveals the block's start")
+assert.equal(getCalendarBookingRevealScrollPosition(scrolled, bounds(300, 150, 150, 700)).top, 218, "A booking taller than the viewport reveals its start")
+console.info("PASS live edit preview reveal in both axes with minimal scrolling")
+
+const horizontalDay = { minute: 750, startMinute: 480, endMinute: 1080, gridWidth: 3600, viewportWidth: 800, padding: 8 }
+assert.equal(getCalendarTimeScrollLeft(horizontalDay), 1228, "Rows center the current time in the visible time area, excluding the member column")
+assert.equal(getCalendarTimeScrollLeft({ ...horizontalDay, minute: 420 }), 0, "Times before opening stop at the start")
+assert.equal(getCalendarTimeScrollLeft({ ...horizontalDay, minute: 1200 }), 2816, "Times after closing stop at the final scroll position")
+assert.equal(getCalendarTimeScrollLeft({ ...horizontalDay, viewportWidth: 4000 }), 0, "A day that fits the viewport needs no scroll")
+console.info("PASS row time centering, edge padding and scroll bounds")

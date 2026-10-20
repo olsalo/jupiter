@@ -21,6 +21,8 @@ export const iconMap = {
   gripVertical: TablerIcons.IconGripVertical,
   minus: TablerIcons.IconMinus,
   plus: TablerIcons.IconPlus,
+  layoutColumns: TablerIcons.IconLayoutColumns,
+  layoutRows: TablerIcons.IconLayoutRows,
   layoutSidebarInactive: TablerIcons.IconLayoutSidebarInactive,
 
   alertCircle: TablerIcons.IconAlertCircle,
@@ -32,6 +34,8 @@ export const iconMap = {
   infoCircle: TablerIcons.IconInfoCircle,
 
   calendar: TablerIcons.IconCalendar,
+  calendarWeek: TablerIcons.IconCalendarWeek,
+  list: TablerIcons.IconList,
   calendarEvent: TablerIcons.IconCalendarEvent,
   calendarOff: TablerIcons.IconCalendarOff,
   coffee: TablerIcons.IconCoffee,

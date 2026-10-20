@@ -121,38 +121,31 @@
 }
 
 @layer utilities {
-  @media (width < 768px), (orientation: landscape) and (pointer: coarse) and (height < 600px) {
-    .route-mobile-header {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      margin-inline: -1.5rem;
-      padding: 1.5rem;
-      isolation: isolate;
-    }
+  .route-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin-inline: -1.5rem;
+    padding: 1.5rem;
+    isolation: isolate;
+  }
 
-    .route-mobile-header::before {
-      position: absolute;
-      z-index: -1;
-      inset: 0;
-      background: color-mix(in oklab, var(--background) 40%, transparent);
-      backdrop-filter: blur(40px) saturate(150%);
-      mask-image: linear-gradient(
-        to bottom,
-        black 0%,
-        black 75%,
-        transparent 100%
-      );
-      pointer-events: none;
-      content: "";
-    }
+  .route-header::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background: color-mix(in oklab, var(--background) 40%, transparent);
+    backdrop-filter: blur(40px) saturate(150%);
+    mask-image: linear-gradient(to bottom, black 0%, black 75%, transparent 100%);
+    pointer-events: none;
+    content: "";
+  }
 
-    .route-mobile-header.table-page-header::before {
-      right: auto;
-      left: 50%;
-      width: 100vw;
-      transform: translateX(-50%);
-    }
+  .floating-layout .route-header::before {
+    right: auto;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
   }
 
   .floating-layout[data-electron="true"] .electron-drag {

@@ -8,7 +8,6 @@ import {
   href,
   useLocation,
   useMatches,
-  useNavigate,
   useNavigation,
   useRouteLoaderData,
 } from "react-router"
@@ -18,15 +17,13 @@ import type { loader as rootLoader } from "~/root"
 import { AppLogo } from "~/components/app-logo"
 import { BillingNotificationBar } from "~/components/billing-notification-bar"
 import { FloatingLayout } from "~/components/floating-layout"
-import Icon from "~/components/icons"
 import { NavigationIcon } from "~/components/navigation-icon"
-import { PageHeader } from "~/components/page-header"
-import { ServiceCategoryControls, ServiceCategoryProvider } from "~/components/services/service-category-controls"
-import { CalendarHeaderActions } from "~/components/calendar-header-actions"
+import { useMediaQuery } from "~/lib/hooks"
+import { resolvePageLayout, type PageLayoutPreference } from "~/lib/page-layout"
+import { ServiceCategoryProvider } from "~/components/services/service-category-controls"
 import { Profile } from "~/components/profile"
 import { SettingsModal } from "~/components/settings-modal"
 import { WelcomeDialog } from "~/components/welcome-dialog"
-import { Button } from "~/components/ui/button"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import {
   Tooltip,
@@ -34,15 +31,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip"
-import { getRoutePermissions, hasOrganizationPermission, type OrganizationPermissions } from "~/lib/auth/permissions"
+import { getRoutePermissions, hasOrganizationPermission } from "~/lib/auth/permissions"
 import { useCurrentOrganizationRole } from "~/lib/use-organization-access"
 import { appNavigationItems } from "~/lib/app-navigation"
 import { cn } from "~/lib/utils"
 import { desktopViewportQuery } from "~/lib/mobile-navigation"
+import { calendarReferenceQueryOptions } from "~/lib/calendar/query-options"
 import { useTRPC } from "~/lib/trpc/client"
 import { useBottomScrollFade } from "~/lib/use-bottom-scroll-fade"
 import { useRouteScrollRestoration } from "~/lib/use-route-scroll-restoration"
-import { useOverviewGreeting } from "~/lib/use-overview-greeting"
 import {
   requireAuthMiddleware,
   requireOrganizationMiddleware,
@@ -79,18 +76,11 @@ const subscribeToElectron = () => () => {}
 const getElectron = () => navigator.userAgent.includes("Electron/")
 const getServerElectron = () => false
 
-type PageHeaderData = {
-  actionHref?: string
-  actionLabel?: string
-  description?: string
-  refreshing?: boolean
-  title?: string
-}
-
 export default function Layout() {
   const { t } = useTranslation()
-  const overviewGreeting = useOverviewGreeting()
   const trpc = useTRPC()
+  useQuery({ ...trpc.staff.list.queryOptions(), ...calendarReferenceQueryOptions })
+  useQuery({ ...trpc.organizations.getCurrent.queryOptions(), ...calendarReferenceQueryOptions })
   useQuery(trpc.example.count.queryOptions())
   const organizationRole = useCurrentOrganizationRole()
   useQuery({ ...trpc.team.count.queryOptions(), enabled: hasOrganizationPermission(organizationRole, { team: ["manage"] }) })
@@ -111,7 +101,9 @@ export default function Layout() {
       match.id === "routes/example/new-note-modal",
   )
   const workspaceMatch = matches.find((match) => (match.handle as { workspace?: boolean } | undefined)?.workspace)
-  const isContainedWorkspace = (workspaceMatch?.handle as { contained?: boolean } | undefined)?.contained === true
+  const isMobile = useMediaQuery("max-768px")
+  const pageLayout = (workspaceMatch?.handle as { pageLayout?: PageLayoutPreference } | undefined)?.pageLayout ?? "scroll"
+  const isViewportPage = resolvePageLayout(pageLayout, isMobile) === "viewport"
   const isOverlayRoute = isNoteModal || matches.some((match) => (match.handle as { overlay?: boolean } | undefined)?.overlay)
   const pagePathname = workspaceMatch?.pathname ?? notesMatch?.pathname ?? location.pathname
   const previousPathname = useRef(pagePathname)
@@ -125,7 +117,6 @@ export default function Layout() {
     }
   }, [isOverlayRoute, pagePathname])
   const animatePage = !isOverlayRoute && animatedPathname === pagePathname
-  const navigate = useNavigate()
   const navigation = useNavigation()
   const pendingPathname =
     navigation.state !== "idle" ? navigation.location?.pathname : undefined
@@ -136,31 +127,9 @@ export default function Layout() {
   const [hasHorizontalOverflow, setHasHorizontalOverflow] = useState(false)
   const [hasVerticalOverflow, setHasVerticalOverflow] = useState(false)
   const user = rootData?.user ?? null
-  const isOverviewRoute = matches.some((match) => match.id === "routes/overview")
-  const workspaceHeader = (workspaceMatch?.handle as {
-    pageHeader?: { titleKey: string, createTitleKey?: string, createPermissions?: OrganizationPermissions }
-  } | undefined)?.pageHeader
-  const headerServices = useQuery({ ...trpc.service.list.queryOptions(), enabled: workspaceHeader?.titleKey === "services" })
-  const canCreateFromHeader = !workspaceHeader?.createPermissions || hasOrganizationPermission(organizationRole, workspaceHeader.createPermissions)
-  const CategoryProvider = workspaceHeader?.titleKey === "services" ? ServiceCategoryProvider : Fragment
-  const pageHeaderData: PageHeaderData | undefined = workspaceHeader ? {
-    title: t(`routeTitles.${workspaceHeader.titleKey}`),
-    description: t(`routeDescriptions.${workspaceHeader.titleKey}`),
-    actionHref: workspaceHeader.createTitleKey && canCreateFromHeader ? `${workspaceMatch?.pathname}/new${location.search}` : undefined,
-    actionLabel: workspaceHeader.createTitleKey && canCreateFromHeader ? t(`routeActions.${workspaceHeader.createTitleKey}`) : undefined,
-    refreshing: workspaceHeader.titleKey === "services" && headerServices.isRefetching,
-  } : isOverviewRoute ? {
-    title: overviewGreeting,
-    description: t("dashboard:description"),
-  } : undefined
-  const isNotesRoute = Boolean(notesMatch)
-  const isTableRoute =
-    isNotesRoute ||
-    matches.some((match) => match.id === "routes/team/team" || match.id === "routes/team-v2/team")
-  useBottomScrollFade(scrollViewportRef, bottomBlurRef, isTableRoute)
-  function openCreateNote() {
-    navigate("/example/new")
-  }
+  const isServicesRoute = workspaceMatch?.id === "routes/services/services"
+  const CategoryProvider = isServicesRoute ? ServiceCategoryProvider : Fragment
+  useBottomScrollFade(scrollViewportRef, bottomBlurRef, isViewportPage)
   const isDesktop = useSyncExternalStore(
     subscribeToDesktopViewport,
     getDesktopViewport,
@@ -201,25 +170,20 @@ export default function Layout() {
       resizeObserver.disconnect()
       viewport.removeEventListener("scroll", updateScrollOverflow)
     }
-  }, [pageHeaderData?.title])
+  }, [pagePathname, isViewportPage])
 
   if (import.meta.env.VITE_APP_LAYOUT_STYLE === "floating") {
     return (
       <CategoryProvider>
         <WelcomeDialog />
         <FloatingLayout
-          headerControls={workspaceHeader?.titleKey === "services" ? <ServiceCategoryControls /> : undefined}
-          headerActions={workspaceHeader?.titleKey === "calendar" ? <CalendarHeaderActions /> : undefined}
           animatePage={animatePage}
           billingNotification={rootData?.billingNotification}
+          isViewportPage={isViewportPage}
           isDesktop={isDesktop}
           isElectron={isElectron}
-          isTableRoute={isTableRoute}
-          containedContent={isContainedWorkspace}
-          fillContent={isOverviewRoute}
           pendingPath={pendingPath}
           menuItems={menuItems}
-          pageHeaderData={pageHeaderData}
           routePathname={pagePathname}
           user={user}
         />
@@ -256,11 +220,10 @@ export default function Layout() {
           </Link>
 
           <nav className="-mx-3 my-3 flex min-h-0 w-[calc(100%+1.5rem)] flex-1 flex-col gap-2 overflow-y-auto px-3 justify-center">
-            <TooltipProvider delay={0}>
+            <TooltipProvider>
               {menuItems.map((item) => (
                 <Tooltip key={item.path}>
                   <TooltipTrigger
-                    delay={0}
                     render={
                       <NavLink
                         aria-label={t(item.labelKey)}
@@ -313,55 +276,16 @@ export default function Layout() {
             scrollFade={false}
             scrollbarClassName={cn(
               "z-20 max-md:hidden",
-              (isTableRoute || !hasVerticalOverflow) && "[&[data-orientation=vertical]]:hidden",
+              (isViewportPage || !hasVerticalOverflow) && "[&[data-orientation=vertical]]:hidden",
               !hasHorizontalOverflow && "[&[data-orientation=horizontal]]:hidden",
             )}
             viewportProps={{
-              className: cn("app-page-scroll !overflow-x-hidden", isTableRoute && "md:!overflow-y-hidden", isContainedWorkspace && "!overflow-y-hidden"),
+              className: cn("app-page-scroll !overflow-x-hidden", pageLayout === "viewport-desktop" && isMobile && "[overflow-anchor:none]", isViewportPage && "!overflow-y-hidden"),
               ref: scrollViewportRef,
             }}
           >
-            <div className={cn("flex min-h-full min-w-0 flex-col", isTableRoute && "md:h-full", isContainedWorkspace && "h-full min-h-0")}>
-              {pageHeaderData?.title && !isTableRoute ? (
-                <div
-                  className="sticky top-0 z-10 hidden shrink-0 px-6 pt-6 pb-6 md:block"
-                  key={`header-${pagePathname}`}
-                >
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 z-0 bg-background/25 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)] md:bg-background/40 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_75%,transparent_100%)]"
-                  />
-                  <PageHeader
-                    controls={workspaceHeader?.titleKey === "services" ? <ServiceCategoryControls /> : undefined}
-                    actions={
-                      workspaceHeader?.titleKey === "calendar" ? <CalendarHeaderActions /> : isNotesRoute && pageHeaderData.actionLabel ? (
-                        <Button
-                          onClick={openCreateNote}
-                          size="lg"
-                          type="button"
-                        >
-                          <Icon aria-hidden="true" name="add" size={16} />
-                          {pageHeaderData.actionLabel}
-                        </Button>
-                      ) : pageHeaderData.actionHref &&
-                        pageHeaderData.actionLabel ? (
-                        <Button
-                          render={<Link to={pageHeaderData.actionHref} state={{ returnTo: `${pagePathname}${location.search}` }} />}
-                          size="lg"
-                        >
-                          <Icon aria-hidden="true" name="add" size={16} />
-                          {pageHeaderData.actionLabel}
-                        </Button>
-                      ) : undefined
-                    }
-                    className={cn("relative z-10", animatePage && "route-enter")}
-                    description={pageHeaderData.description}
-                    refreshing={pageHeaderData.refreshing ?? false}
-                    title={pageHeaderData.title}
-                  />
-                </div>
-              ) : null}
-              <div className={cn("flex min-w-0 flex-1 flex-col gap-6 p-6 md:min-h-0 md:pt-0 md:px-6", isContainedWorkspace && "min-h-0")}>
+            <div className={cn("flex min-h-full min-w-0 flex-col", isViewportPage && "h-full min-h-0")}>
+              <div className={cn("flex min-w-0 flex-1 flex-col gap-0 p-6 md:min-h-0 md:pt-0 md:px-6", isViewportPage && "min-h-0")}>
                 <header className="flex shrink-0 items-start justify-between md:hidden">
                   <Link
                     aria-label={t("nav.overviewHome")}
@@ -382,7 +306,7 @@ export default function Layout() {
                 <div
                   className={cn(
                     "flex min-w-0 flex-1 flex-col md:min-h-0",
-                    isContainedWorkspace && "min-h-0",
+                    isViewportPage && "min-h-0",
                     animatePage && "route-enter",
                   )}
                   key={`content-${pagePathname}`}
@@ -396,20 +320,20 @@ export default function Layout() {
             aria-hidden="true"
             className={cn(
               "pointer-events-none absolute inset-x-0 bottom-0 z-10 h-8 bg-linear-to-t from-background/75 from-50% to-transparent will-change-opacity",
-              isTableRoute && "md:hidden",
-              isContainedWorkspace && "hidden",
+              isViewportPage && "hidden",
             )}
             ref={bottomBlurRef}
           />
         </section>
       </div>
 
-      <nav className="flex h-13 shrink-0 items-center justify-start gap-3 overflow-x-auto border-t border-border bg-background p-5 md:hidden">
+      <nav className="grid h-[calc(4rem+env(safe-area-inset-bottom))] shrink-0 auto-cols-fr grid-flow-col place-items-center overflow-hidden border-t border-border bg-background px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 md:hidden">
         {menuItems.map((item) => (
           <NavLink
+            aria-label={t(item.labelKey)}
             className={({ isActive }) =>
               cn(
-                "flex h-8 shrink-0 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium transition-[background-color,color,border-color,box-shadow] duration-300 ease-out [-webkit-touch-callout:none] motion-reduce:transition-none",
+                "flex aspect-square w-full max-w-12 items-center justify-center rounded-lg border transition-[background-color,color,border-color,box-shadow] duration-300 ease-out [-webkit-touch-callout:none] motion-reduce:transition-none",
                 (pendingPath ? pendingPath === item.path : isActive)
                   ? "border-border bg-sidebar-accent text-sidebar-accent-foreground shadow-xs"
                   : "border-transparent text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
@@ -424,15 +348,12 @@ export default function Layout() {
             to={href(item.path)}
           >
             {({ isActive }) => (
-              <>
-                <NavigationIcon
-                  active={pendingPath ? pendingPath === item.path : isActive}
-                  activeIcon={item.activeIcon}
-                  icon={item.icon}
-                  size={16}
-                />
-                <span>{t(item.labelKey)}</span>
-              </>
+              <NavigationIcon
+                active={pendingPath ? pendingPath === item.path : isActive}
+                activeIcon={item.activeIcon}
+                icon={item.icon}
+                size={24}
+              />
             )}
           </NavLink>
         ))}

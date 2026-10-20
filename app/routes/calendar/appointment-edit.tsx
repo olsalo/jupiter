@@ -1,5 +1,5 @@
 import { CalendarBookingEdit } from "~/components/calendar/calendar-booking-edit"
 
-export default function Edit() {
+export default function EditAppointmentRoute() {
   return <CalendarBookingEdit />
 }

@@ -8,6 +8,9 @@ import Icon from "../icons"
 import type * as React from "react";
 import { createContext, useContext, useRef } from "react"
 
+import { createChangeEventDetails } from "@base-ui/react/internals/createBaseUIEventDetails"
+import { useDrawerDropdownState } from "~/components/drawer-dropdown-state"
+
 import { cn } from "@coss/ui/lib/utils";
 
 const SelectListRefContext = createContext<
@@ -16,14 +19,18 @@ const SelectListRefContext = createContext<
 
 function Select<Value, Multiple extends boolean | undefined = false>({
   onOpenChangeComplete,
+  highlightItemOnHover = false,
   ...props
 }: SelectPrimitive.Root.Props<Value, Multiple>) {
   const listRef = useRef<HTMLDivElement>(null)
+  const dropdown = useDrawerDropdownState<SelectPrimitive.Root.ChangeEventDetails>(props, () => createChangeEventDetails("none"))
 
   return (
     <SelectListRefContext.Provider value={listRef}>
       <SelectPrimitive.Root
         {...props}
+        {...dropdown}
+        highlightItemOnHover={highlightItemOnHover}
         onOpenChangeComplete={(open) => {
           if (open) {
             const list = listRef.current
@@ -230,7 +237,7 @@ function SelectItem({
   return (
     <SelectPrimitive.Item
       className={cn(
-        "grid min-h-8 in-data-[side=none]:min-w-[calc(var(--anchor-width)+1.25rem)] cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-sm py-1 ps-2 pe-4 text-base sm:text-sm outline-none data-disabled:pointer-events-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:opacity-64 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "grid min-h-8 in-data-[side=none]:min-w-[calc(var(--anchor-width)+1.25rem)] cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-sm py-1 ps-2 pe-4 text-base sm:text-sm outline-none data-disabled:pointer-events-none hover:bg-accent hover:text-accent-foreground active:bg-accent active:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground data-disabled:opacity-64 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       data-slot="select-item"

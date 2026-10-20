@@ -1,6 +1,6 @@
 import "dotenv/config"
 import assert from "node:assert/strict"
-import { createElement, Fragment } from "react"
+import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { createStaticHandler, createStaticRouter, Outlet, StaticRouterProvider } from "react-router"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
@@ -10,12 +10,11 @@ import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
 
 const appPath = new URL("../app", import.meta.url).pathname
-const vite = await createServer({ configFile: false, appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, ws: false, hmr: false, watch: null } })
+const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/services-list", appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, ws: false, hmr: false, watch: null } })
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } })
 try {
   const { default: Services } = await vite.ssrLoadModule("/app/routes/services/services.tsx") as typeof import("../app/routes/services/services")
-  const { ServiceCategoryProvider, ServiceCategoryControls } = await vite.ssrLoadModule("/app/components/services/service-category-controls.tsx") as typeof import("../app/components/services/service-category-controls")
-  const { PageHeader } = await vite.ssrLoadModule("/app/components/page-header.tsx") as typeof import("../app/components/page-header")
+  const { ServiceCategoryProvider } = await vite.ssrLoadModule("/app/components/services/service-category-controls.tsx") as typeof import("../app/components/services/service-category-controls")
   const { TRPCProvider, trpc } = await vite.ssrLoadModule("/app/lib/trpc/client.tsx") as typeof import("../app/lib/trpc/client")
   const { resources } = await vite.ssrLoadModule("/app/locales/index.ts") as typeof import("../app/locales")
   const options = createTRPCOptionsProxy({ client: trpc, queryClient })
@@ -23,10 +22,7 @@ try {
   const i18n = createInstance()
   await i18n.init({ resources, lng: "en", defaultNS: "common", interpolation: { escapeValue: false } })
   let role = "owner"
-  const ServicesWithHeader = () => createElement(ServiceCategoryProvider, { children: createElement(Fragment, null,
-    createElement("div", { "data-slot": "desktop-service-header" }, createElement(PageHeader, { title: "Services", controls: createElement(ServiceCategoryControls) })),
-    createElement(Services),
-  ) })
+  const ServicesWithHeader = () => createElement(ServiceCategoryProvider, { children: createElement(Services) })
   const handler = createStaticHandler([{ id: "root", path: "/", Component: Outlet, loader: () => ({ locale: i18n.language, org: { id: "org" }, organizations: [{ id: "org", role }], formatPreference: "eu" }), children: [{ path: "services", Component: ServicesWithHeader }] }])
   async function render(path = "/services") {
     const context = await handler.query(new Request(`https://example.invalid${path}`))
@@ -64,7 +60,7 @@ try {
   const selected = await render("/services?category=consultations")
   assert.match(selected, /<title>Services<\/title>/)
   assert.doesNotMatch(selected, /<h2[^>]*>Consultations<\/h2>/)
-  const desktopHeader = selected.match(/data-slot="desktop-service-header">([\s\S]*?)<\/header>/)?.[1]
+  const desktopHeader = selected.match(/<header\b[^>]*route-header[^>]*>([\s\S]*?)<\/header>/)?.[1]
   assert.ok(desktopHeader)
   assert.match(desktopHeader, /aria-label="Category: Consultations"/)
   assert.match(desktopHeader, /aria-label="Edit"/)

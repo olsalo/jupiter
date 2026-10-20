@@ -1,4 +1,4 @@
-import type { FormApi } from "@rvf/react"
+import { useFormScope, type FormScope } from "@rvf/react"
 import { useTranslation } from "react-i18next"
 
 import Icon from "~/components/icons"
@@ -10,7 +10,8 @@ import type { PersonFormFields } from "~/lib/schemas/team"
 import { TeamScheduleTimeFields } from "./team-schedule-time-fields"
 import { TeamWorkingHoursWeek } from "./team-working-hours-week"
 
-export function TeamWorkingHoursFields({ form, timezone, defaultHours, showHeader = true, resetPending = false, onResetToDefault }: { timezone: string; showHeader?: boolean; resetPending?: boolean; form: FormApi<PersonFormFields>; defaultHours: PersonFormFields["workingHours"]; onResetToDefault?: (hours: PersonFormFields["workingHours"]) => void | Promise<void> }) {
+export function TeamWorkingHoursFields({ scope, timezone, defaultHours, showHeader = true, resetPending = false, onResetToDefault }: { timezone: string; showHeader?: boolean; resetPending?: boolean; scope: FormScope<Pick<PersonFormFields, "workingHours" | "breaks">>; defaultHours: PersonFormFields["workingHours"]; onResetToDefault?: (hours: PersonFormFields["workingHours"]) => void | Promise<void> }) {
+  const form = useFormScope(scope)
   const { t } = useTranslation("team")
   const hours = form.getControlProps("workingHours")
   const rules = hours.value ?? []

@@ -11,12 +11,12 @@ import Icon from "~/components/icons"
 import FormLabel from "~/components/form-label"
 import { PhoneInput } from "~/components/phone-input"
 import { ResponsiveSheetPanel, ResponsiveSheetFooter } from "~/components/responsive-sheet"
+import { ServiceSelection } from "~/components/services/service-selection"
 import { SettingsSectionHeader } from "~/components/settings-section-header"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
-import { Select, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "~/components/ui/select"
 import { Separator } from "~/components/ui/separator"
 import { Spinner } from "~/components/ui/spinner"
 import { Tabs, TabsPanel } from "~/components/ui/tabs"
@@ -24,6 +24,7 @@ import { Textarea } from "~/components/ui/textarea"
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip"
 import { personFormSchema, type PersonFormFields, type PersonFormInput, type PersonFormValues } from "~/lib/schemas/team"
 import { breaksSnapshot } from "~/lib/team-breaks"
+import { currentScheduleDate, scheduleAt, type ScheduleRule } from "~/lib/calendar/availability"
 import { TeamPanelLoading } from "./team-panel-loading"
 import { useTRPC } from "~/lib/trpc/client"
 import { toast } from "~/lib/toast"
@@ -76,6 +77,7 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
       navigate({ pathname: location.pathname, search: `?${params}` }, { replace: true, state: location.state, preventScrollReset: true })
     }
   }
+  const fullHeightServices = !selfSettings && Boolean(person) && editTab === "services"
   const Panel = selfSettings ? "div" : ResponsiveSheetPanel
   const Footer = selfSettings ? "div" : ResponsiveSheetFooter
   const TabsRoot = selfSettings ? "div" : Tabs
@@ -94,22 +96,23 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
   const services = useQuery(trpc.service.list.queryOptions())
   const locations = useQuery(trpc.location.list.queryOptions())
   const organization = useQuery(trpc.organizations.general.queryOptions())
-  const serviceItems = (services.data ?? []).filter((service) => service.isActive || person?.staff?.staffServices.some((link) => link.serviceId === service.id)).map((service) => ({ label: service.name, value: service.id }))
-  const locationItems = (locations.data ?? []).filter((location) => location.isActive || person?.staff?.staffLocations.some((link) => link.locationId === location.id)).map((location) => ({ label: location.name, value: location.id }))
+  const serviceItems = (services.data ?? []).filter((service) => service.isActive || person?.staff?.staffServices.some((link) => link.serviceId === service.id))
   const emptyServices = !selfSettings && services.isSuccess && serviceItems.length === 0
-  const addServiceValue = "__add_service__"
   const editing = Boolean(person)
   const workingHours = useQuery({ ...trpc.availability.getRules.queryOptions({ staffMemberId: person?.staff?.id ?? "new" }), enabled: Boolean(person?.staff) })
   const businessHours = useBusinessWorkingHours()
   const personalHours = workingHours.data?.filter((rule) => rule.locationId === null)
-  const loadedHours = (personalHours?.length ? personalHours : (workingHours.isSuccess || !person?.staff) && !businessHours.isPending && !businessHours.isError ? businessHours.hours : undefined)?.map(({ dayOfWeek, startMinute, endMinute, validFrom, validUntil, isActive }) => ({ dayOfWeek, startMinute, endMinute, timezone: businessHours.timezone, validFrom, validUntil, isActive }))
+  const at = currentScheduleDate(businessHours.timezone)
+  const defaultHours = scheduleAt<ScheduleRule>(businessHours.hours, at).map(({ dayOfWeek, startMinute, endMinute, isActive }) => ({ dayOfWeek, startMinute, endMinute, timezone: businessHours.timezone, validFrom: null, validUntil: null, isActive }))
+  const hoursSource = personalHours?.length ? personalHours : (workingHours.isSuccess || !person?.staff) && !businessHours.isPending && !businessHours.isError ? businessHours.hours : undefined
+  const loadedHours = hoursSource ? scheduleAt<ScheduleRule>(hoursSource, at).map(({ dayOfWeek, startMinute, endMinute, isActive }) => ({ dayOfWeek, startMinute, endMinute, timezone: businessHours.timezone, validFrom: null, validUntil: null, isActive })) : undefined
   const breaksQuery = useQuery({ ...trpc.availability.getBreaks.queryOptions({ staffMemberId: person?.staff?.id ?? "new" }), enabled: Boolean(person?.staff) })
-  const loadedBreaks = breaksQuery.data?.filter((rule) => rule.locationId === null).map(({ dayOfWeek, startMinute, endMinute, validFrom, validUntil, isActive }) => ({ dayOfWeek, startMinute, endMinute, timezone: businessHours.timezone, validFrom, validUntil, isActive }))
+  const loadedBreaks = breaksQuery.data ? scheduleAt(breaksQuery.data.filter((rule) => rule.locationId === null), at).map(({ dayOfWeek, startMinute, endMinute, isActive }) => ({ dayOfWeek, startMinute, endMinute, timezone: businessHours.timezone, validFrom: null, validUntil: null, isActive })) : undefined
   const initialBreaks = useRef(breaksSnapshot(loadedBreaks ?? []))
   const breaksInitialized = useRef(Boolean(loadedBreaks) || !person?.staff)
   useEffect(() => {
     const form = formApi.current
-    if (loadedBreaks && form && !breaksInitialized.current) {
+    if (loadedBreaks && form && (!breaksInitialized.current || breaksSnapshot(form.transient.value().breaks ?? []) === initialBreaks.current)) {
       breaksInitialized.current = true
       initialBreaks.current = breaksSnapshot(loadedBreaks)
       if (savedFormValues.current) savedFormValues.current = { ...savedFormValues.current, breaks: loadedBreaks }
@@ -132,30 +135,26 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
   const hoursInitialized = useRef(Boolean(loadedHours))
   useEffect(() => {
     const form = formApi.current
-    if (loadedHours && form && !hoursInitialized.current) {
+    if (loadedHours && form && (!hoursInitialized.current || JSON.stringify(form.transient.value().workingHours) === initialHours.current)) {
       hoursInitialized.current = true
       initialHours.current = JSON.stringify(loadedHours)
       if (savedFormValues.current) savedFormValues.current = { ...savedFormValues.current, workingHours: loadedHours }
       form.setValue("workingHours", loadedHours)
     }
-  }, [workingHours.data, businessHours.hours, businessHours.isPending, businessHours.isError])
+  }, [workingHours.data, businessHours.hours, businessHours.timezone, businessHours.isPending, businessHours.isError])
   const schema = useMemo(() => personFormSchema(editing, Boolean(person?.staff), { useRequired: t("people.useRequired"), staffRequired: t("people.staffRequired"), endTime: t("people.endTimeError") }, selfSettings), [editing, Boolean(person?.staff), selfSettings, t])
   return (
     <TeamPersonNavigationLayout enabled={sideNavigation && Boolean(person) && !selfSettings} mode="edit" value={editTab} onValueChange={setEditTab} disabled={formSubmitting || update.isPending}>
     <TabsRoot className="contents" {...(selfSettings ? {} : { value: editTab, onValueChange: (value: unknown) => setEditTab(String(value)) })}>
     {person && !selfSettings ? <TeamPersonEditHeader person={person} disabled={formSubmitting || update.isPending} sideNavigation={sideNavigation} /> : null}
     {person && !selfSettings ? <TabsPanel className={editTab === "access" ? "flex min-h-0 flex-1 flex-col [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col" : "hidden"} keepMounted={true} value="access">
-      <ResponsiveSheetPanel className="flex grow shrink-0 flex-col p-6! pb-8!" scrollFade={true}>
-        <TeamPersonAccess person={person} disabled={formSubmitting || update.isPending} />
-      </ResponsiveSheetPanel>
+      <TeamPersonAccess person={person} disabled={formSubmitting || update.isPending} />
     </TabsPanel> : null}
     {person && selfSettings ? <PersonFormSection settings={true} editing={true} selectedTab={editTab} tab="time-off">
       {person.staff ? <TeamPersonTimeOff staff={person.staff} canManage={true} self={selfSettings} /> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
     </PersonFormSection> : null}
     {person && !selfSettings ? <TabsPanel className={editTab === "time-off" ? "flex min-h-0 flex-1 flex-col [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col" : "hidden"} keepMounted={true} value="time-off">
-      <ResponsiveSheetPanel className="flex grow shrink-0 flex-col p-6! pb-8!" scrollFade={true}>
-        {person.staff ? <TeamPersonTimeOff staff={person.staff} canManage={true} self={false} /> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
-      </ResponsiveSheetPanel>
+      {person.staff ? <TeamPersonTimeOff staff={person.staff} canManage={true} self={false} /> : <Alert className="m-6"><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
     </TabsPanel> : null}
     <AppForm<PersonFormInput, PersonFormValues, unknown, PersonFormFields, PersonFormFields>
       className="contents"
@@ -191,6 +190,7 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
           await Promise.all([
             queryClient.invalidateQueries(trpc.team.list.queryFilter()), queryClient.invalidateQueries(trpc.team.count.queryFilter()),
             queryClient.invalidateQueries(trpc.team.getPerson.queryFilter()), queryClient.invalidateQueries(trpc.profile.getTeamProfile.queryFilter()), queryClient.invalidateQueries(trpc.staff.list.queryFilter()),
+            queryClient.invalidateQueries(trpc.appointment.list.queryFilter()), queryClient.invalidateQueries(trpc.appointment.get.queryFilter()), queryClient.invalidateQueries(trpc.availability.calendarSchedule.queryFilter()),
             queryClient.invalidateQueries(trpc.availability.getRules.queryFilter()), queryClient.invalidateQueries(trpc.availability.getBreaks.queryFilter()), queryClient.invalidateQueries(trpc.availability.getSlots.queryFilter()),
           ])
           if (selfSettings) {
@@ -225,7 +225,6 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
         const sendEmail = form.getControlProps("sendEmail")
         const role = form.getControlProps("role")
         const serviceIds = form.getControlProps("serviceIds")
-        const locationIds = form.getControlProps("locationIds")
         const phone = form.getControlProps("phone")
         const useError = !editing && !bookable.value && !access.value ? form.error("takesAppointments") : undefined
         const values = form.value()
@@ -234,19 +233,15 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
         ) || (breaksInitialized.current && breaksSnapshot(values.breaks ?? []) !== initialBreaks.current)
         const canSubmit = !services.isLoading && !locations.isLoading && !((editTab === "availability" || editTab === "breaks") && (hoursPending || hoursError)) && !(editTab === "breaks" && Boolean(person?.staff) && (breaksQuery.isPending || breaksQuery.isError))
         const viewLoading = services.isLoading || locations.isLoading || ((editTab === "availability" || editTab === "breaks") && hoursPending) || (editTab === "breaks" && Boolean(person?.staff) && breaksQuery.isPending)
-        const locationField = <FormLabel label={t("people.locations")} description={t("people.locationsDescription")} error={form.error("locationIds")}>
-                <Select disabled={locations.isLoading || locationItems.length === 0} multiple={true} items={locationItems} value={locationIds.value} onValueChange={locationIds.onChange} name={locationIds.name}>
-                  <SelectTrigger aria-invalid={Boolean(form.error("locationIds"))} onBlur={locationIds.onBlur} ref={locationIds.ref}><SelectValue placeholder={t("people.chooseLocations")} />{locations.isLoading ? <Spinner aria-label={t("people.loadingLocations")} className="ms-auto size-4" /> : null}</SelectTrigger>
-                  <SelectPopup>{locationItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
-                </Select>
-              </FormLabel>
+        const panelLoading = editing && !selfSettings && ((editTab === "availability" || editTab === "breaks") && hoursPending || editTab === "breaks" && Boolean(person?.staff) && breaksQuery.isPending)
+        const fullHeightPanel = fullHeightServices || panelLoading
         const submitting = form.formState.isSubmitting || update.isPending || updateOwn.isPending || resetOwnHours.isPending
         return <>
           {selfSettings ? <SettingsFormStateObserver isDirty={hasEdits} isSubmitting={submitting} canSubmit={canSubmit} isLoading={viewLoading} onChange={onSettingsFormStateChange} /> : null}
-          <div className={(editTab === "access" || editTab === "time-off") && !selfSettings ? "hidden" : "contents"}>
-          <Panel className={selfSettings ? "flex min-h-0 flex-1 flex-col" : editing ? "flex min-h-full flex-1 flex-col p-0!" : "flex flex-col gap-5"}>
+          <div className={editTab === "time-off" || (editTab === "access" && !selfSettings) ? "hidden" : "contents"}>
+          {editing && !selfSettings && (editTab === "profile" || editTab === "services" || editTab === "availability" || editTab === "breaks") ? <div className="shrink-0 px-6 pt-6 pb-5"><SettingsSectionHeader title={t(editTab === "profile" ? "people.contact" : editTab === "services" ? "people.services" : editTab === "availability" ? "people.availability" : "people.breaks")} description={t(editTab === "profile" ? "people.contactSettingsDescription" : editTab === "services" ? "people.profileServicesDescription" : editTab === "availability" ? "people.editHoursDescription" : "people.breaksDescription")} /></div> : null}
+          <Panel {...(!selfSettings ? { scrollable: !fullHeightPanel } : {})} className={selfSettings ? "flex min-h-0 flex-1 flex-col" : fullHeightPanel ? "flex min-h-0 flex-1 flex-col overflow-hidden p-0!" : editing ? "flex min-h-full flex-1 flex-col p-0!" : "flex flex-col gap-5"}>
             <PersonFormSection settings={selfSettings} editing={editing} selectedTab={editTab} tab={selfSettings ? "general" : "profile"}>
-            {editing && !selfSettings ? <SettingsSectionHeader title={t("people.contact")} description={t("people.contactSettingsDescription")} /> : null}
             <FormLabel label={t("name")} description={selfSettings ? t("people.selfNameDescription") : undefined} error={form.error("name")}><Input {...form.getInputProps("name")} aria-invalid={Boolean(form.error("name"))} autoComplete="name" placeholder={t("invite.namePlaceholder")} type="text" /></FormLabel>
             <div className="grid gap-5 sm:grid-cols-2">
               <FormLabel className={!selfSettings && !bookable.value && !person?.staff ? "sm:col-span-2" : undefined} label={t("email")} description={selfSettings ? t("people.selfEmailDescription") : undefined} error={form.error("email")}>
@@ -287,35 +282,32 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
             </PersonFormSection>
             {selfSettings ? <PersonFormSection settings={true} editing={true} selectedTab={editTab} tab="appointments">
               <FormSwitch label={t("people.takesAppointments")} description={t("people.bookableDescription")} error={form.error("takesAppointments")} checked={bookable.value} onCheckedChange={bookable.onChange} onBlur={bookable.onBlur} ref={bookable.ref} name={bookable.name} />
-              {locationField}
               <FormLabel label={t("people.bio")} description={t("people.bioDescription")} error={form.error("bio")}><Textarea {...form.getInputProps("bio")} placeholder={t("people.bioPlaceholder")} aria-invalid={Boolean(form.error("bio"))} /></FormLabel>
             </PersonFormSection> : null}
             {!selfSettings ? <PersonFormSection settings={false} editing={editing} selectedTab={editTab} tab="services">
-            {editing && !selfSettings ? <SettingsSectionHeader title={t("people.services")} description={t("people.profileServicesDescription")} /> : null}
             {bookable.value || person?.staff ? <>
-              <FormLabel label={t("people.services")} description={t("people.servicesDescription")} error={form.error("serviceIds")}>
-                <Select disabled={services.isLoading} multiple={true} items={emptyServices ? [{ label: t("people.addService"), value: addServiceValue }] : serviceItems} value={serviceIds.value} onValueChange={(value) => {
-                    if (emptyServices && value.includes(addServiceValue)) { navigate("/services/new")
-                      return }
-                    serviceIds.onChange(value)
-                  }} name={serviceIds.name}>
-                  <SelectTrigger aria-invalid={Boolean(form.error("serviceIds"))} onBlur={serviceIds.onBlur} ref={serviceIds.ref}><SelectValue placeholder={t("people.chooseServices")} />{services.isLoading ? <Spinner aria-label={t("people.loadingServices")} className="ms-auto size-4" /> : null}</SelectTrigger>
-                  <SelectPopup>{emptyServices ? <SelectItem value={addServiceValue} className="w-full grid-cols-1 justify-center ps-3 pe-3 [&>div]:col-start-1 [&>div]:w-full" render={<Button className="w-full justify-center" type="button" variant="ghost" />}><span className="flex items-center justify-center gap-2"><Icon aria-hidden={true} name="add" size={16} />{t("people.addService")}</span></SelectItem> : serviceItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
-                </Select>
+              <FormLabel className={editing ? "min-h-0 flex-1 items-stretch" : undefined} label={t("people.services")} labelGroupClassName={editing ? "sr-only" : undefined} description={editing ? undefined : t("people.servicesDescription")} error={form.error("serviceIds")} errorPlacement="below">
+                {services.isLoading ? editing ? <div className="relative min-h-0 flex-1"><TeamPanelLoading label={t("people.loadingServices")} /></div> : <div className="flex min-h-48 items-center justify-center"><Spinner aria-label={t("people.loadingServices")} /></div> : <ServiceSelection className={editing ? undefined : "h-80 flex-none"} label={t("people.services")} services={serviceItems} value={serviceIds.value} onChange={serviceIds.onChange} onBlur={serviceIds.onBlur} inputRef={serviceIds.ref} disabled={submitting || services.isError} invalid={Boolean(form.error("serviceIds"))} />}
+                {emptyServices ? <Button className="w-fit" onClick={() => navigate("/services/new")} type="button" variant="outline"><Icon aria-hidden={true} name="add" size={16} />{t("people.addService")}</Button> : null}
               </FormLabel>
-              {locationField}
               {(services.isError || locations.isError) ? <Alert variant="error"><AlertTitle>{t("people.optionsError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription></Alert> : null}
               {!editing ? <FormLabel label={t("people.bio")} description={t("people.bioDescription")} error={form.error("bio")}><Textarea {...form.getInputProps("bio")} placeholder={t("people.bioPlaceholder")} aria-invalid={Boolean(form.error("bio"))} /></FormLabel> : null}
             </> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
             </PersonFormSection> : null}
             {editing ? <PersonFormSection settings={selfSettings} editing={true} selectedTab={editTab} tab="availability">
-              {hoursPending ? <TeamPanelLoading label={t("people.loadingAvailability")} /> : hoursError ? <Alert variant="error"><AlertTitle>{t("people.availabilityError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={workingHours.isFetching || businessHours.isFetching} onClick={() => void Promise.all([workingHours.refetch(), businessHours.refetch()])} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : bookable.value || person?.staff ? <TeamWorkingHoursFields showHeader={!selfSettings} form={form} defaultHours={businessHours.hours} resetPending={resetOwnHours.isPending} onResetToDefault={selfSettings ? async (hours) => {
+              {selfSettings ? <SettingsSectionHeader title={t("people.availability")} description={t("people.editHoursDescription")} /> : null}
+              {hoursPending ? <div className="relative min-h-0 flex-1"><TeamPanelLoading label={t("people.loadingAvailability")} /></div> : hoursError ? <Alert variant="error"><AlertTitle>{t("people.availabilityError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={workingHours.isFetching || businessHours.isFetching} onClick={() => void Promise.all([workingHours.refetch(), businessHours.refetch()])} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : bookable.value || person?.staff ? <TeamWorkingHoursFields showHeader={false} scope={form.scope()} defaultHours={defaultHours} resetPending={resetOwnHours.isPending} onResetToDefault={selfSettings ? async (hours) => {
                 try {
                   await resetOwnHours.mutateAsync()
                   formApi.current?.setValue("workingHours", hours)
                   initialHours.current = JSON.stringify(hours)
                   if (savedFormValues.current) savedFormValues.current = { ...savedFormValues.current, workingHours: hours }
-                  await queryClient.invalidateQueries(trpc.availability.getRules.queryFilter())
+                  await Promise.all([
+                    queryClient.invalidateQueries(trpc.availability.getRules.queryFilter()),
+                    queryClient.invalidateQueries(trpc.availability.calendarSchedule.queryFilter()),
+                    queryClient.invalidateQueries(trpc.appointment.list.queryFilter()),
+                    queryClient.invalidateQueries(trpc.appointment.get.queryFilter()),
+                  ])
                   toast.success(t("people.hoursRestored"))
                 } catch {
                   toast.error(t("people.restoreHoursFailed"))
@@ -323,7 +315,8 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
               } : undefined} timezone={businessHours.timezone} /> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
             </PersonFormSection> : null}
             {editing ? <PersonFormSection settings={selfSettings} editing={true} selectedTab={editTab} tab="breaks">
-              {hoursPending || (person?.staff && breaksQuery.isPending) ? <TeamPanelLoading label={t("people.loadingBreaks")} /> : hoursError || (person?.staff && breaksQuery.isError) ? <Alert variant="error"><AlertTitle>{t("people.breaksError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={breaksQuery.isFetching || workingHours.isFetching || businessHours.isFetching} onClick={() => void Promise.all([breaksQuery.refetch(), workingHours.refetch(), businessHours.refetch()])} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : bookable.value || person?.staff ? <TeamBreaksFields showHeader={!selfSettings} form={form} timezone={businessHours.timezone} /> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
+              {selfSettings ? <SettingsSectionHeader title={t("people.breaks")} description={t("people.breaksDescription")} /> : null}
+              {hoursPending || (person?.staff && breaksQuery.isPending) ? <div className="relative min-h-0 flex-1"><TeamPanelLoading label={t("people.loadingBreaks")} /></div> : hoursError || (person?.staff && breaksQuery.isError) ? <Alert variant="error"><AlertTitle>{t("people.breaksError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={breaksQuery.isFetching || workingHours.isFetching || businessHours.isFetching} onClick={() => void Promise.all([breaksQuery.refetch(), workingHours.refetch(), businessHours.refetch()])} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : bookable.value || person?.staff ? <TeamBreaksFields showHeader={false} scope={form.scope()} timezone={businessHours.timezone} /> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
             </PersonFormSection> : null}
             {!editing ? <>
               <Separator />
@@ -351,8 +344,8 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
 }
 
 function PersonFormSection({ editing, settings = false, selectedTab, tab, children }: { settings?: boolean; editing: boolean; selectedTab: string; tab: string; children: ReactNode }) {
-  if (settings) return <TabsPanel className={selectedTab === tab ? "relative flex min-h-0 flex-1 flex-col gap-5" : "hidden"} keepMounted={true} value={tab}>{children}</TabsPanel>
-  return editing ? <TabsPanel className={selectedTab === tab ? "relative flex min-h-0 flex-1 flex-col gap-5 p-6" : "hidden"} keepMounted={true} value={tab}>{children}</TabsPanel> : <>{children}</>
+  if (settings) return <TabsPanel className={selectedTab === tab ? "relative flex flex-1 flex-col gap-5" : "hidden"} keepMounted={true} value={tab}>{children}</TabsPanel>
+  return editing ? <TabsPanel className={selectedTab === tab ? "relative flex min-h-0 flex-1 flex-col gap-5 px-6 pb-6" : "hidden"} keepMounted={true} value={tab}>{children}</TabsPanel> : <>{children}</>
 }
 
 function profileSnapshot({ workingHours, breaks, serviceIds, locationIds, ...values }: PersonFormFields) {

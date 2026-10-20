@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next"
 import { Link, Outlet, useLocation } from "react-router"
 
 import Icon, { type AppIconName } from "~/components/icons"
-import { TablePage, TablePageHeader } from "~/components/table-page"
+import { ScrollPage } from "~/components/page-layout"
+import { RouteHeader } from "~/components/route-header"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
@@ -36,20 +37,21 @@ export function RoutePlaceholder({ titleKey, icon, createTitleKey, children }: {
   const location = useLocation()
   const title = t(`routeTitles.${titleKey}`)
   return (
-    <TablePage>
-      <title>{title}</title>
-      <TablePageHeader
+    <ScrollPage header={
+      <RouteHeader
         title={title}
         actions={createTitleKey ? (
-          <Button render={<Link to={`new${location.search}`} state={{ returnTo: `${location.pathname}${location.search}` }} />} type="button">
+          <Button aria-label={t(`routeActions.${createTitleKey}`)} className="max-md:size-9 max-md:p-0" render={<Link to={`new${location.search}`} state={{ returnTo: `${location.pathname}${location.search}` }} />} type="button">
             <Icon aria-hidden={true} name="add" size={18} />
-            {t(`routeActions.${createTitleKey}`)}
+            <span className="hidden md:inline">{t(`routeActions.${createTitleKey}`)}</span>
           </Button>
         ) : undefined}
       />
+    }>
+      <title>{title}</title>
       <PlaceholderBody icon={icon} />
       {children}
       <Outlet />
-    </TablePage>
+    </ScrollPage>
   )
 }

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 export const TooltipCreateHandle: typeof TooltipPrimitive.createHandle =
   TooltipPrimitive.createHandle;
 
-export function TooltipProvider({ delay = 100, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>): React.ReactElement {
+export function TooltipProvider({ delay = 50, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>): React.ReactElement {
   return <TooltipPrimitive.Provider delay={delay} {...props} />
 }
 
@@ -24,6 +24,7 @@ export function TooltipPopup({
   align = "center",
   sideOffset = 4,
   side = "top",
+  positionMethod,
   anchor,
   children,
   portalProps,
@@ -31,6 +32,7 @@ export function TooltipPopup({
 }: TooltipPrimitive.Popup.Props & {
   align?: TooltipPrimitive.Positioner.Props["align"];
   side?: TooltipPrimitive.Positioner.Props["side"];
+  positionMethod?: TooltipPrimitive.Positioner.Props["positionMethod"]
   sideOffset?: TooltipPrimitive.Positioner.Props["sideOffset"];
   anchor?: TooltipPrimitive.Positioner.Props["anchor"];
   portalProps?: TooltipPrimitive.Portal.Props;
@@ -40,7 +42,8 @@ export function TooltipPopup({
       <TooltipPrimitive.Positioner
         align={align}
         anchor={anchor}
-        className="z-50 h-(--positioner-height) w-(--positioner-width) max-w-(--available-width)"
+        positionMethod={positionMethod}
+        className="z-50 h-(--positioner-height) w-(--positioner-width) max-w-(--available-width) data-anchor-hidden:invisible"
         data-slot="tooltip-positioner"
         side={side}
         sideOffset={sideOffset}

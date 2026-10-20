@@ -1,13 +1,13 @@
-import { memo, useSyncExternalStore } from "react"
+import { useSyncExternalStore } from "react"
 import { createPortal } from "react-dom"
 
 import { CalendarAppointmentCard } from "~/components/calendar/calendar-appointment"
-import type { CalendarBookingDragPreviewStore } from "~/lib/calendar-booking-drag-preview"
+import type { CalendarBookingDragPreviewStore } from "~/lib/calendar/booking-drag-preview"
+import { calendarBookingReturnDuration, calendarBookingReturnEasing } from "~/lib/calendar/booking-return"
 import type { FormatPreference } from "~/lib/format-preference"
 
-const DraggedAppointmentCard = memo(CalendarAppointmentCard)
-
-export function CalendarBookingDragOverlay({ store, startMinute, endMinute, formatPreference }: {
+export function CalendarBookingDragOverlay({ store, startMinute, endMinute, formatPreference, horizontal = false }: {
+  horizontal?: boolean
   store: CalendarBookingDragPreviewStore
   startMinute: number
   endMinute: number
@@ -31,10 +31,10 @@ export function CalendarBookingDragOverlay({ store, startMinute, endMinute, form
       height: dragged.height,
       transform: `translate3d(${dragged.left - dragged.viewport.left}px, ${dragged.top - dragged.viewport.top}px, 0)`,
       transition: dragged.returning && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), width 260ms ease, height 260ms ease"
+        ? `transform ${calendarBookingReturnDuration}ms ${calendarBookingReturnEasing}, width ${calendarBookingReturnDuration}ms ${calendarBookingReturnEasing}, height ${calendarBookingReturnDuration}ms ${calendarBookingReturnEasing}`
         : undefined,
     }}
   >
-    <DraggedAppointmentCard appointment={dragged.appointment} dragging={!dragged.returning} endMinute={endMinute} floating={true} formatPreference={formatPreference} startMinute={startMinute} />
+    <CalendarAppointmentCard appointment={dragged.appointment} horizontal={horizontal} dragging={!dragged.returning} endMinute={endMinute} floating={true} formatPreference={formatPreference} startMinute={startMinute} />
   </div></div>, document.body)
 }

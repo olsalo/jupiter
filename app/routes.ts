@@ -15,17 +15,20 @@ export default [
       route("block-time", "routes/calendar/block-time.tsx"),
       route("extra-availability", "routes/calendar/extra-availability.tsx"),
       route("new", "routes/calendar/new-appointment.tsx"),
-      route(":appointmentId", "routes/calendar/appointment-sheet.tsx", [
+      route(":appointmentId", "routes/calendar/appointment-layout.tsx", [
         index("routes/calendar/appointment-view.tsx"),
         route("edit", "routes/calendar/appointment-edit.tsx"),
-        route("reschedule", "routes/calendar/appointment-reschedule.tsx"),
       ]),
     ]),
     route("customers", "routes/customers/customers.tsx", [
       route("new", "routes/customers/new-customer.tsx"),
       route(":customerId", "routes/customers/customer-sheet.tsx", [
-        index("routes/customers/customer-view.tsx"),
-        route("edit", "routes/customers/customer-edit.tsx"),
+        route("", "routes/customers/customer-view.tsx", [
+          route("new", "routes/customers/new-customer.tsx", { id: "customer-profile-new" }),
+        ]),
+        route("edit", "routes/customers/customer-edit.tsx", [
+          route("new", "routes/customers/new-customer.tsx", { id: "customer-edit-new" }),
+        ]),
       ]),
     ]),
     route("services", "routes/services/services.tsx", [
@@ -51,13 +54,13 @@ export default [
       ]),
     ]),
     route("team-v2", "routes/team-v2/team.tsx", [
-      route("new", "routes/team-v2/new-person.tsx"),
-      route(":personId", "routes/team-v2/person-detail.tsx", [
-        route("", "routes/team-v2/person-view.tsx", [
-          route("new", "routes/team-v2/new-view-person.tsx"),
+      route("new", "routes/team-v2/new-member.tsx"),
+      route(":memberId", "routes/team-v2/member-layout.tsx", [
+        route("", "routes/team-v2/member-profile.tsx", [
+          route("new", "routes/team-v2/new-member.tsx", { id: "team-member-profile-new" }),
         ]),
-        route("edit", "routes/team-v2/person-edit.tsx", [
-          route("new", "routes/team-v2/new-edit-person.tsx"),
+        route("edit", "routes/team-v2/member-edit.tsx", [
+          route("new", "routes/team-v2/new-member.tsx", { id: "team-member-edit-new" }),
         ]),
       ]),
     ]),

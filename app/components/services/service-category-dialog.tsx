@@ -1,27 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useId, useMemo, useState, type Ref } from "react"
+import { useId, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 
+import { ServiceSelection } from "~/components/services/service-selection"
 import { AppForm } from "~/components/app-form"
 import FormLabel from "~/components/form-label"
-import Icon from "~/components/icons"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
-import { Checkbox } from "~/components/ui/checkbox"
-import { CheckboxGroup } from "~/components/ui/checkbox-group"
 import { ResponsiveSheet, ResponsiveSheetPopup, ResponsiveSheetHeader, ResponsiveSheetTitle, ResponsiveSheetDescription, ResponsiveSheetPanel, ResponsiveSheetFooter } from "~/components/responsive-sheet"
 import { Input } from "~/components/ui/input"
-import { FieldItem } from "~/components/ui/field"
-import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
-import { Label } from "~/components/ui/label"
-import { ScrollArea } from "~/components/ui/scroll-area"
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { Spinner } from "~/components/ui/spinner"
 import { serviceCategorySchema, type ServiceCategoryValues } from "~/lib/schemas/services"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
-import { cn } from "~/lib/utils"
 
 type ServiceCategoryDialogProps = {
   open: boolean
@@ -95,7 +88,7 @@ function ServiceCategoryDialogSession({ open, flow, mode = "create", initialCate
                 <Input {...form.getInputProps("name")} aria-invalid={Boolean(form.error("name"))} disabled={pending} placeholder={t("categoryNamePlaceholder")} type="text" />
               </FormLabel>
               <FormLabel className="min-h-0 flex-1 items-stretch" label={t("categoryServices")} error={form.error("serviceIds") === "invalidAssignment" ? t("invalidAssignment") : form.error("serviceIds")} errorPlacement="below">
-                {services.isPending ? <div className="flex min-h-0 flex-1 items-center justify-center"><Spinner aria-label={t("loading")} /></div> : services.isError ? <Alert variant="error"><AlertTitle>{t("loadError")}</AlertTitle><AlertDescription>{t("listRetryDescription")}</AlertDescription><AlertAction><Button disabled={services.isFetching} onClick={() => void services.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : <CategoryServiceSelection key={flow} services={services.data} value={control.value} onChange={control.onChange} onBlur={control.onBlur} inputRef={control.ref} disabled={pending} invalid={Boolean(form.error("serviceIds"))} />}
+                {services.isPending ? <div className="flex min-h-0 flex-1 items-center justify-center"><Spinner aria-label={t("loading")} /></div> : services.isError ? <Alert variant="error"><AlertTitle>{t("loadError")}</AlertTitle><AlertDescription>{t("listRetryDescription")}</AlertDescription><AlertAction><Button disabled={services.isFetching} onClick={() => void services.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : <ServiceSelection label={t("categoryServices")} key={flow} services={services.data} value={control.value} onChange={control.onChange} onBlur={control.onBlur} inputRef={control.ref} disabled={pending} invalid={Boolean(form.error("serviceIds"))} />}
               </FormLabel>
             </ResponsiveSheetPanel>
             {!services.isPending ? <ResponsiveSheetFooter className="shrink-0"><Button disabled={pending} onClick={() => onOpenChange(false)} type="button" variant="ghost">{t("cancel")}</Button><Button disabled={pending || !services.isSuccess || (editing && !selectedCategory)} loading={saving} type="submit">{t(editing ? saving ? "categorySaving" : "saveCategory" : saving ? "categoryCreating" : "createCategory")}</Button></ResponsiveSheetFooter> : null}
@@ -104,41 +97,4 @@ function ServiceCategoryDialogSession({ open, flow, mode = "create", initialCate
       </AppForm>
     </ResponsiveSheetPopup>
   </ResponsiveSheet>
-}
-
-function CategoryServiceSelection({ services, value, onChange, onBlur, inputRef, disabled, invalid }: {
-  services: { id: string; name: string; durationMinutes: number }[]
-  value: string[]
-  onChange: (value: string[]) => void
-  onBlur: () => void
-  inputRef: Ref<HTMLInputElement>
-  disabled: boolean
-  invalid: boolean
-}) {
-  const { t } = useTranslation("services")
-  const [search, setSearch] = useState("")
-  const term = search.trim().toLocaleLowerCase()
-  const filtered = services.filter((service) => service.name.toLocaleLowerCase().includes(term))
-  const filteredIds = new Set(filtered.map((service) => service.id))
-  const selectedCount = value.filter((id) => filteredIds.has(id)).length
-  const allSelected = filtered.length > 0 && selectedCount === filtered.length
-
-  return <div className={cn("flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg border", invalid && "border-destructive/64")}>
-    <div className="shrink-0 p-3"><InputGroup><InputGroupInput aria-label={t("searchServices")} aria-invalid={invalid} disabled={disabled} nativeInput={true} onBlur={onBlur} onChange={(event) => setSearch(event.target.value)} placeholder={t("searchServices")} ref={inputRef} type="search" value={search} /><InputGroupAddon><Icon aria-hidden={true} name="search" size={16} /></InputGroupAddon></InputGroup></div>
-    <ScrollArea className="h-auto min-h-0 flex-1" fill={filtered.length === 0} overscrollContain={true} scrollFade={true}>
-    <CheckboxGroup aria-label={t("categoryServices")} aria-invalid={invalid} className={cn("items-stretch gap-2 p-2", filtered.length === 0 && "h-full justify-center")} value={value} onValueChange={onChange}>
-      {filtered.length ? filtered.map((service) => <FieldItem className="w-full" key={service.id}><Label className="flex h-11 w-full cursor-pointer gap-3 rounded-md px-2 py-2 font-normal hover:bg-muted/60 has-data-checked:bg-muted/60">
-        <Checkbox aria-invalid={invalid} disabled={disabled} onBlur={onBlur} value={service.id} />
-        <span className="min-w-0 flex-1 truncate text-sm" title={service.name}>{service.name}</span><span className="shrink-0 text-xs text-muted-foreground">{service.durationMinutes} {t("minutes")}</span>
-      </Label></FieldItem>) : <p className="px-3 py-10 text-center text-sm text-muted-foreground">{t(term ? "noServiceMatches" : "empty")}</p>}
-    </CheckboxGroup>
-    </ScrollArea>
-    {services.length > 0 ? <div className="flex shrink-0 items-center justify-between gap-3 border-t px-4 py-3">
-      <FieldItem className="shrink-0"><Label className="cursor-pointer gap-3 text-xs font-normal">
-        <Checkbox checked={allSelected} disabled={disabled || filtered.length === 0} indeterminate={selectedCount > 0 && !allSelected} onBlur={onBlur} onCheckedChange={(checked) => onChange(checked ? [...new Set([...value, ...filteredIds])] : value.filter((id) => !filteredIds.has(id)))} />
-        {t("selectAllServices")}
-      </Label></FieldItem>
-      <p className="text-right text-xs text-muted-foreground" role="status">{t("selectedServices", { count: value.length })}</p>
-    </div> : null}
-  </div>
 }

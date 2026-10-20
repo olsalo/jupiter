@@ -15,6 +15,7 @@ import { Separator } from "~/components/ui/separator"
 import { formatDateTime } from "~/lib/format-preference"
 import { useCurrentOrganizationRole } from "~/lib/use-organization-access"
 import { hasOrganizationRole } from "~/lib/utils"
+import { TeamPersonSection } from "./team-person-section"
 import { TeamRoleMenu } from "./team-role-menu"
 import type { TeamPerson } from "./team-types"
 
@@ -30,8 +31,8 @@ export function TeamPersonAccess({ person, disabled = false }: { person: TeamPer
   const role = person.member ? hasOrganizationRole(person.member.role, "owner") ? "owner" : hasOrganizationRole(person.member.role, "admin") ? "admin" : "member" : "member"
 
   return (
+    <TeamPersonSection header={<SettingsSectionHeader title={t("people.appAccess")} description={t("people.accessSettingsDescription")} />}>
     <div className="flex min-h-0 flex-1 flex-col gap-5" data-slot="team-person-access">
-      <SettingsSectionHeader title={t("people.appAccess")} description={t("people.accessSettingsDescription")} />
       {person.member ? <>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0 flex-1 basis-48"><SettingsSectionHeader title={t("permissionLevel")} description={t("people.permissionsDescription")} /></div>
@@ -55,7 +56,7 @@ export function TeamPersonAccess({ person, disabled = false }: { person: TeamPer
               </div>
           </IconListItem>
         </ul>
-      </section> : <Empty className="min-h-64 w-full border-0 bg-transparent">
+      </section> : <Empty className="min-h-0 w-full border-0 bg-transparent">
         <EmptyHeader>
           <EmptyMedia variant="icon"><Icon aria-hidden={true} name="lock" /></EmptyMedia>
           <EmptyTitle>{t("people.accessNone")}</EmptyTitle>
@@ -64,5 +65,6 @@ export function TeamPersonAccess({ person, disabled = false }: { person: TeamPer
         {person.staff ? <EmptyContent><InviteMemberDialog staffMemberId={person.staff.id} name={person.name} email={person.email ?? ""} trigger={<Button disabled={disabled || !canManage || !person.staff.isActive} size="sm" type="button" variant="outline"><Icon aria-hidden={true} name="add" size={16} />{t("people.inviteToApp")}</Button>} /></EmptyContent> : null}
       </Empty>}
     </div>
+    </TeamPersonSection>
   )
 }

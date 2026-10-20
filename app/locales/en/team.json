@@ -223,6 +223,8 @@
     "addAction": "Add member"
   },
   "timeOff": {
+    "upcoming": "Upcoming time off",
+    "emptyUpcoming": "No upcoming time off",
     "tab": "Time off",
     "add": "Add",
     "description": "Block dates when this member is away",

@@ -9,6 +9,14 @@ import { notFound, schedulingLock } from "../services/scheduling"
 import { serviceCategorySchema } from "~/lib/schemas/services"
 
 export const serviceRouter = {
+  bookingUsage: organizationProcedure.query(async ({ ctx }) => {
+    const counts = await ctx.prisma.appointmentService.groupBy({
+      by: ["serviceId"],
+      where: { appointment: { organizationId: ctx.organizationId, status: { notIn: ["CANCELLED", "NO_SHOW"] } }, service: { organizationId: ctx.organizationId, deletedAt: null, isActive: true } },
+      _count: { _all: true },
+    })
+    return counts.map((item) => ({ serviceId: item.serviceId, bookings: item._count._all }))
+  }),
   categories: organizationProcedure.query(({ ctx }) => ctx.prisma.serviceCategory.findMany({
     where: { organizationId: ctx.organizationId, isActive: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { id: "asc" }],
   })),

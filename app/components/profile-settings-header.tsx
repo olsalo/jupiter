@@ -25,7 +25,7 @@ export function ProfileSettingsHeader({ disabled, person }: {
           <p className="text-sm text-muted-foreground">{t("settings.profileDescription")}</p>
         </div>
       </div>
-      <ProfileSettingsTabs bookable={isBookableStaff(person?.staff)} disabled={disabled} />
+      <ProfileSettingsTabs bookable={person?.staff === undefined || isBookableStaff(person.staff)} disabled={disabled} />
     </header>
   )
 }

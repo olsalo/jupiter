@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 
 import { PlaceholderBody, type PlaceholderTitle } from "./route-placeholder"
-import { PageHeader } from "~/components/page-header"
+import { PageHeading } from "~/components/page-heading"
 import { Button } from "~/components/ui/button"
 
 export function PublicBookingPlaceholder({ titleKey, management = false, back = false }: {
@@ -15,7 +15,7 @@ export function PublicBookingPlaceholder({ titleKey, management = false, back = 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 px-6 py-10 sm:py-16">
       <title>{title}</title>
-      <PageHeader title={title} />
+      <PageHeading title={title} />
       <PlaceholderBody />
       <div className="flex flex-wrap gap-2">
         {management ? <>

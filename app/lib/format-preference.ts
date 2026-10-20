@@ -9,6 +9,22 @@ export const formatLocaleByPreference: Record<FormatPreference, string> = {
 
 export const defaultTimeZone = "Europe/Helsinki"
 
+const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>()
+
+function getDateTimeFormatter(locale: string, options: Intl.DateTimeFormatOptions) {
+  const key = JSON.stringify([locale, options])
+  const cached = dateTimeFormatters.get(key)
+  if (cached) return cached
+  const formatter = new Intl.DateTimeFormat(locale, options)
+  // Keep the shared cache bounded as different business timezones are visited
+  if (dateTimeFormatters.size >= 64) {
+    const oldest = dateTimeFormatters.keys().next().value
+    if (oldest !== undefined) dateTimeFormatters.delete(oldest)
+  }
+  dateTimeFormatters.set(key, formatter)
+  return formatter
+}
+
 const usFormatCountryCodes = new Set([
   "AS",
   "BZ",
@@ -86,7 +102,7 @@ export function formatDateTime(
     ? formatDatePart(date, formatPreference, includeYear, timeZone)
     : null
   const weekday = includeDate && includeWeekday
-    ? new Intl.DateTimeFormat(language === "fi" ? "fi-FI" : "en-US", { weekday: "long", timeZone }).format(date)
+    ? getDateTimeFormatter(language === "fi" ? "fi-FI" : "en-US", { weekday: "long", timeZone }).format(date)
     : null
   const dateLabel = weekday ? `${weekday} ${datePart}` : datePart
 
@@ -94,7 +110,7 @@ export function formatDateTime(
     return dateLabel ?? "-"
   }
 
-  const timeLabel = new Intl.DateTimeFormat(
+  const timeLabel = getDateTimeFormatter(
     formatPreference === "eu" ? "en-GB" : "en-US",
     {
       hour: "numeric",
@@ -122,7 +138,7 @@ function formatDatePart(
   timeZone?: string,
 ) {
   if (formatPreference === "eu") {
-    const dateParts = new Intl.DateTimeFormat("fi-FI", {
+    const dateParts = getDateTimeFormatter("fi-FI", {
       day: "numeric",
       month: "numeric",
       timeZone,
@@ -138,7 +154,7 @@ function formatDatePart(
       : `${day}.${month}.`
   }
 
-  const dateParts = new Intl.DateTimeFormat("en-US", {
+  const dateParts = getDateTimeFormatter("en-US", {
     day: "numeric",
     month: "short",
     timeZone,

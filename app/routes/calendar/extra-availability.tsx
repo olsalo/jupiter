@@ -1,7 +1,7 @@
-import { RoutePlaceholderSheet, PlaceholderSheetContent } from "~/components/placeholders/route-placeholder-sheet"
+import { CalendarAvailability } from "~/components/calendar/calendar-availability"
 
 export const handle = { overlay: true }
 
-export default function ExtraAvailability() {
-  return <RoutePlaceholderSheet titleKey="newAvailabilityOverride" returnTo="/calendar"><PlaceholderSheetContent /></RoutePlaceholderSheet>
+export default function CalendarExtraAvailabilityRoute() {
+  return <CalendarAvailability initialKind="extraHours" />
 }

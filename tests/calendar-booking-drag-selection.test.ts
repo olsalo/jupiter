@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 
-import { getCalendarBookingDragSelection } from "../app/lib/calendar-booking-drag-selection.ts"
+import { getCalendarBookingDragSelection } from "../app/lib/calendar/booking-drag-selection.ts"
 
 const initial = { day: "2026-10-28", member: { id: "alice", name: "Alice" }, startMinute: 540, endMinute: 560 }
 const latest = { ...initial, startMinute: 600, endMinute: 620 }

@@ -3,12 +3,15 @@ import { Link, useLocation, useSearchParams } from "react-router"
 
 import Icon from "~/components/icons"
 import { IconListItem } from "~/components/icon-list-item"
-import { ResponsiveSheetPanel } from "~/components/responsive-sheet"
+import { ServiceListDetails } from "~/components/services/service-list-details"
+import { SettingsSectionHeader } from "~/components/settings-section-header"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { UserAvatar } from "~/components/user-avatar"
 import { Button } from "~/components/ui/button"
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 import { Tabs, TabsPanel } from "~/components/ui/tabs"
 import { cn } from "~/lib/utils"
+import { TeamPersonSection } from "./team-person-section"
 import { TeamPersonAbout } from "./team-person-about"
 import { TeamPersonTimeOff } from "./team-person-time-off"
 import { TeamPersonBreaks } from "./team-person-breaks"
@@ -54,26 +57,30 @@ export function TeamPersonProfile({ person, canManage, sideNavigation = false }:
             <TeamPersonTabs mode="view" disabled={false} />
           </div>
         </div>
-        <ResponsiveSheetPanel className="flex grow shrink-0 flex-col p-0!" scrollFade={true}>
-        <TabsPanel className="flex min-h-0 flex-col p-6" value="about"><TeamPersonAbout person={person} canManage={canManage} /></TabsPanel>
-        <TabsPanel className="flex min-h-0 flex-col p-6" value="services">
-          <div className="grid gap-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0"><h3 className="text-sm font-medium">{t("people.services")}</h3><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{t("people.profileServicesDescription")}</p></div>
-            </div>
-            {services.length ? <ul className="flex flex-col gap-3">{services.map((link) => <IconListItem icon="forms" iconClassName="size-8" key={link.id}><span className="min-w-0 break-words text-sm font-medium">{link.service.name}</span></IconListItem>)}</ul> : <Alert><AlertTitle>{t(person.staff ? "people.noServices" : "people.notBookable")}</AlertTitle><AlertDescription>{t(person.staff ? "people.noServicesDescription" : "people.noStaffDescription")}</AlertDescription></Alert>}
-          </div>
+        <TabsPanel className="flex min-h-0 flex-1 flex-col" value="about"><TeamPersonAbout person={person} canManage={canManage} /></TabsPanel>
+        <TabsPanel className="flex min-h-0 flex-1 flex-col" value="services">
+          <TeamPersonSection header={<SettingsSectionHeader title={t("people.services")} description={t("people.profileServicesDescription")} />}>
+            {services.length ? <ul className="flex flex-col gap-3">{services.map((link) => <IconListItem className="max-sm:gap-3 max-sm:p-3" icon="forms" iconClassName={cn("h-auto w-11 self-stretch max-sm:w-1 max-sm:bg-current max-sm:[&>svg]:hidden", link.service.color && "sm:bg-[color-mix(in_srgb,currentColor_12%,var(--background))]")} iconStyle={link.service.color ? { color: link.service.color } : undefined} key={link.id}>
+              <span className="min-w-0 wrap-anywhere text-balance text-sm font-medium max-sm:text-base">{link.service.name}</span>
+              <ServiceListDetails service={{ ...link.service, durationMinutes: link.durationMinutes ?? link.service.durationMinutes, price: link.price ?? link.service.price }} />
+            </IconListItem>)}</ul> : person.staff ? <Empty className="min-h-0 w-full">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><Icon aria-hidden={true} name="forms" /></EmptyMedia>
+                <EmptyTitle>{t("people.noServices")}</EmptyTitle>
+                <EmptyDescription>{t("people.noServicesDescription")}</EmptyDescription>
+              </EmptyHeader>
+            </Empty> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
+          </TeamPersonSection>
         </TabsPanel>
-        <TabsPanel className="flex min-h-0 flex-col p-6" value="availability">
-          {person.staff ? <TeamPersonAvailability staff={person.staff} /> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
+        <TabsPanel className="flex min-h-0 flex-1 flex-col" value="availability">
+          {person.staff ? <TeamPersonAvailability staff={person.staff} /> : <Alert className="m-6"><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
         </TabsPanel>
-        <TabsPanel className="flex min-h-0 flex-col p-6" value="breaks">
-          {person.staff ? <TeamPersonBreaks staff={person.staff} /> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
+        <TabsPanel className="flex min-h-0 flex-1 flex-col" value="breaks">
+          {person.staff ? <TeamPersonBreaks staff={person.staff} /> : <Alert className="m-6"><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
         </TabsPanel>
-        <TabsPanel className="flex min-h-0 flex-col p-6" value="time-off">
-          {person.staff ? <TeamPersonTimeOff staff={person.staff} canManage={canManage} /> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
+        <TabsPanel className="flex min-h-0 flex-1 flex-col" value="time-off">
+          {person.staff ? <TeamPersonTimeOff staff={person.staff} canManage={canManage} /> : <Alert className="m-6"><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
         </TabsPanel>
-        </ResponsiveSheetPanel>
       </Tabs>
     </div>
     </TeamPersonNavigationLayout>

@@ -288,7 +288,7 @@ export function SettingsModal({
       open={open}
     >
       {showTooltip ? (
-        <TooltipProvider delay={0}>
+        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger render={trigger} />
             <TooltipPopup side="right" sideOffset={8}>
@@ -386,10 +386,10 @@ export function SettingsModal({
         <Tabs className="contents" value={profileTab} onValueChange={(value) => { if (!teamPending && !profileFormState.isSubmitting) setProfileTab(String(value)) }}>
         <SettingsMainSection isMobile={isMobile}>
           <DialogPanel
-            className="min-h-0 flex-1 p-0"
+            className="flex min-h-full flex-1 flex-col p-0"
             scrollbarClassName="hidden"
             stickyHeader={activeItemId === "profile" ? (
-              <ProfileSettingsHeader disabled={profilePerson.isPending || teamPending || profileFormState.isSubmitting} person={profilePerson.data ?? (rootData?.user ? { name: rootData.user.name, image: rootData.user.image ?? null } : undefined)} />
+              <ProfileSettingsHeader disabled={teamPending || profileFormState.isSubmitting} person={profilePerson.data ?? (rootData?.user ? { name: rootData.user.name, image: rootData.user.image ?? null } : undefined)} />
             ) : activeItemId === "business" ? (
               <BusinessSettingsHeader name={rootData?.org?.name} />
             ) : (
@@ -402,16 +402,16 @@ export function SettingsModal({
               </header>
             )}
             scrollAreaClassName={cn(
-              "min-h-0 flex-1 [&_[data-slot=scroll-area-content]]:min-h-full",
-              activeItemId !== "billing" &&
+              "min-h-0 flex-1 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col",
+              activeItemId !== "billing" && activeItemId !== "profile" &&
                 "[&_[data-slot=scroll-area-content]]:h-full",
               isMobile && "touch-auto",
             )}
           >
             <div
               className={cn(
-                "flex min-h-full flex-col",
-                activeItemId !== "billing" && "h-full",
+                "flex min-h-full flex-1 flex-col",
+                activeItemId !== "billing" && activeItemId !== "profile" && "h-full",
               )}
             >
               <div className={cn("relative flex min-h-[18rem] flex-1 flex-col gap-4 px-5 pb-5 max-sm:min-h-[14rem] max-sm:px-4 max-sm:pb-4", (activeItemId === "profile" || activeItemId === "business") && "pt-5 max-sm:pt-4")}>
@@ -432,9 +432,10 @@ export function SettingsModal({
                 )}
                 {viewLoading ? (
                   <div
-                    aria-hidden="true"
-                    className="absolute inset-0 z-10 bg-background"
-                  />
+                    className="absolute inset-0 z-10 flex items-center justify-center bg-background"
+                  >
+                    <Spinner aria-label={t("settings.loading")} className="size-6 text-muted-foreground" />
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -472,14 +473,6 @@ export function SettingsModal({
             <SettingsFormFooter formId={profileFormId} isMobile={isMobile} state={profileFormState} onCancel={() => profileResetRef.current?.()} />
           ) : null}
 
-          {viewLoading ? (
-            <div className="absolute inset-0 z-20 flex items-center justify-center">
-              <Spinner
-                aria-label={t("settings.loading")}
-                className="size-6 text-muted-foreground"
-              />
-            </div>
-          ) : null}
         </SettingsMainSection>
         </Tabs>
       </ResponsiveSettingsPopup>

@@ -1,6 +1,9 @@
 "use client";
 
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
+import { useRef } from "react"
+import { useDrawerDropdownDismiss } from "~/components/drawer-dropdown-state"
+
 import { cn } from "@coss/ui/lib/utils";
 import type * as React from "react";
 import Icon from "../icons"
@@ -8,7 +11,12 @@ import Icon from "../icons"
 export const MenuCreateHandle: typeof MenuPrimitive.createHandle =
   MenuPrimitive.createHandle;
 
-export const Menu: typeof MenuPrimitive.Root = MenuPrimitive.Root;
+export function Menu<Payload = unknown>(props: MenuPrimitive.Root.Props<Payload>) {
+  const actionsRef = useRef<MenuPrimitive.Root.Actions | null>(null)
+  const actions = props.actionsRef ?? actionsRef
+  useDrawerDropdownDismiss(() => actions.current?.close())
+  return <MenuPrimitive.Root {...props} actionsRef={actions} />
+}
 
 export const MenuPortal: typeof MenuPrimitive.Portal = MenuPrimitive.Portal;
 

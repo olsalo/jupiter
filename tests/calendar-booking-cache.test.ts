@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { QueryClient } from "@tanstack/react-query"
 
-import { cacheCalendarBooking, recordCalendarBookingVersion } from "../app/lib/calendar-booking-cache.ts"
+import { cacheCalendarBooking, recordCalendarBookingVersion, removeCalendarBooking } from "../app/lib/calendar/booking-cache.ts"
 
 type Booking = Parameters<typeof cacheCalendarBooking>[2]
 const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } })
@@ -13,7 +13,7 @@ const original: Booking = {
   timezone: "Europe/Helsinki", status: "CONFIRMED", source: "ADMIN",
   customer: { id: "aino", firstName: "Aino", lastName: "Virtanen" },
   staffMember: { id: "alice", name: "Alice" }, location: { id: "shop", name: "Shop" },
-  services: [{ serviceId: "service", name: "Consultation", durationMinutes: 60, service: { color: "#30968d" } }],
+  services: [{ serviceId: "service", name: "Consultation", durationMinutes: 60, bufferBeforeMinutes: 5, bufferAfterMinutes: 10, service: { color: "#30968d" } }],
 }
 const moved: Booking = {
   ...original, startsAt: day("2026-10-14T12:00:00Z"), endsAt: day("2026-10-14T12:30:00Z"),
@@ -53,7 +53,7 @@ try {
   console.info("PASS confirmed cache updates across days, members, customers, filters and sorted ranges")
 
   let completeOldFetch!: (bookings: Booking[]) => void
-  const oldFetch = client.fetchQuery({
+  const oldFetch = client.query({
     queryKey: weekKey,
     queryFn: () => new Promise<Booking[]>((resolve) => { completeOldFetch = resolve }),
     staleTime: 0,
@@ -79,6 +79,18 @@ try {
   await observeCalendar([moved])
   assert.equal(client.getQueryState(availabilityKey)?.isInvalidated, true, "Changed server bookings invalidate availability even across calendar remounts")
   console.info("PASS unchanged live data reuses availability while changed bookings invalidate it across remounts")
+  cacheCalendarBooking(client, listKey, { ...moved, availabilityIssues: ["overlapsBreak"] })
+  assert.deepEqual(client.getQueryData<Booking[]>(weekKey)?.find((booking) => booking.id === moved.id)?.availabilityIssues, ["overlapsBreak"], "Saving a booking preserves its warning in cached calendar ranges")
+  const buffered = client.getQueryData<Booking[]>(key(week))?.find((item) => item.id === moved.id)
+  assert.equal(buffered?.services[0].bufferBeforeMinutes, 5, "Saved calendar cache keeps preparation buffers")
+  assert.equal(buffered?.services[0].bufferAfterMinutes, 10, "Saved calendar cache keeps cleanup buffers")
+  removeCalendarBooking(client, listKey, moved.id)
+  for (const query of client.getQueryCache().findAll({ queryKey: listKey })) {
+    assert.equal((query.state.data as Booking[]).some((booking) => booking.id === moved.id), false, "Deletion removes the booking from every cached calendar range")
+  }
+  assert.deepEqual(client.getQueryData(newDayKey), [neighbor], "Deleting preserves other bookings")
+  assert.equal(client.getQueryData(missingKey), undefined, "Deleting does not populate unloaded calendars")
+  console.info("PASS deletion clears all calendar ranges while preserving other bookings")
 } finally {
   client.clear()
 }

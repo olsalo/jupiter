@@ -1,5 +1,5 @@
 import { useRef } from "react"
-import type { FormApi } from "@rvf/react"
+import { useFormScope, type FormScope } from "@rvf/react"
 import { useTranslation } from "react-i18next"
 
 import { SettingsSectionHeader } from "~/components/settings-section-header"
@@ -8,7 +8,8 @@ import type { PersonFormFields } from "~/lib/schemas/team"
 import { TeamBreaksWeek } from "./team-breaks-week"
 import { TeamScheduleTimeFields } from "./team-schedule-time-fields"
 
-export function TeamBreaksFields({ form, timezone, showHeader = true }: { showHeader?: boolean; form: FormApi<PersonFormFields>; timezone: string }) {
+export function TeamBreaksFields({ scope, timezone, workingDays, showHeader = true }: { workingDays?: number[]; showHeader?: boolean; scope: FormScope<Pick<PersonFormFields, "workingHours" | "breaks">>; timezone: string }) {
+  const form = useFormScope(scope)
   const { t } = useTranslation("team")
   const breaks = form.getControlProps("breaks")
   const pausedBreaks = useRef(new Map<number, PersonFormFields["breaks"]>())
@@ -19,7 +20,7 @@ export function TeamBreaksFields({ form, timezone, showHeader = true }: { showHe
       {showHeader ? <SettingsSectionHeader title={t("people.breaks")} description={t("people.breaksDescription")} /> : null}
       <TeamBreaksWeek
         rules={breaks.value}
-        workingDays={hours.value.filter((rule) => rule.isActive).map((rule) => rule.dayOfWeek)}
+        workingDays={workingDays ?? hours.value.filter((rule) => rule.isActive).map((rule) => rule.dayOfWeek)}
         disabled={form.formState.isSubmitting}
         onToggleDay={(day, enabled) => breaks.onChange(toggleBreakDay(breaks.value, day, enabled, timezone, pausedBreaks.current))}
         onAdd={addBreak}

@@ -32,7 +32,7 @@ export const bookingRouter = {
   getAvailableSlots: bookingProcedure.input(publicSlotInput).query(async ({ ctx, input }) => {
     const { organization, locationId, allowedStaffIds } = await resolveBookingPage(ctx.prisma, input)
     await limitPublicBooking(ctx.prisma, ctx.headers, organization.id, false)
-    return getAvailableSlots(ctx.prisma, organization.id, { ...input, locationId }, { allowedStaffIds })
+    return getAvailableSlots(ctx.prisma, organization.id, { ...input, locationId }, { allowedStaffIds, preferAdjacentStarts: true })
   }),
   create: bookingProcedure.input(createBookingInput).mutation(async ({ ctx, input }) => {
     const { organization } = await resolveBookingPage(ctx.prisma, input)

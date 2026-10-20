@@ -9,8 +9,8 @@ import { ResponsiveModal, ResponsiveModalClose, ResponsiveModalFooter, Responsiv
 import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
 import { Input } from "~/components/ui/input"
-import { calendarCustomerCreateSchema } from "~/lib/schemas/calendar-booking"
-import { calendarReferenceQueryOptions } from "~/lib/calendar-query"
+import { calendarCustomerCreateSchema } from "~/lib/calendar/booking-schema"
+import { calendarReferenceQueryOptions } from "~/lib/calendar/query-options"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 
@@ -41,7 +41,7 @@ export function CreateCustomerDialog({ open, flow, onOpenChange, onCreated }: {
         submitFn={async ({ name, ...contact }) => {
           try {
             const customer = await create.mutateAsync({ firstName: name, ...contact })
-            queryClient.setQueryData(trpc.customer.get.queryKey({ id: customer.id }), customer)
+            queryClient.setQueryData(trpc.customer.get.queryKey({ id: customer.id }), { ...customer, appointments: { upcoming: { items: [], nextCursor: undefined }, history: { items: [], nextCursor: undefined }, recent: { items: [], nextCursor: undefined } } })
             await queryClient.invalidateQueries({ ...trpc.customer.list.queryFilter(), refetchType: "none" })
             onCreated(customer.id)
             onOpenChange(false)

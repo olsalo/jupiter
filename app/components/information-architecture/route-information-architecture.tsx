@@ -4,7 +4,8 @@ import { Link, Outlet, useLocation } from "react-router"
 
 import Icon, { type AppIconName } from "~/components/icons"
 import type { PlaceholderTitle } from "~/components/placeholders/route-placeholder"
-import { TablePageHeader } from "~/components/table-page"
+import { RouteHeader } from "~/components/route-header"
+import { ScrollPage } from "~/components/page-layout"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
@@ -97,21 +98,17 @@ export function InformationArchitecturePage({ section, titleKey, icon, createTit
   const title = t(`routeTitles.${titleKey}`)
 
   return (
-    <section className="flex min-w-0 flex-col gap-4">
+    <ScrollPage header={<RouteHeader controls={controls} title={title} description={t(`routeDescriptions.${titleKey}`)} showDescriptionOnMobile={false} actions={createTitleKey ? (
+        <Button aria-label={t(`routeActions.${createTitleKey}`)} className="max-md:size-9 max-md:p-0" render={<Link to={`new${location.search}`} state={{ returnTo: `${location.pathname}${location.search}` }} />} size="lg" type="button">
+          <Icon aria-hidden={true} name="add" size={18} />
+          <span className="hidden md:inline">{t(`routeActions.${createTitleKey}`)}</span>
+        </Button>
+      ) : undefined} />}>
       <title>{title}</title>
-      <div className="route-mobile-header sticky top-0 z-10 shrink-0 md:hidden">
-        <div aria-hidden={true} className="pointer-events-none absolute -inset-x-6 inset-y-0 bg-background/75 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_75%,transparent_100%)]" />
-        <TablePageHeader className="relative max-md:mt-0" controls={controls} title={title} description={t(`routeDescriptions.${titleKey}`)} showDescriptionOnMobile={true} actions={createTitleKey ? (
-          <Button render={<Link to={`new${location.search}`} state={{ returnTo: `${location.pathname}${location.search}` }} />} type="button">
-            <Icon aria-hidden={true} name="add" size={18} />
-            {t(`routeActions.${createTitleKey}`)}
-          </Button>
-        ) : undefined} />
-      </div>
-      <div className="@container min-w-0">
+      <div className="@container flex min-w-0 flex-col gap-4">
         <RouteInformationArchitecture section={section} icon={icon} />
+        <Outlet />
       </div>
-      <Outlet />
-    </section>
+    </ScrollPage>
   )
 }

@@ -54,10 +54,9 @@ export function RoutePlaceholderSheet({ titleKey, returnTo, children }: {
   )
 }
 
-export function PlaceholderSheetContent({ edit = false, back = false, reschedule = false, intake = false, availability = false }: {
+export function PlaceholderSheetContent({ edit = false, back = false, intake = false, availability = false }: {
   edit?: boolean
   back?: boolean
-  reschedule?: boolean
   intake?: boolean
   availability?: boolean
 }) {
@@ -70,11 +69,10 @@ export function PlaceholderSheetContent({ edit = false, back = false, reschedule
         {[
           ...(back ? [{ to: "..", label: t("routePlaceholders.back") }] : []),
           ...(edit ? [{ to: "edit", label: t("routePlaceholders.edit") }] : []),
-          ...(reschedule ? [{ to: "reschedule", label: t("routeTitles.rescheduleAppointment") }] : []),
           ...(intake ? [{ to: "intake", label: t("routeTitles.serviceIntake") }] : []),
           ...(availability ? [{ to: "availability", label: t("routeTitles.staffAvailability") }] : []),
         ].map(({ to, label }) => (
-          <Button key={to} render={<Link to={`${to}${location.search}`} replace={true} state={location.state} />} type="button" variant="outline">{label}</Button>
+          <Button key={to} render={<Link draggable={false} to={`${to}${location.search}`} replace={true} state={location.state} />} type="button" variant="outline">{label}</Button>
         ))}
       </div>
     </div>

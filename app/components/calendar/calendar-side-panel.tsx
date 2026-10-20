@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useId, useRef, type ComponentProps, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { Link, useNavigate } from "react-router"
 
@@ -8,6 +8,13 @@ import { DialogHeader } from "~/components/ui/dialog"
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerPopup, DrawerTitle } from "~/components/ui/drawer"
 import { useRouteSheet } from "~/components/use-route-sheet"
 import { useMediaQuery } from "~/lib/hooks"
+
+const CalendarPanelCloseContext = createContext<(() => void) | null>(null)
+
+export function CalendarPanelClose({ returnTo, ...props }: ComponentProps<typeof Button> & { returnTo: string }) {
+  const close = useContext(CalendarPanelCloseContext)
+  return <Button {...props} onClick={close ?? undefined} render={close ? undefined : <Link draggable={false} preventScrollReset={true} replace={true} to={returnTo} />} />
+}
 
 type CalendarSidePanelProps = {
   title: string
@@ -35,13 +42,13 @@ export function CalendarSidePanel({ title, subtitle, returnTo, children }: Calen
 
   return <aside
     aria-labelledby={titleId}
-    className="relative flex min-h-0 w-[min(28rem,80%)] min-w-0 shrink-0 flex-col overflow-hidden border-s bg-popover text-popover-foreground max-lg:hidden"
+    className="relative flex min-h-0 w-[min(28rem,80%)] min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border bg-popover text-popover-foreground max-lg:hidden"
     data-slot="calendar-side-panel"
   >
     <DialogHeader className="shrink-0 pr-14 pb-3">
       <h2 className="font-heading text-xl leading-none font-semibold outline-none" id={titleId} ref={headingRef} tabIndex={-1}>{title}</h2>
       {subtitle ? <p className="min-w-0 truncate text-sm text-muted-foreground" data-slot="calendar-panel-subtitle">{subtitle}</p> : null}
-      <Button aria-label={t("routePlaceholders.close")} className="absolute end-2 top-2" render={<Link preventScrollReset={true} replace={true} to={returnTo} />} size="icon" type="button" variant="ghost">
+      <Button aria-label={t("routePlaceholders.close")} className="absolute end-2 top-2" render={<Link draggable={false} preventScrollReset={true} replace={true} to={returnTo} />} size="icon" type="button" variant="ghost">
         <Icon aria-hidden={true} name="x" size={18} />
       </Button>
     </DialogHeader>
@@ -68,7 +75,7 @@ function CalendarBookingOverlay({ title, subtitle, returnTo, children }: Calenda
         <DrawerTitle>{title}</DrawerTitle>
         {subtitle ? <DrawerDescription className="min-w-0 truncate" data-slot="calendar-panel-subtitle">{subtitle}</DrawerDescription> : null}
       </DrawerHeader>
-      <DrawerContent className="flex min-h-0 flex-1 flex-col">{children}</DrawerContent>
+      <DrawerContent className="flex min-h-0 flex-1 flex-col"><CalendarPanelCloseContext.Provider value={close}>{children}</CalendarPanelCloseContext.Provider></DrawerContent>
     </DrawerPopup>
   </Drawer>
 }

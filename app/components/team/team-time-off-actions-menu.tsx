@@ -21,7 +21,13 @@ export function TeamTimeOffActionsMenu({ id, title, staffMemberId, repeating = f
       await Promise.all([
         queryClient.invalidateQueries(trpc.availability.getTimeOff.queryFilter({ staffMemberId })),
         queryClient.invalidateQueries(trpc.availability.listBlockedTime.queryFilter()),
+        queryClient.invalidateQueries(trpc.availability.calendarSchedule.queryFilter()),
+        queryClient.invalidateQueries(trpc.appointment.getBookingTimes.queryFilter()),
+        queryClient.invalidateQueries(trpc.appointment.getSlots.queryFilter()),
         queryClient.invalidateQueries(trpc.availability.getSlots.queryFilter()),
+        queryClient.invalidateQueries(trpc.availability.getBookingTimes.queryFilter()),
+        queryClient.invalidateQueries(trpc.appointment.list.queryFilter()),
+        queryClient.invalidateQueries(trpc.appointment.get.queryFilter()),
       ])
     },
     onError: () => toast.error(t("timeOff.removeError")),

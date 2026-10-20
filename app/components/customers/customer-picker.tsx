@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
-import { useState, type Ref } from "react"
+import { useEffect, useState, type Ref } from "react"
 import { useTranslation } from "react-i18next"
 
 import Icon from "~/components/icons"
@@ -8,18 +8,19 @@ import { Button } from "~/components/ui/button"
 import { Combobox, ComboboxInput, ComboboxItem, ComboboxList, ComboboxPopup, ComboboxTrigger, ComboboxValue } from "~/components/ui/combobox"
 import { SelectButton } from "~/components/ui/select"
 import { Spinner } from "~/components/ui/spinner"
-import { calendarPanelQueryOptions } from "~/lib/calendar-query"
+import { calendarPanelQueryOptions } from "~/lib/calendar/query-options"
 import { useDebouncedValue } from "~/lib/use-debounced-value"
 import { useTRPC } from "~/lib/trpc/client"
 import { cn } from "~/lib/utils"
 
 const newCustomerValue = "__new_customer__"
-type CustomerOption = { id: string; firstName: string; lastName: string | null; email: string | null; phone: string | null }
+export type CustomerOption = { id: string; firstName: string; lastName: string | null; email: string | null; phone: string | null }
 type CustomerPickerItem = { value: string; label: string; detail: string }
 
-export function CustomerPicker({ value, onChange, onBlur, inputRef, invalid, disabled, onCreate, selectedCustomer }: {
+export function CustomerPicker({ value, onChange, onBlur, inputRef, invalid, disabled, onCreate, selectedCustomer, onCustomerChange }: {
   value: string
   selectedCustomer?: CustomerOption
+  onCustomerChange?: (customer: CustomerOption | null) => void
   onChange: (id: string) => void
   onBlur: () => void
   inputRef: Ref<HTMLButtonElement>
@@ -48,6 +49,9 @@ export function CustomerPicker({ value, onChange, onBlur, inputRef, invalid, dis
   })
   const items = [...rows.map(toItem), { value: newCustomerValue, label: t("bookingForm.newCustomer"), detail: "" }]
   const selectedItem = knownCustomer ?? selected.data
+  useEffect(() => {
+    onCustomerChange?.(selectedItem ?? null)
+  }, [selectedItem, onCustomerChange])
 
   return <Combobox
     disabled={disabled}

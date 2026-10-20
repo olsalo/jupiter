@@ -9,7 +9,7 @@ import { isBreakTimeAvailable } from "~/lib/team-breaks"
 import type { PersonFormFields } from "~/lib/schemas/team"
 import { workingTimeValue } from "./team-working-hours-week"
 
-export function TeamScheduleTimeFields({ form, field, index, day }: { form: FormApi<PersonFormFields>; field: "workingHours" | "breaks"; index: number; day: number }) {
+export function TeamScheduleTimeFields({ form, field, index, day }: { form: FormApi<Pick<PersonFormFields, "workingHours" | "breaks">>; field: "workingHours" | "breaks"; index: number; day: number }) {
   const { t } = useTranslation("team")
   const root = useRouteLoaderData<typeof rootLoader>("root")
 

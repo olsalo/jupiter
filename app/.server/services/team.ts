@@ -6,9 +6,11 @@ import type { PrismaClient } from "../../../generated/prisma/client"
 import { createInvitationEmailTemplate } from "~/lib/email-templates/invitation"
 import { generateId } from "~/lib/id"
 import { notFound, schedulingLock, type Database } from "./scheduling"
+import { currentScheduleDate } from "~/lib/calendar/availability"
+import { saveStaffSchedule } from "./staff-schedule"
 
 const staffInclude = (organizationId: string) => ({
-  staffServices: { where: { service: { organizationId, deletedAt: null } }, include: { service: { select: { id: true, name: true } } } },
+  staffServices: { where: { service: { organizationId, deletedAt: null } }, include: { service: { select: { id: true, name: true, color: true, durationMinutes: true, deliveryType: true, isActive: true, price: true, currency: true, description: true } } } },
   staffLocations: { where: { location: { organizationId } }, include: { location: { select: { id: true, name: true } } } },
 } as const)
 const memberSelect = { id: true, role: true, createdAt: true, userId: true, user: { select: { id: true, name: true, email: true, image: true } } } as const
@@ -120,14 +122,14 @@ export async function updatePerson(db: PrismaClient, organizationId: string, inp
     await tx.staffLocation.updateMany({ where: { staffMemberId: staff.id, locationId: { in: input.locationIds } }, data: { isActive: true } })
     await tx.staffService.createMany({ data: input.serviceIds.map((serviceId) => ({ staffMemberId: staff.id, serviceId })), skipDuplicates: true })
     await tx.staffLocation.createMany({ data: input.locationIds.map((locationId) => ({ staffMemberId: staff.id, locationId })), skipDuplicates: true })
-    if (input.workingHours !== undefined) {
-      await tx.availabilityRule.deleteMany({ where: { organizationId, staffMemberId: staff.id, locationId: null, isBreak: false } })
-      await tx.availabilityRule.createMany({ data: input.workingHours.map((rule) => ({ ...rule, organizationId, staffMemberId: staff.id, locationId: null })) })
-    }
-    if (input.breaks !== undefined) {
+    if (input.workingHours !== undefined || input.breaks !== undefined) {
       const settings = await tx.organizationSettings.findUnique({ where: { organizationId } })
-      await tx.availabilityRule.deleteMany({ where: { organizationId, staffMemberId: staff.id, locationId: null, isBreak: true } })
-      await tx.availabilityRule.createMany({ data: input.breaks.map((rule) => ({ ...rule, timezone: settings?.timezone ?? "Europe/Helsinki", organizationId, staffMemberId: staff.id, locationId: null, isBreak: true })) })
+      const timezone = settings?.timezone ?? "Europe/Helsinki"
+      const at = currentScheduleDate(timezone)
+      for (const kind of ["workingHours", "breaks"] as const) {
+        if (input[kind] === undefined) continue
+        await saveStaffSchedule(tx, { organizationId, staffMemberId: staff.id, kind, replacement: input[kind], at, timezone })
+      }
     }
     if (options.accountUserId) await tx.user.update({ where: { id: options.accountUserId }, data: { name: input.name } })
     return personData(tx, organizationId, staff.id)

@@ -1,37 +1,48 @@
+import type { CalendarDragSelection } from "~/lib/calendar/types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { inferRouterOutputs } from "@trpc/server"
 import type { FormApi } from "@rvf/react"
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { TZDate } from "react-day-picker"
 import { useTranslation } from "react-i18next"
-import { Link, useLocation, useNavigate, useParams } from "react-router"
+import { useLocation, useNavigate, useParams } from "react-router"
 
-import type { CalendarDragSelection } from "~/components/calendar/calendar-drag-selection"
-import { BookingTimeFields } from "~/components/calendar/booking-time-fields"
+import { CalendarBookingLiveIssues } from "~/components/calendar/calendar-booking-live-issues"
+import { usePastBookingConfirmation } from "~/components/calendar/use-past-booking-confirmation"
+import { useBreakOverlapConfirmation } from "~/components/calendar/use-break-overlap-confirmation"
+import { BookingDurationField } from "~/components/calendar/booking-duration-field"
+import { BookingMemberFilter } from "~/components/calendar/booking-member-filter"
+import { useCalendarBookingDurationLimit } from "~/components/calendar/use-calendar-booking-duration-limit"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { AppForm } from "~/components/app-form"
 import { BookingSlotList, bookingSlotKey } from "~/components/calendar/booking-slot-list"
 import { CalendarBookingEmpty } from "~/components/calendar/calendar-booking-empty"
-import { CalendarBookingSummary } from "~/components/calendar/calendar-booking-summary"
-import { CalendarSidePanel } from "~/components/calendar/calendar-side-panel"
+import { CalendarPanelClose, CalendarSidePanel } from "~/components/calendar/calendar-side-panel"
 import { useCalendarState } from "~/components/calendar/use-calendar-state"
 import { CreateCustomerDialog } from "~/components/customers/create-customer-dialog"
-import { CustomerPicker } from "~/components/customers/customer-picker"
+import { CustomerPicker, type CustomerOption } from "~/components/customers/customer-picker"
+import { ServicePicker } from "~/components/services/service-picker"
+import { DeleteConfirmationDialog } from "~/components/delete-confirmation-dialog"
 import { DatePicker } from "~/components/date-picker"
 import FormLabel from "~/components/form-label"
+import Icon from "~/components/icons"
 import { Alert, AlertAction, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { DialogFooter } from "~/components/ui/dialog"
 import { ScrollArea } from "~/components/ui/scroll-area"
+import { Separator } from "~/components/ui/separator"
 import { Spinner } from "~/components/ui/spinner"
 import { Textarea } from "~/components/ui/textarea"
-import { calendarDateFromValue, calendarDateToValue, getCalendarBookingRange, getCalendarTimeRange } from "~/lib/calendar-date"
+import { calendarDateFromValue, calendarDateToValue, getCalendarBookingRange, getCalendarTimeRange } from "~/lib/calendar/date"
 import { formatDateTime } from "~/lib/format-preference"
-import { getCalendarBookingDragSelection } from "~/lib/calendar-booking-drag-selection"
-import { cacheCalendarBooking } from "~/lib/calendar-booking-cache"
-import { calendarAvailabilityQueryOptions, calendarPanelQueryOptions } from "~/lib/calendar-query"
+import { getCalendarBookingDragSelection } from "~/lib/calendar/booking-drag-selection"
+import { getCalendarBookingEditSlot, includeCurrentBookingSlot } from "~/lib/calendar/booking-slots"
+import { cacheCalendarBooking, removeCalendarBooking } from "~/lib/calendar/booking-cache"
+import { calendarAvailabilityQueryOptions, calendarPanelQueryOptions, calendarReferenceQueryOptions } from "~/lib/calendar/query-options"
+import { calendarMinDurationMinutes } from "~/lib/calendar/time-step"
+import { useMediaQuery } from "~/lib/hooks"
 import { useDebouncedValue } from "~/lib/use-debounced-value"
-import { calendarBookingSchema } from "~/lib/schemas/calendar-booking"
+import { calendarBookingSchema } from "~/lib/calendar/booking-schema"
 import { toast } from "~/lib/toast"
 import { useOrganizationPermission } from "~/lib/use-organization-access"
 import { useTRPC } from "~/lib/trpc/client"
@@ -42,6 +53,7 @@ type Appointment = inferRouterOutputs<typeof appRouter>["appointment"]["get"]
 export function CalendarBookingEdit() {
   const { t, i18n } = useTranslation()
   const trpc = useTRPC()
+  const queryClient = useQueryClient()
   const { appointmentId = "" } = useParams()
   const location = useLocation()
   const { search } = location
@@ -53,7 +65,12 @@ export function CalendarBookingEdit() {
   const { timeZone, formatPreference } = useCalendarState()
   const appointment = useQuery({ ...trpc.appointment.get.queryOptions({ id: appointmentId }), ...calendarPanelQueryOptions })
   const title = t("routeTitles.editAppointment")
-  const subtitleStart = activePreview?.appointmentId === appointmentId ? activePreview.startsAt : appointment.data?.startsAt
+  const cachedBooking = queryClient.getQueriesData<inferRouterOutputs<typeof appRouter>["appointment"]["list"]>(trpc.appointment.list.queryFilter())
+    .map(([, bookings]) => bookings?.find((booking) => booking.id === appointmentId))
+    .find((booking) => booking !== undefined)
+  const subtitleStart = activePreview?.appointmentId === appointmentId ? activePreview.startsAt
+    : dragSelection ? getCalendarTimeRange(dragSelection.day, dragSelection.startMinute, dragSelection.endMinute - dragSelection.startMinute, timeZone).startsAt
+    : appointment.data?.startsAt ?? cachedBooking?.startsAt
   const subtitle = subtitleStart ? formatDateTime(subtitleStart, { formatPreference, timeZone, language: i18n.resolvedLanguage === "fi" ? "fi" : "en", includeWeekday: true }) : undefined
 
   return <CalendarSidePanel returnTo={returnTo} subtitle={subtitle} title={title}>
@@ -72,73 +89,134 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
   const navigate = useNavigate()
   const calendar = useCalendarState({ preview: false })
   const { timeZone, formatPreference } = calendar
+  const bookedService = appointment.services[0]
+  const [serviceId, setServiceId] = useState(bookedService?.serviceId ?? "")
+  const serviceChanged = Boolean(bookedService && serviceId !== bookedService.serviceId)
+  const services = useQuery({ ...trpc.service.list.queryOptions(), ...calendarReferenceQueryOptions })
+  const availableServices = useMemo(() => {
+    const items = (services.data ?? []).filter((service) => service.isActive && service.id !== bookedService?.serviceId)
+    return bookedService ? [{ id: bookedService.serviceId, name: bookedService.name, durationMinutes: bookedService.durationMinutes, bufferBeforeMinutes: bookedService.bufferBeforeMinutes, bufferAfterMinutes: bookedService.bufferAfterMinutes, color: bookedService.service?.color }, ...items] : items
+  }, [services.data, bookedService])
+  const serviceDurations = useMemo(() => (services.data ?? []).filter((service) => service.isActive).map((service) => service.durationMinutes), [services.data])
+  const selectedService = availableServices.find((service) => service.id === serviceId)
+  const hasStackedButtons = useMediaQuery("max-40rem")
   const canEdit = useOrganizationPermission({ appointments: ["update"] })
-  const { setPreview, clearPreview } = useCalendarBookingPreview()
+  const { setPreview, clearPreview, dragging } = useCalendarBookingPreview()
   const [changingTime, setChangingTime] = useState(Boolean(dragSelection))
+  const [memberFilter, setMemberFilter] = useState<string | undefined>()
+  const [selection, setSelection] = useState("")
+  const [selectedSlotMemberId, setSelectedSlotMemberId] = useState(dragSelection?.member.id ?? appointment.staffMemberId ?? undefined)
+  const ownMemberId = calendar.bookableMembers.find((member) => member.memberId === calendar.organization.data?.memberId)?.id
+  const [preserveScroll, setPreserveScroll] = useState(Boolean(dragSelection))
   const [startTime, setStartTime] = useState(() => {
-    const minute = dragSelection?.startMinute ?? 0
+    const local = new TZDate(appointment.startsAt, timeZone)
+    const minute = dragSelection?.startMinute ?? local.getHours() * 60 + local.getMinutes()
     return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`
   })
   const [length, setLength] = useState<number | null>(() => dragSelection ? dragSelection.endMinute - dragSelection.startMinute : Math.round((+appointment.endsAt - +appointment.startsAt) / 60000))
   const debouncedLength = useDebouncedValue(length)
-  const durationPending = Boolean(dragSelection && length !== debouncedLength)
-  const validLength = length !== null && Number.isInteger(length) && length >= 5 && length <= 1440
+  const durationPending = length !== debouncedLength
+  const validLength = length !== null && Number.isInteger(length) && length >= calendarMinDurationMinutes && length <= 1440
 
   const [selectedDay, setSelectedDay] = useState<string | null>(() => dragSelection?.day ?? calendarDateToValue(new TZDate(appointment.startsAt, timeZone)))
-  const [selection, setSelection] = useState("")
   const [timeError, setTimeError] = useState("")
   const [saved, setSaved] = useState(false)
+  const [summaryCustomer, setSummaryCustomer] = useState<CustomerOption | null>(appointment.customer)
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
   const [customerFlow, setCustomerFlow] = useState(0)
   const formRef = useRef<FormApi<{ customerId: string; notes: string }>>(null)
+  const { confirmPastBooking, pastBookingConfirmation } = usePastBookingConfirmation()
+  const { confirmBreakOverlap, breakOverlapConfirmation } = useBreakOverlapConfirmation()
   const timeErrorId = useId()
   const [appliedDrag, setAppliedDrag] = useState(dragSelection)
   useLayoutEffect(() => {
     if (!dragSelection || appliedDrag === dragSelection) return
     setAppliedDrag(dragSelection)
+    setSelectedSlotMemberId(dragSelection.member.id)
+    setMemberFilter(undefined)
+    setSelection("")
+    setPreserveScroll(true)
     setChangingTime(true)
     setSelectedDay(dragSelection.day)
     setStartTime(`${String(Math.floor(dragSelection.startMinute / 60)).padStart(2, "0")}:${String(dragSelection.startMinute % 60).padStart(2, "0")}`)
     setLength(dragSelection.endMinute - dragSelection.startMinute)
-    setSelection("")
     setTimeError("")
   }, [dragSelection, appliedDrag])
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const remove = useMutation(trpc.appointment.delete.mutationOptions())
   const update = useMutation(trpc.appointment.update.mutationOptions())
-  const service = appointment.services[0]
-  const targetMember = changingTime && dragSelection ? dragSelection.member : appointment.staffMember
-  const targetMemberId = targetMember?.id ?? appointment.staffMemberId
+  const service = useMemo(() => serviceChanged && selectedService ? { serviceId: selectedService.id, name: selectedService.name, service: { color: selectedService.color } } : bookedService, [serviceChanged, selectedService, bookedService])
+  const serviceDetails = useQuery({ ...trpc.service.get.queryOptions({ id: serviceId }), ...calendarReferenceQueryOptions, enabled: changingTime && Boolean(serviceId) })
+  const preferredMember = changingTime && dragSelection ? dragSelection.member : appointment.staffMember
+  const filterMembers: { id: string; name: string }[] = calendar.bookableMembers.filter((member) => appointment.services.length === 1
+    ? !serviceDetails.data || serviceDetails.data.staffServices.some((assignment) => assignment.staffMemberId === member.id && assignment.isActive)
+    : member.id === appointment.staffMemberId)
+  if (preferredMember && !filterMembers.some((member) => member.id === preferredMember.id)) filterMembers.push(preferredMember)
   const canReschedule = canEdit && Boolean(service && appointment.staffMemberId && ["PENDING", "CONFIRMED"].includes(appointment.status))
   const range = getCalendarBookingRange({ ...calendar, mode: "day", selected: selectedDay ? calendarDateFromValue(selectedDay, timeZone) : calendar.selected }, timeZone)
-  const slots = useQuery({
-    ...(dragSelection
-      ? trpc.appointment.getBookingTimes.queryOptions({ id: appointment.id, ...range, staffMemberId: targetMemberId ?? undefined, durationMinutes: debouncedLength !== null && Number.isInteger(debouncedLength) && debouncedLength >= 5 && debouncedLength <= 1440 ? debouncedLength : 5 })
-      : trpc.appointment.getSlots.queryOptions({ id: appointment.id, ...range })),
-    enabled: !saved && !durationPending && appliedDrag === dragSelection && changingTime && Boolean(selectedDay) && canReschedule && (!dragSelection || validLength), ...calendarAvailabilityQueryOptions,
-  })
   const [startHour, startMinute] = startTime.split(":").map(Number)
-  const customRange = dragSelection && changingTime && selectedDay && validLength ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, length, timeZone) : null
-
-  const availableSlots = selectedDay ? slots.data?.days.flatMap((day) => day.slots) ?? [] : []
-  const chosenSlot = durationPending ? undefined : dragSelection
-    ? availableSlots.find((slot) => +new Date(slot.startsAt) === (customRange ? +customRange.startsAt : NaN))
-    : availableSlots.find((slot) => bookingSlotKey(slot) === selection)
-  const availableStartTimes = useMemo(() => new Set(availableSlots.map((slot) => {
-    const local = new TZDate(slot.startsAt, timeZone)
-    return `${String(local.getHours()).padStart(2, "0")}:${String(local.getMinutes()).padStart(2, "0")}`
-  })), [slots.data, selectedDay, timeZone])
-  const preview = useMemo(() => dragSelection && customRange && service && targetMember ? {
-    appointmentId: appointment.id, status: appointment.status, customerName: [appointment.customer.firstName, appointment.customer.lastName].filter(Boolean).join(" "),
-    preserveScroll: true, startsAt: customRange.startsAt.toISOString(), endsAt: customRange.endsAt.toISOString(),
+  const customRange = changingTime && selectedDay && validLength ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, length, timeZone) : null
+  const slots = useQuery({
+    ...(appointment.services.length === 1
+      ? trpc.appointment.getBookingTimes.queryOptions({ id: appointment.id, ...range, serviceId: serviceChanged ? serviceId : undefined, staffMemberId: memberFilter ?? null, durationMinutes: debouncedLength !== null && Number.isInteger(debouncedLength) && debouncedLength >= calendarMinDurationMinutes && debouncedLength <= 1440 ? debouncedLength : calendarMinDurationMinutes, selectedStart: customRange?.startsAt })
+      : trpc.appointment.getSlots.queryOptions({ id: appointment.id, ...range, durationMinutes: appointment.services.length === 1 && validLength && debouncedLength !== null ? debouncedLength : undefined, selectedStart: customRange?.startsAt })),
+    enabled: !saved && !durationPending && appliedDrag === dragSelection && changingTime && Boolean(selectedDay) && canReschedule && validLength, ...calendarAvailabilityQueryOptions,
+  })
+  const originalDay = calendarDateToValue(new TZDate(appointment.startsAt, timeZone))
+  const originalLength = Math.round((+appointment.endsAt - +appointment.startsAt) / 60000)
+  const currentSlot = useMemo(() => !serviceChanged && selectedDay === originalDay && (!memberFilter || memberFilter === appointment.staffMemberId) && length === originalLength && appointment.staffMemberId ? {
+    startsAt: appointment.startsAt.toISOString(), endsAt: appointment.endsAt.toISOString(), staffMemberId: appointment.staffMemberId, locationId: appointment.locationId,
+  } : undefined, [serviceChanged, selectedDay, originalDay, memberFilter, length, originalLength, appointment.staffMemberId, appointment.startsAt, appointment.endsAt, appointment.locationId])
+  const slotDays = useMemo(() => includeCurrentBookingSlot(slots.data?.days ?? [], currentSlot ? { date: originalDay, slot: currentSlot } : undefined), [slots.data?.days, currentSlot, originalDay])
+  const slotMembers = useMemo(() => {
+    const members: { id: string; name: string; image?: string | null }[] = [...(calendar.staff.data ?? [])]
+    if (appointment.staffMember && !members.some((member) => member.id === appointment.staffMember?.id)) members.push(appointment.staffMember)
+    return members
+  }, [calendar.staff.data, appointment.staffMember])
+  const slotLocations = useMemo(() => appointment.location ? [appointment.location] : [], [appointment.location])
+  const availableSlots = slotDays.find((day) => day.date === selectedDay)?.slots ?? []
+  const chosenSlot = durationPending || appliedDrag !== dragSelection || !slots.isSuccess || slots.isFetching || !customRange ? undefined
+    : getCalendarBookingEditSlot(availableSlots, customRange.startsAt, memberFilter ?? selectedSlotMemberId ?? preferredMember?.id, selection)
+  const targetMemberId = chosenSlot?.staffMemberId ?? memberFilter ?? selectedSlotMemberId ?? preferredMember?.id
+  const targetMember = calendar.staff.data?.find((member) => member.id === targetMemberId) ?? (preferredMember?.id === targetMemberId ? preferredMember : undefined)
+  const durationLimit = useCalendarBookingDurationLimit({ startsAt: selectedDay ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, calendarMinDurationMinutes, timeZone).startsAt : undefined, memberId: targetMemberId, appointmentId: appointment.id, length })
+  useLayoutEffect(() => {
+    if (dragging || saved || durationPending || appliedDrag !== dragSelection || slots.isFetching || slots.isError || !chosenSlot) return
+    const local = new TZDate(chosenSlot.startsAt, timeZone)
+    const nextTime = `${String(local.getHours()).padStart(2, "0")}:${String(local.getMinutes()).padStart(2, "0")}`
+    if (nextTime !== startTime) {
+      setStartTime(nextTime)
+      setTimeError("")
+    }
+  }, [dragging, saved, durationPending, appliedDrag, dragSelection, slots.isFetching, slots.isError, chosenSlot?.startsAt, timeZone, startTime])
+  const previewCustomer = summaryCustomer ?? appointment.customer
+  const preview = useMemo(() => customRange && service && targetMember ? {
+    bufferBeforeMinutes: serviceChanged ? selectedService?.bufferBeforeMinutes : bookedService?.bufferBeforeMinutes,
+    bufferAfterMinutes: serviceChanged ? selectedService?.bufferAfterMinutes : bookedService?.bufferAfterMinutes,
+    appointmentId: appointment.id, locationId: appointment.locationId, status: appointment.status, customerName: [previewCustomer.firstName, previewCustomer.lastName].filter(Boolean).join(" "),
+    preserveScroll, startsAt: customRange.startsAt.toISOString(), endsAt: customRange.endsAt.toISOString(),
     member: targetMember, service: { id: service.serviceId, name: service.name, color: service.service?.color ?? "var(--primary)" },
-  } : null, [dragSelection, customRange?.startsAt.toISOString(), customRange?.endsAt.toISOString(), appointment.id, appointment.status, appointment.customer.firstName, appointment.customer.lastName, targetMember, service])
+  } : null, [preserveScroll, customRange?.startsAt.toISOString(), customRange?.endsAt.toISOString(), appointment.id, appointment.locationId, appointment.status, previewCustomer.firstName, previewCustomer.lastName, targetMember, service, serviceChanged, selectedService?.bufferBeforeMinutes, selectedService?.bufferAfterMinutes, bookedService?.bufferBeforeMinutes, bookedService?.bufferAfterMinutes])
   useEffect(() => {
-    if (!saved && dragSelection && appliedDrag === dragSelection && chosenSlot && !slots.isError) setPreview(preview)
-  }, [saved, dragSelection, appliedDrag, preview, chosenSlot, slots.isError, setPreview])
-  const selectedTimeError = timeError || (dragSelection && !durationPending && changingTime && selectedDay && validLength && !slots.isPending && !slots.isFetching && !slots.isError && !chosenSlot ? t("bookingForm.slotTaken") : undefined)
+    if (!dragging && !saved && appliedDrag === dragSelection) setPreview((current) => current && current.appointmentId !== appointment.id ? current : preview)
+  }, [dragging, saved, dragSelection, appliedDrag, preview, appointment.id, setPreview])
+  const selectedTimeError = timeError || undefined
 
-  const pending = update.isPending || saved
-  const disabled = pending || !canEdit
-  const format = (value: string | Date, includeDate = true) => formatDateTime(value, { formatPreference, timeZone, language: i18n.resolvedLanguage === "fi" ? "fi" : "en", includeDate })
+  const pending = update.isPending || remove.isPending || saved
+  const disabled = pending || !canEdit || dragging === true
+  const language = i18n.resolvedLanguage === "fi" ? "fi" : "en"
+  const format = useCallback((value: string | Date, includeDate = true) => formatDateTime(value, { formatPreference, timeZone, language, includeDate }), [formatPreference, timeZone, language])
+  const selectSlot = useCallback((value: string) => {
+    const slot = availableSlots.find((slot) => bookingSlotKey(slot) === value)
+    if (slot) {
+      setPreserveScroll(false)
+      setSelection(value)
+      setSelectedSlotMemberId(slot.staffMemberId)
+      const local = new TZDate(slot.startsAt, timeZone)
+      setStartTime(`${String(local.getHours()).padStart(2, "0")}:${String(local.getMinutes()).padStart(2, "0")}`)
+    }
+    setTimeError("")
+  }, [availableSlots, timeZone])
 
   return <><AppForm
     className="min-h-0 flex-1 gap-0"
@@ -146,34 +224,36 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
     ref={formRef}
     schema={calendarBookingSchema}
     submitFn={async ({ customerId, notes }) => {
-      if (!canEdit || pending) return
+      if (disabled) return
       if (changingTime && (!chosenSlot || slots.isError)) {
         setTimeError(t("bookingForm.chooseSlot"))
         return
       }
+      if (!await confirmPastBooking(changingTime && chosenSlot ? chosenSlot.startsAt : appointment.startsAt)) return
       try {
-        const timeChanged = changingTime && chosenSlot && (+new Date(chosenSlot.startsAt) !== +appointment.startsAt || (dragSelection && (length !== Math.round((+appointment.endsAt - +appointment.startsAt) / 60000) || targetMemberId !== appointment.staffMemberId)))
+        const timeChanged = changingTime && chosenSlot && (serviceChanged || +new Date(chosenSlot.startsAt) !== +appointment.startsAt || length !== Math.round((+appointment.endsAt - +appointment.startsAt) / 60000) || targetMemberId !== appointment.staffMemberId)
+        if (timeChanged && chosenSlot.overlapsBreak && !await confirmBreakOverlap()) return
         await queryClient.cancelQueries(trpc.appointment.list.queryFilter())
-        const result = await update.mutateAsync({ id: appointment.id, customerId, internalNotes: notes, staffMemberId: timeChanged && dragSelection ? targetMemberId ?? undefined : undefined, startsAt: timeChanged && chosenSlot ? new Date(chosenSlot.startsAt) : undefined, durationMinutes: timeChanged && dragSelection && validLength ? length : undefined })
+        const result = await update.mutateAsync({ id: appointment.id, customerId, internalNotes: notes, serviceId: serviceChanged ? serviceId : undefined, staffMemberId: timeChanged && targetMemberId !== appointment.staffMemberId ? targetMemberId ?? undefined : undefined, startsAt: timeChanged && chosenSlot ? new Date(chosenSlot.startsAt) : undefined, durationMinutes: timeChanged && appointment.services.length === 1 && validLength ? length : undefined, allowBreakOverlap: Boolean(timeChanged && dragSelection && customRange && chosenSlot?.startsAt === customRange.startsAt.toISOString()) })
         cacheCalendarBooking(queryClient, trpc.appointment.list.queryKey(), result)
         queryClient.setQueryData(trpc.appointment.get.queryKey({ id: appointment.id }), result)
         setSaved(true)
         if (clearPreview) clearPreview({ animate: false })
         else setPreview(null)
         void Promise.all([
+          queryClient.invalidateQueries({ ...trpc.service.bookingUsage.queryFilter(), refetchType: "none" }),
           queryClient.invalidateQueries({ ...trpc.appointment.getSlots.queryFilter(), refetchType: "none" }),
           queryClient.invalidateQueries({ ...trpc.appointment.getBookingTimes.queryFilter(), refetchType: "none" }),
           queryClient.invalidateQueries({ ...trpc.availability.getBookingTimes.queryFilter(), refetchType: "none" }),
           queryClient.invalidateQueries({ ...trpc.availability.getSlots.queryFilter(), refetchType: "none" }),
-          queryClient.invalidateQueries({ ...trpc.customer.getAppointments.queryFilter({ id: appointment.customerId }), refetchType: "none" }),
-          ...(customerId !== appointment.customerId ? [queryClient.invalidateQueries({ ...trpc.customer.getAppointments.queryFilter({ id: customerId }), refetchType: "none" })] : []),
+          queryClient.invalidateQueries({ ...trpc.customer.get.queryFilter({ id: appointment.customerId }), refetchType: "none" }),
+          ...(customerId !== appointment.customerId ? [queryClient.invalidateQueries({ ...trpc.customer.get.queryFilter({ id: customerId }), refetchType: "none" })] : []),
         ])
         toast.success(t("bookingForm.updated"))
         await navigate(returnTo, { replace: true, preventScrollReset: true })
       } catch (error) {
         if ((error as { data?: { code?: string } }).data?.code === "CONFLICT") {
           setTimeError(t("bookingForm.slotTaken"))
-          setSelection("")
           void slots.refetch()
         } else toast.error(t("bookingForm.updateError"))
         throw error
@@ -181,37 +261,113 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
     }}
   >{(form) => {
     const customer = form.getControlProps("customerId")
+    const saveButton = canEdit ? <Button disabled={disabled || (changingTime && (!chosenSlot || slots.isError))} loading={form.formState.isSubmitting || pending} type="submit">{t("bookingForm.saveChanges")}</Button> : null
+    const deleteButton = canEdit ? <Button className={hasStackedButtons ? undefined : "sm:mr-auto"} disabled={disabled} onClick={() => setDeleteOpen(true)} type="button" variant="destructive-outline"><Icon aria-hidden={true} name="delete" size={16} />{t("bookingForm.delete")}</Button> : null
+    const closeButton = <CalendarPanelClose disabled={pending} returnTo={returnTo} type="button" variant="ghost">{t("bookingForm.close")}</CalendarPanelClose>
     return <>
       <ScrollArea className="min-h-0 flex-1" scrollFade={true}>
         <div className="flex flex-col gap-5 px-6 pt-1 pb-6">
+          <CalendarBookingLiveIssues
+            appointmentId={appointment.id}
+            position={preview ? { ...preview, memberId: preview.member.id, locationId: appointment.locationId, status: appointment.status } : undefined}
+            savedIssues={appointment.availabilityIssues}
+            savedPosition={{ startsAt: appointment.startsAt, endsAt: appointment.endsAt, memberId: appointment.staffMemberId ?? "", locationId: appointment.locationId, status: appointment.status }}
+          />
           {!canEdit ? <Alert variant="info"><AlertTitle>{t("bookingForm.readOnly")}</AlertTitle></Alert> : null}
-          {service ? <CalendarBookingSummary endsAt={customRange?.endsAt.toISOString() ?? chosenSlot?.endsAt ?? appointment.endsAt.toISOString()} formatPreference={formatPreference} member={targetMember ?? undefined} service={{ name: appointment.services.map((item) => item.name).join(", "), durationMinutes: customRange && length !== null ? length : Math.round((+appointment.endsAt - +appointment.startsAt) / 60000), color: service.service?.color }} startsAt={customRange?.startsAt.toISOString() ?? chosenSlot?.startsAt ?? appointment.startsAt.toISOString()} timeZone={timeZone} /> : null}
-          {canReschedule ? <Button disabled={pending} onClick={() => { setChangingTime((value) => !value); setSelection(""); setTimeError("") }} type="button" variant="outline">{t(changingTime ? "bookingForm.keepTime" : "bookingForm.changeTime")}</Button> : null}
-          {changingTime ? <>
-            <FormLabel label={t("bookingForm.date")}>
-              <DatePicker clearLabel={t("bookingForm.clearDay")} disabled={pending} disablePast={true} formatPreference={formatPreference} includeWeekday={true} invalid={Boolean(timeError && !selectedDay)} label={t("bookingForm.date")} language={i18n.resolvedLanguage === "fi" ? "fi" : "en"} onChange={(value) => { setSelectedDay(value); setSelection(""); setTimeError("") }} placeholder={t("bookingForm.chooseDay")} timeZone={timeZone} value={selectedDay} weekStartsOn={calendar.weekStartsOn} />
-            </FormLabel>
-            {dragSelection ? <>
-              <BookingTimeFields availableStartTimes={availableStartTimes} disabled={disabled} formatPreference={formatPreference} language={i18n.resolvedLanguage === "fi" ? "fi" : "en"} length={length} lengthError={!validLength ? t("bookingForm.lengthError") : undefined} onLengthChange={(value) => { setLength(value); setTimeError("") }} onStartChange={(value) => { setStartTime(value); setTimeError("") }} startDisabled={!selectedDay || !validLength || durationPending || slots.isPending || slots.isError} startTime={startTime} timeError={selectedTimeError || undefined} />
-              {slots.isError ? <Alert variant="error"><AlertTitle>{t("bookingForm.loadError")}</AlertTitle><AlertAction><Button disabled={slots.isFetching} onClick={() => void slots.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
-            </> : <FormLabel error={timeError ? <span id={timeErrorId}>{timeError}</span> : undefined} errorPlacement="below" errorClassName="whitespace-normal" label={t("bookingForm.times")}>
-              <div aria-describedby={timeError ? timeErrorId : undefined} aria-invalid={Boolean(timeError)} aria-label={t("bookingForm.times")} className="w-full" role="group">
-                {slots.isPending && selectedDay ? <div className="flex min-h-32 items-center justify-center"><Spinner aria-label={t("loading")} /></div> : slots.isError ? <Alert variant="error"><AlertTitle>{t("bookingForm.loadError")}</AlertTitle><AlertAction><Button disabled={slots.isFetching} onClick={() => void slots.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : availableSlots.length ? <BookingSlotList days={slots.data?.days ?? []} format={format} formatPreference={formatPreference} invalid={Boolean(timeError)} locations={appointment.location ? [appointment.location] : []} members={appointment.staffMember ? [appointment.staffMember] : []} onSelect={(value) => { setSelection(value); setTimeError("") }} selection={selection} showDateHeadings={false} timeZone={timeZone} /> : <CalendarBookingEmpty description={t(selectedDay ? "bookingForm.tryDate" : "bookingForm.chooseDayForTimes")} icon="calendarOff" title={t("bookingForm.noTimes")} />}
-              </div>
-            </FormLabel>}
-          </> : null}
           <FormLabel error={form.error("customerId")} label={t("bookingForm.customerLabel")}>
-            <CustomerPicker selectedCustomer={appointment.customer} disabled={disabled} inputRef={customer.ref} invalid={Boolean(form.error("customerId"))} onBlur={customer.onBlur} onChange={customer.onChange} onCreate={() => { setCustomerFlow((flow) => flow + 1); setCustomerModalOpen(true) }} value={customer.value} />
+            <CustomerPicker onCustomerChange={setSummaryCustomer} selectedCustomer={appointment.customer} disabled={disabled} inputRef={customer.ref} invalid={Boolean(form.error("customerId"))} onBlur={customer.onBlur} onChange={customer.onChange} onCreate={() => { setCustomerFlow((flow) => flow + 1); setCustomerModalOpen(true) }} value={customer.value} />
           </FormLabel>
           <FormLabel error={form.error("notes")} label={t("bookingForm.notes")}><Textarea {...form.getInputProps("notes")} aria-invalid={Boolean(form.error("notes"))} disabled={disabled} /></FormLabel>
+          <Separator />
+          <FormLabel label={t("bookingForm.service")}>
+            {appointment.services.length === 1 ? <ServicePicker disabled={disabled || !canReschedule || services.isPending} onChange={(id) => {
+              if (!id || id === serviceId) return
+              setServiceId(id)
+              setLength(Math.max(calendarMinDurationMinutes, services.data?.find((item) => item.id === id)?.durationMinutes ?? availableServices.find((item) => item.id === id)?.durationMinutes ?? originalLength))
+              setMemberFilter(undefined)
+              setSelection("")
+              setChangingTime(true)
+              setPreserveScroll(false)
+              setTimeError("")
+            }} services={availableServices} value={serviceId} /> : appointment.services.map((item) => <ServicePicker disabled={true} key={item.id} onChange={() => {}} services={[{ id: item.serviceId, name: item.name, durationMinutes: item.durationMinutes, color: item.service?.color }]} value={item.serviceId} />)}
+          </FormLabel>
+          {services.isError ? <Alert variant="error"><AlertTitle>{t("bookingForm.servicesError")}</AlertTitle><AlertAction><Button disabled={services.isFetching} onClick={() => void services.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
+          <BookingDurationField serviceDurations={serviceDurations} minLength={calendarMinDurationMinutes} disabled={disabled || !canReschedule || appointment.services.length !== 1} language={i18n.resolvedLanguage === "fi" ? "fi" : "en"} length={length} maxLength={durationLimit} lengthError={!validLength ? t("bookingForm.lengthError") : undefined} onLengthChange={(value) => { setLength(value); setChangingTime(true); setPreserveScroll(false); setTimeError("") }} />
+          {canReschedule ? <Button disabled={disabled} onClick={() => {
+            setPreserveScroll(false)
+            setChangingTime(serviceChanged || !changingTime)
+            if (changingTime) {
+              setMemberFilter(undefined)
+              setSelection("")
+              setLength(originalLength)
+              setSelectedDay(originalDay)
+              const local = new TZDate(appointment.startsAt, timeZone)
+              setStartTime(`${String(local.getHours()).padStart(2, "0")}:${String(local.getMinutes()).padStart(2, "0")}`)
+            }
+            setTimeError("")
+          }} type="button" variant="outline"><Icon aria-hidden={true} name="clock" size={16} />{t(changingTime ? "bookingForm.keepTime" : "bookingForm.changeTime")}</Button> : null}
+          {changingTime ? <>
+            <FormLabel label={t("bookingForm.date")}>
+              <DatePicker clearLabel={t("bookingForm.clearDay")} disabled={pending} disablePast={false} formatPreference={formatPreference} includeWeekday={true} invalid={Boolean(timeError && !selectedDay)} label={t("bookingForm.date")} language={i18n.resolvedLanguage === "fi" ? "fi" : "en"} onChange={(value) => { setSelectedDay(value); setPreserveScroll(false); setTimeError("") }} placeholder={t("bookingForm.chooseDay")} timeZone={timeZone} value={selectedDay} weekStartsOn={calendar.weekStartsOn} />
+            </FormLabel>
+            <FormLabel error={selectedTimeError ? <span id={timeErrorId}>{selectedTimeError}</span> : undefined} errorPlacement="below" errorClassName="whitespace-normal" label={t("bookingForm.times")}>
+              <BookingMemberFilter disabled={disabled || serviceDetails.isFetching || calendar.staff.isPending || appointment.services.length !== 1} members={filterMembers} ownMemberId={ownMemberId} onChange={(id) => {
+                setMemberFilter(id)
+                if (id) setSelectedSlotMemberId(id)
+                setSelection("")
+                setPreserveScroll(false)
+                setTimeError("")
+              }} value={memberFilter} />
+              <div aria-describedby={selectedTimeError ? timeErrorId : undefined} aria-invalid={Boolean(selectedTimeError)} aria-label={t("bookingForm.times")} className="w-full" role="group">
+                {(slots.isPending || slots.isFetching || durationPending || appliedDrag !== dragSelection) && selectedDay ? <div className="flex min-h-32 items-center justify-center"><Spinner aria-label={t("loading")} /></div> : slots.isError ? <Alert variant="error"><AlertTitle>{t("bookingForm.loadError")}</AlertTitle><AlertAction><Button disabled={slots.isFetching} onClick={() => void slots.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : availableSlots.length ? <BookingSlotList currentSlotKey={currentSlot ? bookingSlotKey(currentSlot) : undefined} disabled={disabled || durationPending || !slots.isSuccess || slots.isFetching} days={slotDays} format={format} formatPreference={formatPreference} invalid={Boolean(selectedTimeError)} locations={slotLocations} members={slotMembers} onSelect={selectSlot} selection={chosenSlot ? bookingSlotKey(chosenSlot) : ""} showDateHeadings={false} timeZone={timeZone} /> : <CalendarBookingEmpty description={t(selectedDay ? "bookingForm.tryDate" : "bookingForm.chooseDayForTimes")} icon="calendarOff" title={t("bookingForm.noTimes")} />}
+              </div>
+            </FormLabel>
+          </> : null}
         </div>
       </ScrollArea>
-      <DialogFooter className="shrink-0 rounded-none! bg-transparent">
-        <Button disabled={pending} render={<Link preventScrollReset={true} replace={true} to={returnTo} />} type="button" variant="ghost">{t("bookingForm.close")}</Button>
-        {canEdit ? <Button disabled={pending || (changingTime && (!chosenSlot || slots.isError))} loading={form.formState.isSubmitting || pending} type="submit">{t("bookingForm.saveChanges")}</Button> : null}
+      <DialogFooter className={`shrink-0 rounded-none! bg-transparent ${hasStackedButtons ? "flex-col" : ""}`}>
+        {hasStackedButtons ? <>{saveButton}{deleteButton}{closeButton}</> : <>{deleteButton}{closeButton}{saveButton}</>}
       </DialogFooter>
     </>
   }}</AppForm>
+    <DeleteConfirmationDialog
+      cancelLabel={t("settings.cancel")}
+      closeOnConfirm={false}
+      confirmLabel={t("bookingForm.delete")}
+      description={t("bookingForm.deleteDescription")}
+      forceBackdrop={true}
+      isPending={remove.isPending || saved}
+      onConfirm={async () => {
+        try {
+          await queryClient.cancelQueries(trpc.appointment.list.queryFilter())
+          await remove.mutateAsync({ id: appointment.id })
+          setSaved(true)
+          setDeleteOpen(false)
+          removeCalendarBooking(queryClient, trpc.appointment.list.queryKey(), appointment.id)
+          if (clearPreview) clearPreview({ animate: false })
+          else setPreview(null)
+          void Promise.all([
+            queryClient.invalidateQueries(trpc.appointment.list.queryFilter()),
+            queryClient.invalidateQueries({ ...trpc.service.bookingUsage.queryFilter(), refetchType: "none" }),
+            queryClient.invalidateQueries({ ...trpc.appointment.getSlots.queryFilter(), refetchType: "none" }),
+            queryClient.invalidateQueries({ ...trpc.appointment.getBookingTimes.queryFilter(), refetchType: "none" }),
+            queryClient.invalidateQueries({ ...trpc.availability.getBookingTimes.queryFilter(), refetchType: "none" }),
+            queryClient.invalidateQueries({ ...trpc.availability.getSlots.queryFilter(), refetchType: "none" }),
+            queryClient.invalidateQueries({ ...trpc.customer.get.queryFilter({ id: appointment.customerId }), refetchType: "none" }),
+          ])
+          toast.success(t("bookingForm.deleted"))
+          await navigate(returnTo, { replace: true, preventScrollReset: true })
+          queryClient.removeQueries(trpc.appointment.get.queryFilter({ id: appointment.id }))
+        } catch {
+          toast.error(t("bookingForm.deleteError"))
+        }
+      }}
+      onOpenChange={setDeleteOpen}
+      open={deleteOpen}
+      title={t("bookingForm.delete")}
+    />
+    {pastBookingConfirmation}
+    {breakOverlapConfirmation}
     <CreateCustomerDialog flow={customerFlow} onCreated={(id) => { formRef.current?.setValue("customerId", id); formRef.current?.clearError("customerId") }} onOpenChange={setCustomerModalOpen} open={customerModalOpen} />
   </>
 }

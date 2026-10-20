@@ -1,29 +1,13 @@
+import type { CalendarBookingDragUpdate, CalendarBookingPreview, CalendarBookingReturnMotion, CalendarDragSelection } from "~/lib/calendar/types"
 import { createContext, useCallback, useLayoutEffect, useContext, useRef, useState, type Dispatch, type ReactNode, type SetStateAction, type RefObject } from "react"
 
 import { useLocation, useNavigation } from "react-router"
 
-import type { CalendarDragSelection } from "~/components/calendar/calendar-drag-selection"
-import { createCalendarPreviewScrollState, type CalendarPreviewScrollState } from "~/lib/calendar-preview-scroll"
-
-export type CalendarBookingPreview = {
-  preserveScroll?: boolean
-  appointmentId?: string
-  customerName?: string
-  status?: string
-  startsAt: string
-  endsAt: string
-  member: { id: string; name: string }
-  service: { id: string; name: string; color: string }
-}
-
-export type CalendarBookingReturnMotion = {
-  appointmentId: string
-  bounds: { left: number; top: number; width: number; height: number }
-}
-
-export type CalendarBookingDragUpdate = { selection: CalendarDragSelection; appointmentId?: string }
+import { createCalendarBookingDragPreview, type CalendarBookingDragPreviewStore } from "~/lib/calendar/booking-drag-preview"
+import { createCalendarPreviewScrollState, type CalendarPreviewScrollState } from "~/lib/calendar/preview-scroll"
 
 export const CalendarBookingPreviewContext = createContext<{
+  liveDragPreview?: CalendarBookingDragPreviewStore
   dragging?: boolean
   setDragging?: Dispatch<SetStateAction<boolean>>
   preview: CalendarBookingPreview | null
@@ -40,6 +24,7 @@ export function CalendarBookingPreviewProvider({ children }: { children: ReactNo
   const navigation = useNavigation()
   const previousPath = useRef(location.pathname)
   const [dragging, setDragging] = useState(false)
+  const [liveDragPreview] = useState(createCalendarBookingDragPreview)
   const [dragUpdate, setDragUpdate] = useState<CalendarBookingDragUpdate | null>(null)
   const [preview, updatePreview] = useState<CalendarBookingPreview | null>(null)
   const currentPreview = useRef<CalendarBookingPreview | null>(null)
@@ -84,7 +69,7 @@ export function CalendarBookingPreviewProvider({ children }: { children: ReactNo
     setDragUpdate((current) => current && !stillEditing(current.appointmentId) ? null : current)
   }, [location.pathname, navigation.location?.pathname, setPreview])
 
-  return <CalendarBookingPreviewContext.Provider value={{ dragging, setDragging, preview, setPreview, clearPreview, returnMotion, scrollState, dragUpdate, setDragUpdate }}>{children}</CalendarBookingPreviewContext.Provider>
+  return <CalendarBookingPreviewContext.Provider value={{ liveDragPreview, dragging, setDragging, preview, setPreview, clearPreview, returnMotion, scrollState, dragUpdate, setDragUpdate }}>{children}</CalendarBookingPreviewContext.Provider>
 }
 
 export function useCalendarBookingPreview() {

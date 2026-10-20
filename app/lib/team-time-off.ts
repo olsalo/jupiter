@@ -68,3 +68,13 @@ export function timeOffIntervals(values: TimeOffValues, timezone: string, range?
   }
   return intervals
 }
+
+export function upcomingTimeOff<Entry extends { startsAt: Date; endsAt: Date; recurrence: unknown }>(entries: Entry[], now = new Date()) {
+  return entries.flatMap((entry) => {
+    const recurrence = readTimeOffRecurrence(entry.recurrence)
+    if (!recurrence) return entry.endsAt > now ? [entry] : []
+    const nextYear = Temporal.Instant.fromEpochMilliseconds(Math.max(+now, +entry.startsAt)).toZonedDateTimeISO(recurrence.timezone).add({ years: 1, days: 1 })
+    const next = timeOffIntervals(recurrence, recurrence.timezone, { from: now, to: new Date(nextYear.epochMilliseconds) })[0]
+    return next ? [{ ...entry, ...next }] : []
+  }).sort((a, b) => +a.startsAt - +b.startsAt)
+}

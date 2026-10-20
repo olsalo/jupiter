@@ -1,3 +1,4 @@
+import { calendarMinDurationMinutes } from "~/lib/calendar/time-step"
 import { z } from "~/lib/zod"
 
 export const id = z.string().trim().min(1).max(128)
@@ -51,10 +52,10 @@ export const replaceRulesInput = scopeInput.extend({ rules: z.array(ruleInput).m
 export const intervalInput = scopeInput.extend({ startsAt: z.coerce.date(), endsAt: z.coerce.date(), reason: text.optional() }).refine(({ startsAt, endsAt }) => endsAt > startsAt)
 export const overrideInput = intervalInput.safeExtend({ isAvailable: z.boolean() })
 export const blockedInput = intervalInput.safeExtend({ title: z.string().trim().max(120).optional() })
-export const bookingDuration = z.number().int().min(5).max(1440)
+export const bookingDuration = z.number().int().min(calendarMinDurationMinutes).max(1440)
 export const calendarSlotInput = slotInput.safeExtend({ durationMinutes: bookingDuration.optional() })
-export const calendarBookingTimesInput = z.object({ ...slotInput.shape, serviceId: id.optional(), staffMemberId: id, durationMinutes: bookingDuration }).refine(({ from, to }) => to > from && +to - +from <= 31 * 86400000, "Choose a range of up to 31 days")
-export const createAppointmentInput = scopeInput.extend({ durationMinutes: bookingDuration.optional(), serviceId: id, startsAt: z.coerce.date(), customerId: id, notes: text.optional() })
+export const calendarBookingTimesInput = z.object({ ...slotInput.shape, serviceId: id.optional(), staffMemberId: id.optional(), durationMinutes: bookingDuration, selectedStart: z.coerce.date().optional() }).refine(({ from, to }) => to > from && +to - +from <= 31 * 86400000, "Choose a range of up to 31 days")
+export const createAppointmentInput = scopeInput.extend({ durationMinutes: bookingDuration.optional(), allowBreakOverlap: z.boolean().optional(), serviceId: id, startsAt: z.coerce.date(), customerId: id, notes: text.optional() })
 export const createAppointmentWithCustomerInput = createAppointmentInput.omit({ customerId: true }).extend({ customer: customerInput })
 export const createBookingInput = pageInput.extend({ serviceId: id, ...scopeInput.shape, startsAt: z.coerce.date(), customer: customerInput, notes: text.optional(), answers: z.array(z.object({ questionId: id, value: z.union([z.string().max(4000), z.number().finite(), z.boolean(), z.array(z.string().max(200)).max(50)]) })).max(50).default([]) })
 export const bookingCodeInput = z.object({ bookingCode: z.string().regex(/^[A-Za-z0-9_-]{32}$/) })
@@ -65,8 +66,8 @@ export const publicRescheduleInput = bookingCodeInput.extend({ startsAt: z.coerc
 export const listAppointmentsInput = rangeInput.safeExtend({ ...scopeInput.shape, customerId: id.optional(), includeCancelled: z.boolean().optional(), status: z.enum(["PENDING", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_SHOW"]).optional() })
 export const paginationInput = z.object({ cursor: id.optional(), limit: z.number().int().min(1).max(100).default(50), search: z.string().trim().max(120).optional() })
 export const notesInput = idInput.extend({ customerNotes: text.nullable().optional(), internalNotes: text.nullable().optional() })
-export const updateAppointmentInput = idInput.extend({ customerId: id, internalNotes: text, staffMemberId: id.optional(), durationMinutes: bookingDuration.optional(), startsAt: z.coerce.date().optional() })
-export const appointmentSlotsInput = idInput.extend({ from: slotInput.shape.from, to: slotInput.shape.to }).refine(({ from, to }) => to > from && +to - +from <= 31 * 86400000)
+export const updateAppointmentInput = idInput.extend({ customerId: id, internalNotes: text, serviceId: id.optional(), staffMemberId: id.optional(), durationMinutes: bookingDuration.optional(), allowBreakOverlap: z.boolean().optional(), startsAt: z.coerce.date().optional() })
+export const appointmentSlotsInput = idInput.extend({ durationMinutes: bookingDuration.optional(), selectedStart: z.coerce.date().optional(), from: slotInput.shape.from, to: slotInput.shape.to }).refine(({ from, to }) => to > from && +to - +from <= 31 * 86400000)
 
 // Zod defaults also run inside partial schemas, so explicitly remove them for
 // updates to preserve fields the caller did not send
@@ -95,4 +96,5 @@ export const locationUpdateInput = idInput.extend({
   isActive: locationInput.shape.isActive.removeDefault().optional(),
 })
 
-export const appointmentBookingTimesInput = appointmentSlotsInput.safeExtend({ durationMinutes: bookingDuration, staffMemberId: id.optional() })
+// Omitting the member keeps the saved member; null lists the whole team
+export const appointmentBookingTimesInput = appointmentSlotsInput.safeExtend({ durationMinutes: bookingDuration, serviceId: id.optional(), staffMemberId: id.nullable().optional(), selectedStart: z.coerce.date().optional() })

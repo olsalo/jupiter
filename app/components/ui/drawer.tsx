@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Icon from "~/components/icons";
+import { DrawerDropdownScope } from "~/components/drawer-dropdown-state"
 import { getDialogPopupClassName, getDialogViewportClassName } from "~/components/dialog-popup-styles"
 import { getSheetPopupClassName, getSheetViewportClassName } from "~/components/sheet-popup-styles"
 
@@ -158,6 +159,7 @@ export function DrawerPopup({
   portalProps,
   viewportClassName,
   presentation = "drawer",
+  render,
   ...props
 }: DrawerPrimitive.Popup.Props & {
   showCloseButton?: boolean;
@@ -230,6 +232,7 @@ export function DrawerPopup({
           )}
           data-slot={`${presentation}-popup`}
           {...props}
+          render={(popupProps, state) => <DrawerDropdownScope popupProps={popupProps} render={render} state={state} />}
         >
           {children}
           {showCloseButton && (

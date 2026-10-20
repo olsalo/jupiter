@@ -1,7 +1,7 @@
-import { RoutePlaceholderSheet, PlaceholderSheetContent } from "~/components/placeholders/route-placeholder-sheet"
+import { CalendarBlockTime } from "~/components/calendar/calendar-block-time"
 
 export const handle = { overlay: true }
 
-export default function BlockTime() {
-  return <RoutePlaceholderSheet titleKey="newBlockedTime" returnTo="/calendar"><PlaceholderSheetContent /></RoutePlaceholderSheet>
+export default function CalendarBlockTimeRoute() {
+  return <CalendarBlockTime />
 }

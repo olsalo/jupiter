@@ -1,7 +1,7 @@
 import { z } from "~/lib/zod"
 import { ruleInput } from "~/lib/schemas/appointments"
 
-function workingHoursSchema(endTimeError = "End time must be after start time") {
+export function workingHoursSchema(endTimeError = "End time must be after start time") {
   return z.array(z.object({ ...ruleInput.shape, isActive: z.boolean().default(true) }).superRefine((rule, ctx) => {
     if (rule.endMinute <= rule.startMinute) ctx.addIssue({ code: "custom", path: ["endMinute"], message: endTimeError })
     if (rule.validFrom && rule.validUntil && rule.validUntil <= rule.validFrom) ctx.addIssue({ code: "custom", path: ["endMinute"], message: endTimeError })

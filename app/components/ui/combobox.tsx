@@ -6,6 +6,8 @@ import { ScrollArea } from "@coss/ui/components/scroll-area";
 import { cn } from "@coss/ui/lib/utils";
 import * as React from "react";
 import Icon from "../icons"
+import { createChangeEventDetails } from "@base-ui/react/internals/createBaseUIEventDetails"
+import { useDrawerDropdownState } from "~/components/drawer-dropdown-state"
 
 export const ComboboxContext: React.Context<{
   chipsRef: React.RefObject<Element | null> | null;
@@ -21,10 +23,11 @@ export const ComboboxContext: React.Context<{
 export function Combobox<Value, Multiple extends boolean | undefined = false>(
   props: ComboboxPrimitive.Root.Props<Value, Multiple>,
 ): React.ReactElement {
-  const chipsRef = React.useRef<Element | null>(null);
+  const chipsRef = React.useRef<Element | null>(null)
+  const dropdown = useDrawerDropdownState<ComboboxPrimitive.Root.ChangeEventDetails>(props, () => createChangeEventDetails("none"))
   return (
     <ComboboxContext.Provider value={{ chipsRef, multiple: !!props.multiple }}>
-      <ComboboxPrimitive.Root {...props} />
+      <ComboboxPrimitive.Root {...props} {...dropdown} />
     </ComboboxContext.Provider>
   );
 }
