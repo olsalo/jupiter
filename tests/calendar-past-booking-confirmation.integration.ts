@@ -7,7 +7,7 @@ import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
 
 const vite = await createServer({
-  configFile: false, appType: "custom",
+  configFile: false, cacheDir: "node_modules/.vite-tests/calendar-past-booking-confirmation", appType: "custom",
   resolve: { alias: { "~": new URL("../app", import.meta.url).pathname, "@": new URL("../app", import.meta.url).pathname, "@coss/ui/lib": new URL("../app/lib", import.meta.url).pathname } },
   server: { ws: false, middlewareMode: true, hmr: false, watch: null },
 })
@@ -47,6 +47,17 @@ try {
   confirmButton.props.onClick()
   await accepted
   assert.equal(saves, 1, "Explicit confirmation saves the past booking once")
+
+  const movedToFuture = confirmation.confirmPastBooking("2026-10-18T11:00:00Z", "2026-10-20T11:00:00Z")
+  let resolved = false
+  void movedToFuture.then(() => { resolved = true })
+  await Promise.resolve()
+  assert.equal(resolved, false, "Moving a past booking into the future still asks before saving")
+  dialog.props.onOpenChange(false)
+  assert.equal(await movedToFuture, false)
+  const movedToPast = confirmation.confirmPastBooking("2026-10-20T11:00:00Z", "2026-10-18T11:00:00Z")
+  confirmButton.props.onClick()
+  assert.equal(await movedToPast, true, "Moving a future booking into the past requires confirmation")
 
   mock.timers.setTime(Date.parse("2026-10-19T12:10:00Z"))
   const elapsed = save("2026-10-19T12:05:00Z")

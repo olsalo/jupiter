@@ -45,7 +45,7 @@ try {
     await prisma.member.update({ where: { id: membership.id }, data: { role } })
     const routeContext = new RouterContextProvider()
     routeContext.set(membershipContext, { role, staffProfile: { id: ownStaff.id, isActive: true, acceptsAppointments: true } })
-    for (const path of ["/services/new", "/team/new", "/booking-pages/new"]) {
+    for (const path of ["/services/new", "/team/new", "/booking-page/new"]) {
       const url = new URL(path, origin)
       const checkRoute = async () => requireRoutePermissionsMiddleware({ context: routeContext, url, request: new Request(url), params: {}, pattern: path }, async () => new Response())
       if (role === "member") await assert.rejects(checkRoute, (response: Response) => response.status === 302 && response.headers.get("location") === "/calendar")

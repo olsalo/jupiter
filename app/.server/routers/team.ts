@@ -1,3 +1,5 @@
+import { createResourceLimits } from "../resource-limits/service"
+import { ResourceLimitError } from "../resource-limits/errors"
 import { createPerson, inviteStaff, linkInvitationStaff, personData, teamData, updatePerson } from "../services/team"
 import { isManager } from "../services/scheduling"
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server"
@@ -84,6 +86,7 @@ export const teamRouter = {
       if (!member || !isManager(member)) throw new TRPCError({ code: "FORBIDDEN" })
       return inviteStaff(ctx.prisma, ctx.organizationId, ctx.user.id, { ...input, staffMemberId: input.staffMemberId }, process.env.BETTER_AUTH_URL ?? "http://localhost:5175", ctx.locale)
     }
+    await createResourceLimits(ctx.prisma).assert(ctx.organizationId, "teamMembers")
     try {
       // Better Auth checks the sender's membership and invitation permissions.
       const { name, sendEmail, ...invitationInput } = input
@@ -107,6 +110,10 @@ export const teamRouter = {
       return { error: null, id: invitation.id, linked: false }
     } catch (error) {
       if (error instanceof APIError) {
+        if (error.body?.code === "RESOURCE_LIMIT_REACHED") {
+          const status = await createResourceLimits(ctx.prisma).get(ctx.organizationId, "teamMembers")
+          throw new ResourceLimitError("teamMembers", status.limit)
+        }
         if (error.body?.code === "USER_IS_ALREADY_A_MEMBER_OF_THIS_ORGANIZATION") {
           return { error: "alreadyMember" as const, id: null }
         }
@@ -235,6 +242,7 @@ export const teamRouter = {
             return { error: "unavailable" as const, organizationName: null }
           }
         } else {
+          await createResourceLimits(ctx.prisma).assert(invitation.organizationId, "teamMembers", 0)
           try {
             await auth.api.acceptInvitation({ headers: ctx.headers, body: input })
           } catch (error) {

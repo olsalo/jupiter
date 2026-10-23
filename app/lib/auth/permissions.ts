@@ -73,8 +73,8 @@ export function getRoutePermissions(pathname: string): OrganizationPermissions |
   switch (area) {
     case "services": return { services: ["configure"] }
     case "team":
-    case "team-v2": return { team: ["manage"] }
-    case "booking-pages": return { bookingPage: ["configure"] }
+    case "team-original": return { team: ["manage"] }
+    case "booking-page": return { bookingPage: ["configure"] }
     case "calendar": return { appointments: ["read"] }
     case "customers": return { customers: ["read"] }
     default: return null

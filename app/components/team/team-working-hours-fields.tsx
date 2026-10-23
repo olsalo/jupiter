@@ -10,7 +10,7 @@ import type { PersonFormFields } from "~/lib/schemas/team"
 import { TeamScheduleTimeFields } from "./team-schedule-time-fields"
 import { TeamWorkingHoursWeek } from "./team-working-hours-week"
 
-export function TeamWorkingHoursFields({ scope, timezone, defaultHours, showHeader = true, resetPending = false, onResetToDefault }: { timezone: string; showHeader?: boolean; resetPending?: boolean; scope: FormScope<Pick<PersonFormFields, "workingHours" | "breaks">>; defaultHours: PersonFormFields["workingHours"]; onResetToDefault?: (hours: PersonFormFields["workingHours"]) => void | Promise<void> }) {
+export function TeamWorkingHoursFields({ scope, timezone, defaultHours, showHeader = true, showReset = true, resetDescription, resetPending = false, onResetToDefault }: { resetDescription?: string; timezone: string; showHeader?: boolean; showReset?: boolean; resetPending?: boolean; scope: FormScope<Pick<PersonFormFields, "workingHours" | "breaks">>; defaultHours: PersonFormFields["workingHours"]; onResetToDefault?: (hours: PersonFormFields["workingHours"]) => void | Promise<void> }) {
   const form = useFormScope(scope)
   const { t } = useTranslation("team")
   const hours = form.getControlProps("workingHours")
@@ -47,16 +47,16 @@ export function TeamWorkingHoursFields({ scope, timezone, defaultHours, showHead
         }}
         renderTimes={(rule, index) => <TeamScheduleTimeFields form={form} field="workingHours" index={index} day={rule.dayOfWeek} />}
       />
-      <TooltipProvider>
+      {showReset ? <TooltipProvider>
         <div className="flex justify-end">
           <Tooltip>
             <TooltipTrigger render={<span className="inline-flex" />}>
-              <Button aria-busy={resetPending} aria-label={t("people.resetHours")} disabled={form.formState.isSubmitting || resetPending} onClick={() => void resetToDefault()} size="sm" type="button" variant="outline"><span className="inline-flex size-4 shrink-0 items-center justify-center">{resetPending ? <Spinner aria-hidden={true} className="size-4" /> : <Icon aria-hidden={true} name="refresh" size={16} />}</span>{t("people.restoreToDefault")}</Button>
+              <Button aria-busy={resetPending} aria-label={resetDescription ?? t("people.resetHours")} disabled={form.formState.isSubmitting || resetPending} onClick={() => void resetToDefault()} size="sm" type="button" variant="outline"><span className="inline-flex size-4 shrink-0 items-center justify-center">{resetPending ? <Spinner aria-hidden={true} className="size-4" /> : <Icon aria-hidden={true} name="refresh" size={16} />}</span>{t("people.restoreToDefault")}</Button>
             </TooltipTrigger>
-            <TooltipPopup>{t("people.resetHours")}</TooltipPopup>
+            <TooltipPopup>{resetDescription ?? t("people.resetHours")}</TooltipPopup>
           </Tooltip>
         </div>
-      </TooltipProvider>
+      </TooltipProvider> : null}
     </div>
   )
 }

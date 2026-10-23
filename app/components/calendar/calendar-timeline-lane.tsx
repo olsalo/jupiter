@@ -36,8 +36,6 @@ export const CalendarTimelineLane = memo(function CalendarTimelineLane({ lane, m
       {lane.unavailableTimes.filter((period) => !mobile || period.isBlocked).map((unavailable, index) => {
         const top = (Math.max(startMinute, unavailable.startMinute) - startMinute) / 60 * calendarTimelineHourHeight - (unavailable.startMinute <= startMinute ? calendarTimelinePadding : 0)
         const bottom = (Math.min(endMinute, unavailable.endMinute) - startMinute) / 60 * calendarTimelineHourHeight + (unavailable.endMinute >= endMinute ? calendarTimelinePadding : 0)
-        const gridTop = top + calendarTimelinePadding
-        const gridBottom = bottom + calendarTimelinePadding
         return <div
           aria-label={`${lane.member.name} · ${unavailable.title || t("calendarGrid.unavailable")}`}
           className="absolute inset-0 flex items-center justify-center overflow-hidden bg-foreground/1 px-1.5"
@@ -51,10 +49,7 @@ export const CalendarTimelineLane = memo(function CalendarTimelineLane({ lane, m
             backgroundImage: "repeating-linear-gradient(135deg, transparent 0px, transparent 5px, color-mix(in srgb, var(--muted-foreground) 8%, transparent) 5px, color-mix(in srgb, var(--muted-foreground) 8%, transparent) 6px)",
           }}
         >
-          {Math.min(endMinute, unavailable.endMinute) - Math.max(startMinute, unavailable.startMinute) >= 30 ? <Badge className="absolute left-1/2 z-40 max-w-[calc(100%-0.75rem)] -translate-x-1/2 -translate-y-1/2 border-border/50 bg-background/80 px-1.5 text-[10px] text-muted-foreground dark:bg-background/80" data-slot="calendar-unavailable-badge" style={{
-            // Center in the visible intersection, staying inside short unavailable periods
-            top: `clamp(12px, calc((max(var(--calendar-view-top, 0px), ${gridTop}px) + min(var(--calendar-view-bottom, ${gridBottom}px), ${gridBottom}px)) / 2 - ${gridTop}px), calc(100% - 12px))`,
-          }} variant="outline">{unavailable.title || t("calendarGrid.unavailable")}</Badge> : null}
+          {Math.min(endMinute, unavailable.endMinute) - Math.max(startMinute, unavailable.startMinute) >= 30 ? <Badge className="absolute top-1/2 left-1/2 z-40 max-w-[calc(100%-0.75rem)] -translate-x-1/2 -translate-y-1/2 border-border/50 bg-background/80 px-1.5 text-[10px] text-muted-foreground dark:bg-background/80" data-slot="calendar-unavailable-badge" variant="outline">{unavailable.title || t("calendarGrid.unavailable")}</Badge> : null}
         </div>
       })}
       {lane.breaks.map((period, index) => <CalendarBreakCard endMinute={endMinute} formatPreference={formatPreference} key={index} period={period} startMinute={startMinute} />)}

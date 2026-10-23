@@ -5,6 +5,7 @@ import { defineConfig } from "vite"
 import { offlinePlugin } from "./build-plugins/offline.ts"
 
 export default defineConfig({
+  cacheDir: process.env.VITE_TEST_CACHE_DIR ?? "node_modules/.vite",
   plugins: [tailwindcss(), reactRouter(), offlinePlugin()],
   server: {
     port: 5175,

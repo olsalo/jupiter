@@ -10,16 +10,18 @@ type UserAvatarProps = Omit<ComponentProps<typeof Avatar>, "children"> & {
   name: string
   src?: string | null
   decorative?: boolean
+  initialsCount?: 1 | 2
+  fallbackClassName?: string
 }
 
-export function UserAvatar({ stableId, name, src, decorative = false, className, ...props }: UserAvatarProps) {
+export function UserAvatar({ stableId, name, src, decorative = false, initialsCount = 2, className, fallbackClassName, ...props }: UserAvatarProps) {
   const colorClass = getAvatarColorClass(stableId)
-  const initials = name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => Array.from(part)[0]).join("").toUpperCase()
+  const initials = name.trim().split(/\s+/).map((part) => part.match(/[\p{L}\p{N}]/u)?.[0]).filter(Boolean).slice(0, initialsCount).join("").toUpperCase()
 
   return (
     <Avatar aria-hidden={decorative || undefined} aria-label={decorative ? undefined : name} className={cn("border border-black/8 dark:border-white/10", colorClass, className)} role={decorative ? undefined : "img"} {...props}>
       {src ? <AvatarImage alt="" draggable={false} src={src} /> : null}
-      <AvatarFallback className={colorClass}>{initials || <Icon aria-hidden={true} className="size-1/2" name="user" />}</AvatarFallback>
+      <AvatarFallback className={cn(colorClass, fallbackClassName)}>{initials || <Icon aria-hidden={true} className="size-1/2" name="user" />}</AvatarFallback>
     </Avatar>
   )
 }

@@ -39,21 +39,21 @@ export default [
         route("intake", "routes/services/service-intake.tsx"),
       ]),
     ]),
-    route("booking-pages", "routes/booking-pages/booking-pages.tsx", [
+    route("booking-page", "routes/booking-pages/booking-pages.tsx", [
       route("new", "routes/booking-pages/new-booking-page.tsx"),
       route(":bookingPageId", "routes/booking-pages/booking-page-sheet.tsx", [
         index("routes/booking-pages/booking-page-view.tsx"),
         route("edit", "routes/booking-pages/booking-page-edit.tsx"),
       ]),
     ]),
-    route("team", "routes/team/team.tsx", [
+    route("team-original", "routes/team/team.tsx", [
       route("new", "routes/team/new-person.tsx"),
       route(":personId", "routes/team/person-sheet.tsx", [
         index("routes/team/person-view.tsx"),
         route("edit", "routes/team/person-edit.tsx"),
       ]),
     ]),
-    route("team-v2", "routes/team-v2/team.tsx", [
+    route("team", "routes/team-v2/team.tsx", [
       route("new", "routes/team-v2/new-member.tsx"),
       route(":memberId", "routes/team-v2/member-layout.tsx", [
         route("", "routes/team-v2/member-profile.tsx", [
@@ -75,6 +75,8 @@ export default [
   route("/invite/:invitationId", "routes/invite.tsx"),
   route("/onboarding", "routes/onboarding/onboarding.tsx", [
     route("business", "routes/onboarding/business.tsx"),
+    route("availability", "routes/onboarding/availability.tsx"),
+    route("holidays", "routes/onboarding/holidays.tsx"),
     route("subscription", "routes/onboarding/subscription.tsx"),
   ]),
   route("api/locale", "routes/api/locale.ts"),

@@ -56,5 +56,13 @@
     "organizationNameTaken": "Taken",
     "subscription": "Couldn’t open checkout. Try again",
     "billingNotConfigured": "You can't start a subscription yet. Try again later"
+  },
+  "availability": {
+    "title": "Set your usual hours",
+    "description": "These hours apply to your team unless someone has their own schedule"
+  },
+  "holidays": {
+    "title": "Confirm your holidays",
+    "description": "Review the suggested holidays and adjust when your business is open"
   }
 }

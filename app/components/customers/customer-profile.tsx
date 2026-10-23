@@ -36,7 +36,7 @@ export function CustomerProfile({ customer }: { customer: Customer }) {
         <h2 className="min-w-0 break-words text-xl font-semibold leading-7">{name}</h2>
         {canUpdate ? <Button aria-label={t("customerPage.edit")} className="@max-[32rem]/customer-header:size-8 @max-[32rem]/customer-header:p-0" render={<Link replace={true} state={location.state} to={`edit${location.search}`} />} type="button" variant="outline"><Icon aria-hidden={true} name="edit" size={16} /><span className="@max-[32rem]/customer-header:hidden">{t("customerPage.edit")}</span></Button> : null}
       </div>
-      <div className="px-6"><TabsList aria-label={t("customerPage.details")} className="grid w-full grid-cols-2" variant="underline">{(["overview", "appointments"] as const).map((value) => <TabsTab key={value} value={value}><Icon aria-hidden={true} name={value === "overview" ? "user" : "calendar"} size={16} />{t(`customerPage.${value}`)}</TabsTab>)}</TabsList></div>
+      <div className="px-6"><TabsList aria-label={t("customerPage.details")} className="grid w-full grid-cols-2" variant="underline">{(["overview", "appointments"] as const).map((value) => <TabsTab key={value} value={value}><Icon aria-hidden={true} name={value === "overview" ? "user" : "calendar"} size={16} />{t(value === "overview" ? "customerPage.profile" : "customerPage.appointments")}</TabsTab>)}</TabsList></div>
     </div>
     <TabsPanel className="flex min-h-0 flex-1 flex-col" value="overview">
       <div className="shrink-0 px-6 pb-5 pt-6"><SettingsSectionHeader title={t("customerPage.contact")} description={t("customerPage.contactDescription")} /></div>

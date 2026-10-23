@@ -27,7 +27,7 @@ export const profileRouter = {
     if (!staffMemberId || !canAccessAvailability(ctx.member, staffMemberId)) throw new TRPCError({ code: "FORBIDDEN" })
     await ctx.prisma.$transaction(async (tx) => {
       await schedulingLock(tx, ctx.organizationId)
-      await tx.availabilityRule.deleteMany({ where: { organizationId: ctx.organizationId, staffMemberId, locationId: null, isBreak: false } })
+      await tx.availabilityRule.deleteMany({ where: { organizationId: ctx.organizationId, staffMemberId, isBreak: false } })
     })
     return { success: true }
   }),
@@ -38,7 +38,14 @@ export const profileRouter = {
   updateLocale: publicProcedure
     .input(z.object({ locale: z.enum(["en", "fi"]) }))
     .mutation(async ({ ctx, input }) => {
+      if (ctx.user) await syncUserLocale({ locale: input.locale, userId: ctx.user.id })
       ctx.responseHeaders?.append("Set-Cookie", await localeCookie.serialize(input.locale))
+      return input
+    }),
+  updateFormatPreference: publicProcedure
+    .input(z.object({ formatPreference: z.enum(["eu", "us"]) }))
+    .mutation(async ({ ctx, input }) => {
+      ctx.responseHeaders?.append("Set-Cookie", await formatPreferenceCookie.serialize(input.formatPreference))
       return input
     }),
   updateTheme: publicProcedure

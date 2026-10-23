@@ -1,3 +1,5 @@
+import { createResourceLimits } from "../resource-limits/service"
+import { queuedEmailContent } from "./email-queue"
 import { hasOrganizationPermission } from "~/lib/auth/permissions"
 import { TRPCError } from "@trpc/server"
 import type { z } from "~/lib/zod"
@@ -63,6 +65,7 @@ export async function createPerson(db: PrismaClient, organizationId: string, act
     if (existingMember && (!input.takesAppointments || existingMember.staffProfile)) emailConflict("alreadyMember")
     if (input.email && await tx.staffMember.findFirst({ where: { organizationId, email: { equals: input.email, mode: "insensitive" } } })) emailConflict("alreadyStaff")
     if (input.giveAppAccess && await tx.invitation.findFirst({ where: { organizationId, email: input.email, status: "pending", expiresAt: { gt: new Date() } } })) emailConflict("alreadyInvited")
+    if (!existingMember) await createResourceLimits(tx).assert(organizationId, "teamMembers")
     const staff = input.takesAppointments ? await tx.staffMember.create({ data: {
       organizationId, name: input.name, email: input.email || null, phone: input.phone || null, bio: input.bio || null, timezone: input.timezone || null,
       memberId: existingMember?.id, acceptsAppointments: true, isActive: input.isActive,
@@ -76,12 +79,13 @@ export async function createPerson(db: PrismaClient, organizationId: string, act
 export async function createPersonInvitation(tx: Database, organizationId: string, actorUserId: string, input: { name: string; email: string; role: "admin" | "member"; sendEmail: boolean; staffMemberId?: string }, origin: string, locale: "en" | "fi") {
   if (await tx.invitation.findFirst({ where: { organizationId, status: "pending", expiresAt: { gt: new Date() }, OR: [{ email: input.email }, ...(input.staffMemberId ? [{ staffMemberId: input.staffMemberId }] : [])] } })) emailConflict("alreadyInvited")
   if (await tx.invitation.count({ where: { organizationId, status: "pending", expiresAt: { gt: new Date() } } }) >= 100) throw new TRPCError({ code: "FORBIDDEN", message: "There are too many pending invitations" })
+  if (!input.staffMemberId) await createResourceLimits(tx).assert(organizationId, "teamMembers")
   const organization = await tx.organization.findUniqueOrThrow({ where: { id: organizationId }, select: { name: true } })
-  const invitation = await tx.invitation.create({ data: { id: generateId("inv"), organizationId, inviterId: actorUserId, inviteeName: input.name, email: input.email, role: input.role, staffMemberId: input.staffMemberId, status: "pending", expiresAt: new Date(Date.now() + 14 * 86400000) } })
+  const invitation = await tx.invitation.create({ data: { id: generateId(), organizationId, inviterId: actorUserId, inviteeName: input.name, email: input.email, role: input.role, staffMemberId: input.staffMemberId, status: "pending", expiresAt: new Date(Date.now() + 14 * 86400000) } })
   const inviteUrl = new URL(`/invite/${encodeURIComponent(invitation.id)}`, origin).toString()
   if (input.sendEmail) {
-    const template = createInvitationEmailTemplate({ organizationName: organization.name, inviteUrl, locale })
-    await tx.notification.create({ data: { organizationId, kind: "CUSTOM", channel: "EMAIL", recipient: input.email, subject: template.subject, body: template.text, metadata: { invitationId: invitation.id, invitationHtml: template.html } } })
+    const template = await createInvitationEmailTemplate({ organizationName: organization.name, inviteUrl, locale })
+    await tx.notification.create({ data: { organizationId, kind: "CUSTOM", channel: "EMAIL", recipient: input.email, ...queuedEmailContent(template, locale, { invitationId: invitation.id }) } })
   }
   if (process.env.NODE_ENV === "development") {
     console.info(`[team] Invitation for ${input.email}: ${inviteUrl}`)

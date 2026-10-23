@@ -1,4 +1,7 @@
 import { useTranslation } from "react-i18next"
+import { redirect } from "react-router"
+
+import type { Route } from "./+types/overview"
 
 import Icon, { type AppIconName } from "~/components/icons"
 import { JoinedTeamDialog } from "~/components/joined-team-dialog"
@@ -9,12 +12,12 @@ import { Card, CardDescription, CardHeader, CardTitle } from "~/components/ui/ca
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
 import { useOverviewGreeting } from "~/lib/use-overview-greeting"
 
-export function loader() {
-  return { greetingDate: new Date().toISOString() }
+export function loader({ request }: Route.LoaderArgs): { greetingDate: string } {
+  throw redirect(`/calendar${new URL(request.url).search}`)
 }
 
-export function clientLoader() {
-  return { greetingDate: new Date().toISOString() }
+export function clientLoader({ request }: Route.ClientLoaderArgs): { greetingDate: string } {
+  throw redirect(`/calendar${new URL(request.url).search}`)
 }
 
 export const shouldRevalidate = shouldRevalidateAppRoute

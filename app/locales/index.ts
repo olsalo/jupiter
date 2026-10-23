@@ -1,3 +1,7 @@
+import enBooking from "./en/booking.json"
+import fiBooking from "./fi/booking.json"
+import enEmail from "./en/email.json"
+import fiEmail from "./fi/email.json"
 import enServices from "./en/services.json"
 import fiServices from "./fi/services.json"
 import enIa from "./en/ia.json"
@@ -22,6 +26,8 @@ import fiTeam from "./fi/team.json"
 export const supportedLanguages = ["en", "fi"] as const
 export const fallbackLanguage = "en"
 export const namespaces = [
+  "booking",
+  "email",
   "common",
   "ia",
   "auth",
@@ -36,6 +42,8 @@ export const namespaces = [
 
 export const resources = {
   en: {
+    booking: enBooking,
+    email: enEmail,
     common: enCommon,
     ia: enIa,
     auth: enAuth,
@@ -48,6 +56,8 @@ export const resources = {
     services: enServices,
   },
   fi: {
+    booking: fiBooking,
+    email: fiEmail,
     common: fiCommon,
     ia: fiIa,
     auth: fiAuth,

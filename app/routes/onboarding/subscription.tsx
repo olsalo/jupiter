@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { useNavigate, useSearchParams } from "react-router"
 
 import type { Route } from "./+types/subscription"
+import { OnboardingActions } from "~/components/onboarding/onboarding-actions"
 import { OnboardingStepError, OnboardingStepLoading } from "~/components/onboarding/step-state"
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
 import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
@@ -180,23 +181,25 @@ export default function SubscriptionStep() {
         </CardContent>
       </Card>
 
-      <Button
-        disabled={
-          isChoosingSubscription ||
-          (!annualEnabled && billingInterval === "year")
-        }
-        onClick={() => void chooseSubscription()}
-        type="button"
-      >
-        {isChoosingSubscription ? (
-          <>
-            <Spinner className="size-4" />
-            {t("actions.choosingSubscription")}
-          </>
-        ) : (
-          t("actions.chooseSubscription")
-        )}
-      </Button>
+      <OnboardingActions>
+        <Button
+          disabled={
+            isChoosingSubscription ||
+            (!annualEnabled && billingInterval === "year")
+          }
+          onClick={() => void chooseSubscription()}
+          type="button"
+        >
+          {isChoosingSubscription ? (
+            <>
+              <Spinner className="size-4" />
+              {t("actions.choosingSubscription")}
+            </>
+          ) : (
+            t("actions.chooseSubscription")
+          )}
+        </Button>
+      </OnboardingActions>
     </div>
   )
 }

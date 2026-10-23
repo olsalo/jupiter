@@ -5,7 +5,7 @@ import { Link, Outlet, useLocation, useParams } from "react-router"
 
 import type { Route } from "./+types/team"
 import Icon from "~/components/icons"
-import { ViewportPage } from "~/components/page-layout"
+import { ScrollPage, ViewportPage } from "~/components/page-layout"
 import { RouteHeader } from "~/components/route-header"
 import { TeamMemberList } from "~/components/team/team-member-list"
 import type { TeamMasterDetailContext } from "~/components/team/team-types"
@@ -13,12 +13,13 @@ import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/u
 import { Button } from "~/components/ui/button"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
+import { useMediaQuery } from "~/lib/hooks"
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { useOrganizationPermission } from "~/lib/use-organization-access"
 
-export const handle = { workspace: true, pageLayout: "viewport" }
+export const handle = { workspace: true, pageLayout: "viewport-desktop" }
 export const shouldRevalidate = shouldRevalidateAppRoute
 
 export async function loader(args: Route.LoaderArgs) {
@@ -39,13 +40,15 @@ export default function TeamV2() {
   const team = useQuery(trpc.team.list.queryOptions())
   const { memberId } = useParams()
   const location = useLocation()
+  const mobile = useMediaQuery("max-640px")
+  const Page = mobile ? ScrollPage : ViewportPage
   const [search, setSearch] = useState("")
   const [closingLocationKey, setClosingLocationKey] = useState<string | null>(null)
   const detailContext: TeamMasterDetailContext = { onPersonCloseStart: () => setClosingLocationKey(location.key) }
   const canManage = useOrganizationPermission({ team: ["manage"] })
 
   return (
-    <ViewportPage header={
+    <Page header={
       <RouteHeader
         className="shrink-0 items-start gap-6 max-md:items-center max-md:gap-3 [&>div:has(h1)]:flex-1 sm:[&>div:has([data-team-mobile-search])]:hidden"
         title={t("v2.title")}
@@ -65,7 +68,7 @@ export default function TeamV2() {
         <AlertDescription>{t(team.data ? "staleDescription" : "retryDescription")}</AlertDescription>
         <AlertAction><Button disabled={team.isFetching} onClick={() => void team.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
       </Alert> : null}
-      <div className="@container/team relative isolate flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background sm:rounded-md sm:p-px after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] sm:after:border sm:after:border-border" data-slot="team-master-detail">
+      <div className="@container/team relative isolate flex min-h-0 min-w-0 flex-1 sm:overflow-hidden sm:bg-background sm:rounded-md sm:p-px after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] sm:after:border sm:after:border-border" data-slot="team-master-detail">
         <aside aria-label={t("members")} className="flex min-h-0 w-full min-w-0 flex-col sm:w-64 sm:shrink-0 sm:border-r lg:w-80">
           <TeamMemberList search={search} onSearchChange={setSearch} people={team.data?.people ?? []} selectedId={closingLocationKey === location.key ? undefined : memberId} loading={team.isPending} failed={team.isError && !team.data} />
         </aside>
@@ -80,6 +83,6 @@ export default function TeamV2() {
         </section>
         {!memberId ? <Outlet /> : null}
       </div>
-    </ViewportPage>
+    </Page>
   )
 }

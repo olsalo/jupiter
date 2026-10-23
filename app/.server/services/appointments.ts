@@ -1,3 +1,5 @@
+import { canRescheduleAppointment } from "~/lib/appointment-status"
+import { captureBookingPolicy, savedBookingPolicy } from "./booking-policy"
 import { serializeAppointment } from "./serialization"
 import { randomBytes } from "node:crypto"
 import { TRPCError } from "@trpc/server"
@@ -11,11 +13,11 @@ import { cancelOutdatedNotifications, cancelReminders, queueNotification } from 
 import { notFound, schedulingLock, slotUnavailable, type Database } from "./scheduling"
 
 type CreateInput = z.infer<typeof createAppointmentInput> | z.infer<typeof createBookingInput> | z.infer<typeof createAppointmentWithCustomerInput>
-const detailInclude = { services: { include: { service: { select: { color: true, durationMinutes: true } } } }, customer: true, staffMember: { select: { id: true, name: true } }, location: { select: { id: true, name: true } }, events: { orderBy: { createdAt: "asc" as const } } }
+const detailInclude = { services: { include: { service: { select: { color: true, durationMinutes: true } } } }, answers: { include: { question: { select: { label: true, sortOrder: true } } } }, customer: true, staffMember: { select: { id: true, name: true } }, location: { select: { id: true, name: true } }, events: { orderBy: { createdAt: "asc" as const } } }
 export async function getAppointment(db: Database, organizationId: string, id: string, scope: { staffMemberId?: string } = {}) {
   const appointment = await db.appointment.findFirst({ where: { id, organizationId, ...scope }, include: detailInclude })
   if (!appointment) notFound()
-  return { ...serializeAppointment(appointment), services: appointment.services.map((service) => ({ ...service, unitPrice: service.unitPrice.toString(), totalPrice: service.totalPrice.toString() })) }
+  return { ...serializeAppointment(appointment), answers: appointment.answers.map((answer) => ({ ...answer, question: { label: answer.label ?? answer.question.label, sortOrder: answer.sortOrder ?? answer.question.sortOrder } })), services: appointment.services.map((service) => ({ ...service, unitPrice: service.unitPrice.toString(), totalPrice: service.totalPrice.toString() })) }
 }
 
 export async function publicAppointment(db: Database, bookingCode: string) {
@@ -70,6 +72,7 @@ async function validateAnswers(tx: Database, organizationId: string, serviceId: 
     const answer = answers.find((answer) => answer.questionId === question.id)
     if (!answer || answer.value === "" || (Array.isArray(answer.value) && !answer.value.length)) throw new TRPCError({ code: "BAD_REQUEST", message: `Answer ${question.label}` })
   }
+  return questions
 }
 
 export async function createAppointment(db: PrismaClient, organizationId: string, input: CreateInput, actorUserId?: string) {
@@ -87,9 +90,10 @@ export async function createAppointment(db: PrismaClient, organizationId: string
     const slot = slots.days.flatMap((day) => day.slots).find((slot) => slot.startsAt === input.startsAt.toISOString())
     if (!slot) slotUnavailable()
     let customer
+    let questions: Awaited<ReturnType<typeof validateAnswers>> = []
     if (isPublic) {
       if ((settings?.requireCustomerEmail !== false && !input.customer.email) || (settings?.requireCustomerPhone && !input.customer.phone)) throw new TRPCError({ code: "BAD_REQUEST", message: "Add the required contact details" })
-      await validateAnswers(tx, organizationId, service.id, input.answers)
+      questions = await validateAnswers(tx, organizationId, service.id, input.answers)
     }
     if ("customer" in input) {
       // Serialized with booking writes; never copy unverified submitted details over
@@ -104,13 +108,17 @@ export async function createAppointment(db: PrismaClient, organizationId: string
     const confirmed = settings?.autoConfirmAppointments !== false && !service.requiresConfirmation
     const appointment = await tx.appointment.create({ data: {
       organizationId, customerId: customer.id, staffMemberId: slot.staffMemberId, locationId: slot.locationId,
-      bookingCode: randomBytes(24).toString("base64url"), startsAt: input.startsAt, endsAt: new Date(slot.endsAt), timezone: settings?.defaultTimezone ?? settings?.timezone ?? "Europe/Helsinki",
+      ...captureBookingPolicy(settings, service),
+      bookingCode: randomBytes(24).toString("base64url"), startsAt: input.startsAt, endsAt: new Date(slot.endsAt), timezone: settings?.bookingTimezone ?? settings?.timezone ?? "Europe/Helsinki",
       status: confirmed ? "CONFIRMED" : "PENDING", confirmedAt: confirmed ? new Date() : null, source: isPublic ? "PUBLIC_BOOKING" : "ADMIN",
       customerNotes: isPublic ? input.notes : undefined, internalNotes: !isPublic ? input.notes : undefined,
       currency: service.currency, subtotalAmount: service.price ?? "0", totalAmount: service.price ?? "0",
       services: { create: { serviceId: service.id, staffMemberId: slot.staffMemberId, name: service.name, durationMinutes: durationMinutes ?? service.durationMinutes, unitPrice: service.price ?? "0", totalPrice: service.price ?? "0", bufferBeforeMinutes: service.bufferBeforeMinutes, bufferAfterMinutes: service.bufferAfterMinutes } },
-      events: { create: { organizationId, type: "CREATED", actorUserId } },
-      ...(isPublic ? { answers: { create: input.answers } } : {}),
+      events: { create: { type: "CREATED", actorUserId } },
+      ...(isPublic ? { answers: { create: input.answers.map((answer) => {
+        const question = questions.find((question) => question.id === answer.questionId)!
+        return { ...answer, label: question.label, type: question.type, sortOrder: question.sortOrder, options: question.options ?? Prisma.DbNull }
+      }) } } : {}),
     } })
     await queueNotification(tx, organizationId, appointment.id, "BOOKING_CONFIRMATION")
     await queueNotification(tx, organizationId, appointment.id, "REMINDER")
@@ -141,8 +149,9 @@ export async function changeAppointment(db: PrismaClient, organizationId: string
       if (input.durationMinutes !== undefined || input.staffMemberId !== undefined || input.serviceId !== undefined) throw new TRPCError({ code: "FORBIDDEN" })
       const cancellation = input.status === "CANCELLED"
       if (!cancellation && !input.startsAt) throw new TRPCError({ code: "FORBIDDEN" })
-      const allowed = cancellation ? settings?.allowCustomerCancellation : settings?.allowCustomerRescheduling
-      const notice = cancellation ? service?.cancellationNoticeMinutes ?? settings?.cancellationNoticeMinutes ?? 0 : service?.rescheduleNoticeMinutes ?? settings?.rescheduleNoticeMinutes ?? 0
+      const policy = savedBookingPolicy(appointment, settings, service)
+      const allowed = cancellation ? policy.allowCustomerCancellation : policy.allowCustomerRescheduling
+      const notice = cancellation ? policy.cancellationNoticeMinutes : policy.rescheduleNoticeMinutes
       if (allowed === false || +appointment.startsAt - Date.now() < notice * 60000) throw new TRPCError({ code: "BAD_REQUEST", message: "Contact the business to change this appointment" })
     }
     let type: AppointmentEventType = "NOTE_ADDED"
@@ -152,11 +161,11 @@ export async function changeAppointment(db: PrismaClient, organizationId: string
     const replacingService = Boolean(input.serviceId && input.serviceId !== snapshot?.serviceId)
     if (input.startsAt || input.durationMinutes !== undefined || input.staffMemberId !== undefined || replacingService) {
       if ((input.durationMinutes !== undefined || input.staffMemberId !== undefined || replacingService) && appointment.services.length !== 1) throw new TRPCError({ code: "BAD_REQUEST", message: "This booking length cannot be changed" })
-      if (!["PENDING", "CONFIRMED"].includes(appointment.status) || !snapshot || !targetMemberId) throw new TRPCError({ code: "BAD_REQUEST", message: "This appointment cannot be rescheduled" })
+      if (!(options.public ? ["PENDING", "CONFIRMED"].includes(appointment.status) : canRescheduleAppointment(appointment.status)) || !snapshot || !targetMemberId) throw new TRPCError({ code: "BAD_REQUEST", message: "This appointment cannot be rescheduled" })
       const replacement = replacingService ? await tx.service.findFirst({ where: { id: input.serviceId, organizationId, deletedAt: null, isActive: true } }) : null
       if (replacingService && !replacement) notFound()
       const durationMinutes = input.durationMinutes ?? replacement?.durationMinutes ?? (input.staffMemberId !== undefined ? snapshot.durationMinutes : undefined)
-      const available = await getAvailableSlots(tx, organizationId, { serviceId: replacement?.id ?? snapshot.serviceId, staffMemberId: targetMemberId, locationId: appointment.locationId ?? undefined, from: targetStart, to: new Date(+targetStart + 1) }, { allowPast: !options.public, allowBreakOverlapStart: !options.public && input.allowBreakOverlap ? +targetStart : undefined, excludeAppointmentId: appointment.id, snapshot: replacement ?? snapshot, replacingService, durationMinutes, useOrganizationDefaults: false, purpose: "reschedule" })
+      const available = await getAvailableSlots(tx, organizationId, { serviceId: replacement?.id ?? snapshot.serviceId, staffMemberId: targetMemberId, locationId: appointment.locationId ?? undefined, from: targetStart, to: new Date(+targetStart + 1) }, { allowPast: !options.public, allowBreakOverlapStart: !options.public && input.allowBreakOverlap ? +targetStart : undefined, excludeAppointmentId: appointment.id, snapshot: replacement ?? snapshot, replacingService, durationMinutes, useOrganizationDefaults: false, purpose: "reschedule", bookingPolicy: savedBookingPolicy(appointment, settings, service) })
       const slot = available.days.flatMap((day) => day.slots).find((slot) => slot.startsAt === targetStart.toISOString() && slot.locationId === appointment.locationId)
       if (!slot) slotUnavailable()
       data.startsAt = targetStart

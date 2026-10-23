@@ -28,13 +28,13 @@ try {
     defaultSlotIntervalMinutes: 30, minBookingNoticeMinutes: 120, maxBookingAdvanceDays: 30,
     cancellationNoticeMinutes: 60, rescheduleNoticeMinutes: 90, requireCustomerEmail: true, requireCustomerPhone: true,
     autoConfirmAppointments: false, allowCustomerCancellation: false, allowCustomerRescheduling: false, bookingEnabled: true,
-    defaultTimezone: "Europe/Helsinki", defaultCalendarView: "month" as const, defaultStartHour: 9, defaultEndHour: 17,
+    bookingTimezone: "Europe/Helsinki", defaultCalendarView: "month" as const, defaultStartHour: 9, defaultEndHour: 17,
     showWeekends: false, showCancelledAppointments: false, calendarSlotIntervalMinutes: 15,
     sendBookingConfirmations: true, sendCancellationEmails: true, sendRescheduleEmails: true,
     enableAppointmentReminders: true, reminderOffsetsMinutes: [1440, 120], senderName: "Small business", replyToAddress: " reply@example.invalid ",
   }
   const saved = await caller.organizations.updateSettings(input)
-  assert.equal(saved.location, "FI")
+  assert.equal(saved.countryCode, "FI")
   assert.equal(saved.currency, "USD")
   assert.deepEqual(saved.reminderOffsetsMinutes, [1440, 120])
   const general = await caller.organizations.general()
@@ -103,7 +103,7 @@ try {
   await prisma.member.update({ where: { id: member.id }, data: { role: "member" } })
   await assert.rejects(caller.organizations.updateSettings({ senderName: "Denied" }), { code: "FORBIDDEN" })
   await prisma.member.update({ where: { id: member.id }, data: { role: "admin" } })
-  await caller.organizations.updateSettings({ defaultLocationId: null, defaultBookingPageId: null, defaultTimezone: null })
+  await caller.organizations.updateSettings({ defaultLocationId: null, defaultBookingPageId: null, bookingTimezone: null })
   assert.equal((await caller.organizations.getCurrent()).settings!.defaultLocationId, null)
   console.info("PASS settings roundtrip, validation, tenant defaults, booking rules, multiple reminders, reminder changes, sender/reply-to, calendar cancellation filtering and roles")
 } finally {

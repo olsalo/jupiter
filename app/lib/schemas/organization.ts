@@ -28,7 +28,7 @@ export const appointmentSettingsInput = z.object({
   requireCustomerEmail: z.boolean().optional(), requireCustomerPhone: z.boolean().optional(),
   autoConfirmAppointments: z.boolean().optional(),
   allowCustomerCancellation: z.boolean().optional(), allowCustomerRescheduling: z.boolean().optional(),
-  defaultLocationId: reference, defaultTimezone: timezone.nullable().optional(), defaultBookingPageId: reference,
+  defaultLocationId: reference, bookingTimezone: timezone.nullable().optional(), defaultBookingPageId: reference,
   defaultCalendarView: z.enum(["day", "week", "month", "agenda"]).optional(),
   defaultStartHour: z.number().int().min(0).max(23).optional(),
   defaultEndHour: z.number().int().min(1).max(24).optional(),

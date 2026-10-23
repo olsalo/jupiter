@@ -59,7 +59,7 @@ export const exampleRouter = {
     return ctx.prisma.note.create({
       data: {
         ...input,
-        id: generateId("note"),
+        id: generateId(),
         organizationId,
       },
     })

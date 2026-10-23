@@ -1,3 +1,6 @@
+import english from "~/locales/en/common.json"
+import finnish from "~/locales/fi/common.json"
+import { businessHolidayWindows } from "~/lib/business-holidays"
 import { canAccessAvailability, hasOrganizationPermission } from "~/lib/auth/permissions"
 import type { TRPCRouterRecord } from "@trpc/server"
 import { TRPCError } from "@trpc/server"
@@ -68,7 +71,13 @@ export const availabilityRouter = {
     })
     const extraAvailability = await ctx.prisma.availabilityOverride.findMany({ where: { organizationId: ctx.organizationId, isAvailable: true, startsAt: { lt: input.to }, endsAt: { gt: input.from } } })
     const blocked = await getBlockedTimeInRange(ctx.prisma, ctx.organizationId, input)
-    return [...rules.map((rule) => ({
+    const settings = await ctx.prisma.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } })
+    const holidays = businessHolidayWindows(settings?.businessHolidays, input.from, input.to, settings?.timezone ?? "Europe/Helsinki")
+    const holidayLabels = (ctx.locale === "fi" ? finnish : english).businessSchedule.defaults
+    return [...holidays.map((holiday) => ({
+      staffMemberId: null, locationId: null, isBreak: false, isExtra: holiday.isOpen, isBlocked: !holiday.isOpen,
+      title: holiday.title || holidayLabels[holiday.holidayId as keyof typeof holidayLabels] || holiday.holidayId, windows: [{ start: Math.max(holiday.start, +input.from), end: Math.min(holiday.end, +input.to) }],
+    })), ...rules.map((rule) => ({
       locationId: rule.locationId,
       staffMemberId: rule.staffMemberId,
       isBreak: rule.isBreak,

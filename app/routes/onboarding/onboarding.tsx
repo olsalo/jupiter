@@ -31,7 +31,7 @@ import { cn } from "~/lib/utils"
 
 export const middleware: Route.MiddlewareFunction[] = [requireAuthMiddleware]
 
-type OnboardingStepId = "business" | "subscription"
+type OnboardingStepId = "business" | "availability" | "holidays" | "subscription"
 
 type OnboardingStepState = {
   complete: boolean
@@ -41,20 +41,28 @@ type OnboardingStepState = {
 function getOnboardingSteps({
   billingEnabled,
   businessComplete,
+  availabilityComplete,
+  holidaysComplete,
   subscriptionComplete,
 }: {
   billingEnabled: boolean
   businessComplete: boolean
+  availabilityComplete: boolean
+  holidaysComplete: boolean
   subscriptionComplete: boolean
 }): OnboardingStepState[] {
-  const businessStep = { complete: businessComplete, id: "business" as const }
+  const setupSteps: OnboardingStepState[] = [
+    { complete: businessComplete, id: "business" },
+    { complete: availabilityComplete, id: "availability" },
+    { complete: holidaysComplete, id: "holidays" },
+  ]
 
   if (!billingEnabled) {
-    return [businessStep]
+    return setupSteps
   }
 
   return [
-    businessStep,
+    ...setupSteps,
     { complete: subscriptionComplete, id: "subscription" },
   ]
 }
@@ -72,7 +80,7 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
     ? steps.findIndex((item) => url.pathname === `/onboarding/${item.id}`)
     : -1
 
-  if (status.subscriptionComplete && requestedStepIndex === -1) {
+  if (status.setupComplete && status.subscriptionComplete && requestedStepIndex === -1) {
     throw redirect("/")
   }
 
@@ -107,6 +115,10 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
     totalSteps: steps.length,
     nextStep,
   })
+}
+
+export function shouldRevalidate() {
+  return true
 }
 
 export default function Onboarding({ loaderData }: Route.ComponentProps) {

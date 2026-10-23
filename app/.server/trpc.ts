@@ -1,3 +1,5 @@
+import { ResourceLimitError } from "./resource-limits/errors"
+import { isSupportedLocale } from "~/lib/locale"
 import { initTRPC, TRPCError } from "@trpc/server"
 import { createInstance } from "i18next"
 import superjson from "superjson"
@@ -47,12 +49,13 @@ export const createTRPCContext = async (opts: {
     .then((storedFormatPreference) => isFormatPreference(storedFormatPreference)
       ? storedFormatPreference
       : getFormatPreferenceFromRequest(opts.headers))
-  const [authSession, organizationId, formatPreference, locale] = await Promise.all([
+  const [authSession, organizationId, formatPreference] = await Promise.all([
     authSessionPromise,
     organizationIdPromise,
     formatPreferencePromise,
-    configureRequestZodI18n(opts.headers),
   ])
+
+  const locale = await configureRequestZodI18n(opts.headers, authSession?.user.locale)
 
   const source = opts.headers.get("x-trpc-source") ?? "unknown"
 
@@ -82,6 +85,7 @@ const t = initTRPC.context<Context>().create({
     ...shape,
     data: {
       ...shape.data,
+      resourceLimit: error.cause instanceof ResourceLimitError ? { resource: error.cause.resource, limit: error.cause.limit } : null,
       zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
       appCode: error.cause && "appCode" in error.cause ? error.cause.appCode : null,
     },
@@ -92,7 +96,15 @@ export const createCallerFactory = t.createCallerFactory
 export const createTRPCRouter = t.router
 export const publicProcedure = t.procedure
 
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+const resourceLimitProcedure = t.procedure.use(async ({ next }) => {
+  const result = await next()
+  if (!result.ok && result.error.cause instanceof ResourceLimitError) {
+    throw new TRPCError({ code: "FORBIDDEN", message: result.error.cause.message, cause: result.error.cause })
+  }
+  return result
+})
+
+export const protectedProcedure = resourceLimitProcedure.use(({ ctx, next }) => {
   if (!ctx.user?.id) {
     throw new TRPCError({ code: "UNAUTHORIZED" })
   }
@@ -180,8 +192,8 @@ async function getActiveOrganization({
   )
 }
 
-async function configureRequestZodI18n(headers: Headers) {
-  const locale = await getRequestLocale(headers)
+async function configureRequestZodI18n(headers: Headers, savedLocale?: string | null) {
+  const locale = isSupportedLocale(savedLocale) ? savedLocale : await getRequestLocale(headers)
   const i18n = createInstance()
 
   await i18n.init({

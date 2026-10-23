@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils"
 
 export function getTeamPersonSections(mode: "view" | "edit") {
   const sections: { value: string; labelKey: string; icon: AppIconName }[] = [
-    { value: mode === "edit" ? "profile" : "about", labelKey: mode === "edit" ? "people.profile" : "people.about", icon: "user" },
+    { value: mode === "edit" ? "profile" : "about", labelKey: "people.profile", icon: "user" },
     ...(mode === "edit" ? [{ value: "access", labelKey: "people.appAccess", icon: "lock" as const }] : []),
     { value: "services", labelKey: "people.services", icon: "forms" },
     { value: "availability", labelKey: "people.availability", icon: "clock" },

@@ -16,7 +16,7 @@ export const serviceInput = z.object({
   bufferAfterMinutes: z.number().int().min(0).max(240).default(0), price: z.string().regex(/^\d{1,10}(\.\d{1,2})?$/).nullable().default(null),
   currency: z.string().regex(/^[A-Z]{3}$/).optional(), deliveryType: z.enum(["IN_PERSON", "ONLINE", "PHONE", "FLEXIBLE"]).default("IN_PERSON"),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
-  maxAttendees: z.literal(1).default(1), minBookingNoticeMinutes: minutes.default(0),
+  maxAttendees: z.literal(1).default(1), minBookingNoticeMinutes: minutes.nullable().default(null),
   maxBookingAdvanceDays: z.number().int().min(1).max(730).nullable().optional(), cancellationNoticeMinutes: minutes.nullable().optional(),
   rescheduleNoticeMinutes: minutes.nullable().optional(), requiresConfirmation: z.boolean().default(false), isActive: z.boolean().default(true),
 })
@@ -59,6 +59,7 @@ export const createAppointmentInput = scopeInput.extend({ durationMinutes: booki
 export const createAppointmentWithCustomerInput = createAppointmentInput.omit({ customerId: true }).extend({ customer: customerInput })
 export const createBookingInput = pageInput.extend({ serviceId: id, ...scopeInput.shape, startsAt: z.coerce.date(), customer: customerInput, notes: text.optional(), answers: z.array(z.object({ questionId: id, value: z.union([z.string().max(4000), z.number().finite(), z.boolean(), z.array(z.string().max(200)).max(50)]) })).max(50).default([]) })
 export const bookingCodeInput = z.object({ bookingCode: z.string().regex(/^[A-Za-z0-9_-]{32}$/) })
+export const publicRescheduleSlotsInput = bookingCodeInput.extend({ from: slotInput.shape.from, to: slotInput.shape.to }).refine(({ from, to }) => to > from && +to - +from <= 31 * 86400000)
 export const cancelInput = idInput.extend({ reason: text.optional() })
 export const publicCancelInput = bookingCodeInput.extend({ reason: text.optional() })
 export const rescheduleInput = idInput.extend({ startsAt: z.coerce.date() })

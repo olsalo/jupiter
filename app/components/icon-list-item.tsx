@@ -3,7 +3,7 @@ import { cn } from "~/lib/utils"
 
 import Icon, { type AppIconName } from "~/components/icons"
 
-export function IconListItem({ icon, children, actions, leading, className, ref, iconStyle, iconClassName }: { icon: AppIconName; children: ReactNode; actions?: ReactNode; leading?: ReactNode; className?: string; ref?: Ref<HTMLLIElement>; iconStyle?: CSSProperties; iconClassName?: string }) {
+export function IconListItem({ icon, children, actions, leading, className, ref, iconStyle, iconClassName }: { icon?: AppIconName; children: ReactNode; actions?: ReactNode; leading?: ReactNode; className?: string; ref?: Ref<HTMLLIElement>; iconStyle?: CSSProperties; iconClassName?: string }) {
   const itemRef = useRef<HTMLLIElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -29,7 +29,7 @@ export function IconListItem({ icon, children, actions, leading, className, ref,
     }}>
       {leading}
       <span className={cn("flex size-[var(--content-height,2.75rem)] shrink-0 items-center justify-center rounded-md bg-muted", iconClassName)} data-slot="icon-list-item-icon" style={iconStyle}>
-        <Icon aria-hidden={true} className="size-5.5 sm:size-5" name={icon} size={22} />
+        {icon ? <Icon aria-hidden={true} className="size-5.5 sm:size-5" name={icon} size={22} /> : null}
       </span>
       <div className="grid min-w-0 flex-1 gap-1.5" data-slot="icon-list-item-content" ref={contentRef}>{children}</div>
       {actions}

@@ -219,3 +219,12 @@ function getCountryCode(headers: Headers) {
 
   return country?.toUpperCase() ?? null
 }
+
+export function formatCalendarDay(value: Date | string, language: "en" | "fi", timeZone: string) {
+  const date = value instanceof Date ? value : new Date(value)
+  const locale = language === "fi" ? "fi-FI" : "en-US"
+  return {
+    weekday: getDateTimeFormatter(locale, { weekday: "short", timeZone }).format(date),
+    day: getDateTimeFormatter(locale, { day: "numeric", timeZone }).format(date),
+  }
+}

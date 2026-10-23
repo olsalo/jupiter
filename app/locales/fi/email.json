@@ -1,0 +1,41 @@
+{
+  "otp": {
+    "sign-in": {
+      "subject": "Kirjautumiskoodisi",
+      "title": "Kirjautumiskoodisi",
+      "intro": "Käytä alla olevaa koodia kirjautuaksesi"
+    },
+    "email-verification": {
+      "subject": "Vahvista sähköpostiosoitteesi",
+      "title": "Vahvista sähköpostiosoitteesi",
+      "intro": "Käytä alla olevaa koodia jatkaaksesi"
+    },
+    "forget-password": {
+      "subject": "Salasanan palautuskoodi",
+      "title": "Salasanan palautuskoodi",
+      "intro": "Käytä alla olevaa koodia jatkaaksesi"
+    },
+    "change-email": {
+      "subject": "Vahvista uusi sähköpostiosoitteesi",
+      "title": "Vahvista uusi sähköpostiosoitteesi",
+      "intro": "Käytä alla olevaa koodia jatkaaksesi"
+    }
+  },
+  "otpExpiry": "Koodi vanhenee {{minutes}} minuutin kuluttua",
+  "otpIgnore": "Jos et pyytänyt tätä koodia, voit jättää tämän viestin huomiotta.",
+  "invitation": {
+    "title": "Sinut on kutsuttu tiimiin {{organizationName}}",
+    "description": "Avaa alla oleva linkki ja kirjaudu sisään tällä sähköpostiosoitteella liittyäksesi tiimiin. Kutsu on voimassa kaksi viikkoa.",
+    "action": "Liity tiimiin"
+  },
+  "appointment": {
+    "BOOKING_CONFIRMATION": "Varaus vastaanotettu",
+    "CANCELLATION": "Varaus peruttu",
+    "RESCHEDULE": "Varausaika muutettu",
+    "REMINDER": "Muistutus varauksesta",
+    "update": "Varauksen päivitys",
+    "bookingCode": "Varauskoodi",
+    "reschedule": "Siirrä aikaa",
+    "view": "Näytä varaus"
+  }
+}

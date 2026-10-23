@@ -1,4 +1,8 @@
-import type { EmailLocale } from "./otp"
+import { createElement } from "react"
+import { InvitationEmail } from "~/components/emails/invitation"
+import { renderEmail } from "./render"
+import { getEmailTranslations } from "./translations"
+import type { EmailLocale, EmailTemplate } from "./types"
 
 export function createInvitationEmailTemplate({
   organizationName,
@@ -8,24 +12,11 @@ export function createInvitationEmailTemplate({
   organizationName: string
   inviteUrl: string
   locale: EmailLocale
-}) {
-  const title = locale === "fi"
-    ? `Sinut on kutsuttu tiimiin ${organizationName}`
-    : `You're invited to join ${organizationName}`
-  const description = locale === "fi"
-    ? "Avaa alla oleva linkki ja kirjaudu sisään tällä sähköpostiosoitteella liittyäksesi tiimiin. Kutsu on voimassa kaksi viikkoa."
-    : "Open the link below and sign in with this email address to join the team. This invitation expires in two weeks."
-  const action = locale === "fi" ? "Liity tiimiin" : "Join the team"
+}): Promise<EmailTemplate> {
+  const t = getEmailTranslations(locale)
+  const title = t("invitation.title", { organizationName })
+  const description = t("invitation.description")
+  const action = t("invitation.action")
 
-  return {
-    subject: title,
-    text: `${title}\n\n${description}\n\n${inviteUrl}`,
-    html: `<html lang="${locale}"><body style="font-family:Arial,sans-serif;line-height:1.6"><h1>${escapeHtml(title)}</h1><p>${description}</p><p><a href="${escapeHtml(inviteUrl)}">${action}</a></p></body></html>`,
-  }
-}
-
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (character) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  })[character]!)
+  return renderEmail(title, createElement(InvitationEmail, { locale, title, description, action, inviteUrl }))
 }

@@ -1,6 +1,7 @@
+import { PlanUsage } from "~/components/plan-usage"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { FormApi } from "@rvf/react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { ComponentProps, ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -9,11 +10,15 @@ import {
 } from "react-router"
 
 import { RouteInformationArchitecture } from "~/components/information-architecture/route-information-architecture"
+import { CommunicationsSettings, communicationsSettingsFormId } from "~/components/communications-settings"
 import { getSettingsItemIdFromHash, getVisibleSettingsItems, isSettingsHash, type SettingsItemId } from "~/lib/settings-navigation"
 import { ProfilePreferences } from "~/components/profile-preferences"
 import { SettingsFormFooter } from "~/components/settings-form-footer"
 import type { PersonFormFields } from "~/lib/schemas/team"
 import { ProfileSettingsHeader } from "~/components/profile-settings-header"
+import { BookingSettings, bookingSettingsFormId } from "~/components/booking-settings"
+import { BusinessLocationSettings, businessLocationFormId } from "~/components/business-location-settings"
+import { BusinessScheduleSettings, businessScheduleFormId } from "~/components/business-schedule-settings"
 import { BusinessSettingsHeader } from "~/components/business-settings-header"
 import { TeamPersonForm, type SettingsPersonFormState } from "~/components/team/team-person-form"
 import { AppForm, type AppFormState } from "~/components/app-form"
@@ -71,7 +76,7 @@ import {
 import { Separator } from "~/components/ui/separator"
 import { Radio, RadioGroup } from "~/components/ui/radio-group"
 import { Spinner } from "~/components/ui/spinner"
-import { Tabs } from "~/components/ui/tabs"
+import { Tabs, TabsPanel } from "~/components/ui/tabs"
 import {
   Tooltip,
   TooltipPopup,
@@ -135,6 +140,15 @@ export function SettingsModal({
   const [open, setOpen] = useState(false)
   const [selectedItemId, setActiveItemId] = useState<SettingsItemId>("profile")
   const activeItemId = visibleSettingsItems.find((item) => item.id === selectedItemId)?.id ?? "profile"
+  const [bookingFormState, setBookingFormState] = useState<AppFormState>({ isDirty: false, isSubmitting: false })
+  const [communicationsFormState, setCommunicationsFormState] = useState<AppFormState>({ isDirty: false, isSubmitting: false })
+  const communicationsResetRef = useRef<(() => void) | null>(null)
+  const bookingResetRef = useRef<(() => void) | null>(null)
+  const [businessTab, setBusinessTab] = useState("general")
+  const [businessScheduleState, setBusinessScheduleState] = useState<AppFormState>({ isDirty: false, isSubmitting: false })
+  const [businessLocationState, setBusinessLocationState] = useState<AppFormState>({ isDirty: false, isSubmitting: false })
+  const businessLocationReset = useRef<(() => void) | null>(null)
+  const businessScheduleReset = useRef<(() => void) | null>(null)
   const [profileTab, setProfileTab] = useState("general")
   const [teamPending, setTeamPending] = useState(false)
   const trpc = useTRPC()
@@ -164,6 +178,8 @@ export function SettingsModal({
   const generalFormApi = useRef<FormApi<OrganizationSettingsFormInput>>(null)
   const profileResetRef = useRef<(() => void) | null>(null)
   const profileFormApi = useRef<FormApi<PersonFormFields>>(null)
+  const businessFormState = businessTab === "general" ? generalFormState : businessTab === "location" ? businessLocationState : businessScheduleState
+  const activeBusinessFormId = businessTab === "general" ? generalFormId : businessTab === "location" ? businessLocationFormId : businessScheduleFormId
   const activeItem = visibleSettingsItems.find((item) => item.id === activeItemId) ?? visibleSettingsItems[0]!
   const Root = isMobile ? Drawer : Dialog
   const Trigger = isMobile ? DrawerTrigger : DialogTrigger
@@ -172,6 +188,33 @@ export function SettingsModal({
   const Description = isMobile ? DrawerDescription : DialogDescription
   const Footer = isMobile ? DrawerFooter : DialogFooter
   const viewLoading = (activeItemId === "billing" && isBillingLoading) || (activeItemId === "business" && isGeneralLoading) || (activeItemId === "profile" && profilePerson.isPending)
+
+  // Closing the overlay must not rebuild the profile and its mounted schedule fields.
+  const profileForm = useMemo(() => profilePerson.data ? (
+    <TeamPersonForm key={profilePerson.data.member?.id ?? profilePerson.data.id} person={profilePerson.data} selfSettings={true} settingsTab={profileTab} onSettingsTabChange={setProfileTab} settingsFormApi={profileFormApi} settingsResetRef={profileResetRef} settingsFormId={profileFormId} onSettingsFormStateChange={setProfileFormState} generalContent={<ProfilePreferences />} close={() => {}} onPendingChange={setTeamPending} />
+  ) : null, [profilePerson.data, profileTab])
+
+  // Keep section content stable while the overlay changes its open state.
+  const settingsContent = useMemo(() => {
+    if (activeItemId === "business") return (
+      <>
+        <TabsPanel className="m-0" keepMounted={true} value="general">
+          <GeneralSettingsContent formApi={generalFormApi} onLoadingChange={setIsGeneralLoading} onFormStateChange={setGeneralFormState} />
+        </TabsPanel>
+        <TabsPanel className="m-0" keepMounted={true} value="location">
+          <BusinessLocationSettings onFormStateChange={setBusinessLocationState} resetRef={businessLocationReset} />
+        </TabsPanel>
+        <div className={businessTab === "general" || businessTab === "location" ? "hidden" : "flex flex-1 flex-col"}>
+          <BusinessScheduleSettings onTabChange={setBusinessTab} onFormStateChange={setBusinessScheduleState} resetRef={businessScheduleReset} />
+        </div>
+      </>
+    )
+    if (activeItemId === "booking") return <BookingSettings onFormStateChange={setBookingFormState} resetRef={bookingResetRef} />
+    if (activeItemId === "billing") return <BillingSettingsContent onLoadingChange={setIsBillingLoading} />
+    if (activeItemId === "communications") return <CommunicationsSettings onFormStateChange={setCommunicationsFormState} resetRef={communicationsResetRef} />
+    if (activeItemId === "profile") return null
+    return <div className="@container min-w-0"><RouteInformationArchitecture section={activeItemId} icon={activeItem.icon} /></div>
+  }, [activeItemId, activeItem.icon, businessTab])
 
   const updateSettingsNavOverflow = useCallback(() => {
     const nav = settingsNavRef.current
@@ -301,7 +344,7 @@ export function SettingsModal({
       )}
 
       <ResponsiveSettingsPopup isMobile={isMobile}>
-        <Header className="min-h-0 gap-4 border-e border-border bg-muted/35 p-3.5 max-sm:border-e-0">
+        <Header className="min-h-0 gap-4 border-e border-border bg-muted/35 p-3.5 max-sm:rounded-t-2xl max-sm:border-e-0">
           <div className="space-y-1">
             <Title className="text-lg">{t("settings.title")}</Title>
             <Description className="sr-only">
@@ -383,7 +426,10 @@ export function SettingsModal({
           </div>
         </Header>
 
-        <Tabs className="contents" value={profileTab} onValueChange={(value) => { if (!teamPending && !profileFormState.isSubmitting) setProfileTab(String(value)) }}>
+        <Tabs className="contents" value={activeItemId === "business" ? businessTab : profileTab} onValueChange={(value) => {
+          if (activeItemId === "business") { if (!businessFormState.isSubmitting) setBusinessTab(String(value)) }
+          else if (!teamPending && !profileFormState.isSubmitting) setProfileTab(String(value))
+        }}>
         <SettingsMainSection isMobile={isMobile}>
           <DialogPanel
             className="flex min-h-full flex-1 flex-col p-0"
@@ -391,7 +437,7 @@ export function SettingsModal({
             stickyHeader={activeItemId === "profile" ? (
               <ProfileSettingsHeader disabled={teamPending || profileFormState.isSubmitting} person={profilePerson.data ?? (rootData?.user ? { name: rootData.user.name, image: rootData.user.image ?? null } : undefined)} />
             ) : activeItemId === "business" ? (
-              <BusinessSettingsHeader name={rootData?.org?.name} />
+              <BusinessSettingsHeader disabled={businessFormState.isSubmitting} name={rootData?.org?.name} />
             ) : (
               <header className="relative px-5 py-4 max-sm:px-4">
                 <div aria-hidden={true} className="pointer-events-none absolute inset-0 bg-background/85 backdrop-blur-[28px] backdrop-saturate-150" />
@@ -403,7 +449,7 @@ export function SettingsModal({
             )}
             scrollAreaClassName={cn(
               "min-h-0 flex-1 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col",
-              activeItemId !== "billing" && activeItemId !== "profile" &&
+              activeItemId !== "billing" && activeItemId !== "profile" && activeItemId !== "business" && activeItemId !== "booking" && activeItemId !== "communications" &&
                 "[&_[data-slot=scroll-area-content]]:h-full",
               isMobile && "touch-auto",
             )}
@@ -411,25 +457,15 @@ export function SettingsModal({
             <div
               className={cn(
                 "flex min-h-full flex-1 flex-col",
-                activeItemId !== "billing" && activeItemId !== "profile" && "h-full",
+                activeItemId !== "billing" && activeItemId !== "profile" && activeItemId !== "business" && activeItemId !== "booking" && activeItemId !== "communications" && "h-full",
               )}
             >
               <div className={cn("relative flex min-h-[18rem] flex-1 flex-col gap-4 px-5 pb-5 max-sm:min-h-[14rem] max-sm:px-4 max-sm:pb-4", (activeItemId === "profile" || activeItemId === "business") && "pt-5 max-sm:pt-4")}>
-                {activeItemId === "business" ? (
-                  <GeneralSettingsContent
-                    formApi={generalFormApi}
-                    onLoadingChange={setIsGeneralLoading}
-                    onFormStateChange={setGeneralFormState}
-                  />
-                ) : activeItemId === "profile" ? (
+                {activeItemId === "profile" ? (
                   profilePerson.isPending ? null : profilePerson.isError ? <Alert variant="error"><AlertTitle>{tTeam("people.loadFailed")}</AlertTitle><AlertDescription>{tTeam("retryDescription")}</AlertDescription><Button disabled={profilePerson.isFetching} onClick={() => void profilePerson.refetch()} size="sm" type="button" variant="outline">{tTeam("retry")}</Button></Alert> : (
-                    <TeamPersonForm key={profilePerson.data.member?.id ?? profilePerson.data.id} person={profilePerson.data} selfSettings={true} settingsTab={profileTab} onSettingsTabChange={setProfileTab} settingsFormApi={profileFormApi} settingsResetRef={profileResetRef} settingsFormId={profileFormId} onSettingsFormStateChange={setProfileFormState} generalContent={<ProfilePreferences />} close={() => {}} onPendingChange={setTeamPending} />
+                    profileForm
                   )
-                ) : activeItemId === "billing" ? (
-                  <BillingSettingsContent onLoadingChange={setIsBillingLoading} />
-                ) : (
-                  <div className="@container min-w-0"><RouteInformationArchitecture section={activeItemId} icon={activeItem.icon} /></div>
-                )}
+                ) : settingsContent}
                 {viewLoading ? (
                   <div
                     className="absolute inset-0 z-10 flex items-center justify-center bg-background"
@@ -441,13 +477,14 @@ export function SettingsModal({
             </div>
           </DialogPanel>
 
-          {!viewLoading && activeItemId === "business" && generalFormState.isDirty ? (
+          {!viewLoading && activeItemId === "business" && businessFormState.isDirty ? (
             <Footer className={cn("shrink-0", !isMobile && "rounded-b-2xl")}>
               <Button
-                disabled={generalFormState.isSubmitting}
+                disabled={businessFormState.isSubmitting}
                 onClick={() => {
-                  generalFormApi.current?.resetForm()
-                  setGeneralFormState({ isDirty: false, isSubmitting: false })
+                  if (businessTab === "general") generalFormApi.current?.resetForm()
+                  else if (businessTab === "location") businessLocationReset.current?.()
+                  else businessScheduleReset.current?.()
                 }}
                 type="button"
                 variant="ghost"
@@ -455,11 +492,11 @@ export function SettingsModal({
                 {t("settings.cancel")}
               </Button>
               <Button
-                disabled={generalFormState.isSubmitting}
-                form={generalFormId}
+                disabled={businessFormState.isSubmitting}
+                form={activeBusinessFormId}
                 type="submit"
               >
-                {generalFormState.isSubmitting ? (
+                {businessFormState.isSubmitting ? (
                   <>
                     <Spinner className="size-4" />
                     {t("settings.saving")}
@@ -469,6 +506,10 @@ export function SettingsModal({
                 )}
               </Button>
             </Footer>
+          ) : activeItemId === "communications" ? (
+            <SettingsFormFooter formId={communicationsSettingsFormId} isMobile={isMobile} state={{ ...communicationsFormState, canSubmit: true }} onCancel={() => communicationsResetRef.current?.()} />
+          ) : activeItemId === "booking" ? (
+            <SettingsFormFooter formId={bookingSettingsFormId} isMobile={isMobile} state={{ ...bookingFormState, canSubmit: true }} onCancel={() => bookingResetRef.current?.()} />
           ) : !viewLoading && activeItemId === "profile" ? (
             <SettingsFormFooter formId={profileFormId} isMobile={isMobile} state={profileFormState} onCancel={() => profileResetRef.current?.()} />
           ) : null}
@@ -490,7 +531,7 @@ function ResponsiveSettingsPopup({
   if (isMobile) {
     return (
       <DrawerPopup
-        className="grid h-[min(90dvh,44rem)] w-full grid-cols-1 grid-rows-[auto_minmax(0,1fr)] p-0"
+        className="grid h-[min(90dvh,44rem)] w-full grid-cols-1 grid-rows-[auto_minmax(0,1fr)] p-0 has-data-[slot=drawer-bar]:pt-0"
         showBar={true}
       >
         {children}
@@ -981,6 +1022,7 @@ function BillingSettingsContent({
 
   return (
     <div className="flex min-h-full flex-1 flex-col gap-8">
+      {canManage ? <PlanUsage /> : null}
       <Card className="overflow-hidden">
         <CardHeader className="gap-2 p-4">
           <div className="flex items-start justify-between gap-4">

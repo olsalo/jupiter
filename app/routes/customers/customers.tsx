@@ -5,7 +5,7 @@ import { Link, Outlet, useLocation, useParams } from "react-router"
 
 import type { Route } from "./+types/customers"
 import Icon from "~/components/icons"
-import { ViewportPage } from "~/components/page-layout"
+import { ScrollPage, ViewportPage } from "~/components/page-layout"
 import { RouteHeader } from "~/components/route-header"
 import { CustomerList } from "~/components/customers/customer-list"
 import type { CustomerMasterDetailContext } from "~/components/customers/customer-types"
@@ -14,12 +14,13 @@ import { Button } from "~/components/ui/button"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 import { useDebouncedValue } from "~/lib/use-debounced-value"
+import { useMediaQuery } from "~/lib/hooks"
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { useOrganizationPermission } from "~/lib/use-organization-access"
 
-export const handle = { workspace: true, pageLayout: "viewport" }
+export const handle = { workspace: true, pageLayout: "viewport-desktop" }
 export const shouldRevalidate = shouldRevalidateAppRoute
 
 export async function loader(args: Route.LoaderArgs) {
@@ -39,6 +40,8 @@ export default function Customers() {
   const trpc = useTRPC()
   const { customerId } = useParams()
   const location = useLocation()
+  const mobile = useMediaQuery("max-640px")
+  const Page = mobile ? ScrollPage : ViewportPage
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search.trim())
   const customers = useInfiniteQuery(trpc.customer.list.infiniteQueryOptions({ limit: 50, search: debouncedSearch || undefined }, { getNextPageParam: (page) => page.nextCursor }))
@@ -47,7 +50,7 @@ export default function Customers() {
   const canCreate = useOrganizationPermission({ customers: ["create"] })
 
   return (
-    <ViewportPage header={
+    <Page header={
       <RouteHeader
         className="shrink-0 items-start gap-6 max-md:items-center max-md:gap-3 [&>div:has(h1)]:flex-1 sm:[&>div:has([data-customer-mobile-search])]:hidden"
         title={t("customerPage.title")}
@@ -67,7 +70,7 @@ export default function Customers() {
         <AlertDescription>{t(customers.data ? "customerPage.staleDescription" : "customerPage.retryDescription")}</AlertDescription>
         <AlertAction><Button disabled={customers.isFetching} onClick={() => void customers.refetch()} size="sm" type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction>
       </Alert> : null}
-      <div className="@container/customers relative isolate flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background sm:rounded-md sm:p-px after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] sm:after:border sm:after:border-border" data-slot="customer-master-detail">
+      <div className="@container/customers relative isolate flex min-h-0 min-w-0 flex-1 sm:overflow-hidden sm:bg-background sm:rounded-md sm:p-px after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] sm:after:border sm:after:border-border" data-slot="customer-master-detail">
         <aside aria-label={t("customerPage.title")} className="flex min-h-0 w-full min-w-0 flex-col sm:w-64 sm:shrink-0 sm:border-r lg:w-80">
           <CustomerList search={search} onSearchChange={setSearch} customers={customers.data?.pages.flatMap((page) => page.items) ?? []} hasMore={customers.hasNextPage} fetchingMore={customers.isFetchingNextPage} onLoadMore={() => void customers.fetchNextPage()} selectedId={closingLocationKey === location.key ? undefined : customerId} loading={customers.isPending} failed={customers.isError && !customers.data} />
         </aside>
@@ -82,6 +85,6 @@ export default function Customers() {
         </section>
         {!customerId ? <Outlet /> : null}
       </div>
-    </ViewportPage>
+    </Page>
   )
 }

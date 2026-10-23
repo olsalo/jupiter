@@ -1,6 +1,11 @@
 import type { TRPCRouterRecord } from "@trpc/server"
 import { TRPCError } from "@trpc/server"
 
+import { z } from "~/lib/zod"
+import { Temporal } from "@js-temporal/polyfill"
+import { businessScheduleSchema } from "~/lib/schemas/business-schedule"
+import { upcomingBusinessHolidays } from "~/lib/business-holidays"
+import { schedulingLock } from "../services/scheduling"
 import { protectedProcedure } from "../trpc"
 import { auth, stripeBillingEnabled } from "~/lib/auth/server"
 import { isOnboardingCountryCode } from "~/lib/countries"
@@ -18,12 +23,12 @@ const demoOnboardingPaymentBypassEnabled =
 export const onboardingRouter = {
   status: protectedProcedure.query(async ({ ctx }) => {
     const membership = await ctx.prisma.member.findFirst({
-      where: { userId: ctx.user.id },
+      where: { userId: ctx.user.id, ...(ctx.organizationId ? { organizationId: ctx.organizationId } : {}) },
       select: {
         organizationId: true,
         organization: {
           select: {
-            settings: { select: { location: true, timezone: true } },
+            settings: { select: { countryCode: true, timezone: true, onboardingStep: true } },
           },
         },
       },
@@ -41,7 +46,10 @@ export const onboardingRouter = {
 
     return {
       billingEnabled: stripeBillingEnabled || demoOnboardingPaymentBypassEnabled,
-      businessComplete: Boolean(settings?.location && settings.timezone),
+      businessComplete: Boolean(settings?.countryCode && settings.timezone),
+      availabilityComplete: Boolean(settings && settings.onboardingStep !== "availability"),
+      holidaysComplete: Boolean(settings && !settings.onboardingStep),
+      setupComplete: Boolean(settings?.countryCode && settings.timezone && !settings.onboardingStep),
       demoOnboardingPaymentBypassEnabled,
       subscriptionComplete: Boolean(subscription),
     }
@@ -50,12 +58,12 @@ export const onboardingRouter = {
   business: protectedProcedure.query(async ({ ctx }) => {
     const [membership, ipLocation] = await Promise.all([
       ctx.prisma.member.findFirst({
-        where: { userId: ctx.user.id },
+        where: { userId: ctx.user.id, ...(ctx.organizationId ? { organizationId: ctx.organizationId } : {}) },
         select: {
           organization: {
             select: {
               name: true,
-              settings: { select: { currency: true, location: true, timezone: true } },
+              settings: { select: { currency: true, countryCode: true, timezone: true } },
             },
           },
         },
@@ -70,7 +78,7 @@ export const onboardingRouter = {
       businessName: membership?.organization.name ?? "",
       currency: settings?.currency ?? ipCurrency ?? "EUR",
       location:
-        settings?.location?.toLowerCase() ??
+        settings?.countryCode?.toLowerCase() ??
         (ipCountry && isOnboardingCountryCode(ipCountry) ? ipCountry : "fi"),
       name: ctx.user.name,
       timezone: settings?.timezone ?? ipLocation?.location.timezone ?? defaultTimeZone,
@@ -79,7 +87,7 @@ export const onboardingRouter = {
 
   subscription: protectedProcedure.query(async ({ ctx }) => {
     const membership = await ctx.prisma.member.findFirst({
-      where: { userId: ctx.user.id },
+      where: { userId: ctx.user.id, ...(ctx.organizationId ? { organizationId: ctx.organizationId } : {}) },
       select: { organizationId: true },
     })
     const locale = ctx.locale === "fi" ? "fi" : "en"
@@ -104,22 +112,68 @@ export const onboardingRouter = {
     }
   }),
 
+  schedule: protectedProcedure.query(async ({ ctx }) => {
+    const member = await ctx.prisma.member.findFirst({
+      where: { userId: ctx.user.id, ...(ctx.organizationId ? { organizationId: ctx.organizationId } : {}) },
+      include: { organization: { include: { settings: true } } },
+    })
+    if (!member || !member.role.split(",").includes("owner")) throw new TRPCError({ code: "FORBIDDEN" })
+    const settings = member.organization.settings
+    const timezone = settings?.timezone ?? defaultTimeZone
+    const rules = await ctx.prisma.availabilityRule.findMany({ where: { organizationId: member.organizationId, staffMemberId: null, locationId: null, isBreak: false } })
+    return {
+      timezone,
+      workingHours: rules.length ? rules.map(({ dayOfWeek, startMinute, endMinute, isActive }) => ({ dayOfWeek, startMinute, endMinute, isActive, timezone, validFrom: null, validUntil: null })) : [1, 2, 3, 4, 5].map((dayOfWeek) => ({ dayOfWeek, startMinute: 480, endMinute: 1080, isActive: true, timezone, validFrom: null, validUntil: null })),
+      breaks: [],
+      holidays: upcomingBusinessHolidays(settings?.businessHolidays, Temporal.Now.plainDateISO(timezone).toString()),
+    }
+  }),
+
+  saveAvailability: protectedProcedure.input(z.object({ workingHours: businessScheduleSchema.shape.workingHours, breaks: businessScheduleSchema.shape.breaks })).mutation(async ({ ctx, input }) => {
+    return ctx.prisma.$transaction(async (tx) => {
+      const member = await tx.member.findFirst({ where: { userId: ctx.user.id, ...(ctx.organizationId ? { organizationId: ctx.organizationId } : {}) }, include: { organization: { include: { settings: true } } } })
+      if (!member || !member.role.split(",").includes("owner")) throw new TRPCError({ code: "FORBIDDEN" })
+      await schedulingLock(tx, member.organizationId)
+      const settings = await tx.organizationSettings.findUniqueOrThrow({ where: { organizationId: member.organizationId } })
+      if (settings.onboardingStep !== "availability") throw new TRPCError({ code: "CONFLICT" })
+      const scope = { organizationId: member.organizationId, staffMemberId: null, locationId: null, isBreak: false }
+      await tx.availabilityRule.deleteMany({ where: scope })
+      const rules = input.workingHours.length ? input.workingHours : [{ dayOfWeek: 1, startMinute: 480, endMinute: 1080, isActive: false }]
+      await tx.availabilityRule.createMany({ data: rules.map((rule) => ({ ...scope, ...rule, timezone: settings.timezone, validFrom: null, validUntil: null })) })
+      await tx.organizationSettings.update({ where: { organizationId: member.organizationId }, data: { onboardingStep: "holidays" } })
+      return { success: true }
+    })
+  }),
+
+  confirmHolidays: protectedProcedure.input(businessScheduleSchema).mutation(async ({ ctx, input }) => {
+    return ctx.prisma.$transaction(async (tx) => {
+      const member = await tx.member.findFirst({ where: { userId: ctx.user.id, ...(ctx.organizationId ? { organizationId: ctx.organizationId } : {}) }, select: { organizationId: true, role: true } })
+      if (!member || !member.role.split(",").includes("owner")) throw new TRPCError({ code: "FORBIDDEN" })
+      await schedulingLock(tx, member.organizationId)
+      const settings = await tx.organizationSettings.findUniqueOrThrow({ where: { organizationId: member.organizationId } })
+      if (settings.onboardingStep !== "holidays") throw new TRPCError({ code: "CONFLICT" })
+      await tx.organizationSettings.update({ where: { organizationId: member.organizationId }, data: { businessHolidays: { version: 2, holidays: input.holidays }, onboardingStep: null } })
+      return { success: true }
+    })
+  }),
+
   complete: protectedProcedure
     .input(onboardingFormSchema)
     .mutation(async ({ ctx, input }) => {
       const existingMembership = await ctx.prisma.member.findFirst({
-        select: { id: true, organizationId: true },
-        where: { userId: ctx.user.id },
+        select: { id: true, organizationId: true, role: true },
+        where: { userId: ctx.user.id, ...(ctx.organizationId ? { organizationId: ctx.organizationId } : {}) },
       })
 
       if (existingMembership) {
+        if (!existingMembership.role.split(",").includes("owner")) throw new TRPCError({ code: "FORBIDDEN" })
         const existingSettings = await ctx.prisma.organizationSettings.findUnique({
-          select: { location: true, timezone: true },
+          select: { countryCode: true, timezone: true },
           where: { organizationId: existingMembership.organizationId },
         })
 
         if (
-          existingSettings?.location &&
+          existingSettings?.countryCode &&
           existingSettings.timezone &&
           !demoOnboardingPaymentBypassEnabled
         ) {
@@ -142,21 +196,32 @@ export const onboardingRouter = {
           })
         }
 
+        await schedulingLock(transaction, organization.id)
+        const location = await transaction.location.findFirst({ where: { organizationId: organization.id }, orderBy: { createdAt: "asc" } })
+          ?? await transaction.location.create({ data: { organizationId: organization.id, name: input.businessName, country: input.location.toUpperCase(), timezone: input.timezone } })
+        const member = await transaction.member.findFirstOrThrow({ where: { organizationId: organization.id, userId: ctx.user.id } })
+        await transaction.staffMember.upsert({
+          where: { memberId: member.id },
+          create: { organizationId: organization.id, memberId: member.id, name: input.name, email: ctx.user.email, staffLocations: { create: { locationId: location.id } } },
+          update: { name: input.name },
+        })
         await transaction.user.update({
           data: { name: input.name },
           where: { id: ctx.user.id },
         })
         await transaction.organizationSettings.upsert({
           create: {
-            id: generateId("orgset"),
+            id: generateId(),
             organizationId: organization.id,
+            onboardingStep: "availability",
             currency: input.currency,
-            location: input.location.toUpperCase(),
+            countryCode: input.location.toUpperCase(),
             timezone: input.timezone,
           },
           update: {
+            onboardingStep: "availability",
             currency: input.currency,
-            location: input.location.toUpperCase(),
+            countryCode: input.location.toUpperCase(),
             timezone: input.timezone,
           },
           where: { organizationId: organization.id },

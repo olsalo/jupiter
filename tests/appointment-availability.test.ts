@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { createServer } from "vite"
 
-const vite = await createServer({ configFile: false, appType: "custom", resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } }, server: { ws: false, middlewareMode: true, hmr: false, watch: null } })
+const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/appointment-availability", appType: "custom", resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } }, server: { ws: false, middlewareMode: true, hmr: false, watch: null } })
 try {
   const { generateSlots, getAvailableSlots, overlaps } = await vite.ssrLoadModule("/app/.server/services/availability.ts") as typeof import("../app/.server/services/availability")
   const { localWindows, localDate, minuteMs } = await vite.ssrLoadModule("/app/.server/services/time.ts") as typeof import("../app/.server/services/time")

@@ -3,5 +3,5 @@ import { RoutePlaceholderSheet, PlaceholderSheetContent } from "~/components/pla
 export const handle = { overlay: true }
 
 export default function New() {
-  return <RoutePlaceholderSheet titleKey="newBookingPage" returnTo="/booking-pages"><PlaceholderSheetContent /></RoutePlaceholderSheet>
+  return <RoutePlaceholderSheet titleKey="newBookingPage" returnTo="/booking-page"><PlaceholderSheetContent /></RoutePlaceholderSheet>
 }

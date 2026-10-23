@@ -1,31 +1,35 @@
-import { formatDateTime, getFormatPreferenceFromCountry } from "~/lib/format-preference"
-import type { NotificationKind, Prisma } from "../../../generated/prisma/client"
+import { fallbackLanguage } from "~/locales"
+import { isSupportedLocale } from "~/lib/locale"
+import { createAppointmentEmailTemplate, type AppointmentEmailKind } from "~/lib/email-templates/appointment"
+import { queuedEmailContent } from "./email-queue"
+import type { Prisma } from "../../../generated/prisma/client"
 import type { Database } from "./scheduling"
 
 const notificationInclude = { customer: true, organization: { include: { settings: true } }, services: true } as const
 type NotificationAppointment = Prisma.AppointmentGetPayload<{ include: typeof notificationInclude }>
 
-function notificationData(appointment: NotificationAppointment, kind: NotificationKind, offsetMinutes?: number): Prisma.NotificationCreateManyInput | null {
+async function notificationData(appointment: NotificationAppointment, kind: AppointmentEmailKind, offsetMinutes?: number): Promise<Prisma.NotificationCreateManyInput | null> {
   if (!appointment.customer.email) return null
   const settings = appointment.organization.settings
   if ((kind === "BOOKING_CONFIRMATION" && settings?.sendBookingConfirmations === false) || (kind === "CANCELLATION" && settings?.sendCancellationEmails === false) || (kind === "RESCHEDULE" && settings?.sendRescheduleEmails === false) || (kind === "REMINDER" && settings?.enableAppointmentReminders === false)) return null
-  const labels = { BOOKING_CONFIRMATION: "Booking received", CANCELLATION: "Booking cancelled", RESCHEDULE: "Booking rescheduled", REMINDER: "Appointment reminder" } as const
-  const subject = kind in labels ? labels[kind as keyof typeof labels] : "Appointment update"
-  const time = formatDateTime(appointment.startsAt, { formatPreference: getFormatPreferenceFromCountry(settings?.location ?? "FI"), language: appointment.customer.locale === "fi" ? "fi" : "en", timeZone: appointment.timezone })
-  const body = `${appointment.organization.name}\n${appointment.services.map((service) => service.name).join(", ")}\n${time}\nBooking code: ${appointment.bookingCode}`
+  const locale = isSupportedLocale(appointment.customer.locale) ? appointment.customer.locale : fallbackLanguage
   const scheduledAt = kind === "REMINDER" ? new Date(+appointment.startsAt - offsetMinutes! * 60000) : new Date()
   if (kind === "REMINDER" && scheduledAt <= new Date()) return null
-  return { organizationId: appointment.organizationId, appointmentId: appointment.id, kind, channel: "EMAIL", status: kind === "REMINDER" ? "SCHEDULED" : "PENDING", recipient: appointment.customer.email, subject, body, scheduledAt, metadata: kind === "REMINDER" ? { reminderOffsetMinutes: offsetMinutes! } : undefined }
+  const managementUrl = process.env.BETTER_AUTH_URL
+    ? new URL(`/booking/${appointment.bookingCode}`, process.env.BETTER_AUTH_URL).toString()
+    : undefined
+  const rescheduleUrl = managementUrl && (appointment.allowCustomerRescheduling ?? settings?.allowCustomerRescheduling ?? true) && ["PENDING", "CONFIRMED"].includes(appointment.status)
+    ? `${managementUrl}/reschedule`
+    : undefined
+  const template = await createAppointmentEmailTemplate({ kind, locale, organizationName: appointment.organization.name, services: appointment.services.map((service) => service.name), startsAt: appointment.startsAt, timezone: appointment.timezone, country: settings?.countryCode ?? "FI", bookingCode: appointment.bookingCode, rescheduleUrl, managementUrl })
+  return { organizationId: appointment.organizationId, appointmentId: appointment.id, kind, channel: "EMAIL", status: kind === "REMINDER" ? "SCHEDULED" : "PENDING", recipient: appointment.customer.email, scheduledAt, ...queuedEmailContent(template, locale, kind === "REMINDER" ? { reminderOffsetMinutes: offsetMinutes! } : {}) }
 }
 
-export async function queueNotification(tx: Database, organizationId: string, appointmentId: string, kind: NotificationKind) {
+export async function queueNotification(tx: Database, organizationId: string, appointmentId: string, kind: AppointmentEmailKind) {
   const appointment = await tx.appointment.findFirst({ where: { id: appointmentId, organizationId }, include: notificationInclude })
   if (!appointment) return
   const offsets = kind === "REMINDER" ? appointment.organization.settings?.reminderOffsetsMinutes ?? [1440] : [undefined]
-  const data = offsets.flatMap((offset) => {
-    const notification = notificationData(appointment, kind, offset)
-    return notification ? [notification] : []
-  })
+  const data = (await Promise.all(offsets.map((offset) => notificationData(appointment, kind, offset)))).filter((notification) => notification !== null)
   if (data.length) await tx.notification.createMany({ data })
 }
 
@@ -37,11 +41,14 @@ export async function refreshReminders(tx: Database, organizationId: string) {
   if (settings?.enableAppointmentReminders === false) return
   const appointments = await tx.appointment.findMany({ where: { organizationId, startsAt: { gt: new Date() }, status: { in: ["PENDING", "CONFIRMED", "CHECKED_IN"] }, OR: [{ status: { not: "PENDING" } }, { expiresAt: null }, { expiresAt: { gt: new Date() } }] }, include: notificationInclude })
   const sent = await tx.notification.findMany({ where: { organizationId, kind: "REMINDER", status: "SENT" }, select: { appointmentId: true, metadata: true } })
-  const data = appointments.flatMap((appointment) => (settings?.reminderOffsetsMinutes ?? [1440]).flatMap((offset) => {
-    if (sent.some((notification) => notification.appointmentId === appointment.id && notification.metadata && typeof notification.metadata === "object" && !Array.isArray(notification.metadata) && notification.metadata.reminderOffsetMinutes === offset)) return []
-    const notification = notificationData(appointment, "REMINDER", offset)
-    return notification ? [notification] : []
-  }))
+  const data: Prisma.NotificationCreateManyInput[] = []
+  for (const appointment of appointments) {
+    for (const offset of settings?.reminderOffsetsMinutes ?? [1440]) {
+      if (sent.some((notification) => notification.appointmentId === appointment.id && notification.metadata && typeof notification.metadata === "object" && !Array.isArray(notification.metadata) && notification.metadata.reminderOffsetMinutes === offset)) continue
+      const notification = await notificationData(appointment, "REMINDER", offset)
+      if (notification) data.push(notification)
+    }
+  }
   // Bound SQL batch sizes while retaining one atomic settings change
   for (let index = 0; index < data.length; index += 500) await tx.notification.createMany({ data: data.slice(index, index + 500) })
 }

@@ -1,3 +1,4 @@
+import { canRescheduleAppointment } from "~/lib/appointment-status"
 import type { CalendarDragSelection } from "~/lib/calendar/types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { inferRouterOutputs } from "@trpc/server"
@@ -11,6 +12,7 @@ import { CalendarBookingLiveIssues } from "~/components/calendar/calendar-bookin
 import { usePastBookingConfirmation } from "~/components/calendar/use-past-booking-confirmation"
 import { useBreakOverlapConfirmation } from "~/components/calendar/use-break-overlap-confirmation"
 import { BookingDurationField } from "~/components/calendar/booking-duration-field"
+import { BookingCustomerDetails } from "~/components/calendar/booking-customer-details"
 import { BookingMemberFilter } from "~/components/calendar/booking-member-filter"
 import { useCalendarBookingDurationLimit } from "~/components/calendar/use-calendar-booking-duration-limit"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
@@ -152,7 +154,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
     ? !serviceDetails.data || serviceDetails.data.staffServices.some((assignment) => assignment.staffMemberId === member.id && assignment.isActive)
     : member.id === appointment.staffMemberId)
   if (preferredMember && !filterMembers.some((member) => member.id === preferredMember.id)) filterMembers.push(preferredMember)
-  const canReschedule = canEdit && Boolean(service && appointment.staffMemberId && ["PENDING", "CONFIRMED"].includes(appointment.status))
+  const canReschedule = canEdit && Boolean(service && appointment.staffMemberId && canRescheduleAppointment(appointment.status))
   const range = getCalendarBookingRange({ ...calendar, mode: "day", selected: selectedDay ? calendarDateFromValue(selectedDay, timeZone) : calendar.selected }, timeZone)
   const [startHour, startMinute] = startTime.split(":").map(Number)
   const customRange = changingTime && selectedDay && validLength ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, length, timeZone) : null
@@ -229,7 +231,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
         setTimeError(t("bookingForm.chooseSlot"))
         return
       }
-      if (!await confirmPastBooking(changingTime && chosenSlot ? chosenSlot.startsAt : appointment.startsAt)) return
+      if (!await confirmPastBooking(appointment.startsAt, changingTime && chosenSlot ? chosenSlot.startsAt : appointment.startsAt)) return
       try {
         const timeChanged = changingTime && chosenSlot && (serviceChanged || +new Date(chosenSlot.startsAt) !== +appointment.startsAt || length !== Math.round((+appointment.endsAt - +appointment.startsAt) / 60000) || targetMemberId !== appointment.staffMemberId)
         if (timeChanged && chosenSlot.overlapsBreak && !await confirmBreakOverlap()) return
@@ -278,6 +280,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
             <CustomerPicker onCustomerChange={setSummaryCustomer} selectedCustomer={appointment.customer} disabled={disabled} inputRef={customer.ref} invalid={Boolean(form.error("customerId"))} onBlur={customer.onBlur} onChange={customer.onChange} onCreate={() => { setCustomerFlow((flow) => flow + 1); setCustomerModalOpen(true) }} value={customer.value} />
           </FormLabel>
           <FormLabel error={form.error("notes")} label={t("bookingForm.notes")}><Textarea {...form.getInputProps("notes")} aria-invalid={Boolean(form.error("notes"))} disabled={disabled} /></FormLabel>
+          <BookingCustomerDetails answers={appointment.answers} message={appointment.customerNotes} />
           <Separator />
           <FormLabel label={t("bookingForm.service")}>
             {appointment.services.length === 1 ? <ServicePicker disabled={disabled || !canReschedule || services.isPending} onChange={(id) => {

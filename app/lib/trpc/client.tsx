@@ -118,7 +118,8 @@ const links = [
     condition: (op) =>
       op.path === "profile.updatePreferences" ||
       op.path === "profile.updateTheme" ||
-      op.path === "profile.updateLocale",
+      op.path === "profile.updateLocale" ||
+      op.path === "profile.updateFormatPreference",
     true: httpLink({ transformer: superjson, url: `${getBaseUrl()}/api/trpc` }),
     false: httpBatchStreamLink({
       transformer: superjson,

@@ -12,5 +12,12 @@ export const onboardingFormSchema = z.object({
     .length(2)
     .refine(isOnboardingCountryCode),
   name: z.string().trim().min(1).max(100),
-  timezone: z.string().trim().min(1).max(100),
+  timezone: z.string().trim().min(1).max(100).refine((value) => {
+    try {
+      new Intl.DateTimeFormat("en", { timeZone: value })
+      return true
+    } catch {
+      return false
+    }
+  }),
 })

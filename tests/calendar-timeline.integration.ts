@@ -123,7 +123,7 @@ try {
     queryClient.setQueryData(options.appointment.list.queryKey(range), bookings)
     if (state.mode === "list") queryClient.setQueryData(options.appointment.list.queryKey({ ...range, includeCancelled: true }), bookings)
     for (const booking of bookings) {
-      queryClient.setQueryData([...options.appointment.get.queryKey({ id: booking.id })], { ...booking, services: booking.services.map((item, index) => ({ ...item, id: `${booking.id}/${index}`, service: item.service ? { ...item.service, durationMinutes: 30 } : null })), customer: { ...booking.customer, email: "aino@example.invalid", phone: "+358401234567" }, customerId: booking.customer.id, staffMemberId: booking.staffMember?.id, locationId: null, internalNotes: "Saved booking notes" })
+      queryClient.setQueryData([...options.appointment.get.queryKey({ id: booking.id })], { ...booking, services: booking.services.map((item, index) => ({ ...item, id: `${booking.id}/${index}`, service: item.service ? { ...item.service, durationMinutes: 30 } : null })), customer: { ...booking.customer, email: "aino@example.invalid", phone: "+358401234567" }, customerId: booking.customer.id, staffMemberId: booking.staffMember?.id, locationId: null, answers: [], customerNotes: null, internalNotes: "Saved booking notes" })
       queryClient.setQueryData([...options.customer.get.queryKey({ id: booking.customer.id })], { ...booking.customer, email: null, phone: null })
       const selectedDrag = dragUpdate?.appointmentId === booking.id ? dragUpdate.selection : draggedBooking?.appointmentId === booking.id ? draggedBooking : undefined
       if (selectedDrag) {
@@ -395,6 +395,10 @@ try {
     { day: "2026-10-26", startMinute: 0, endMinute: 30 },
   ], "Shared date boundaries preserve midnight splits across a 25-hour daylight saving day")
   const normalized = getCalendarAppointments([booking], [calendarDateFromValue("2026-10-14", "Europe/Helsinki")], "Europe/Helsinki")[0]
+  for (const status of ["COMPLETED", "NO_SHOW", "CANCELLED"]) {
+    const appointment = getCalendarAppointments([{ ...booking, status }], [calendarDateFromValue("2026-10-14", "Europe/Helsinki")], "Europe/Helsinki")[0]
+    assert.equal(appointment.movable, status !== "CANCELLED", `${status} bookings expose the correct drag eligibility`)
+  }
   const conflictFixtures = ["PENDING", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_SHOW"].map((status) => ({ ...normalized, id: status, status }))
   assert.deepEqual(getCalendarBookingConflicts(conflictFixtures, false).map((appointment) => appointment.id), ["PENDING", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS"], "Disabled: active bookings stop calendar dragging")
   assert.deepEqual(getCalendarBookingConflicts(conflictFixtures, true), [], "Enabled: existing bookings do not stop calendar dragging")

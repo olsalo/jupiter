@@ -148,8 +148,11 @@ export function CalendarMemberRows({ initialNow, focusedAppointmentId, days, mem
         initializedDate.current = date
       } else if (initializedDate.current !== date) {
         if (!preview?.preserveScroll && !focusedAppointmentId) {
+          // The route's clock snapshot can predate switching to the rows layout
+          const currentTime = new TZDate(Date.now(), timeZone)
+          const currentMinute = currentTime.getHours() * 60 + currentTime.getMinutes()
           scrollTo({
-            left: getCalendarTimeScrollLeft({ minute, startMinute, endMinute, gridWidth: grid.clientWidth, viewportWidth: viewport.clientWidth - 176, padding: calendarTimelinePadding }),
+            left: getCalendarTimeScrollLeft({ minute: currentMinute, startMinute, endMinute, gridWidth: grid.clientWidth, viewportWidth: viewport.clientWidth - 176, padding: calendarTimelinePadding }),
             top: viewport.scrollTop,
           })
         }
@@ -162,7 +165,7 @@ export function CalendarMemberRows({ initialNow, focusedAppointmentId, days, mem
     observer.observe(grid)
     position()
     return () => observer.disconnect()
-  }, [date, minute, startMinute, endMinute, scrollState, preview?.preserveScroll, focusedAppointmentId])
+  }, [date, timeZone, startMinute, endMinute, scrollState, preview?.preserveScroll, focusedAppointmentId])
 
   return <section aria-busy={waitingForInitialPosition || undefined} aria-label={t("calendarGrid.day")} className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background", waitingForInitialPosition && "invisible", className)} data-layout="rows" data-presentation="desktop" data-slot="day-calendar">
     {waitingForInitialPosition ? <div className="visible absolute inset-0 z-50 flex items-center justify-center bg-background"><Spinner aria-label={t("loading")} /></div> : null}
@@ -197,8 +200,6 @@ export function CalendarMemberRows({ initialNow, focusedAppointmentId, days, mem
                       const end = Math.min(endMinute, range.endMinute)
                       const leftPadding = range.startMinute <= startMinute ? calendarTimelinePadding : 0
                       const rightPadding = range.endMinute >= endMinute ? calendarTimelinePadding : 0
-                      const blockStart = `calc(var(--calendar-grid-width, 0px) * ${(start - startMinute) / duration} + ${calendarTimelinePadding - leftPadding}px)`
-                      const blockEnd = `calc(var(--calendar-grid-width, 0px) * ${(end - startMinute) / duration} + ${calendarTimelinePadding + rightPadding}px)`
                       return <div
                         aria-label={`${lane.member.name} · ${range.title || t("calendarGrid.unavailable")}`}
                         className="pointer-events-none absolute inset-y-0 overflow-hidden bg-foreground/2"
@@ -212,12 +213,8 @@ export function CalendarMemberRows({ initialNow, focusedAppointmentId, days, mem
                         }}
                       >
                         {end - start >= 30 ? <Badge
-                          className="absolute top-1/2 z-40 max-w-[calc(100%-0.75rem)] -translate-x-1/2 -translate-y-1/2 border-border/50 bg-background/80 px-1.5 text-[10px] text-muted-foreground dark:bg-background/80"
+                          className="absolute top-1/2 left-1/2 z-40 max-w-[calc(100%-0.75rem)] -translate-x-1/2 -translate-y-1/2 border-border/50 bg-background/80 px-1.5 text-[10px] text-muted-foreground dark:bg-background/80"
                           data-slot="calendar-unavailable-badge"
-                          style={{
-                            // Keep the label centered in the visible part of the shaded time block
-                            left: `clamp(12px, calc((max(var(--calendar-scroll-left, 0px), ${blockStart}) + min(calc(var(--calendar-scroll-left, 0px) + var(--calendar-time-viewport-width, 100%)), ${blockEnd})) / 2 - ${blockStart}), calc(100% - 12px))`,
-                          }}
                           variant="outline"
                         >{range.title || t("calendarGrid.unavailable")}</Badge> : null}
                       </div>
@@ -235,14 +232,14 @@ export function CalendarMemberRows({ initialNow, focusedAppointmentId, days, mem
       </ScrollArea>
       <div className="flex w-[19px] shrink-0 flex-col border-l" data-slot="calendar-vertical-scroll">
         <div aria-hidden={true} className="h-11 shrink-0 border-b" />
-        <ScrollArea className="min-h-0 flex-1" overscrollContain={true} scrollbarClassName="data-[orientation=vertical]:opacity-100 data-[orientation=vertical]:m-1 data-[orientation=vertical]:w-2.5 data-[orientation=horizontal]:hidden" viewportProps={{ ref: verticalRef, className: "[overflow-anchor:none]", "aria-label": t("calendarGrid.scrollMembers"), onScroll: (event) => scrollTo({ left: viewportRef.current?.scrollLeft ?? 0, top: event.currentTarget.scrollTop }) }}>
+        <ScrollArea className="min-h-0 flex-1" overscrollContain={true} scrollbarClassName="[&_[data-slot=scroll-area-thumb]]:bg-foreground/15 data-[orientation=vertical]:opacity-100 data-[orientation=vertical]:m-1 data-[orientation=vertical]:w-2.5 data-[orientation=horizontal]:hidden" viewportProps={{ ref: verticalRef, className: "[overflow-anchor:none]", "aria-label": t("calendarGrid.scrollMembers"), onScroll: (event) => scrollTo({ left: viewportRef.current?.scrollLeft ?? 0, top: event.currentTarget.scrollTop }) }}>
           <div aria-hidden={true} style={{ width: 1, height: scrollSize.height }} />
         </ScrollArea>
       </div>
     </div>
     <div className="flex h-[19px] shrink-0 border-t" data-slot="calendar-horizontal-scroll">
       <div aria-hidden={true} className="w-44 shrink-0 border-r" />
-      <ScrollArea className="min-w-0 flex-1" overscrollContain={true} scrollbarClassName="data-[orientation=horizontal]:opacity-100 data-[orientation=horizontal]:m-1 data-[orientation=horizontal]:h-2.5 data-[orientation=vertical]:hidden" viewportProps={{ ref: horizontalRef, className: "[overflow-anchor:none]", "aria-label": t("calendarGrid.scrollTimes"), onScroll: (event) => scrollTo({ left: event.currentTarget.scrollLeft, top: viewportRef.current?.scrollTop ?? 0 }) }}>
+      <ScrollArea className="min-w-0 flex-1" overscrollContain={true} scrollbarClassName="[&_[data-slot=scroll-area-thumb]]:bg-foreground/15 data-[orientation=horizontal]:opacity-100 data-[orientation=horizontal]:m-1 data-[orientation=horizontal]:h-2.5 data-[orientation=vertical]:hidden" viewportProps={{ ref: horizontalRef, className: "[overflow-anchor:none]", "aria-label": t("calendarGrid.scrollTimes"), onScroll: (event) => scrollTo({ left: event.currentTarget.scrollLeft, top: viewportRef.current?.scrollTop ?? 0 }) }}>
         <div aria-hidden={true} style={{ width: scrollSize.width, height: 1 }} />
       </ScrollArea>
       <div aria-hidden={true} className="w-[19px] shrink-0 border-l" />

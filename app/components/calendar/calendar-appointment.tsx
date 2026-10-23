@@ -28,7 +28,7 @@ export const CalendarAppointmentCard = memo(function CalendarAppointmentCard({ a
   const language = i18n.resolvedLanguage === "fi" ? "fi" : "en"
   const formatTime = (minute: number) => formatDateTime(new Date(Date.UTC(2000, 0, 1, 0, minute)), { formatPreference, language, timeZone: "UTC", includeDate: false })
   const time = `${formatTime(appointment.startMinute)} – ${formatTime(appointment.endMinute)}`
-  const status = appointment.status ? t(`calendarGrid.statuses.${appointment.status}`) : ""
+  const status = appointment.status && appointment.status !== "CONFIRMED" ? t(`calendarGrid.statuses.${appointment.status}`) : ""
   const label = [appointment.customerName, appointment.service.name, time, status].filter(Boolean).join(" · ")
 
   // Keep the hidden source hit-testable so another drag can interrupt its return animation

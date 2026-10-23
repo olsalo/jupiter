@@ -5,6 +5,7 @@ import { createServer } from "vite"
 process.env.NODE_ENV = "test"
 const vite = await createServer({
   configFile: false,
+  cacheDir: "node_modules/.vite-tests/prisma-client-cache",
   appType: "custom",
   resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } },
   server: { middlewareMode: true, hmr: false, ws: false, watch: null },

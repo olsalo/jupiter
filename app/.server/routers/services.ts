@@ -3,7 +3,7 @@ import type { TRPCRouterRecord } from "@trpc/server"
 import { permissionProcedure, organizationProcedure } from "../trpc"
 import { assignmentInput, idInput, serviceCreateInput, serviceUpdateInput } from "~/lib/schemas/appointments"
 import { TRPCError } from "@trpc/server"
-import { nanoid } from "nanoid"
+import { generateId } from "~/lib/id"
 import { z } from "~/lib/zod"
 import { notFound, schedulingLock } from "../services/scheduling"
 import { serviceCategorySchema } from "~/lib/schemas/services"
@@ -87,7 +87,7 @@ export const serviceRouter = {
     const lastService = await tx.service.aggregate({ where: { organizationId: ctx.organizationId }, _max: { sortOrder: true } })
     return tx.service.create({ data: {
       ...input, sortOrder: (lastService._max.sortOrder ?? -1) + 1,
-      slug: input.slug ?? `${slugBase}-${nanoid(10).toLowerCase().replace(/[_-]/g, "0")}`,
+      slug: input.slug ?? `${slugBase}-${generateId().toLowerCase()}`,
       currency: input.currency ?? ctx.organization.settings?.currency ?? "EUR", organizationId: ctx.organizationId,
       staffServices: { create: staffIds.map((staffMemberId) => ({ staffMemberId })) },
       serviceLocations: { create: locationIds.map((locationId) => ({ locationId })) },

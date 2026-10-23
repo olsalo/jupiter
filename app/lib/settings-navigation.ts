@@ -4,7 +4,6 @@ import { hasOrganizationPermission, type OrganizationPermissions } from "~/lib/a
 export const settingsItems = [
   { id: "profile", icon: "user", labelKey: "settings.profile", descriptionKey: "settings.profileDescription", permissions: null },
   { id: "business", icon: "buildingStore", labelKey: "settings.business", descriptionKey: "settings.generalDescription", permissions: { business: ["configure"] } },
-  { id: "locations", icon: "building", labelKey: "settings.locations", descriptionKey: "settings.locationsDescription", permissions: { locations: ["configure"] } },
   { id: "booking", icon: "calendarEvent", labelKey: "settings.booking", descriptionKey: "settings.bookingDescription", permissions: { bookingSettings: ["configure"] } },
   { id: "communications", icon: "mail", labelKey: "settings.communications", descriptionKey: "settings.communicationsDescription", permissions: { communications: ["configure"] } },
   { id: "billing", icon: "creditCard", labelKey: "settings.billing", descriptionKey: "settings.billingDescription", permissions: { billing: ["manage"] } },

@@ -1,10 +1,11 @@
+import type { EmailLocale } from "~/lib/email-templates/types"
+import { isSupportedLocale } from "~/lib/locale"
 import { Resend } from "resend"
 
-import { fallbackLanguage, supportedLanguages } from "~/locales"
+import { fallbackLanguage } from "~/locales"
 import { localeCookie } from "~/lib/cookies.server"
 import {
   createOtpEmailTemplate,
-  type EmailLocale,
   type OtpEmailType,
 } from "~/lib/email-templates/otp"
 
@@ -31,6 +32,7 @@ export async function sendEmail(message: EmailMessage) {
   const provider = getEmailProvider()
 
   if (!provider) {
+    if (process.env.NODE_ENV === "production") throw new Error("EMAIL_PROVIDER is required to send email in production")
     return
   }
 
@@ -60,10 +62,6 @@ export async function sendEmail(message: EmailMessage) {
     return
   }
 
-  if (!from) {
-    throw new Error(`EMAIL_FROM is required when ${getApiKeyName(provider)} is configured`)
-  }
-
   await sendWithResend({ apiKey, from, message, recipients })
 }
 
@@ -71,14 +69,15 @@ export async function sendOtpEmail({ email, locale, otp, type }: OtpEmailOptions
   const provider = getEmailProvider()
 
   if (!provider) {
-    if (process.env.NODE_ENV !== "production" && type === "sign-in") {
+    if (process.env.NODE_ENV === "production") throw new Error("EMAIL_PROVIDER is required to send email in production")
+    if (type === "sign-in") {
       console.info(`[better-auth] ${type} OTP for ${email}: ${otp}`)
     }
 
     return
   }
 
-  const template = createOtpEmailTemplate({
+  const template = await createOtpEmailTemplate({
     expiresInMinutes: emailOtpExpiresInMinutes,
     locale,
     otp,
@@ -93,16 +92,24 @@ export async function sendOtpEmail({ email, locale, otp, type }: OtpEmailOptions
   })
 }
 
-export async function getEmailLocale(request?: Request): Promise<EmailLocale> {
+export async function getEmailLocale(request?: Request | Headers): Promise<EmailLocale> {
+  const headers = request instanceof Headers ? request : request?.headers
+  if (headers) {
+    // Resolve the authenticated account, never an account guessed from the recipient
+    const { auth } = await import("~/lib/auth/server")
+    const session = await auth.api.getSession({ headers })
+    if (isSupportedLocale(session?.user.locale)) return session.user.locale
+  }
+
   const cookieLocale = await localeCookie.parse(
-    request?.headers.get("Cookie") ?? "",
+    headers?.get("Cookie") ?? "",
   )
 
   if (isSupportedLocale(cookieLocale)) {
     return cookieLocale
   }
 
-  const acceptedLocale = request?.headers.get("Accept-Language")
+  const acceptedLocale = headers?.get("Accept-Language")
 
   if (acceptedLocale) {
     const language = acceptedLocale
@@ -235,13 +242,6 @@ function getDeliveryRecipients(recipients: string | string[]) {
   }
 
   return overrideRecipients.length === 1 ? overrideRecipients[0] : overrideRecipients
-}
-
-function isSupportedLocale(locale: unknown): locale is EmailLocale {
-  return (
-    typeof locale === "string" &&
-    supportedLanguages.includes(locale as EmailLocale)
-  )
 }
 
 function getSenderAddress(from: string) {

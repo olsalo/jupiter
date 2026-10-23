@@ -6,7 +6,7 @@ import { href, useNavigate, useRouteLoaderData } from "react-router"
 
 import type { loader as rootLoader } from "~/root"
 import Icon from "~/components/icons"
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
+import { UserAvatar } from "~/components/user-avatar"
 import { Badge } from "~/components/ui/badge"
 import {
   Menu,
@@ -43,7 +43,6 @@ export function Profile({
   menuSide,
   menuSideOffset = 8,
   user,
-  variant = "default",
 }: ProfileProps) {
   const { t } = useTranslation()
   const { t: tTeam } = useTranslation("team")
@@ -60,11 +59,10 @@ export function Profile({
     onError: () => toast.error(t("account.switchBusinessError")),
   }))
   const displayName = user?.name || user?.email || t("account.fallbackName")
-  const displayInitial = displayName.trim().charAt(0).toUpperCase() || "C"
   const activeBusinessName = rootData?.org?.name ?? organizations[0]?.name
   const businessSummary = (
     <>
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-foreground ring-1 ring-border">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-foreground ring-1 ring-border">
         <Icon aria-hidden="true" name="buildingStore" size={16} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col leading-tight">
@@ -99,27 +97,15 @@ export function Profile({
         )}
         title={displayName}
       >
-        <Avatar
-          className={cn(
-            "ring-1 ring-border",
-            variant === "light"
-              ? "bg-muted text-foreground"
-              : "bg-primary text-primary-foreground",
-          )}
-        >
-          {user?.image ? (
-            <AvatarImage alt={displayName} src={user.image} />
-          ) : null}
-          <AvatarFallback
-            className={cn(
-              variant === "light"
-                ? "bg-muted text-foreground"
-                : "bg-primary text-primary-foreground",
-            )}
-          >
-            {displayInitial}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          className="size-full bg-foreground text-xs text-background"
+          decorative={true}
+          fallbackClassName="bg-foreground text-background"
+          initialsCount={1}
+          name={displayName}
+          src={user?.image}
+          stableId={displayName}
+        />
       </MenuTrigger>
       <MenuPopup align="end" className="w-min min-w-[180px]!" side={menuSide} sideOffset={menuSideOffset}>
         {organizations.length > 0 ? (
@@ -128,7 +114,7 @@ export function Profile({
               <MenuSub>
                 <MenuSubTrigger
                   aria-label={`${t("account.switchBusiness")}: ${displayName}, ${activeBusinessName}`}
-                  className="min-h-12 gap-3 whitespace-nowrap px-3 py-2 sm:text-base"
+                  className="min-h-11 gap-2 whitespace-nowrap"
                   disabled={logOut.isPending}
                 >
                   {businessSummary}
@@ -147,7 +133,7 @@ export function Profile({
                     return (
                       <MenuItem
                         aria-current={isActive ? "true" : undefined}
-                        className="min-h-11 gap-3 whitespace-nowrap px-3 py-2 sm:text-base"
+                        className="whitespace-nowrap"
                         closeOnClick={false}
                         disabled={isActive || isPending}
                         key={organization.id}
@@ -166,7 +152,7 @@ export function Profile({
                 </MenuSubPopup>
               </MenuSub>
             ) : (
-              <div className="flex min-h-12 items-center gap-3 px-3 py-2 text-base text-foreground">
+              <div className="flex min-h-11 items-center gap-2 px-2 py-1 text-sm text-foreground">
                 {businessSummary}
               </div>
             )}
@@ -174,7 +160,7 @@ export function Profile({
           </>
         ) : null}
         <MenuItem
-          className="min-h-11 gap-3 whitespace-nowrap px-3 py-2 sm:text-base"
+          className="whitespace-nowrap"
           closeOnClick={false}
           disabled={isPending}
           onClick={() => logOut.mutate()}

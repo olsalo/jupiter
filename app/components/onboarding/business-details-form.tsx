@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { useNavigate, useNavigation } from "react-router"
 import type { FormApi } from "@rvf/react"
 
+import { OnboardingActions } from "~/components/onboarding/onboarding-actions"
 import { AppForm } from "~/components/app-form"
 import FormLabel from "~/components/form-label"
 import Icon from "~/components/icons"
@@ -21,6 +22,7 @@ import { Spinner } from "~/components/ui/spinner"
 import { onboardingCountries } from "~/lib/countries"
 import { currencyItems } from "~/lib/currencies"
 import { onboardingFormSchema } from "~/lib/schemas/onboarding"
+import { toast } from "~/lib/toast"
 import { timezoneItems } from "~/lib/timezones"
 import { useTRPC } from "~/lib/trpc/client"
 
@@ -34,7 +36,7 @@ type OnboardingFormValues = {
 
 export function BusinessDetailsForm({ defaultValues, nextStep }: {
   defaultValues: OnboardingFormValues
-  nextStep: "business" | "subscription" | null
+  nextStep: "business" | "availability" | "holidays" | "subscription" | null
 }) {
   const { t } = useTranslation("onboarding")
   const formApi = useRef<FormApi<OnboardingFormValues>>(null)
@@ -82,10 +84,8 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                 ? t("errors.organizationNameTaken")
                 : t("errors.create")
 
-            formApi.current?.unstable_setCustomError(
-              "businessName",
-              errorMessage,
-            )
+            if (errorMessage === t("errors.organizationNameTaken")) formApi.current?.unstable_setCustomError("businessName", errorMessage)
+            else toast.error(errorMessage)
             throw error
           }
         }}
@@ -246,19 +246,21 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                 </Select>
               </FormLabel>
 
-              <Button className="keyboard-focusable" disabled={isSubmitting} type="submit">
-                {isSubmitting ? (
-                  <>
-                    <Spinner className="size-4" />
-                    {t("actions.creating")}
-                  </>
-                ) : (
-                  <>
-                    {t(isFinalStep ? "actions.finishSetup" : "actions.create")}
-                    <Icon aria-hidden={true} name="chevronRight" size={16} />
-                  </>
-                )}
-              </Button>
+              <OnboardingActions>
+                <Button className="keyboard-focusable" disabled={isSubmitting} type="submit">
+                  {isSubmitting ? (
+                    <>
+                      <Spinner className="size-4" />
+                      {t("actions.creating")}
+                    </>
+                  ) : (
+                    <>
+                      {t(isFinalStep ? "actions.finishSetup" : "actions.create")}
+                      <Icon aria-hidden={true} name="chevronRight" size={16} />
+                    </>
+                  )}
+                </Button>
+              </OnboardingActions>
             </>
           )
         }}

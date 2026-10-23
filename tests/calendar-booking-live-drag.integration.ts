@@ -9,6 +9,7 @@ import type { CalendarBookingDragPhase } from "../app/lib/calendar/booking-drag"
 
 const vite = await createServer({
   configFile: false,
+  cacheDir: "node_modules/.vite-tests/calendar-booking-live-drag",
   appType: "custom",
   resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } },
   server: { middlewareMode: true, hmr: false, ws: false, watch: null },
@@ -30,7 +31,7 @@ try {
   mock.timers.enable({ apis: ["Date", "setTimeout"], now: Date.parse("2026-10-19T09:00:00Z") })
   const { getCalendarPreviewIssues, getCalendarAppointmentPosition } = await vite.ssrLoadModule("/app/lib/calendar/preview-issues.ts") as typeof import("../app/lib/calendar/preview-issues")
   const { createCalendarBookingDragPreview } = await vite.ssrLoadModule("/app/lib/calendar/booking-drag-preview.ts") as typeof import("../app/lib/calendar/booking-drag-preview")
-  function harness(resize = false, creationDraft = false, horizontal = false, liveIssues = false, bufferedNeighbour = false, serviceDurations?: readonly number[], appointmentStart = 600) {
+  function harness(resize = false, creationDraft = false, horizontal = false, liveIssues = false, bufferedNeighbour = false, serviceDurations?: readonly number[], appointmentStart = 600, status = "CONFIRMED") {
     const bounds = (left: number, top: number, width: number, height: number) => ({ left, top, width, height, right: left + width, bottom: top + height })
     const measurements = { lanes: 0, queries: 0 }
     const sharedPreview = createCalendarBookingDragPreview()
@@ -44,7 +45,7 @@ try {
     let drag!: ReturnType<typeof useCalendarBookingDrag>
     function Capture() {
       drag = useCalendarBookingDrag({
-        appointments: [{ id: "booking", day: "2099-10-28", memberId: "alice", customerName: "Aino", startMinute: appointmentStart, endMinute: appointmentStart + 60, durationMinutes: 60, bufferBeforeMinutes: bufferedNeighbour ? 5 : 0, bufferAfterMinutes: bufferedNeighbour ? 10 : 0, movable: true, status: creationDraft ? "" : "CONFIRMED", draft: creationDraft, creationDraft, service: { id: "service", name: "Consultation", color: "#808080" } }],
+        appointments: [{ id: "booking", day: "2099-10-28", memberId: "alice", customerName: "Aino", startMinute: appointmentStart, endMinute: appointmentStart + 60, durationMinutes: 60, bufferBeforeMinutes: bufferedNeighbour ? 5 : 0, bufferAfterMinutes: bufferedNeighbour ? 10 : 0, movable: true, status: creationDraft ? "" : status, draft: creationDraft, creationDraft, service: { id: "service", name: "Consultation", color: "#808080" } }],
         conflictAppointments: bufferedNeighbour ? [{ id: "neighbour", day: "2099-10-28", memberId: "alice", customerName: "Next", startMinute: 700, endMinute: 720, bufferBeforeMinutes: 5, bufferAfterMinutes: 10, status: "CONFIRMED", service: { id: "service", name: "Short service", color: "#808080" } }] : undefined,
         getDraftService: (length) => length === 20 ? { id: "short", name: "Short service", color: "#ff9900" }
           : length === 30 ? { id: "regular", name: "Regular service", color: "#0088ff" } : undefined,
@@ -79,6 +80,16 @@ try {
     assert.deepEqual(live.sharedPreview.getSnapshot()?.appointment.availabilityIssues, [], "Moving to another member clears the original member's break warning immediately")
     live.drag.gridProps.onPointerCancel()
     assert.equal(live.sharedPreview.getSnapshot()?.appointment.memberId, "alice", "Cancel returns the warning to the original position")
+  }
+  for (const status of ["COMPLETED", "NO_SHOW", "CANCELLED"]) {
+    for (const horizontal of [false, true]) {
+      for (const resize of [false, true]) {
+        const booking = harness(resize, false, horizontal, false, false, undefined, 600, status)
+        booking.drag.gridProps.onPointerDown(booking.event(horizontal ? 214 : 150, horizontal ? 30 : 114))
+        booking.drag.gridProps.onPointerUp(booking.event(horizontal ? 250 : 150, horizontal ? 30 : 150))
+        assert.equal(booking.updates.at(-1)?.phase, status === "CANCELLED" ? undefined : "drop", `${status} drag and resize eligibility is consistent in both layouts`)
+      }
+    }
   }
   for (const horizontal of [false, true]) {
     const adjacent = harness(false, false, horizontal, false, true)

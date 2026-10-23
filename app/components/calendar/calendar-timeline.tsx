@@ -321,9 +321,9 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
         <div className="grid" style={dayColumns}>
           {days.map((day) => {
             const value = calendarDateToValue(day)
-            return <div className={cn("min-w-0", isWeekView && calendarDateColumnClassName)} data-today={value === today ? "true" : undefined} key={value}>
+            return <div className={cn("min-w-0", isWeekView && calendarDateColumnClassName, isWeekView && value === today && "bg-[color-mix(in_srgb,var(--foreground)_2%,var(--background))]")} data-today={value === today ? "true" : undefined} key={value}>
               {isWeekView ? <CalendarDateHeading day={day} formatPreference={formatPreference} relative={false} timeZone={timeZone} today={today} /> : null}
-              <div className={cn("grid h-9", isWeekView && value === today ? "bg-[color-mix(in_srgb,var(--foreground)_3%,var(--background))]" : "bg-[color-mix(in_srgb,var(--muted)_20%,var(--background))]", isWeekView && "border-t")} style={laneColumns}>
+              <div className={cn("grid h-9", isWeekView && value === today ? "bg-[color-mix(in_srgb,var(--foreground)_2%,var(--background))]" : "bg-[color-mix(in_srgb,var(--muted)_20%,var(--background))]", isWeekView && "border-t")} style={laneColumns}>
                 {orderedMembers.map((member) => <div className="flex min-w-0 items-center justify-center gap-1.5 border-r px-2 text-xs text-muted-foreground last:border-r-0" data-slot="calendar-member-heading" key={member.id}>
                   <UserAvatar className="size-5 shrink-0 text-[9px]" decorative={true} name={member.name} src={member.image} stableId={member.id} />
                   <span className="truncate">{member.name}</span>
@@ -369,7 +369,7 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
         <div {...bookingDrag.gridProps} className={cn("relative", bookingDrag.dragged?.resizing && !bookingDrag.dragged.returning && "cursor-ns-resize [&_*]:cursor-ns-resize!")} data-slot="calendar-grid" style={{ ...gridWidth, height: contentHeight }}>
           <div className="absolute inset-0 grid" style={dayColumns}>
             {timelineLayout.map(({ date, lanes }) => {
-              return <div className={cn("relative grid min-w-0", !isMobileView && isWeekView && calendarDateColumnClassName)} data-today={date === today ? "true" : undefined} key={date} style={laneColumns}>
+              return <div className={cn("relative grid min-w-0", !isMobileView && isWeekView && calendarDateColumnClassName, !isMobileView && isWeekView && date === today && "bg-[color-mix(in_srgb,var(--foreground)_2%,var(--background))]")} data-today={date === today ? "true" : undefined} key={date} style={laneColumns}>
                 {lanes.map((lane) => <CalendarTimelineLane
                   getDraftService={getDraftService}
                   serviceDurations={serviceDurations}
@@ -414,7 +414,7 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
       {!isMobileView ? <div className="w-[19px] shrink-0 border-l" data-slot="calendar-vertical-scroll">
         <ScrollArea
           overscrollContain={true}
-          scrollbarClassName="data-[orientation=vertical]:opacity-100 data-[orientation=vertical]:m-1 data-[orientation=vertical]:w-2.5 data-[orientation=horizontal]:hidden"
+          scrollbarClassName="[&_[data-slot=scroll-area-thumb]]:bg-foreground/15 data-[orientation=vertical]:opacity-100 data-[orientation=vertical]:m-1 data-[orientation=vertical]:w-2.5 data-[orientation=horizontal]:hidden"
           viewportProps={{ ref: verticalRef, className: "[overflow-anchor:none]", "aria-label": t("calendarGrid.scrollTimes"), onScroll: (event) => syncVertical(event.currentTarget.scrollTop) }}
         >
           <div aria-hidden={true} style={{ width: 1, height: contentHeight }} />
@@ -426,7 +426,7 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
       <ScrollArea
         className="min-w-0 flex-1"
         overscrollContain={true}
-        scrollbarClassName="data-[orientation=horizontal]:opacity-100 data-[orientation=horizontal]:m-1 data-[orientation=horizontal]:h-2.5 data-[orientation=vertical]:hidden"
+        scrollbarClassName="[&_[data-slot=scroll-area-thumb]]:bg-foreground/15 data-[orientation=horizontal]:opacity-100 data-[orientation=horizontal]:m-1 data-[orientation=horizontal]:h-2.5 data-[orientation=vertical]:hidden"
         viewportProps={{ ref: horizontalRef, className: "[overflow-anchor:none]", "aria-label": t(isWeekView ? "calendarGrid.scrollDates" : "calendarGrid.scrollMembers"), onScroll: (event) => syncHorizontal(event.currentTarget.scrollLeft) }}
       >
         <div aria-hidden={true} style={{ width, height: 1 }} />

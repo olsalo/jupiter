@@ -1,3 +1,4 @@
+import { canRescheduleAppointment } from "../appointment-status.ts"
 import type { BookingAvailabilityIssue } from "./booking-issues.ts"
 import type { CalendarAppointment } from "./types.ts"
 import { TZDate } from "react-day-picker"
@@ -43,7 +44,7 @@ export function getCalendarAppointments(bookings: Booking[], days: Date[], timeZ
       endMinute: end === to ? 1440 : localEnd.getHours() * 60 + localEnd.getMinutes(),
       status: booking.status,
       ...(booking.availabilityIssues ? { availabilityIssues: booking.availabilityIssues } : {}),
-      movable: Boolean(booking.staffMember && booking.services.length === 1 && ["PENDING", "CONFIRMED"].includes(booking.status)),
+      movable: Boolean(booking.staffMember && booking.services.length === 1 && canRescheduleAppointment(booking.status)),
       bufferBeforeMinutes: Math.max(0, ...booking.services.map((service) => service.bufferBeforeMinutes ?? 0)),
       bufferAfterMinutes: Math.max(0, ...booking.services.map((service) => service.bufferAfterMinutes ?? 0)),
       durationMinutes: (+new Date(booking.endsAt) - +new Date(booking.startsAt)) / 60000,

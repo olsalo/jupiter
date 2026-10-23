@@ -27,7 +27,7 @@ export function TeamPersonAbout({ person, canManage }: { person: TeamPerson; can
   ]
 
   return (
-    <TeamPersonSection header={<SettingsSectionHeader title={t("people.about")} description={t("people.aboutDescription")} />}>
+    <TeamPersonSection header={<SettingsSectionHeader title={t("people.profile")} description={t("people.aboutDescription")} />}>
       <dl className="divide-y">
         {details.map((detail) => (
           <div className="grid gap-1.5 py-4 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] sm:items-center sm:gap-4" key={detail.label}>

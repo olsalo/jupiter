@@ -39,7 +39,7 @@ try {
     return converted
   }
   const routes = await convert(config)
-  for (const pathname of ["/calendar", "/calendar/new", "/calendar/appt-123/edit", "/calendar/appt-123/reschedule", "/customers/new", "/customers/customer-123", "/services/service-123/intake", "/booking-pages/page-123/edit", "/team", "/example/new"]) {
+  for (const pathname of ["/calendar", "/calendar/new", "/calendar/appt-123/edit", "/calendar/appt-123/reschedule", "/customers/new", "/customers/customer-123", "/services/service-123/intake", "/booking-page/page-123/edit", "/team", "/example/new"]) {
     const matches = matchRoutes(routes, pathname)
     assert.ok(matches)
     assert.ok(matches.some((match) => match.route.id === "routes/layout.tsx"), `${pathname} stays in the authenticated layout`)
@@ -63,14 +63,14 @@ try {
     const provided = createElement(TRPCProvider, { queryClient, trpcClient: trpc, children: routed })
     return renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(QueryClientProvider, { client: queryClient }, provided)))
   }
-  for (const pathname of ["/calendar?view=day", "/customers", "/services", "/booking-pages"]) {
+  for (const pathname of ["/calendar?view=day", "/customers", "/services", "/booking-page"]) {
     const markup = await render(pathname)
     assert.match(markup, /data-slot="route-information-architecture"/)
     assert.match(markup, /Information architecture/)
     assert.match(markup, /Planned actions/)
     assert.doesNotMatch(markup, /This view is coming soon/)
   }
-  const bookingPage = await render("/booking-pages")
+  const bookingPage = await render("/booking-page")
   assert.match(bookingPage, /The MVP has one Booking page/)
   assert.doesNotMatch(bookingPage, /New booking page/)
   const create = await render("/services/new")

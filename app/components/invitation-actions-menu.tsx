@@ -29,6 +29,7 @@ export function InvitationActionsMenu({ invitationId, email, canInvite, disabled
         queryClient.invalidateQueries({ queryKey: trpc.team.list.queryKey() }),
         queryClient.invalidateQueries({ queryKey: trpc.team.count.queryKey() }),
         queryClient.invalidateQueries(trpc.team.getPerson.queryFilter()),
+        queryClient.invalidateQueries(trpc.resourceLimits.getAll.queryFilter()),
       ])
     },
     onError: () => toast.error(t("invite.cancelFailed")),

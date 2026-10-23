@@ -1,3 +1,4 @@
+import { createResourceLimits } from "../resource-limits/service"
 import type { TRPCRouterRecord } from "@trpc/server"
 import { permissionProcedure, organizationProcedure } from "../trpc"
 import { assignmentInput, idInput, staffInput, staffUpdateInput, staffCreateInput } from "~/lib/schemas/appointments"
@@ -18,6 +19,7 @@ export const staffRouter = {
   create: permissionProcedure({ team: ["manage"] }).input(staffCreateInput).mutation(({ ctx, input: { serviceIds, locationIds, ...data } }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)
     await checkAssignments(tx, ctx.organizationId, data.memberId, serviceIds, locationIds)
+    if (!data.memberId) await createResourceLimits(tx).assert(ctx.organizationId, "teamMembers")
     return tx.staffMember.create({ data: { ...data, organizationId: ctx.organizationId, staffServices: { create: serviceIds.map((serviceId) => ({ serviceId })) }, staffLocations: { create: locationIds.map((locationId) => ({ locationId })) } } })
   })),
   update: permissionProcedure({ team: ["manage"] }).input(staffUpdateInput).mutation(({ ctx, input: { id, ...data } }) => ctx.prisma.$transaction(async (tx) => {

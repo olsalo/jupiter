@@ -28,7 +28,7 @@ export function TeamPersonSheet({ title, description, children, pending = false,
     onCloseStart,
   })
   function close(destination?: string) {
-    if (destination === "/team?tab=invites") returnTo.current = destination
+    if (destination === "/team?tab=invites") returnTo.current = `${basePath}?tab=invites`
     startClosing()
   }
   return (

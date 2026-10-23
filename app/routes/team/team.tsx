@@ -152,7 +152,7 @@ export default function Team() {
         description={t("description")}
         showDescriptionOnMobile={false}
         actions={<div className="flex items-center gap-2">
-          <Button aria-label={t("v2.detailView")} className="max-md:size-9 max-md:p-0" render={<Link to="/team-v2" />} type="button" variant="outline"><Icon aria-hidden={true} className="md:hidden" name="layoutSidebarInactive" size={18} /><span className="hidden md:inline">{t("v2.detailView")}</span></Button>
+          <Button aria-label={t("v2.detailView")} className="max-md:size-9 max-md:p-0" render={<Link to="/team" />} type="button" variant="outline"><Icon aria-hidden={true} className="md:hidden" name="layoutSidebarInactive" size={18} /><span className="hidden md:inline">{t("v2.detailView")}</span></Button>
           {canInvite ? <Button aria-label={t("people.addAction")} className="max-md:size-9 max-md:p-0" render={<Link to="new" state={{ returnTo: `${location.pathname}${location.search}` }} />} type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("people.addAction")}</span></Button> : null}
         </div>}
       />
@@ -235,7 +235,7 @@ export default function Team() {
               enablePagination={false}
               fillHeight={true}
               getRowId={(person) => person.id}
-              onRowClick={(person) => navigate(`/team/${encodeURIComponent(person.id)}`, { state: { returnTo: `${location.pathname}${location.search}` } })}
+              onRowClick={(person) => navigate(`/team-original/${encodeURIComponent(person.id)}`, { state: { returnTo: `${location.pathname}${location.search}` } })}
               loading={team.isLoading}
               loadingLabel={t("loading")}
               skeletonRowCount={personCount}

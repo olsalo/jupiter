@@ -1,3 +1,5 @@
+import { createResourceLimits } from "~/.server/resource-limits/service"
+import { ResourceLimitError } from "~/.server/resource-limits/errors"
 import { hasOrganizationPermission, organizationAccessControl, organizationRoles } from "~/lib/auth/permissions"
 import { i18n } from "@better-auth/i18n"
 import { stripe } from "@better-auth/stripe"
@@ -22,6 +24,7 @@ import {
 } from "~/lib/email.server"
 import { createInvitationEmailTemplate } from "~/lib/email-templates/invitation"
 import { prisma } from "~/lib/prisma.server"
+import { generateId } from "~/lib/id"
 
 const fallbackAuthUrl = process.env.BETTER_AUTH_URL || "http://localhost:5174"
 const oneYearInSeconds = 60 * 60 * 24 * 365
@@ -74,7 +77,7 @@ export const auth = betterAuth({
   },
   advanced: {
     database: {
-      generateId: false,
+      generateId,
     },
   },
   user: {
@@ -112,7 +115,7 @@ export const auth = betterAuth({
       async sendVerificationOTP({ email, otp, type }, context) {
         await sendOtpEmail({
           email,
-          locale: await getEmailLocale(context?.request),
+          locale: await getEmailLocale(context?.request ?? context?.headers),
           otp,
           type,
         })
@@ -127,14 +130,21 @@ export const auth = betterAuth({
         inviteeName: { type: "string", required: false },
       } } },
       organizationHooks: {
+        async beforeAddMember({ member }) {
+          await assertTeamCapacity(member.organizationId)
+        },
         async beforeCreateInvitation({ invitation }) {
-          if (typeof invitation.staffMemberId !== "string") return
+          if (typeof invitation.staffMemberId !== "string") {
+            await assertTeamCapacity(invitation.organizationId)
+            return
+          }
           const staff = await prisma.staffMember.findFirst({ where: { id: invitation.staffMemberId, organizationId: invitation.organizationId, isActive: true } })
           if (!staff || staff.memberId || (staff.email && staff.email.toLowerCase() !== invitation.email.toLowerCase())) {
             throw new APIError("BAD_REQUEST", { message: "This staff profile cannot be invited" })
           }
         },
         async beforeAcceptInvitation({ invitation, user }) {
+          await assertTeamCapacity(invitation.organizationId, 0)
           if (!user.emailVerified) throw new APIError("FORBIDDEN", { message: "Verify your email before accepting" })
           if (typeof invitation.staffMemberId !== "string") return
           const staff = await prisma.staffMember.findFirst({ where: { id: invitation.staffMemberId, organizationId: invitation.organizationId }, include: { member: true } })
@@ -145,10 +155,11 @@ export const auth = betterAuth({
         },
       },
       invitationExpiresIn: twoWeeksInSeconds,
-      async sendInvitationEmail({ id, email, organization }, request) {
+      async sendInvitationEmail({ id, email, organization, inviter }, request) {
         if (request?.headers.get("x-send-invitation-email") === "false") return
 
         const inviteUrl = new URL(`/invite/${encodeURIComponent(id)}`, request?.url ?? fallbackAuthUrl).toString()
+        const inviterLocale = (await prisma.user.findUnique({ where: { id: inviter.user.id }, select: { locale: true } }))?.locale
 
         if (process.env.NODE_ENV !== "production") {
           console.info(`[better-auth] Invitation for ${email}: ${inviteUrl}`)
@@ -156,10 +167,10 @@ export const auth = betterAuth({
 
         await sendEmail({
           to: email,
-          ...createInvitationEmailTemplate({
+          ...await createInvitationEmailTemplate({
             organizationName: organization.name,
             inviteUrl,
-            locale: await getEmailLocale(request),
+            locale: isSupportedLocale(inviterLocale) ? inviterLocale : await getEmailLocale(request),
           }),
         })
       },
@@ -992,4 +1003,15 @@ function isSupportedLocale(locale: unknown): locale is (typeof supportedLanguage
       locale as (typeof supportedLanguages)[number],
     )
   )
+}
+
+async function assertTeamCapacity(organizationId: string, additional = 1) {
+  try {
+    await createResourceLimits(prisma).assert(organizationId, "teamMembers", additional)
+  } catch (error) {
+    if (error instanceof ResourceLimitError) {
+      throw new APIError("FORBIDDEN", { code: error.appCode, message: error.message })
+    }
+    throw error
+  }
 }

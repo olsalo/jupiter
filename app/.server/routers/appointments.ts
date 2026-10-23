@@ -1,3 +1,4 @@
+import { canRescheduleAppointment } from "~/lib/appointment-status"
 import type { TRPCRouterRecord } from "@trpc/server"
 import { permissionProcedure } from "../trpc"
 import { appointmentBookingTimesInput, appointmentSlotsInput, cancelInput, createAppointmentInput, createAppointmentWithCustomerInput, idInput, listAppointmentsInput, notesInput, rescheduleInput, updateAppointmentInput } from "~/lib/schemas/appointments"
@@ -20,16 +21,16 @@ export const appointmentRouter = {
   getSlots: permissionProcedure({ appointments: ["update"] }).input(appointmentSlotsInput).query(async ({ ctx, input }) => {
     const appointment = await getAppointment(ctx.prisma, ctx.organizationId, input.id)
     const snapshot = appointment.services[0]
-    if (!snapshot || !appointment.staffMemberId || !["PENDING", "CONFIRMED"].includes(appointment.status)) return { days: [] }
-    const result = await getAvailableSlots(ctx.prisma, ctx.organizationId, { serviceId: snapshot.serviceId, staffMemberId: appointment.staffMemberId, locationId: appointment.locationId ?? undefined, from: input.from, to: input.to }, { allowPast: true, allowBreakOverlapStart: input.selectedStart ? +input.selectedStart : undefined, excludeAppointmentId: appointment.id, snapshot, durationMinutes: input.durationMinutes, listStarts: input.durationMinutes !== undefined, useOrganizationDefaults: false, purpose: "reschedule" })
+    if (!snapshot || !appointment.staffMemberId || !canRescheduleAppointment(appointment.status)) return { days: [] }
+    const result = await getAvailableSlots(ctx.prisma, ctx.organizationId, { serviceId: snapshot.serviceId, staffMemberId: appointment.staffMemberId, locationId: appointment.locationId ?? undefined, from: input.from, to: input.to }, { allowPast: true, allowBreakOverlapStart: input.selectedStart ? +input.selectedStart : undefined, excludeAppointmentId: appointment.id, snapshot, durationMinutes: input.durationMinutes, listStarts: input.durationMinutes !== undefined, bookingPolicy: appointment.minBookingNoticeMinutes !== null ? { minBookingNoticeMinutes: appointment.minBookingNoticeMinutes, maxBookingAdvanceDays: appointment.maxBookingAdvanceDays } : undefined, useOrganizationDefaults: false, purpose: "reschedule" })
     return { days: result.days.map((day) => ({ ...day, slots: day.slots.filter((slot) => slot.locationId === appointment.locationId) })).filter((day) => day.slots.length > 0) }
   }),
   getBookingTimes: permissionProcedure({ appointments: ["update"] }).input(appointmentBookingTimesInput).query(async ({ ctx, input }) => {
     const appointment = await getAppointment(ctx.prisma, ctx.organizationId, input.id)
     const snapshot = appointment.services[0]
-    if (!snapshot || appointment.services.length !== 1 || !appointment.staffMemberId || !["PENDING", "CONFIRMED"].includes(appointment.status)) return { days: [] }
+    if (!snapshot || appointment.services.length !== 1 || !appointment.staffMemberId || !canRescheduleAppointment(appointment.status)) return { days: [] }
     const replacingService = Boolean(input.serviceId && input.serviceId !== snapshot.serviceId)
-    const result = await getAvailableSlots(ctx.prisma, ctx.organizationId, { serviceId: input.serviceId ?? snapshot.serviceId, staffMemberId: input.staffMemberId === null ? undefined : input.staffMemberId ?? appointment.staffMemberId, locationId: appointment.locationId ?? undefined, from: input.from, to: input.to }, { allowPast: true, allowBreakOverlapStart: input.selectedStart ? +input.selectedStart : undefined, excludeAppointmentId: appointment.id, snapshot: replacingService ? undefined : snapshot, replacingService, durationMinutes: input.durationMinutes, listStarts: true, useOrganizationDefaults: false, purpose: "reschedule" })
+    const result = await getAvailableSlots(ctx.prisma, ctx.organizationId, { serviceId: input.serviceId ?? snapshot.serviceId, staffMemberId: input.staffMemberId === null ? undefined : input.staffMemberId ?? appointment.staffMemberId, locationId: appointment.locationId ?? undefined, from: input.from, to: input.to }, { allowPast: true, allowBreakOverlapStart: input.selectedStart ? +input.selectedStart : undefined, excludeAppointmentId: appointment.id, snapshot: replacingService ? undefined : snapshot, bookingPolicy: appointment.minBookingNoticeMinutes !== null ? { minBookingNoticeMinutes: appointment.minBookingNoticeMinutes, maxBookingAdvanceDays: appointment.maxBookingAdvanceDays } : undefined, replacingService, durationMinutes: input.durationMinutes, listStarts: true, useOrganizationDefaults: false, purpose: "reschedule" })
     return { days: result.days.map((day) => ({ ...day, slots: day.slots.filter((slot) => slot.locationId === appointment.locationId) })).filter((day) => day.slots.length > 0) }
   }),
   update: permissionProcedure({ appointments: ["update"] }).input(updateAppointmentInput).mutation(async ({ ctx, input }) => {

@@ -16,5 +16,5 @@ export function clientLoader() {
 export default function NewPerson() {
   const { t } = useTranslation("team")
   const [pending, setPending] = useState(false)
-  return <TeamPersonSheet title={t("people.addTitle")} description={t("people.addDescription")} pending={pending}>{(close) => <TeamPersonForm close={close} onPendingChange={setPending} />}</TeamPersonSheet>
+  return <TeamPersonSheet basePath="/team-original" title={t("people.addTitle")} description={t("people.addDescription")} pending={pending}>{(close) => <TeamPersonForm close={close} onPendingChange={setPending} />}</TeamPersonSheet>
 }

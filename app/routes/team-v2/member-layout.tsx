@@ -50,7 +50,7 @@ export default function MemberLayout({ params }: Route.ComponentProps) {
     return <Outlet context={{ person: query.data, canManage, close, onPendingChange: setPending, sideNavigation: !mobile } satisfies TeamPersonContext} />
   }
 
-  if (mobile) return <TeamPersonSheet basePath="/team-v2" onCloseStart={detailContext.onPersonCloseStart} pending={pending} profile={loading || (Boolean(query.data) && (!editing || canManage))} title={query.data?.name ?? t("people.details")} description={t(editing ? "people.editDescription" : "people.detailsDescription")}>{content}</TeamPersonSheet>
+  if (mobile) return <TeamPersonSheet basePath="/team" onCloseStart={detailContext.onPersonCloseStart} pending={pending} profile={loading || (Boolean(query.data) && (!editing || canManage))} title={query.data?.name ?? t("people.details")} description={t(editing ? "people.editDescription" : "people.detailsDescription")}>{content}</TeamPersonSheet>
 
-  return <div className="flex min-h-0 flex-1 flex-col" data-slot="team-person-detail">{content(() => navigate("/team-v2"))}</div>
+  return <div className="flex min-h-0 flex-1 flex-col" data-slot="team-person-detail">{content(() => navigate("/team"))}</div>
 }

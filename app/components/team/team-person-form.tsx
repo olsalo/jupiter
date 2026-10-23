@@ -189,6 +189,7 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
           if (!person) close(invitationOnly ? "/team?tab=invites" : undefined)
           await Promise.all([
             queryClient.invalidateQueries(trpc.team.list.queryFilter()), queryClient.invalidateQueries(trpc.team.count.queryFilter()),
+            queryClient.invalidateQueries(trpc.resourceLimits.getAll.queryFilter()),
             queryClient.invalidateQueries(trpc.team.getPerson.queryFilter()), queryClient.invalidateQueries(trpc.profile.getTeamProfile.queryFilter()), queryClient.invalidateQueries(trpc.staff.list.queryFilter()),
             queryClient.invalidateQueries(trpc.appointment.list.queryFilter()), queryClient.invalidateQueries(trpc.appointment.get.queryFilter()), queryClient.invalidateQueries(trpc.availability.calendarSchedule.queryFilter()),
             queryClient.invalidateQueries(trpc.availability.getRules.queryFilter()), queryClient.invalidateQueries(trpc.availability.getBreaks.queryFilter()), queryClient.invalidateQueries(trpc.availability.getSlots.queryFilter()),
@@ -210,7 +211,10 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
           return result
         } catch (error) {
           const appCode = (error as { data?: { appCode?: string } }).data?.appCode
-          if (appCode && ["alreadyStaff", "alreadyMember", "alreadyInvited", "alreadyLinked", "pendingInvitation"].includes(appCode)) {
+          if (appCode === "RESOURCE_LIMIT_REACHED") {
+            const limit = (error as { data?: { resourceLimit?: { limit: number } } }).data?.resourceLimit?.limit
+            toast.error(t("common:settings.teamMemberLimitReached", { count: limit }))
+          } else if (appCode && ["alreadyStaff", "alreadyMember", "alreadyInvited", "alreadyLinked", "pendingInvitation"].includes(appCode)) {
             const messages: Record<string, string> = { alreadyStaff: t("people.alreadyStaff"), alreadyMember: t("invite.alreadyMember"), alreadyInvited: t("invite.alreadyInvited"), alreadyLinked: t("people.alreadyLinked"), pendingInvitation: t("people.pendingEmail") }
             setEditTab(selfSettings ? "general" : "profile")
             formApi.current?.unstable_setCustomError("email", messages[appCode])
@@ -331,7 +335,7 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
             {useError ? <Alert id={useErrorId} variant="error"><AlertDescription>{useError}</AlertDescription></Alert> : null}
           </Panel>
           </div>
-          {!selfSettings && !viewLoading ? <Footer className={editing ? "shrink-0 bg-transparent" : "shrink-0 bg-muted/70"}>
+          {!selfSettings && !viewLoading ? <Footer className={editing ? "shrink-0 bg-transparent sm:bg-transparent" : "shrink-0 bg-muted/70"}>
             <Button disabled={submitting} onClick={selfSettings ? () => formApi.current?.resetForm() : person ? undefined : () => close()} render={person && !selfSettings ? <Link to={{ pathname: "..", search: `?profileTab=${editTab === "profile" || editTab === "access" ? "about" : editTab}` }} relative="path" replace={true} state={location.state} onClick={(event) => { if (submitting) event.preventDefault() }} /> : undefined} type="button" variant="ghost">{t("cancel")}</Button>
             <Button disabled={(editing && !hasEdits) || submitting || services.isLoading || locations.isLoading || ((editTab === "availability" || editTab === "breaks") && (hoursPending || hoursError)) || (editTab === "breaks" && Boolean(person?.staff) && (breaksQuery.isPending || breaksQuery.isError))} loading={submitting} type="submit">{t(submitting ? "people.saving" : person ? "people.save" : "people.add")}</Button>
           </Footer> : null}

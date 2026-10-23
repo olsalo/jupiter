@@ -1,3 +1,4 @@
+import { canRescheduleAppointment } from "~/lib/appointment-status"
 import type { CalendarAppointment, CalendarBookingReturnMotion, CalendarDragSelection, CalendarMember, CalendarUnavailableTime } from "~/lib/calendar/types"
 import { startTransition, useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type MouseEvent, type DragEvent, type RefObject, type SetStateAction } from "react"
 
@@ -309,7 +310,7 @@ export function useCalendarBookingDrag({ appointments, conflictAppointments = ap
         const card = (event.target as HTMLElement).closest<HTMLElement>('[data-slot="calendar-appointment"]')
         const lane = card?.closest<HTMLElement>('[data-slot="calendar-member-lane"]')
         const appointment = appointments.find((appointment) => appointment.id === card?.dataset.appointmentId && appointment.day === lane?.dataset.day)
-        if (!appointment || appointment.movable === false || (appointment.draft && appointment.movable !== true) || (!appointment.creationDraft && !["PENDING", "CONFIRMED"].includes(appointment.status ?? "")) || !lane || !card) return
+        if (!appointment || appointment.movable === false || (appointment.draft && appointment.movable !== true) || (!appointment.creationDraft && !canRescheduleAppointment(appointment.status ?? "")) || !lane || !card) return
         const mode = (event.target as HTMLElement).closest('[data-slot="calendar-booking-resize-handle"]') ? "resize" : "move"
         if (mode === "resize" && ((appointment.durationMinutes ?? appointment.endMinute - appointment.startMinute) !== appointment.endMinute - appointment.startMinute || appointment.startMinute < startMinute || appointment.endMinute > endMinute)) return
         if (returnTimer.current !== null) {

@@ -12,6 +12,7 @@ process.env.STRIPE_WEBHOOK_SECRET = "whsec_onboarding_routing"
 process.env.STRIPE_PRO_PRICE_ID = "price_onboarding_routing"
 const vite = await createServer({
   configFile: false,
+  cacheDir: "node_modules/.vite-tests/onboarding-routing",
   appType: "custom",
   resolve: { alias: {
     "@coss/ui/components": new URL("../app/components/ui", import.meta.url).pathname,
@@ -40,9 +41,10 @@ try {
   const originalFindSubscription = prisma.subscription.findFirst
   let businessComplete = true
   let subscriptionComplete = false
+  let onboardingStep: string | null = null
   prisma.member.findFirst = (async () => ({
     organizationId: "onboarding-routing-org",
-    organization: { settings: businessComplete ? { location: "FI", timezone: "Europe/Helsinki" } : null },
+    organization: { settings: businessComplete ? { countryCode: "FI", timezone: "Europe/Helsinki", onboardingStep } : null },
   })) as unknown as typeof prisma.member.findFirst
   prisma.subscription.findFirst = (async () => subscriptionComplete ? { id: "onboarding-subscription" } : null) as typeof prisma.subscription.findFirst
 
@@ -56,7 +58,7 @@ try {
         pattern: "/onboarding/subscription",
       })
       assert.equal(result.data.stepId, "subscription")
-      assert.equal(result.data.step, 2)
+      assert.equal(result.data.step, 4)
     }
 
     await assert.rejects(() => loader({
@@ -86,9 +88,9 @@ try {
         for (const stepId of ["business", "subscription"] as const) {
           const result = await loadStep(stepId)
           assert.equal(result.data.stepId, stepId)
-          assert.equal(result.data.step, stepId === "business" ? 1 : 2)
-          assert.equal(result.data.totalSteps, 2)
-          assert.equal(result.data.nextStep, stepId === "business" ? "subscription" : null)
+          assert.equal(result.data.step, stepId === "business" ? 1 : 4)
+          assert.equal(result.data.totalSteps, 4)
+          assert.equal(result.data.nextStep, stepId === "business" ? "availability" : null)
         }
       }
     } else {
@@ -101,6 +103,14 @@ try {
         error instanceof Response &&
         error.headers.get("Location") === "/onboarding/business?billing=year"
       ))
+      businessComplete = true
+      for (const pending of ["availability", "holidays"]) {
+        onboardingStep = pending
+        await assert.rejects(() => loadStep("subscription"), (error: unknown) => (
+          error instanceof Response && error.headers.get("Location") === `/onboarding/${pending}?billing=year`
+        ))
+      }
+      onboardingStep = null
       subscriptionComplete = true
       await assert.rejects(() => loadStep("business"), (error: unknown) => (
         error instanceof Response && error.headers.get("Location") === "/"

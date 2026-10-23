@@ -18,8 +18,8 @@ export function usePastBookingConfirmation() {
     pending?.(confirmed)
   }
 
-  const confirmPastBooking = (startsAt: string | Date): Promise<boolean> => {
-    if (+new Date(startsAt) >= Date.now()) return Promise.resolve(true)
+  const confirmPastBooking = (...startsAt: (string | Date)[]): Promise<boolean> => {
+    if (startsAt.every((start) => +new Date(start) >= Date.now())) return Promise.resolve(true)
     resolve.current?.(false)
     setOpen(true)
     return new Promise((onResolve) => { resolve.current = onResolve })

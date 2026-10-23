@@ -156,7 +156,7 @@ export function CalendarAgendaContent({ appointments, days, members, now, timeZo
     {isMobile ? content : <ScrollArea
       className="relative min-h-0 flex-1 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-[19px] after:border-l after:bg-(--calendar-chrome) max-md:h-auto max-md:[&>[data-slot=scroll-area-viewport]]:h-auto max-md:[&>[data-slot=scroll-area-viewport]]:overflow-visible! max-md:after:hidden"
       overscrollContain={true}
-      scrollbarClassName="z-20 data-[orientation=vertical]:opacity-100 data-[orientation=vertical]:m-1 data-[orientation=vertical]:w-2.5 data-[orientation=horizontal]:hidden"
+      scrollbarClassName="[&_[data-slot=scroll-area-thumb]]:bg-foreground/15 z-20 data-[orientation=vertical]:opacity-100 data-[orientation=vertical]:m-1 data-[orientation=vertical]:w-2.5 data-[orientation=horizontal]:hidden"
       viewportProps={{
         "aria-label": t("calendarAgenda.label"),
         className: "md:mr-[19px] md:mask-b-from-[calc(100%-min(1.5rem,var(--scroll-area-overflow-y-end,0px)))] [overflow-anchor:none]",

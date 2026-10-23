@@ -29,6 +29,7 @@ export function TeamMemberActionsMenu({ canRevoke, memberId, memberName, trigger
         queryClient.invalidateQueries({ queryKey: trpc.team.count.queryKey() }),
         queryClient.invalidateQueries(trpc.team.getPerson.queryFilter()),
         queryClient.invalidateQueries(trpc.staff.list.queryFilter()),
+        queryClient.invalidateQueries(trpc.resourceLimits.getAll.queryFilter()),
       ])
       setConfirmOpen(false)
       toast.success(t("memberActions.revoked"))

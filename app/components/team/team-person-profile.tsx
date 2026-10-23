@@ -60,7 +60,7 @@ export function TeamPersonProfile({ person, canManage, sideNavigation = false }:
         <TabsPanel className="flex min-h-0 flex-1 flex-col" value="about"><TeamPersonAbout person={person} canManage={canManage} /></TabsPanel>
         <TabsPanel className="flex min-h-0 flex-1 flex-col" value="services">
           <TeamPersonSection header={<SettingsSectionHeader title={t("people.services")} description={t("people.profileServicesDescription")} />}>
-            {services.length ? <ul className="flex flex-col gap-3">{services.map((link) => <IconListItem className="max-sm:gap-3 max-sm:p-3" icon="forms" iconClassName={cn("h-auto w-11 self-stretch max-sm:w-1 max-sm:bg-current max-sm:[&>svg]:hidden", link.service.color && "sm:bg-[color-mix(in_srgb,currentColor_12%,var(--background))]")} iconStyle={link.service.color ? { color: link.service.color } : undefined} key={link.id}>
+            {services.length ? <ul className="flex flex-col gap-3">{services.map((link) => <IconListItem className="max-sm:gap-3 max-sm:p-3" iconClassName={cn("h-auto w-1 self-stretch", link.service.color ? "bg-current" : undefined)} iconStyle={link.service.color ? { color: link.service.color } : undefined} key={link.id}>
               <span className="min-w-0 wrap-anywhere text-balance text-sm font-medium max-sm:text-base">{link.service.name}</span>
               <ServiceListDetails service={{ ...link.service, durationMinutes: link.durationMinutes ?? link.service.durationMinutes, price: link.price ?? link.service.price }} />
             </IconListItem>)}</ul> : person.staff ? <Empty className="min-h-0 w-full">

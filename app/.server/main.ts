@@ -1,3 +1,4 @@
+import { resourceLimitsRouter } from "./routers/resource-limits"
 import { staffRouter } from "./routers/staff"
 import { serviceRouter } from "./routers/services"
 import { locationRouter } from "./routers/locations"
@@ -12,8 +13,11 @@ import { onboardingRouter } from "./routers/onboarding"
 import { organizationsRouter } from "./routers/organizations"
 import { profileRouter } from "./routers/profile"
 import { teamRouter } from "./routers/team"
+import { bookingPageRouter } from "./routers/booking-page"
 
 export const appRouter = createTRPCRouter({
+  resourceLimits: resourceLimitsRouter,
+  bookingPage: bookingPageRouter,
   staff: staffRouter,
   service: serviceRouter,
   location: locationRouter,

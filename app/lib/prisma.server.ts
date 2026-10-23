@@ -1,8 +1,8 @@
 import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "../../generated/prisma/client"
-import { extendPrismaClient } from "prisma-prefixed-ids"
 
 import { generateId } from "~/lib/id"
+import { createIdWriteTransformer } from "~/lib/prisma-ids.server"
 
 const connectionString = process.env.DATABASE_URL
 
@@ -13,10 +13,11 @@ if (!connectionString) {
 const globalForPrisma = globalThis as typeof globalThis & {
   prisma?: PrismaClient
   prismaConstructor?: typeof PrismaClient
+  prismaIdGenerator?: typeof generateId
 }
 
 // A regenerated client can have a new schema while Vite retains the old instance.
-const cachedPrisma = globalForPrisma.prismaConstructor === PrismaClient
+const cachedPrisma = globalForPrisma.prismaConstructor === PrismaClient && globalForPrisma.prismaIdGenerator === generateId
   ? globalForPrisma.prisma
   : undefined
 
@@ -25,23 +26,18 @@ const basePrisma =
     adapter: new PrismaPg(connectionString),
   })
 
-const prefixes: Record<string, string> = {
-  Account: "acct",
-  Invitation: "inv",
-  Member: "mem",
-  Note: "note",
-  Organization: "org",
-  OrganizationSettings: "orgset",
-  Session: "sess",
-  Subscription: "sub",
-  User: "usr",
-  Verification: "ver",
-}
+const withGeneratedIds = createIdWriteTransformer(basePrisma)
 
-export const prisma = cachedPrisma ?? extendPrismaClient(basePrisma, {
-  idGenerator: generateId,
-  prefixes,
-})
+export const prisma = cachedPrisma ?? basePrisma.$extends({
+  name: "generatedIds",
+  query: {
+    $allModels: {
+      $allOperations({ model, operation, args, query }) {
+        return query(withGeneratedIds(model, operation, args) as typeof args)
+      },
+    },
+  },
+}) as PrismaClient
 
 if (process.env.NODE_ENV !== "production") {
   if (globalForPrisma.prisma && globalForPrisma.prisma !== prisma) {
@@ -49,4 +45,5 @@ if (process.env.NODE_ENV !== "production") {
   }
   globalForPrisma.prisma = prisma
   globalForPrisma.prismaConstructor = PrismaClient
+  globalForPrisma.prismaIdGenerator = generateId
 }

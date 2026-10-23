@@ -56,10 +56,10 @@ export function CustomerForm({ customer, close, onPendingChange }: {
         {customer ? <div className="shrink-0 border-b px-6 py-5"><h2 className="text-xl font-semibold">{t("customerPage.edit")}</h2><p className="mt-1 text-sm text-muted-foreground">{t("customerPage.editDescription")}</p></div> : null}
         <ResponsiveSheetPanel className="flex flex-col gap-5" scrollFade={true}>
           {(["firstName", "lastName", "email", "phone"] as const).map((field) => <FormLabel error={form.error(field)} key={field} label={<>{t(`customerPage.${field}`)}{field !== "firstName" ? <Badge className="font-normal" size="sm" variant="secondary">{t("bookingForm.optional")}</Badge> : null}</>}>
-            {field === "phone" ? <PhoneInput country={organization.data?.settings?.location} disabled={form.formState.isSubmitting || organization.isPending} invalid={Boolean(form.error(field))} name={phone.name} onBlur={phone.onBlur} onChange={phone.onChange} ref={phone.ref} value={phone.value} /> : <Input {...form.getInputProps(field)} aria-invalid={Boolean(form.error(field))} autoComplete={field === "firstName" ? "given-name" : field === "lastName" ? "family-name" : "email"} disabled={form.formState.isSubmitting} inputMode={field === "email" ? "email" : "text"} type="text" />}
+            {field === "phone" ? <PhoneInput country={organization.data?.settings?.countryCode} disabled={form.formState.isSubmitting || organization.isPending} invalid={Boolean(form.error(field))} name={phone.name} onBlur={phone.onBlur} onChange={phone.onChange} ref={phone.ref} value={phone.value} /> : <Input {...form.getInputProps(field)} aria-invalid={Boolean(form.error(field))} autoComplete={field === "firstName" ? "given-name" : field === "lastName" ? "family-name" : "email"} disabled={form.formState.isSubmitting} inputMode={field === "email" ? "email" : "text"} type="text" />}
           </FormLabel>)}
         </ResponsiveSheetPanel>
-        <ResponsiveSheetFooter>
+        <ResponsiveSheetFooter className={customer ? "sm:bg-transparent" : undefined}>
           <Button disabled={form.formState.isSubmitting} onClick={() => void close()} type="button" variant="ghost">{t("customerPage.cancel")}</Button>
           <Button disabled={form.formState.isSubmitting} loading={form.formState.isSubmitting} type="submit">{t(customer ? "customerPage.save" : "customerPage.add")}</Button>
         </ResponsiveSheetFooter>

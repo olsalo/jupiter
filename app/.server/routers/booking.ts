@@ -1,11 +1,13 @@
 import type { TRPCRouterRecord } from "@trpc/server"
 import { publicProcedure } from "../trpc"
-import { bookingCodeInput, createBookingInput, pageInput, publicCancelInput, publicRescheduleInput, publicSlotInput } from "~/lib/schemas/appointments"
+import { bookingCodeInput, createBookingInput, pageInput, publicCancelInput, publicRescheduleInput, publicRescheduleSlotsInput, publicSlotInput } from "~/lib/schemas/appointments"
 import { getBookingPage, resolveBookingPage } from "../services/booking-page"
 import { getAvailableSlots } from "../services/availability"
 import { changeAppointment, createAppointment, publicAppointment } from "../services/appointments"
 import { limitBookingLookup, limitPublicBooking } from "../services/booking-rate-limit"
 import { notFound } from "../services/scheduling"
+import { getBookingManagementPage } from "../services/booking-management"
+import { getReschedulePage, getRescheduleSlots } from "../services/booking-reschedule"
 
 const bookingProcedure = publicProcedure.use(async ({ ctx, next, path }) => {
   const started = performance.now()
@@ -43,6 +45,18 @@ export const bookingRouter = {
   getByCode: bookingProcedure.input(bookingCodeInput).query(async ({ ctx, input }) => {
     await bookingIdentity(ctx, input.bookingCode, false)
     return publicAppointment(ctx.prisma, input.bookingCode)
+  }),
+  getManagementPage: bookingProcedure.input(bookingCodeInput).query(async ({ ctx, input }) => {
+    await bookingIdentity(ctx, input.bookingCode, false)
+    return getBookingManagementPage(ctx.prisma, input.bookingCode)
+  }),
+  getReschedulePage: bookingProcedure.input(bookingCodeInput).query(async ({ ctx, input }) => {
+    await bookingIdentity(ctx, input.bookingCode, false)
+    return getReschedulePage(ctx.prisma, input.bookingCode)
+  }),
+  getRescheduleSlots: bookingProcedure.input(publicRescheduleSlotsInput).query(async ({ ctx, input }) => {
+    await bookingIdentity(ctx, input.bookingCode, false)
+    return getRescheduleSlots(ctx.prisma, input)
   }),
   cancel: bookingProcedure.input(publicCancelInput).mutation(async ({ ctx, input }) => {
     const appointment = await bookingIdentity(ctx, input.bookingCode, true)

@@ -81,6 +81,7 @@ export function InviteMemberDialog({ staffMemberId, name = "", email = "", trigg
               await Promise.all([
                 queryClient.invalidateQueries(trpc.team.list.queryFilter()),
                 queryClient.invalidateQueries(trpc.team.count.queryFilter()),
+                queryClient.invalidateQueries(trpc.resourceLimits.getAll.queryFilter()),
                 queryClient.invalidateQueries(trpc.team.getPerson.queryFilter()),
                 queryClient.invalidateQueries(trpc.staff.list.queryFilter()),
               ])
@@ -88,7 +89,10 @@ export function InviteMemberDialog({ staffMemberId, name = "", email = "", trigg
               toast.success(t(result.linked ? "people.accessLinked" : staffMemberId && values.sendEmail ? "people.inviteQueued" : values.sendEmail ? "invite.sent" : "invite.created"))
             } catch (error) {
               const appCode = (error as { data?: { appCode?: string } }).data?.appCode
-              if (appCode && ["alreadyMember", "alreadyInvited", "alreadyLinked", "staffEmailMismatch"].includes(appCode)) formApi.current?.unstable_setCustomError("email", t(appCode === "alreadyLinked" ? "people.alreadyLinked" : appCode === "staffEmailMismatch" ? "people.staffEmailMismatch" : `invite.${appCode}`))
+              if (appCode === "RESOURCE_LIMIT_REACHED") {
+                const limit = (error as { data?: { resourceLimit?: { limit: number } } }).data?.resourceLimit?.limit
+                toast.error(t("common:settings.teamMemberLimitReached", { count: limit }))
+              } else if (appCode && ["alreadyMember", "alreadyInvited", "alreadyLinked", "staffEmailMismatch"].includes(appCode)) formApi.current?.unstable_setCustomError("email", t(appCode === "alreadyLinked" ? "people.alreadyLinked" : appCode === "staffEmailMismatch" ? "people.staffEmailMismatch" : `invite.${appCode}`))
               else toast.error(t("invite.failed"))
               throw error
             }

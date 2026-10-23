@@ -19,6 +19,7 @@ import {
 } from "~/components/ui/tooltip"
 import type { AppNavigationItem } from "~/lib/app-navigation"
 import { cn } from "~/lib/utils"
+import { useMobileMenuNavigation } from "~/lib/mobile-navigation"
 import { useBottomScrollFade } from "~/lib/use-bottom-scroll-fade"
 import { useRouteScrollRestoration } from "~/lib/use-route-scroll-restoration"
 
@@ -52,6 +53,7 @@ export function FloatingLayout({
   user,
 }: FloatingLayoutProps) {
   const { t } = useTranslation()
+  const mobileMenuNavigation = useMobileMenuNavigation()
   const scrollViewportRef = useRef<HTMLDivElement>(null)
   useRouteScrollRestoration(scrollViewportRef, routePathname)
   const bottomFadeRef = useRef<HTMLDivElement>(null)
@@ -144,6 +146,7 @@ export function FloatingLayout({
           aria-hidden="true"
           className={cn(
             "pointer-events-none fixed inset-x-0 bottom-0 z-10 h-[calc(112px+env(safe-area-inset-bottom))] bg-linear-to-t from-background/75 from-50% to-transparent will-change-opacity md:h-8",
+            routePathname === "/booking-page" && "md:h-14 from-background from-20%",
             isViewportPage && "hidden",
           )}
           ref={bottomFadeRef}
@@ -172,6 +175,7 @@ export function FloatingLayout({
                 <TooltipTrigger
                   render={
                     <NavLink
+                      {...mobileMenuNavigation}
                       aria-label={t(item.labelKey)}
                       className={({ isActive }) =>
                         cn(

@@ -36,7 +36,7 @@ export default function PersonSheet({ params }: Route.ComponentProps) {
   const query = useQuery({ ...trpc.team.getPerson.queryOptions({ id: params.personId }), initialData: () => queryClient.getQueryData(trpc.team.list.queryKey())?.people.find((person) => person.id === params.personId), initialDataUpdatedAt: () => queryClient.getQueryState(trpc.team.list.queryKey())?.dataUpdatedAt })
   const loading = useModalQueryLoading(query, params.personId)
   return (
-    <TeamPersonSheet pending={pending} profile={loading || (Boolean(query.data) && (!editing || canManage))} title={query.data?.name ?? t(editing ? "people.edit" : "people.details")} description={t(editing ? "people.editDescription" : "people.detailsDescription")}>
+    <TeamPersonSheet basePath="/team-original" pending={pending} profile={loading || (Boolean(query.data) && (!editing || canManage))} title={query.data?.name ?? t(editing ? "people.edit" : "people.details")} description={t(editing ? "people.editDescription" : "people.detailsDescription")}>
       {(close) => loading ? <OverlayLoading data-slot="person-loading" label={t("people.loading")} /> : query.isError && !query.data ? <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("people.loadFailed")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription></Alert><Button onClick={() => void query.refetch()} type="button" variant="outline">{t("retry")}</Button></ResponsiveSheetPanel> : <Outlet context={{ person: query.data ?? null, canManage, close, onPendingChange: setPending } satisfies TeamPersonContext} />}
     </TeamPersonSheet>
   )

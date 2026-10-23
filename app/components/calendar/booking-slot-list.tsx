@@ -26,7 +26,7 @@ export const bookingSlotKey = (slot: Pick<BookingSlot, "startsAt" | "staffMember
 export function BookingSlotList({ days, members, locations, selection, currentSlotKey, invalid, disabled = false, format, onSelect, showDateHeadings = true, timeZone = defaultTimeZone, formatPreference = "eu" }: {
   days: { date: string; slots: BookingSlot[] }[]
   members: BookingMember[]
-  locations: { id: string; name: string }[]
+  locations: { id: string; name: string | null }[]
   selection: string
   currentSlotKey?: string
   invalid: boolean
@@ -55,8 +55,8 @@ export function BookingSlotList({ days, members, locations, selection, currentSl
         const startTime = format(slot.startsAt, false)
         const endTime = format(slot.endsAt, false)
         period.slots.push({
-          key: bookingSlotKey(slot), member, locationName: location?.name,
-          label: `${member.name} · ${startTime} – ${endTime}${location ? ` · ${location.name}` : ""}`,
+          key: bookingSlotKey(slot), member, locationName: location?.name ?? undefined,
+          label: `${member.name} · ${startTime} – ${endTime}${location?.name ? ` · ${location.name}` : ""}`,
           time: `${startTime} – ${endTime}`,
         })
       }

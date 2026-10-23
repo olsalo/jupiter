@@ -5,6 +5,7 @@ import {
   Link,
   NavLink,
   Outlet,
+  redirect,
   href,
   useLocation,
   useMatches,
@@ -35,8 +36,10 @@ import { getRoutePermissions, hasOrganizationPermission } from "~/lib/auth/permi
 import { useCurrentOrganizationRole } from "~/lib/use-organization-access"
 import { appNavigationItems } from "~/lib/app-navigation"
 import { cn } from "~/lib/utils"
-import { desktopViewportQuery } from "~/lib/mobile-navigation"
+import { desktopViewportQuery, useMobileMenuNavigation } from "~/lib/mobile-navigation"
 import { calendarReferenceQueryOptions } from "~/lib/calendar/query-options"
+import { createTRPC } from "~/lib/trpc/server"
+import { getQueryClient } from "~/lib/trpc/client"
 import { useTRPC } from "~/lib/trpc/client"
 import { useBottomScrollFade } from "~/lib/use-bottom-scroll-fade"
 import { useRouteScrollRestoration } from "~/lib/use-route-scroll-restoration"
@@ -52,7 +55,10 @@ export const middleware: Route.MiddlewareFunction[] = [
   requireRoutePermissionsMiddleware,
 ]
 
-export function loader() {
+export async function loader(args: Route.LoaderArgs) {
+  const trpc = await createTRPC(args)
+  const status = await getQueryClient().query(trpc.onboarding.status.queryOptions())
+  if (!status.setupComplete || (status.billingEnabled && !status.subscriptionComplete && !status.demoOnboardingPaymentBypassEnabled)) throw redirect("/onboarding")
   return null
 }
 
@@ -102,6 +108,7 @@ export default function Layout() {
   )
   const workspaceMatch = matches.find((match) => (match.handle as { workspace?: boolean } | undefined)?.workspace)
   const isMobile = useMediaQuery("max-768px")
+  const mobileMenuNavigation = useMobileMenuNavigation()
   const pageLayout = (workspaceMatch?.handle as { pageLayout?: PageLayoutPreference } | undefined)?.pageLayout ?? "scroll"
   const isViewportPage = resolvePageLayout(pageLayout, isMobile) === "viewport"
   const isOverlayRoute = isNoteModal || matches.some((match) => (match.handle as { overlay?: boolean } | undefined)?.overlay)
@@ -320,6 +327,7 @@ export default function Layout() {
             aria-hidden="true"
             className={cn(
               "pointer-events-none absolute inset-x-0 bottom-0 z-10 h-8 bg-linear-to-t from-background/75 from-50% to-transparent will-change-opacity",
+              pagePathname === "/booking-page" && "h-14 from-background from-20%",
               isViewportPage && "hidden",
             )}
             ref={bottomBlurRef}
@@ -330,6 +338,7 @@ export default function Layout() {
       <nav className="grid h-[calc(4rem+env(safe-area-inset-bottom))] shrink-0 auto-cols-fr grid-flow-col place-items-center overflow-hidden border-t border-border bg-background px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 md:hidden">
         {menuItems.map((item) => (
           <NavLink
+            {...mobileMenuNavigation}
             aria-label={t(item.labelKey)}
             className={({ isActive }) =>
               cn(

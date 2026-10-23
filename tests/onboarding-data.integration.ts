@@ -11,6 +11,7 @@ process.env.LOCATION_API = "onboarding-test-key"
 const originalFetch = globalThis.fetch
 const vite = await createServer({
   configFile: false,
+  cacheDir: "node_modules/.vite-tests/onboarding-data",
   appType: "custom",
   resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } },
   server: { middlewareMode: true, hmr: false, ws: false, watch: null },
@@ -23,15 +24,16 @@ try {
   type Context = Parameters<typeof router.createCaller>[0]
   let membership: {
     organizationId: string
+    role: string
     organization: {
       name: string
-      settings: { currency: string, location: string, timezone: string } | null
+      settings: { currency: string, countryCode: string, timezone: string } | null
     }
   } | null = null
   let activeSubscription: { id: string } | null = null
   let savedCurrency: string | undefined
   let savedBusinessName: string | undefined
-  let existingSettings: { location: string, timezone: string } | null = null
+  let existingSettings: { countryCode: string, timezone: string } | null = null
   const context = {
     headers: new Headers(),
     user: { id: "onboarding-user", name: "Matti Meikäläinen" },
@@ -41,6 +43,10 @@ try {
     prisma: {
       organizationSettings: { findUnique: async () => existingSettings },
       $transaction: async (callback: (transaction: {
+        $queryRaw: () => Promise<unknown[]>
+        location: { findFirst: () => Promise<{ id: string }> }
+        member: { findFirstOrThrow: () => Promise<{ id: string }> }
+        staffMember: { upsert: () => Promise<{ id: string }> }
         user: { update: () => Promise<void> }
         organization: {
           update: (args: { data: { name: string }, where: { id: string } }) => Promise<void>
@@ -49,6 +55,10 @@ try {
           upsert: (args: { create: { currency: string }, update: { currency: string } }) => Promise<void>
         }
       }) => Promise<void>) => callback({
+        $queryRaw: async () => [],
+        location: { findFirst: async () => ({ id: "onboarding-location" }) },
+        member: { findFirstOrThrow: async () => ({ id: "onboarding-member" }) },
+        staffMember: { upsert: async () => ({ id: "onboarding-staff" }) },
         user: { update: async () => undefined },
         organization: {
           update: async ({ data, where }) => {
@@ -85,6 +95,9 @@ try {
   assert.deepEqual(await caller.status(), {
     billingEnabled: demoBypassEnabled,
     businessComplete: false,
+    availabilityComplete: false,
+    holidaysComplete: false,
+    setupComplete: false,
     demoOnboardingPaymentBypassEnabled: demoBypassEnabled,
     subscriptionComplete: false,
   })
@@ -119,9 +132,10 @@ try {
 
   membership = {
     organizationId: "onboarding-org",
+    role: "owner",
     organization: {
       name: "Yritys Oy",
-      settings: { currency: "SEK", location: "SE", timezone: "Europe/Stockholm" },
+      settings: { currency: "SEK", countryCode: "SE", timezone: "Europe/Stockholm" },
     },
   }
   assert.deepEqual(await caller.business(), {
@@ -147,7 +161,7 @@ try {
     timezone: "Europe/Stockholm",
   })
   assert.equal(savedCurrency, "SEK")
-  existingSettings = { location: "SE", timezone: "Europe/Stockholm" }
+  existingSettings = { countryCode: "SE", timezone: "Europe/Stockholm" }
   const updatedDetails = {
     businessName: "Uusi Yritys Oy",
     currency: "eur",

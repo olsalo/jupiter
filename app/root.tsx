@@ -1,3 +1,4 @@
+import { isSupportedLocale } from "~/lib/locale"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -16,6 +17,7 @@ import {
 import type { Route } from "./+types/root"
 import {
   getLocale,
+  getInstance,
   i18nextMiddleware,
 } from "./middleware/i18next"
 import {
@@ -69,8 +71,9 @@ export const links: Route.LinksFunction = () => [
 ]
 
 export async function loader({ context, request }: Route.LoaderArgs) {
-  const locale = getLocale(context)
   const user = context.get(userContext)
+  const locale = isSupportedLocale(user?.locale) ? user.locale : getLocale(context)
+  await getInstance(context).changeLanguage(locale)
   const org = context.get(organizationContext)
   const membership = context.get(membershipContext)
   const [organizationSettings, memberships, billingNotification, hasActiveSubscription] = await Promise.all([
@@ -94,7 +97,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       ? getOrganizationBillingNotification({ organizationId: org.id })
       : null,
     org ? hasActiveOrganizationSubscription({ organizationId: org.id }) : false,
-    user && user.locale !== locale
+    user && !isSupportedLocale(user.locale)
       ? syncUserLocale({ locale, userId: user.id })
       : undefined,
   ])
@@ -170,7 +173,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className={import.meta.env.DEV ? undefined : "select-none"}>
+      <body
+        className={import.meta.env.DEV ? undefined : "select-none"}
+        onDragStartCapture={(event) => {
+          if (event.target instanceof Element && event.target.closest("a[href]")) {
+            event.preventDefault()
+          }
+        }}
+      >
         {children}
         <ScrollRestoration />
         <Scripts />

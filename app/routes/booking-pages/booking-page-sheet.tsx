@@ -4,5 +4,5 @@ import { RoutePlaceholderSheet } from "~/components/placeholders/route-placehold
 export const handle = { overlay: true }
 
 export default function Details() {
-  return <RoutePlaceholderSheet titleKey="bookingPage" returnTo="/booking-pages"><Outlet /></RoutePlaceholderSheet>
+  return <RoutePlaceholderSheet titleKey="bookingPage" returnTo="/booking-page"><Outlet /></RoutePlaceholderSheet>
 }

@@ -45,6 +45,7 @@ export const iconMap = {
   // Actions
   add: TablerIcons.IconPlus,
   edit: TablerIcons.IconPencil,
+  save: TablerIcons.IconDeviceFloppy,
   delete: TablerIcons.IconTrash,
   search: TablerIcons.IconSearch,
   settings: TablerIcons.IconSettings,

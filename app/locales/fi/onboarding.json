@@ -56,5 +56,13 @@
     "organizationNameTaken": "Jo käytössä",
     "subscription": "Maksusivun avaus epäonnistui. Yritä uudelleen",
     "billingNotConfigured": "Tilauksen tekeminen ei vielä onnistu. Yritä myöhemmin uudelleen"
+  },
+  "availability": {
+    "title": "Valitse tavalliset aukioloajat",
+    "description": "Tiimisi käyttää näitä aikoja, ellei henkilölle ole asetettu omaa aikataulua"
+  },
+  "holidays": {
+    "title": "Vahvista pyhäpäivät",
+    "description": "Tarkista ehdotetut pyhäpäivät ja muokkaa yrityksesi aukioloa"
   }
 }
