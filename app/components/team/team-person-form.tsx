@@ -18,7 +18,6 @@ import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
 import { Separator } from "~/components/ui/separator"
-import { Spinner } from "~/components/ui/spinner"
 import { Tabs, TabsPanel } from "~/components/ui/tabs"
 import { Textarea } from "~/components/ui/textarea"
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip"
@@ -93,12 +92,11 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
   const updateOwn = useMutation(trpc.profile.updateTeamProfile.mutationOptions())
   const resetOwnHours = useMutation(trpc.profile.resetTeamWorkingHours.mutationOptions())
   const update = useMutation(trpc.team.updatePerson.mutationOptions())
-  const services = useQuery(trpc.service.list.queryOptions())
-  const locations = useQuery(trpc.location.list.queryOptions())
+  const editing = Boolean(person)
+  const services = useQuery({ ...trpc.service.list.queryOptions(), enabled: !selfSettings && (!editing || editTab === "services") })
   const organization = useQuery(trpc.organizations.general.queryOptions())
   const serviceItems = (services.data ?? []).filter((service) => service.isActive || person?.staff?.staffServices.some((link) => link.serviceId === service.id))
   const emptyServices = !selfSettings && services.isSuccess && serviceItems.length === 0
-  const editing = Boolean(person)
   const workingHours = useQuery({ ...trpc.availability.getRules.queryOptions({ staffMemberId: person?.staff?.id ?? "new" }), enabled: Boolean(person?.staff) })
   const businessHours = useBusinessWorkingHours()
   const personalHours = workingHours.data?.filter((rule) => rule.locationId === null)
@@ -235,8 +233,9 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
         const hasEdits = profileSnapshot(values) !== initialProfile.current || (
           hoursInitialized.current && JSON.stringify(values.workingHours) !== initialHours.current
         ) || (breaksInitialized.current && breaksSnapshot(values.breaks ?? []) !== initialBreaks.current)
-        const canSubmit = !services.isLoading && !locations.isLoading && !((editTab === "availability" || editTab === "breaks") && (hoursPending || hoursError)) && !(editTab === "breaks" && Boolean(person?.staff) && (breaksQuery.isPending || breaksQuery.isError))
-        const viewLoading = services.isLoading || locations.isLoading || ((editTab === "availability" || editTab === "breaks") && hoursPending) || (editTab === "breaks" && Boolean(person?.staff) && breaksQuery.isPending)
+        const canSubmit = !services.isLoading && !((editTab === "availability" || editTab === "breaks") && (hoursPending || hoursError)) && !(editTab === "breaks" && Boolean(person?.staff) && (breaksQuery.isPending || breaksQuery.isError))
+        const viewLoading = services.isLoading || ((editTab === "availability" || editTab === "breaks") && hoursPending) || (editTab === "breaks" && Boolean(person?.staff) && breaksQuery.isPending)
+        const servicesLoading = !selfSettings && services.isLoading && (!editing || editTab === "services")
         const panelLoading = editing && !selfSettings && ((editTab === "availability" || editTab === "breaks") && hoursPending || editTab === "breaks" && Boolean(person?.staff) && breaksQuery.isPending)
         const fullHeightPanel = fullHeightServices || panelLoading
         const submitting = form.formState.isSubmitting || update.isPending || updateOwn.isPending || resetOwnHours.isPending
@@ -244,7 +243,9 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
           {selfSettings ? <SettingsFormStateObserver isDirty={hasEdits} isSubmitting={submitting} canSubmit={canSubmit} isLoading={viewLoading} onChange={onSettingsFormStateChange} /> : null}
           <div className={editTab === "time-off" || (editTab === "access" && !selfSettings) ? "hidden" : "contents"}>
           {editing && !selfSettings && (editTab === "profile" || editTab === "services" || editTab === "availability" || editTab === "breaks") ? <div className="shrink-0 px-6 pt-6 pb-5"><SettingsSectionHeader title={t(editTab === "profile" ? "people.contact" : editTab === "services" ? "people.services" : editTab === "availability" ? "people.availability" : "people.breaks")} description={t(editTab === "profile" ? "people.contactSettingsDescription" : editTab === "services" ? "people.profileServicesDescription" : editTab === "availability" ? "people.editHoursDescription" : "people.breaksDescription")} /></div> : null}
-          <Panel {...(!selfSettings ? { scrollable: !fullHeightPanel } : {})} className={selfSettings ? "flex min-h-0 flex-1 flex-col" : fullHeightPanel ? "flex min-h-0 flex-1 flex-col overflow-hidden p-0!" : editing ? "flex min-h-full flex-1 flex-col p-0!" : "flex flex-col gap-5"}>
+          {servicesLoading ? <ResponsiveSheetPanel className="relative flex min-h-0 flex-1" scrollable={false}>
+            <TeamPanelLoading label={t("people.loadingServices")} />
+          </ResponsiveSheetPanel> : <Panel {...(!selfSettings ? { scrollable: !fullHeightPanel } : {})} className={selfSettings ? "flex min-h-0 flex-1 flex-col" : fullHeightPanel ? "flex min-h-0 flex-1 flex-col overflow-hidden p-0!" : editing ? "flex min-h-full flex-1 flex-col p-0!" : "flex flex-col gap-5"}>
             <PersonFormSection settings={selfSettings} editing={editing} selectedTab={editTab} tab={selfSettings ? "general" : "profile"}>
             <FormLabel label={t("name")} description={selfSettings ? t("people.selfNameDescription") : undefined} error={form.error("name")}><Input {...form.getInputProps("name")} aria-invalid={Boolean(form.error("name"))} autoComplete="name" placeholder={t("invite.namePlaceholder")} type="text" /></FormLabel>
             <div className="grid gap-5 sm:grid-cols-2">
@@ -291,10 +292,10 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
             {!selfSettings ? <PersonFormSection settings={false} editing={editing} selectedTab={editTab} tab="services">
             {bookable.value || person?.staff ? <>
               <FormLabel className={editing ? "min-h-0 flex-1 items-stretch" : undefined} label={t("people.services")} labelGroupClassName={editing ? "sr-only" : undefined} description={editing ? undefined : t("people.servicesDescription")} error={form.error("serviceIds")} errorPlacement="below">
-                {services.isLoading ? editing ? <div className="relative min-h-0 flex-1"><TeamPanelLoading label={t("people.loadingServices")} /></div> : <div className="flex min-h-48 items-center justify-center"><Spinner aria-label={t("people.loadingServices")} /></div> : <ServiceSelection className={editing ? undefined : "h-80 flex-none"} label={t("people.services")} services={serviceItems} value={serviceIds.value} onChange={serviceIds.onChange} onBlur={serviceIds.onBlur} inputRef={serviceIds.ref} disabled={submitting || services.isError} invalid={Boolean(form.error("serviceIds"))} />}
+                <ServiceSelection className={editing ? undefined : "h-80 flex-none"} label={t("people.services")} services={serviceItems} value={serviceIds.value} onChange={serviceIds.onChange} onBlur={serviceIds.onBlur} inputRef={serviceIds.ref} disabled={submitting || services.isError} invalid={Boolean(form.error("serviceIds"))} />
                 {emptyServices ? <Button className="w-fit" onClick={() => navigate("/services/new")} type="button" variant="outline"><Icon aria-hidden={true} name="add" size={16} />{t("people.addService")}</Button> : null}
               </FormLabel>
-              {(services.isError || locations.isError) ? <Alert variant="error"><AlertTitle>{t("people.optionsError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription></Alert> : null}
+              {(services.isError) ? <Alert variant="error"><AlertTitle>{t("people.optionsError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription></Alert> : null}
               {!editing ? <FormLabel label={t("people.bio")} description={t("people.bioDescription")} error={form.error("bio")}><Textarea {...form.getInputProps("bio")} placeholder={t("people.bioPlaceholder")} aria-invalid={Boolean(form.error("bio"))} /></FormLabel> : null}
             </> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
             </PersonFormSection> : null}
@@ -333,11 +334,11 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
               </> : null}
             </> : null}
             {useError ? <Alert id={useErrorId} variant="error"><AlertDescription>{useError}</AlertDescription></Alert> : null}
-          </Panel>
+          </Panel>}
           </div>
-          {!selfSettings && !viewLoading ? <Footer className={editing ? "shrink-0 bg-transparent sm:bg-transparent" : "shrink-0 bg-muted/70"}>
+          {!selfSettings ? <Footer className="shrink-0">
             <Button disabled={submitting} onClick={selfSettings ? () => formApi.current?.resetForm() : person ? undefined : () => close()} render={person && !selfSettings ? <Link to={{ pathname: "..", search: `?profileTab=${editTab === "profile" || editTab === "access" ? "about" : editTab}` }} relative="path" replace={true} state={location.state} onClick={(event) => { if (submitting) event.preventDefault() }} /> : undefined} type="button" variant="ghost">{t("cancel")}</Button>
-            <Button disabled={(editing && !hasEdits) || submitting || services.isLoading || locations.isLoading || ((editTab === "availability" || editTab === "breaks") && (hoursPending || hoursError)) || (editTab === "breaks" && Boolean(person?.staff) && (breaksQuery.isPending || breaksQuery.isError))} loading={submitting} type="submit">{t(submitting ? "people.saving" : person ? "people.save" : "people.add")}</Button>
+            <Button disabled={submitting} loading={submitting} type="submit">{t(submitting ? "people.saving" : person ? "people.save" : "people.add")}</Button>
           </Footer> : null}
         </>
       }}

@@ -6,9 +6,10 @@ import { ProfileSettingsTabs } from "~/components/profile-settings-tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import type { TeamPerson } from "~/components/team/team-types"
 
-export function ProfileSettingsHeader({ disabled, person }: {
+export function ProfileSettingsHeader({ disabled, person, bookable = isBookableStaff(person?.staff) }: {
   disabled: boolean
   person?: Pick<TeamPerson, "name" | "image"> & Partial<Pick<TeamPerson, "staff">>
+  bookable?: boolean
 }) {
   const { t } = useTranslation("common")
   const initials = person?.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()
@@ -25,7 +26,7 @@ export function ProfileSettingsHeader({ disabled, person }: {
           <p className="text-sm text-muted-foreground">{t("settings.profileDescription")}</p>
         </div>
       </div>
-      <ProfileSettingsTabs bookable={person?.staff === undefined || isBookableStaff(person.staff)} disabled={disabled} />
+      <ProfileSettingsTabs bookable={bookable} disabled={disabled} />
     </header>
   )
 }

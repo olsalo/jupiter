@@ -1,9 +1,8 @@
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useRouteLoaderData } from "react-router"
 
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 import { AppForm } from "~/components/app-form"
 import FormLabel from "~/components/form-label"
 import { Alert, AlertAction, AlertTitle } from "~/components/ui/alert"
@@ -20,7 +19,7 @@ export function CustomerNotes({ customerId, onPendingChange }: { customerId: str
   const { t } = useTranslation()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const root = useRouteLoaderData<typeof rootLoader>("root")
+  const root = useAppContext()
   const query = useInfiniteQuery(trpc.customer.listNotes.infiniteQueryOptions({ id: customerId, limit: 20 }, { getNextPageParam: (page) => page.nextCursor }))
   const add = useMutation(trpc.customer.addNote.mutationOptions())
   const update = useMutation(trpc.customer.updateNote.mutationOptions())

@@ -27,7 +27,7 @@ export async function getIpLocationFromHeaders(
 }
 
 export async function getIpLocation(ip: string | null): Promise<IpLocation | null> {
-  const apiKey = process.env.LOCATION_API
+  const apiKey = process.env.LOCATION_API_KEY
 
   if (!apiKey || !ip) {
     return null

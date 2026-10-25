@@ -4,10 +4,7 @@ import type { FormApi } from "@rvf/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { ComponentProps, ReactNode } from "react"
 import { useTranslation } from "react-i18next"
-import {
-  useRevalidator,
-  useRouteLoaderData,
-} from "react-router"
+import { useRevalidator } from "react-router"
 
 import { RouteInformationArchitecture } from "~/components/information-architecture/route-information-architecture"
 import { CommunicationsSettings, communicationsSettingsFormId } from "~/components/communications-settings"
@@ -98,7 +95,7 @@ import { useTRPC } from "~/lib/trpc/client"
 import { toast } from "~/lib/toast"
 import { hasOrganizationPermission, isBookableStaff } from "~/lib/auth/permissions"
 import { useCurrentOrganizationRole } from "~/lib/use-organization-access"
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 
 type GeneralFormState = AppFormState
 
@@ -134,7 +131,7 @@ export function SettingsModal({
 }) {
   const { t } = useTranslation()
   const isMobile = useMediaQuery("max-640px")
-  const rootData = useRouteLoaderData<typeof rootLoader>("root")
+  const rootData = useAppContext()
   const organizationRole = useCurrentOrganizationRole()
   const visibleSettingsItems = getVisibleSettingsItems(organizationRole)
   const [open, setOpen] = useState(false)
@@ -435,7 +432,7 @@ export function SettingsModal({
             className="flex min-h-full flex-1 flex-col p-0"
             scrollbarClassName="hidden"
             stickyHeader={activeItemId === "profile" ? (
-              <ProfileSettingsHeader disabled={teamPending || profileFormState.isSubmitting} person={profilePerson.data ?? (rootData?.user ? { name: rootData.user.name, image: rootData.user.image ?? null } : undefined)} />
+              <ProfileSettingsHeader bookable={isBookableStaff(profilePerson.data ? profilePerson.data.staff : rootData?.staffProfile)} disabled={teamPending || profileFormState.isSubmitting} person={profilePerson.data ?? (rootData?.user ? { name: rootData.user.name, image: rootData.user.image ?? null } : undefined)} />
             ) : activeItemId === "business" ? (
               <BusinessSettingsHeader disabled={businessFormState.isSubmitting} name={rootData?.org?.name} />
             ) : (
@@ -531,7 +528,7 @@ function ResponsiveSettingsPopup({
   if (isMobile) {
     return (
       <DrawerPopup
-        className="grid h-[min(90dvh,44rem)] w-full grid-cols-1 grid-rows-[auto_minmax(0,1fr)] p-0 has-data-[slot=drawer-bar]:pt-0"
+        className="grid h-(--app-drawer-height) w-full grid-cols-1 grid-rows-[auto_minmax(0,1fr)] p-0 has-data-[slot=drawer-bar]:pt-0"
         showBar={true}
       >
         {children}
@@ -576,7 +573,7 @@ function BillingSettingsContent({
   const { i18n, t } = useTranslation()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const rootData = useRouteLoaderData<typeof rootLoader>("root")
+  const rootData = useAppContext()
   const [pendingAction, setPendingAction] = useState<
     | "billing-interval"
     | "cancel"

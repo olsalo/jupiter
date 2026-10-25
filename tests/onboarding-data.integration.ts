@@ -7,7 +7,7 @@ process.env.NODE_ENV = "test"
 const demoBypassEnabled = process.argv.includes("--demo")
 process.env.DEMO_BYPASS_ONBOARDING_PAYMENT = String(demoBypassEnabled)
 process.env.STRIPE_SECRET_KEY = ""
-process.env.LOCATION_API = "onboarding-test-key"
+process.env.LOCATION_API_KEY = "onboarding-test-key"
 const originalFetch = globalThis.fetch
 const vite = await createServer({
   configFile: false,

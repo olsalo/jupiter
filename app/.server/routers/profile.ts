@@ -12,8 +12,32 @@ import { z } from "~/lib/zod"
 import { localeCookie, themeCookie, formatPreferenceCookie } from "~/lib/cookies.server"
 import { syncUserLocale } from "~/lib/locale.server"
 import { schedulingLock } from "../services/scheduling"
+import { getOrganizationBillingNotification } from "~/lib/auth/server"
+import { hasOwnerRole } from "~/lib/utils"
 
 export const profileRouter = {
+  getAppContext: protectedProcedure.query(async ({ ctx }) => {
+    const memberships = await ctx.prisma.member.findMany({
+      select: { role: true, organization: { select: { id: true, name: true } } },
+      where: { userId: ctx.user.id },
+      orderBy: { organization: { name: "asc" } },
+    })
+    const activeMembership = memberships.find(({ organization }) => organization.id === ctx.organizationId)
+    const [settings, billingNotification] = await Promise.all([
+      activeMembership
+        ? ctx.prisma.organizationSettings.findUnique({ select: { timezone: true }, where: { organizationId: activeMembership.organization.id } })
+        : null,
+      activeMembership && hasOwnerRole(activeMembership.role)
+        ? getOrganizationBillingNotification({ organizationId: activeMembership.organization.id })
+        : null,
+    ])
+
+    return {
+      organizations: memberships.map(({ organization, role }) => ({ ...organization, role })),
+      organizationTimezone: settings?.timezone ?? "Europe/Helsinki",
+      billingNotification,
+    }
+  }),
   getTeamProfile: organizationProcedure.query(async ({ ctx }) => {
     const person = await personData(ctx.prisma, ctx.organizationId, ctx.member.id)
     return { ...person, name: person.member?.user.name || person.name, email: person.member!.user.email }

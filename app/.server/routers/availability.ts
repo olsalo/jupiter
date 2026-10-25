@@ -62,16 +62,18 @@ export const availabilityRouter = {
     return { effectiveFrom: input.effectiveFrom }
   })),
   calendarSchedule: permissionProcedure({ appointments: ["read"] }).input(rangeInput).query(async ({ ctx, input }) => {
-    const rules = await ctx.prisma.availabilityRule.findMany({
-      where: {
-        organizationId: ctx.organizationId,
-        OR: [{ staffMemberId: null }, { staffMember: { isActive: true, acceptsAppointments: true } }],
-      },
-      select: { staffMemberId: true, locationId: true, isBreak: true, dayOfWeek: true, startMinute: true, endMinute: true, timezone: true, validFrom: true, validUntil: true, isActive: true },
-    })
-    const extraAvailability = await ctx.prisma.availabilityOverride.findMany({ where: { organizationId: ctx.organizationId, isAvailable: true, startsAt: { lt: input.to }, endsAt: { gt: input.from } } })
-    const blocked = await getBlockedTimeInRange(ctx.prisma, ctx.organizationId, input)
-    const settings = await ctx.prisma.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } })
+    const [rules, extraAvailability, blocked] = await Promise.all([
+      ctx.prisma.availabilityRule.findMany({
+        where: {
+          organizationId: ctx.organizationId,
+          OR: [{ staffMemberId: null }, { staffMember: { isActive: true, acceptsAppointments: true } }],
+        },
+        select: { staffMemberId: true, locationId: true, isBreak: true, dayOfWeek: true, startMinute: true, endMinute: true, timezone: true, validFrom: true, validUntil: true, isActive: true },
+      }),
+      ctx.prisma.availabilityOverride.findMany({ where: { organizationId: ctx.organizationId, isAvailable: true, startsAt: { lt: input.to }, endsAt: { gt: input.from } } }),
+      getBlockedTimeInRange(ctx.prisma, ctx.organizationId, input),
+    ])
+    const settings = ctx.organization.settings
     const holidays = businessHolidayWindows(settings?.businessHolidays, input.from, input.to, settings?.timezone ?? "Europe/Helsinki")
     const holidayLabels = (ctx.locale === "fi" ? finnish : english).businessSchedule.defaults
     return [...holidays.map((holiday) => ({

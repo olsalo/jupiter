@@ -1,9 +1,6 @@
 import type { EmailLocale } from "~/lib/email-templates/types"
-import { isSupportedLocale } from "~/lib/locale"
 import { Resend } from "resend"
 
-import { fallbackLanguage } from "~/locales"
-import { localeCookie } from "~/lib/cookies.server"
 import {
   createOtpEmailTemplate,
   type OtpEmailType,
@@ -90,52 +87,6 @@ export async function sendOtpEmail({ email, locale, otp, type }: OtpEmailOptions
     text: template.text,
     to: email,
   })
-}
-
-export async function getEmailLocale(request?: Request | Headers): Promise<EmailLocale> {
-  const headers = request instanceof Headers ? request : request?.headers
-  if (headers) {
-    // Resolve the authenticated account, never an account guessed from the recipient
-    const { auth } = await import("~/lib/auth/server")
-    const session = await auth.api.getSession({ headers })
-    if (isSupportedLocale(session?.user.locale)) return session.user.locale
-  }
-
-  const cookieLocale = await localeCookie.parse(
-    headers?.get("Cookie") ?? "",
-  )
-
-  if (isSupportedLocale(cookieLocale)) {
-    return cookieLocale
-  }
-
-  const acceptedLocale = headers?.get("Accept-Language")
-
-  if (acceptedLocale) {
-    const language = acceptedLocale
-      .split(",")
-      .map((part, index) => {
-        const [tag, ...parameters] = part.trim().split(";")
-        const qualityParameter = parameters.find((parameter) =>
-          parameter.trim().startsWith("q="),
-        )
-
-        return {
-          index,
-          language: tag?.split("-")[0]?.toLowerCase(),
-          quality: qualityParameter ? Number(qualityParameter.split("=")[1]) : 1,
-        }
-      })
-      .sort((left, right) => right.quality - left.quality || left.index - right.index)
-      .map(({ language }) => language)
-      .find(isSupportedLocale)
-
-    if (language) {
-      return language
-    }
-  }
-
-  return fallbackLanguage
 }
 
 function formatRecipients(recipients: string | string[]) {

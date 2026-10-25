@@ -5,7 +5,7 @@ import { useRevalidator, useRouteLoaderData } from "react-router"
 import type { loader as rootLoader } from "~/root"
 import Icon from "~/components/icons"
 import { Tabs, TabsList, TabsTab } from "~/components/ui/tabs"
-import { isTheme, type Theme } from "~/lib/theme"
+import { changeThemeWithTransition, isTheme, type Theme } from "~/lib/theme"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 import { useBackgroundSetting } from "~/lib/use-background-setting"
@@ -28,10 +28,12 @@ export function ThemeSwitch() {
           return
         }
 
-        void theme.set(value, async () => {
-          await mutation.mutateAsync({ theme: value })
-          await revalidator.revalidate()
-        }, () => toast.error(t("settings.themeSaveError")))
+        changeThemeWithTransition(() => {
+          void theme.set(value, async () => {
+            await mutation.mutateAsync({ theme: value })
+            await revalidator.revalidate()
+          }, () => toast.error(t("settings.themeSaveError")))
+        })
       }}
       value={theme.value}
     >

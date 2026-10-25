@@ -2,7 +2,7 @@ import { PageHeading, type PageHeadingProps } from "~/components/page-heading"
 import { cn } from "~/lib/utils"
 
 export function RouteHeader({ className, ...props }: PageHeadingProps) {
-  const isFloatingLayout = import.meta.env.VITE_APP_LAYOUT_STYLE === "floating"
+  const isFloatingLayout = import.meta.env.APP_LAYOUT_STYLE === "floating"
 
   return <PageHeading
     showBillingNotification={true}

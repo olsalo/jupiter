@@ -70,7 +70,7 @@ function CalendarBookingOverlay({ title, subtitle, returnTo, children }: Calenda
     }
     if (!nextOpen) close()
   }} onOpenChangeComplete={(nextOpen) => { if (!nextOpen) finishClosing() }} open={open} position={isMobile ? "bottom" : "right"}>
-    <DrawerPopup className={isMobile ? "h-[calc(100dvh-3rem)]" : "w-[28rem]"} forceBackdrop={true} position={isMobile ? "bottom" : "right"} presentation={isMobile ? "drawer" : "sheet"} showBar={isMobile} showCloseButton={true} variant={isMobile ? "default" : "inset"}>
+    <DrawerPopup className={isMobile ? "h-(--app-drawer-height)" : "w-[28rem]"} forceBackdrop={true} position={isMobile ? "bottom" : "right"} presentation={isMobile ? "drawer" : "sheet"} showBar={isMobile} showCloseButton={true} variant={isMobile ? "default" : "inset"}>
       <DrawerHeader className="shrink-0 pr-14 pb-3">
         <DrawerTitle>{title}</DrawerTitle>
         {subtitle ? <DrawerDescription className="min-w-0 truncate" data-slot="calendar-panel-subtitle">{subtitle}</DrawerDescription> : null}

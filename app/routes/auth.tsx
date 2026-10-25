@@ -135,7 +135,7 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
 
   return (
     <main
-      className="auth-layout relative flex min-h-dvh bg-background text-foreground"
+      className="auth-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] relative flex min-h-dvh bg-background text-foreground"
       data-electron={isElectron}
     >
       <title>{t("title")}</title>
@@ -146,15 +146,15 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
         />
       ) : null}
       <section
-        className={`flex flex-1 flex-col gap-4 p-5 md:p-4 ${isElectron ? "pt-[52px] md:pt-12" : ""}`}
+        className={`grid flex-1 grid-cols-1 grid-rows-[1fr_auto_1fr] gap-4 p-5 md:flex md:flex-col md:p-4 ${isElectron ? "pt-[calc(52px+env(safe-area-inset-top,0px))] md:pt-[calc(3rem+env(safe-area-inset-top,0px))]" : "pt-[calc(1.25rem+env(safe-area-inset-top,0px))] md:pt-[calc(1rem+env(safe-area-inset-top,0px))]"}`}
       >
-        <header className="flex items-center justify-between">
+        <header className="col-start-1 row-start-1 flex items-center justify-between self-start">
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground md:size-9">
             <AppLogo aria-hidden="true" className="size-5 md:size-6" />
           </div>
         </header>
 
-        <div className="flex flex-1 items-center justify-center">
+        <div className="row-start-2 flex flex-1 items-center justify-center">
           <div className="flex w-full max-w-xs flex-col gap-5">
             <div className="flex flex-col gap-1.5">
               <h1 className="text-2xl font-semibold">{t("title")}</h1>
@@ -255,6 +255,7 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
                         aria-invalid={Boolean(form.error("otp")) || undefined}
                         aria-label={t("otp.ariaLabel")}
                         autoComplete="one-time-code"
+                        disabled={isSubmitting}
                         inputMode="numeric"
                         length={6}
                         name="otp"
@@ -263,8 +264,13 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
                           form.unstable_setCustomError("otp", null)
                         }}
                         onValueChange={(value) => {
+                          const previousValue = form.value("otp")
                           form.setValue("otp", value)
                           form.unstable_setCustomError("otp", null)
+
+                          if (value.length === 6 && value !== previousValue && !isSubmitting) {
+                            form.submit()
+                          }
                         }}
                         validationType="none"
                         value={form.value("otp")}
@@ -351,7 +357,7 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
             </AppForm>
           </div>
         </div>
-        <footer className="flex h-8 shrink-0 items-center gap-2">
+        <footer className="col-start-1 row-start-1 flex shrink-0 items-center gap-2 justify-self-end max-md:self-start max-md:[&_[data-slot=tabs-tab]]:size-8 max-md:[&_[data-slot=tabs-tab]]:p-0 max-md:[&_[data-slot=tabs-tab]]:text-sm max-md:[&_svg]:size-5 md:relative md:bottom-[env(safe-area-inset-bottom,0px)] md:h-8">
           <ThemeSwitch />
           <LanguageSwitch />
         </footer>

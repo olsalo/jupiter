@@ -12,7 +12,7 @@ export function TeamPersonStatusBadges({ person }: { person: TeamPerson }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       <Badge className="max-w-full max-sm:h-auto max-sm:whitespace-normal max-sm:py-0.5" variant={bookable ? "secondary" : "outline"}>{t(bookable ? "people.bookable" : "people.notBookable")}</Badge>
-      <Badge className="max-w-full max-sm:h-auto max-sm:whitespace-normal max-sm:py-0.5" variant="outline">{t(role ?? (person.invitation ? "people.accessInvited" : "people.accessNone"))}</Badge>
+      <Badge className="max-w-full max-sm:hidden" variant="outline">{t(role ?? (person.invitation ? "people.accessInvited" : "people.accessNone"))}</Badge>
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import type { CalendarAppointment, CalendarDragSelection, CalendarMember } from "~/lib/calendar/types"
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
 import { CalendarAppointmentCard } from "~/components/calendar/calendar-appointment"
@@ -87,7 +87,16 @@ export function CalendarDragLane({ day, timeZone, mobile = false, horizontal = f
     setSelection(null)
   }
 
-  return <div className={onSelect && !mobile ? "relative min-w-0 [@media(hover:hover)_and_(pointer:fine)]:cursor-crosshair" : "relative min-w-0"} data-day={calendarDateToValue(day)} data-member-id={member.id} data-slot="calendar-member-lane" style={horizontal ? { height: "100%" } : { marginBlock: calendarTimelinePadding }}
+  const updateCursor = (event: PointerEvent<HTMLDivElement>) => {
+    const minute = minuteAt(event.currentTarget, horizontal ? event.clientX : event.clientY)
+    const unavailable = minute < startMinute || minute >= endMinute || blocked.some((range) => minute >= range.startMinute && minute < range.endMinute)
+    const canCreate = onSelect && !mobile && event.pointerType !== "touch" && window.matchMedia("(hover: hover) and (pointer: fine)").matches
+    event.currentTarget.style.cursor = canCreate && (drag.current || !unavailable) ? "crosshair" : "default"
+  }
+
+  return <div className="relative min-w-0 cursor-default" data-day={calendarDateToValue(day)} data-member-id={member.id} data-slot="calendar-member-lane" style={horizontal ? { height: "100%" } : { marginBlock: calendarTimelinePadding }}
+    onPointerEnter={updateCursor}
+    onPointerLeave={(event) => { if (!drag.current) event.currentTarget.style.cursor = "default" }}
     onPointerDown={(event) => {
       if (!onSelect || event.button !== 0 || event.pointerType === "touch" || (event.target as HTMLElement).closest('[data-slot="calendar-appointment"]')) return
       const minute = minuteAt(event.currentTarget, (horizontal ? event.clientX : event.clientY))
@@ -103,6 +112,7 @@ export function CalendarDragLane({ day, timeZone, mobile = false, horizontal = f
       event.preventDefault()
     }}
     onPointerMove={(event) => {
+      updateCursor(event)
       if (drag.current?.pointerId !== event.pointerId || Math.abs((horizontal ? event.clientX : event.clientY) - drag.current.origin) < 4) return
       if (!drag.current.started) {
         drag.current.started = true

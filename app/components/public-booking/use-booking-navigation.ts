@@ -46,6 +46,7 @@ export function useBookingNavigation(data: BookingPageData, detailsServiceId?: s
       if (value) next.set(key, value)
       else next.delete(key)
     }
+    if (next.toString() === currentParams.current.toString()) return
     currentParams.current = next
     setParams(next, { replace, preventScrollReset: true })
   }

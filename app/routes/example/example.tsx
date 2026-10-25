@@ -6,7 +6,6 @@ import {
   Outlet,
   useNavigate,
   useRevalidator,
-  useRouteLoaderData,
 } from "react-router"
 
 import type { AppRouter } from "~/.server/main"
@@ -37,7 +36,7 @@ import { createTRPC } from "~/lib/trpc/server"
 import { useDeleteConfirmation } from "~/lib/hooks"
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
 import { toast } from "~/lib/toast"
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 import { resources } from "~/locales"
 
 type ListNotesOutput = inferRouterOutputs<AppRouter>["example"]["list"]
@@ -75,7 +74,7 @@ export default function Notes() {
   const { i18n, t } = useTranslation("notes")
   const navigate = useNavigate()
   const trpc = useTRPC()
-  const rootData = useRouteLoaderData<typeof rootLoader>("root")
+  const rootData = useAppContext()
   const queryClient = useQueryClient()
   const notesQuery = useQuery({
     ...trpc.example.list.queryOptions(),

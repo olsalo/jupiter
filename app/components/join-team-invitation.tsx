@@ -42,7 +42,7 @@ export function JoinTeamInvitation({ invitationId }: { invitationId: string }) {
   }, [invitationId, invitation.mutate])
 
   return (
-    <main aria-busy={true} className="grid min-h-dvh place-items-center bg-background px-6" role="status">
+    <main aria-busy={true} className="grid min-h-dvh place-items-center bg-background pl-[calc(1.5rem+env(safe-area-inset-left,0px))] pr-[calc(1.5rem+env(safe-area-inset-right,0px))] pb-[env(safe-area-inset-bottom,0px)]" role="status">
       <div className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 text-base text-muted-foreground">
         <Spinner aria-hidden={true} className="size-5 text-primary" />
         <span>{t("accept.checking")}</span>

@@ -26,7 +26,7 @@ import { CustomerPicker, type CustomerOption } from "~/components/customers/cust
 import { ServicePicker } from "~/components/services/service-picker"
 import { Alert, AlertAction, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
-import { DialogFooter } from "~/components/ui/dialog"
+import { DrawerFooter } from "~/components/ui/drawer"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { Spinner } from "~/components/ui/spinner"
 import { Textarea } from "~/components/ui/textarea"
@@ -121,7 +121,6 @@ export function CalendarBookingForm({ dragSelection, selectedDay, onSelectedDayC
   const serviceDetails = useQuery({ ...trpc.service.get.queryOptions({ id: serviceId }), ...calendarReferenceQueryOptions, enabled: Boolean(serviceId) })
   const staff = calendar.staff
   const filterMembers = calendar.bookableMembers.filter((member) => member.id === staffMemberId || !serviceDetails.data || serviceDetails.data.staffServices.some((assignment) => assignment.staffMemberId === member.id && assignment.isActive))
-  const locations = useQuery({ ...trpc.location.list.queryOptions(), ...calendarReferenceQueryOptions, enabled: step === "time" && Boolean(selectedDay && (serviceId || dragSelection)) })
   const calendarRange = getCalendarBookingRange(calendar, timeZone)
   const calendarRangeKey = `${calendarRange.from.toISOString()}/${calendarRange.to.toISOString()}/${timeZone}`
   useEffect(() => { if (!dragSelection) setSelectedDay(null) }, [calendarRangeKey, setSelectedDay, dragSelection])
@@ -148,7 +147,7 @@ export function CalendarBookingForm({ dragSelection, selectedDay, onSelectedDayC
     ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, calendarMinDurationMinutes, timeZone).startsAt : undefined
   const chosenSlot = durationPending || appliedDrag !== dragSelection || !slots.isSuccess || slots.isFetching ? undefined : availableSlots.find((slot) => slotKey(slot) === selection)
     ?? (preferredStart ? getClosestBookingSlot(availableSlots, preferredStart, selectedSlotMemberId ?? dragSelection?.member.id) : undefined)
-  const durationLimit = useCalendarBookingDurationLimit({ startsAt: preferredStart, memberId: staffMemberId ?? chosenSlot?.staffMemberId ?? selectedSlotMemberId, length: validLength ? durationMinutes : null })
+  const durationLimit = useCalendarBookingDurationLimit({ startsAt: preferredStart, memberId: staffMemberId ?? chosenSlot?.staffMemberId ?? selectedSlotMemberId, length: validLength ? durationMinutes : null, beforeMinutes: service?.bufferBeforeMinutes, afterMinutes: service?.bufferAfterMinutes })
   useLayoutEffect(() => {
     if (dragging || saved || durationPending || appliedDrag !== dragSelection || slots.isFetching || slots.isError || !chosenSlot) return
     const local = new TZDate(chosenSlot.startsAt, timeZone)
@@ -198,7 +197,12 @@ export function CalendarBookingForm({ dragSelection, selectedDay, onSelectedDayC
     ref={formRef}
     schema={calendarBookingSchema}
     submitFn={async ({ notes, customerId }) => {
-      if (step !== "customer" || !canContinue || !chosenSlot) return
+      if (step !== "customer") return
+      if (!canContinue || !chosenSlot) {
+        setStep("time")
+        setTimeError(t("bookingForm.chooseSlot"))
+        return
+      }
       if (chosenSlot.overlapsBreak && !await confirmBreakOverlap()) return
       if (!await confirmPastBooking(chosenSlot.startsAt)) return
       try {
@@ -297,7 +301,6 @@ export function CalendarBookingForm({ dragSelection, selectedDay, onSelectedDayC
                     format={format}
                     formatPreference={formatPreference}
                     invalid={Boolean(timeError)}
-                    locations={locations.data ?? []}
                     members={staff.data ?? []}
                     onSelect={selectSlot}
                     selection={chosenSlot ? slotKey(chosenSlot) : ""}
@@ -325,13 +328,17 @@ export function CalendarBookingForm({ dragSelection, selectedDay, onSelectedDayC
           </>}
         </div>
       </ScrollArea>
-      {selectedDay && service && (chosenSlot || step === "customer") ? <DialogFooter className="shrink-0 rounded-none! flex-col-reverse! items-stretch bg-transparent max-md:*:w-full md:flex-row! md:items-center md:justify-between!">
+      {selectedDay && service && (chosenSlot || step === "customer") ? <DrawerFooter allowSelection={false} className="shrink-0 rounded-none! flex-col-reverse! items-stretch max-md:*:w-full md:flex-row! md:items-center md:justify-between!">
         {step === "customer" ? <Button disabled={pending} onClick={() => setStep("time")} type="button" variant="ghost"><Icon aria-hidden={true} name="chevronLeft" size={16} />{t("bookingForm.back")}</Button> : null}
-        {step === "time" ? <Button className="md:ml-auto" disabled={!canContinue || pending} key="continue" onClick={(event) => {
+        {step === "time" ? <Button className="md:ml-auto" disabled={pending} key="continue" onClick={(event) => {
           event.preventDefault()
+          if (!canContinue) {
+            setTimeError(t("bookingForm.chooseSlot"))
+            return
+          }
           setStep("customer")
-        }} type="button">{t("bookingForm.continue")}<Icon aria-hidden={true} name="chevronRight" size={16} /></Button> : <Button disabled={!canContinue || pending} key="submit" loading={form.formState.isSubmitting || pending} type="submit"><Icon aria-hidden={true} name="plus" size={16} />{t("bookingForm.add")}</Button>}
-      </DialogFooter> : null}
+        }} type="button">{t("bookingForm.continue")}<Icon aria-hidden={true} name="chevronRight" size={16} /></Button> : <Button disabled={pending} key="submit" loading={form.formState.isSubmitting || pending} type="submit"><Icon aria-hidden={true} name="plus" size={16} />{t("bookingForm.add")}</Button>}
+      </DrawerFooter> : null}
     </>}}
   </AppForm>
     {pastBookingConfirmation}

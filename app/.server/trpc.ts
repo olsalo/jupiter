@@ -36,24 +36,32 @@ export const createTRPCContext = async (opts: {
   const authSessionPromise = opts.authenticatedContext
     ? Promise.resolve(opts.authenticatedContext.authSession)
     : auth.api.getSession({ headers: opts.headers })
-  const organizationIdPromise = opts.authenticatedContext
-    ? Promise.resolve(opts.authenticatedContext.organizationId)
-    : authSessionPromise.then(async (authSession) => (authSession
-      ? (await getActiveOrganization({
-          organizationId: authSession.session.activeOrganizationId,
-          userId: authSession.user.id,
-        }))?.id ?? null
-      : null))
   const formatPreferencePromise = formatPreferenceCookie
     .parse(opts.headers.get("cookie"))
     .then((storedFormatPreference) => isFormatPreference(storedFormatPreference)
       ? storedFormatPreference
       : getFormatPreferenceFromRequest(opts.headers))
-  const [authSession, organizationId, formatPreference] = await Promise.all([
+  const [authSession, formatPreference] = await Promise.all([
     authSessionPromise,
-    organizationIdPromise,
     formatPreferencePromise,
   ])
+  const organizationId = opts.authenticatedContext?.organizationId ?? null
+  let organizationPromise: Promise<string | null> | undefined
+  const resolveOrganization = () => organizationPromise ??= (async () => {
+    if (organizationId || !authSession) return organizationId
+    const organization = await getActiveOrganization({
+      organizationId: authSession.session.activeOrganizationId,
+      userId: authSession.user.id,
+    })
+    if (organization && authSession.session.activeOrganizationId !== organization.id) {
+      await prisma.session.update({
+        where: { id: authSession.session.id },
+        data: { activeOrganizationId: organization.id },
+      })
+      authSession.session.activeOrganizationId = organization.id
+    }
+    return organization?.id ?? null
+  })()
 
   const locale = await configureRequestZodI18n(opts.headers, authSession?.user.locale)
 
@@ -71,6 +79,7 @@ export const createTRPCContext = async (opts: {
     user: authSession?.user,
     session: authSession?.session,
     organizationId,
+    ...({ resolveOrganization } as { resolveOrganization?: () => Promise<string | null> }),
     formatLocale: getFormatLocale(formatPreference),
     formatPreference,
     locale,
@@ -104,17 +113,20 @@ const resourceLimitProcedure = t.procedure.use(async ({ next }) => {
   return result
 })
 
-export const protectedProcedure = resourceLimitProcedure.use(({ ctx, next }) => {
+export const protectedProcedure = resourceLimitProcedure.use(async ({ ctx, next }) => {
   if (!ctx.user?.id) {
     throw new TRPCError({ code: "UNAUTHORIZED" })
   }
+
+  // Public procedures never need to resolve the visitor's workspace
+  const organizationId = ctx.resolveOrganization ? await ctx.resolveOrganization() : ctx.organizationId
 
   return next({
     ctx: {
       headers: ctx.headers,
       user: ctx.user,
       session: ctx.session,
-      organizationId: ctx.organizationId,
+      organizationId,
       formatLocale: ctx.formatLocale,
       formatPreference: ctx.formatPreference,
       locale: ctx.locale,

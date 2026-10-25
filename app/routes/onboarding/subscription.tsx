@@ -112,75 +112,77 @@ export default function SubscriptionStep() {
   const annualDiscount = calculateAnnualDiscount(prices)
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-semibold">{t("subscription.title")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("subscription.description")}
-        </p>
-      </div>
+    <div className="flex flex-col">
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-2xl font-semibold">{t("subscription.title")}</h1>
+          <p className="text-sm text-muted-foreground">
+            {t("subscription.description")}
+          </p>
+        </div>
 
-      <Tabs
-        className="w-full"
-        onValueChange={(value) => {
-          if (value === "month" || (value === "year" && annualEnabled)) {
-            setBillingInterval(value)
-          }
-        }}
-        value={billingInterval}
-      >
-        <TabsList
-          aria-label={t("subscription.billingLabel")}
-          className="grid w-full grid-cols-2"
+        <Tabs
+          className="w-full"
+          onValueChange={(value) => {
+            if (value === "month" || (value === "year" && annualEnabled)) {
+              setBillingInterval(value)
+            }
+          }}
+          value={billingInterval}
         >
-          <TabsTab value="month">{t("subscription.monthly")}</TabsTab>
-          <TabsTab disabled={!annualEnabled} value="year">
-            {t("subscription.yearly")}
-            {annualDiscount !== null ? (
-              <Badge size="sm" variant="success">
-                -{annualDiscount}%
-              </Badge>
-            ) : null}
-          </TabsTab>
-        </TabsList>
-      </Tabs>
+          <TabsList
+            aria-label={t("subscription.billingLabel")}
+            className="grid w-full grid-cols-2"
+          >
+            <TabsTab value="month">{t("subscription.monthly")}</TabsTab>
+            <TabsTab disabled={!annualEnabled} value="year">
+              {t("subscription.yearly")}
+              {annualDiscount !== null ? (
+                <Badge size="sm" variant="success">
+                  -{annualDiscount}%
+                </Badge>
+              ) : null}
+            </TabsTab>
+          </TabsList>
+        </Tabs>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="!flex !p-[18px] flex-row items-center gap-4 border-b bg-muted/30">
-          <CardTitle className="shrink-0 whitespace-nowrap text-2xl">
-            {plan.name}
-          </CardTitle>
-          <div className="ms-auto flex shrink-0 items-baseline gap-1 whitespace-nowrap">
-            <p className="font-heading text-2xl font-semibold leading-none">
-              {formatPrice(
-                prices[billingInterval],
-                locale,
-                t("subscription.priceUnavailable"),
-              )}
-            </p>
-            <span className="text-sm text-muted-foreground">
-              {billingInterval === "month"
-                ? t("subscription.perMonth")
-                : t("subscription.perYear")}
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent className="p-[18px]">
-          <ul className="flex flex-col gap-3">
-            {plan.features.map((feature) => (
-              <li className="flex items-center gap-2.5 text-sm" key={feature}>
-                <Icon
-                  className="shrink-0 text-primary"
-                  name="circleCheckFilled"
-                  size={18}
-                />
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
+        <Card className="overflow-hidden">
+          <CardHeader className="!flex !p-[18px] flex-row items-center gap-4 border-b bg-muted/30">
+            <CardTitle className="shrink-0 whitespace-nowrap text-2xl">
+              {plan.name}
+            </CardTitle>
+            <div className="ms-auto flex shrink-0 items-baseline gap-1 whitespace-nowrap">
+              <p className="font-heading text-2xl font-semibold leading-none">
+                {formatPrice(
+                  prices[billingInterval],
+                  locale,
+                  t("subscription.priceUnavailable"),
+                )}
+              </p>
+              <span className="text-sm text-muted-foreground">
+                {billingInterval === "month"
+                  ? t("subscription.perMonth")
+                  : t("subscription.perYear")}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-[18px]">
+            <ul className="flex flex-col gap-3">
+              {plan.features.map((feature) => (
+                <li className="flex items-center gap-2.5 text-sm" key={feature}>
+                  <Icon
+                    className="shrink-0 text-primary"
+                    name="circleCheckFilled"
+                    size={18}
+                  />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
 
+      </div>
       <OnboardingActions>
         <Button
           disabled={

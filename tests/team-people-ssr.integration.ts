@@ -87,10 +87,14 @@ try {
   assert.match(staffTabs, /Working hours/)
   assert.match(staffTabs, /Breaks/)
   const loadingProfileHeader = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(Tabs, { value: "general", children: createElement(ProfileSettingsHeader, { disabled: false, person: { name: member.user.name, image: null } }) })))
-  for (const label of ["General", "Appointments", "Working hours", "Breaks", "Time off"]) {
+  for (const label of ["General", "Appointments"]) {
     assert.ok(loadingProfileHeader.includes(`aria-label="${label}"`), `${label} is available before the team profile loads`)
   }
   assert.doesNotMatch(loadingProfileHeader, /disabled=""/)
+  const bookableLoadingHeader = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(Tabs, { value: "general", children: createElement(ProfileSettingsHeader, { bookable: true, disabled: false, person: { name: member.user.name, image: null } }) })))
+  for (const label of ["Working hours", "Breaks", "Time off"]) {
+    assert.ok(bookableLoadingHeader.includes(`aria-label="${label}"`), `${label} is immediately available from the signed-in member's staff status`)
+  }
   const permissionMarkup = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(PermissionLevelSelect, { value: "member", name: "role", onValueChange: () => {} })))
   assert.match(permissionMarkup, /Standard/)
   assert.match(permissionMarkup, /Can manage appointments and customers/)
@@ -219,6 +223,12 @@ try {
   assert.match(ownSettings, /aria-label="Working hours"/)
   assert.match(ownSettings, /aria-label="Breaks"/)
   assert.match(ownSettings, /aria-label="Time off"/)
+  for (const person of [undefined, { name: "Loading profile", image: null }, ownerPerson, { ...staffPerson, staff: { ...staff, acceptsAppointments: false } }, { ...staffPerson, staff: { ...staff, isActive: false } }]) {
+    const header = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(Tabs, { value: "general", children: createElement(ProfileSettingsHeader, { disabled: false, person }) })))
+    assert.match(header, /aria-label="General"/)
+    assert.match(header, /aria-label="Appointments"/)
+    assert.doesNotMatch(header, /aria-label="Working hours"|aria-label="Breaks"|aria-label="Time off"/, "Schedule tabs stay hidden until an active appointment-taking profile is known")
+  }
   assert.match(ownSettings, /whitespace-nowrap text-center/)
   assert.match(ownSettings, /grow-0 shrink-0 basis-auto/)
   assert.match(ownSettings, /size-12 text-base/)
@@ -584,6 +594,11 @@ try {
   const englishEmail = addPersonSchema.safeParse({ name: "Person", email: "invalid" })
   assert.ok(!englishEmail.success)
   assert.equal(englishEmail.error.issues.find((issue) => issue.path[0] === "email")?.message, "Invalid")
+  queryClient.removeQueries({ queryKey: options.service.list.queryKey(), exact: true })
+  queryClient.removeQueries({ queryKey: options.location.list.queryKey(), exact: true })
+  const profileWithoutOptions = await render("/team-original/staff-1/edit")
+  assert.match(profileWithoutOptions, /data-slot="sheet-footer"/, "Profile editing is ready before unrelated service and location options load")
+  assert.match(profileWithoutOptions, /name="name"/)
   queryClient.removeQueries({ queryKey: options.team.getPerson.queryKey({ id: staff.id }), exact: true })
   queryClient.setQueryData([...options.team.list.queryKey()], { members: [member], people: [ownerPerson], invitations: [], canInvite: true })
   const cold = await render("/team-original/staff-1")
@@ -602,6 +617,8 @@ try {
   const coldCreate = await render("/team-original/new")
   assert.match(coldCreate, /Add member/)
   assert.match(coldCreate, /Loading services/)
+  assert.match(coldCreate, /data-slot="sheet-footer"/, "Add member footer is visible while services load")
+  assert.match(coldCreate, /data-slot="team-panel-loading"/, "Services load in the centered content area")
   assert.doesNotMatch(coldCreate, /Loading locations/)
   queryClient.setQueryData([...options.service.list.queryKey()], [])
   queryClient.setQueryData([...options.location.list.queryKey()], [])

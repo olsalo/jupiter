@@ -2,11 +2,11 @@ import { dehydrate, useQuery } from "@tanstack/react-query"
 import type { inferRouterOutputs } from "@trpc/server"
 import { useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Link, Outlet, useLocation, useNavigate, useRevalidator, useRouteLoaderData, useSearchParams } from "react-router"
+import { Link, Outlet, useLocation, useNavigate, useRevalidator, useSearchParams } from "react-router"
 
 import type { Route } from "./+types/team"
 import type { AppRouter } from "~/.server/main"
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 import Icon from "~/components/icons"
 import { InvitationActionsMenu } from "~/components/invitation-actions-menu"
 import { ViewportPage } from "~/components/page-layout"
@@ -68,7 +68,7 @@ export default function Team() {
   const [filter, setFilter] = useState("all")
   const navigate = useNavigate()
   const location = useLocation()
-  const root = useRouteLoaderData<typeof rootLoader>("root")
+  const root = useAppContext()
   const trpc = useTRPC()
   const team = useQuery(trpc.team.list.queryOptions())
   const counts = useQuery({ ...trpc.team.count.queryOptions(), enabled: false })

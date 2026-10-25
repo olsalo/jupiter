@@ -1,7 +1,6 @@
-import { dehydrate } from "@tanstack/react-query"
-
 import type { Route } from "./+types/public-booking"
 import { PublicBookingPage } from "~/components/public-booking/public-booking-page"
+import { loadPublicBookingQuery } from "~/lib/public-booking-loader.server"
 import { getQueryClient } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
@@ -11,18 +10,14 @@ export const shouldRevalidate = shouldRevalidateAppRoute
 export async function loader(args: Route.LoaderArgs) {
   const queryClient = getQueryClient()
   const trpc = await createTRPC(args)
-  await queryClient
-    .query(
-      trpc.booking.getPage.queryOptions(
-        {
-          organizationSlug: args.params.organizationSlug,
-          bookingPageSlug: args.params.bookingPageSlug,
-        },
-        { retry: false },
-      ),
-    )
-    .catch(() => undefined)
-  return { queryClient: dehydrate(queryClient) }
+  const pageQuery = trpc.booking.getPage.queryOptions(
+    {
+      organizationSlug: args.params.organizationSlug,
+      bookingPageSlug: args.params.bookingPageSlug,
+    },
+    { retry: false },
+  )
+  return loadPublicBookingQuery(queryClient, pageQuery.queryKey, () => queryClient.query(pageQuery))
 }
 
 export function clientLoader() {

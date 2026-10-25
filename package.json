@@ -24,7 +24,7 @@
     "icons:generate": "node --experimental-strip-types scripts/generate-icons.ts",
     "jobs:appointments": "node --env-file-if-exists=.env build/jobs/runner.js",
     "mockups:generate": "node --experimental-strip-types scripts/generate-mockups.ts",
-    "start": "react-router-serve ./build/server/index.js",
+    "start": "node --env-file-if-exists=.env ./node_modules/@react-router/serve/bin.cjs ./build/server/index.js",
     "test:appointment-settings": "node --experimental-strip-types tests/organization-settings.integration.ts",
     "test:appointments": "node --experimental-strip-types tests/appointment-availability.test.ts && node --experimental-strip-types tests/appointments.integration.ts",
     "test:barber-seed": "node --experimental-strip-types tests/barber-seed.test.ts",

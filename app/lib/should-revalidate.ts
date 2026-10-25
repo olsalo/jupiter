@@ -1,5 +1,12 @@
 import type { ShouldRevalidateFunctionArgs } from "react-router"
 
+export function shouldRevalidateWorkspaceRoute({ currentUrl, nextUrl, formMethod }: Pick<ShouldRevalidateFunctionArgs, "currentUrl" | "nextUrl" | "formMethod">) {
+  if (formMethod && formMethod.toUpperCase() !== "GET") return true
+  // Check setup when the workspace first loads and on explicit revalidation.
+  // Client queries own route data and enforce access on every API request
+  return currentUrl.pathname === nextUrl.pathname && currentUrl.search === nextUrl.search
+}
+
 function isAccountRoute(pathname: string) {
   return (
     pathname === "/auth" ||

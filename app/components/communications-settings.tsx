@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 
 import { AppForm, type AppFormState } from "~/components/app-form"
 import FormLabel from "~/components/form-label"
-import { FormSwitch } from "~/components/form-switch"
+import { SettingsSwitch } from "~/components/settings-switch"
 import Icon from "~/components/icons"
 import { SettingsSectionHeader } from "~/components/settings-section-header"
 import { Alert, AlertDescription } from "~/components/ui/alert"
@@ -15,7 +15,6 @@ import { NumberField, NumberFieldGroup, NumberFieldInput, NumberFieldDecrement, 
 import { Separator } from "~/components/ui/separator"
 import { Spinner } from "~/components/ui/spinner"
 import { communicationsSettingsSchema, type CommunicationsSettingsValues } from "~/lib/schemas/communications"
-import { createSettingsSaveQueue } from "~/lib/settings-save-queue"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 
@@ -109,28 +108,18 @@ function MessageSwitch({ name, checked }: { name: ToggleName; checked: boolean }
   const { t } = useTranslation()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const queue = useRef(createSettingsSaveQueue())
-  const revision = useRef(0)
-  const confirmed = useRef(checked)
   const mutation = useMutation(trpc.organizations.updateCommunicationsSettings.mutationOptions())
   const queryKey = trpc.organizations.communicationsSettings.queryKey()
-  const save = (value: boolean) => {
-    if (queue.current.pendingCount === 0) confirmed.current = checked
-    const currentRevision = ++revision.current
-    queryClient.setQueryData(queryKey, (current) => current ? { ...current, [name]: value } : current)
-    void queue.current.enqueue(async () => {
-      try {
-        const saved = await mutation.mutateAsync({ [name]: value })
-        confirmed.current = saved[name]
-        if (currentRevision !== revision.current) return
-        queryClient.setQueryData(queryKey, (current) => current ? { ...current, [name]: saved[name] } : current)
-        await queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter())
-      } catch {
-        if (currentRevision !== revision.current) return
-        queryClient.setQueryData(queryKey, (current) => current ? { ...current, [name]: confirmed.current } : current)
-        toast.error(t("settings.saveError"))
-      }
-    })
-  }
-  return <FormSwitch checked={checked} disabled={false} label={t(`communicationsSettings.${name}`)} description={t(`communicationsSettings.${name}Description`)} onCheckedChange={save} />
+
+  return <SettingsSwitch
+    checked={checked}
+    disabled={false}
+    label={t(`communicationsSettings.${name}`)}
+    description={t(`communicationsSettings.${name}Description`)}
+    errorMessage={t("settings.saveError")}
+    save={(value) => mutation.mutateAsync({ [name]: value })}
+    getChecked={(saved) => saved[name]}
+    updateCache={(value) => queryClient.setQueryData(queryKey, (current) => current ? { ...current, [name]: value } : current)}
+    onSaved={() => queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter())}
+  />
 }

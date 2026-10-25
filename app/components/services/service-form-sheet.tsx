@@ -2,7 +2,7 @@ import type { FormApi } from "@rvf/react"
 import { useId, useMemo, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { useLocation, useNavigate, useNavigation, useSearchParams } from "react-router"
+import { useLocation, useNavigate, useSearchParams } from "react-router"
 import { AppForm } from "~/components/app-form"
 import FormLabel from "~/components/form-label"
 import { ColorPicker, colorPickerPalette } from "~/components/color-picker"
@@ -64,7 +64,6 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
   const locationItems = (locations.data ?? []).filter((location) => location.isActive || initialValues.current?.locationIds.includes(location.id)).map((location) => ({ value: location.id, label: location.name }))
   const deliveryItems = (["IN_PERSON", "ONLINE", "PHONE", "FLEXIBLE"] as const).map((value) => ({ value, label: t(value) }))
   const navigate = useNavigate()
-  const navigation = useNavigation()
   const location = useLocation()
   const [submitting, setSubmitting] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -87,8 +86,7 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
       initialValues.current = null
     },
   })
-  const pending = submitting || create.isPending || update.isPending || saved || navigation.state !== "idle"
-  const optionsPending = staff.isPending || locations.isPending || organization.isPending
+  const pending = submitting || create.isPending || update.isPending || saved
   const optionsError = staff.isError || locations.isError || organization.isError
 
   const categoryOptions = [...(categories.data ?? [])]
@@ -152,7 +150,7 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
             const staffIds = form.getControlProps("staffIds")
             const locationIds = form.getControlProps("locationIds")
             return <>
-              <ResponsiveSheetPanel className="flex flex-col gap-5 p-6! pb-8!" scrollFade={true}>
+              <ResponsiveSheetPanel className="flex flex-col gap-5 pb-8!" scrollFade={true}>
                 <fieldset className="contents" disabled={pending}>
                   <SettingsSectionHeader title={t("general")} />
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
@@ -210,10 +208,10 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
                   </FormLabel>
                 </fieldset>
               </ResponsiveSheetPanel>
-              {!optionsPending ? <ResponsiveSheetFooter className="shrink-0 bg-muted/70">
+              <ResponsiveSheetFooter className="shrink-0">
                 <Button disabled={pending} onClick={close} type="button" variant="ghost">{t("cancel")}</Button>
-                <Button disabled={pending || optionsPending || optionsError} loading={pending} type="submit">{t(editing ? pending ? "saving" : "saveService" : pending ? "creating" : "create")}</Button>
-              </ResponsiveSheetFooter> : null}
+                <Button disabled={pending} loading={pending} type="submit">{t(editing ? pending ? "saving" : "saveService" : pending ? "creating" : "create")}</Button>
+              </ResponsiveSheetFooter>
             </>
           }}
         </AppForm> : <>

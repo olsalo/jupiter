@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useMemo } from "react"
-import { useRouteLoaderData } from "react-router"
 
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 
 import { useTRPC } from "~/lib/trpc/client"
 
@@ -10,7 +9,7 @@ export function useBusinessWorkingHours() {
   const trpc = useTRPC()
   const rules = useQuery(trpc.availability.getRules.queryOptions({}))
   const organization = useQuery(trpc.organizations.getCurrent.queryOptions())
-  const root = useRouteLoaderData<typeof rootLoader>("root")
+  const root = useAppContext()
   const timezone = root?.organizationTimezone ?? organization.data?.settings?.timezone ?? "Europe/Helsinki"
   const hours = useMemo(() => {
     const businessRules = rules.data?.filter((rule) => rule.staffMemberId === null && rule.locationId === null)

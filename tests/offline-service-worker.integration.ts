@@ -54,7 +54,7 @@ runInNewContext(code.replace(/export\s*\{\s*\};?/g, ""), {
       },
     }),
     match: async () => undefined,
-    keys: async () => ["jupiter-offline-v0", "jupiter-offline-v2", "other-app-cache"],
+    keys: async () => ["offline-v0", "offline-v2", "other-app-cache"],
     delete: async (name: string) => { deletedCaches.push(name); return true },
   },
   clients: { claim: async () => { claimed = true } },
@@ -75,7 +75,7 @@ for (const name of ["install", "activate"]) {
 assert.deepEqual(cachedPaths, ["/offline.html", "/offline-fi.html"])
 assert.equal(activated, true)
 assert.equal(claimed, true)
-assert.deepEqual(deletedCaches, ["jupiter-offline-v0"])
+assert.deepEqual(deletedCaches, ["offline-v0"])
 
 function request(method: string, mode: string) {
   let response: Promise<Response> | undefined

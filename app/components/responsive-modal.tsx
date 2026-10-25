@@ -1,8 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ComponentProps } from "react"
 
-import { AnimatedDrawerPopup } from "~/components/animated-drawer-popup"
 import { getDialogPopupClassName, getDialogViewportClassName } from "~/components/dialog-popup-styles"
-import { Drawer, DrawerBackdrop, DrawerBar, DrawerClose, DrawerDescription, DrawerFooter, DrawerHeader, DrawerPanel, DrawerTitle, DrawerTrigger } from "~/components/ui/drawer"
+import { Drawer, DrawerBackdrop, DrawerBar, DrawerClose, DrawerDescription, DrawerFooter, DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle, DrawerTrigger } from "~/components/ui/drawer"
 import { useMediaQuery } from "~/lib/hooks"
 import { useHydrated } from "~/lib/use-hydrated"
 import { cn } from "~/lib/utils"
@@ -34,7 +33,7 @@ export function ResponsiveModal({ onOpenChange, open, defaultOpen = false, ...pr
   </ResponsiveModalContext.Provider>
 }
 
-export function ResponsiveModalPopup({ children, className, drawerClassName, titleId, descriptionId, forceBackdrop = false, showCloseButton = true, ...props }: Omit<ComponentProps<typeof AnimatedDrawerPopup>, "enabled" | "position" | "presentation" | "variant"> & { drawerClassName?: string; titleId?: string; descriptionId?: string }) {
+export function ResponsiveModalPopup({ children, className, drawerClassName, titleId, descriptionId, forceBackdrop = false, showCloseButton = true, ...props }: Omit<ComponentProps<typeof DrawerPopup>, "ref" | "position" | "presentation" | "variant"> & { drawerClassName?: string; titleId?: string; descriptionId?: string }) {
   const { isMobile, initiallyServerRendered, open } = useContext(ResponsiveModalContext)
   const hydrated = useHydrated()
   const previousChildren = useRef(children)
@@ -46,26 +45,25 @@ export function ResponsiveModalPopup({ children, className, drawerClassName, tit
     return <>
       <DrawerBackdrop forceRender={true} hidden={false} presentation="dialog" />
       <div className={getDialogViewportClassName({ className: "max-sm:grid-rows-[1fr_auto] max-sm:p-0 max-sm:pt-12" })} data-open="" data-slot="dialog-viewport" role="presentation">
-        <div aria-describedby={descriptionId} aria-labelledby={titleId} aria-modal={true} className={getDialogPopupClassName({ className: cn("max-sm:max-w-none max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:border-x-0 max-sm:border-b-0 max-sm:pt-2", className, drawerClassName) })} data-open="" data-slot="dialog-popup" role="dialog" tabIndex={-1}>
+        <div aria-describedby={descriptionId} aria-labelledby={titleId} aria-modal={true} className={getDialogPopupClassName({ className: cn("max-sm:not-has-data-[slot=dialog-footer]:pb-[env(safe-area-inset-bottom,0px)] max-sm:max-w-none max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:border-x-0 max-sm:border-b-0 max-sm:pt-2", className, drawerClassName) })} data-open="" data-slot="dialog-popup" role="dialog" tabIndex={-1}>
           {content}<DrawerBar className="sm:hidden" position="bottom" />
         </div>
       </div>
     </>
   }
 
-  return <AnimatedDrawerPopup
+  return <DrawerPopup
     {...props}
     aria-describedby={descriptionId}
     aria-labelledby={titleId}
     backdropClassName={initiallyServerRendered ? "data-starting-style:opacity-100" : undefined}
     className={isMobile ? cn(drawerClassName, initiallyServerRendered && "data-starting-style:transform-none") : cn(className, initiallyServerRendered && "data-starting-style:opacity-100 data-starting-style:scale-100")}
-    enabled={isMobile}
     forceBackdrop={forceBackdrop}
     position="bottom"
     presentation={isMobile ? "drawer" : "dialog"}
     showBar={isMobile}
     showCloseButton={showCloseButton}
-  >{content}</AnimatedDrawerPopup>
+  >{content}</DrawerPopup>
 }
 
 export function ResponsiveModalTrigger(props: ComponentProps<typeof DrawerTrigger>) {

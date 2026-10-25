@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "react-router"
 
 import { CalendarBookingIssueMarker } from "~/components/calendar/calendar-booking-issues"
+import { CalendarAppointmentBuffers } from "~/components/calendar/calendar-appointment-buffers"
 import { Card } from "~/components/ui/card"
 import { formatDateTime, type FormatPreference } from "~/lib/format-preference"
 import { cn } from "~/lib/utils"
@@ -32,8 +33,10 @@ export const CalendarAppointmentCard = memo(function CalendarAppointmentCard({ a
   const label = [appointment.customerName, appointment.service.name, time, status].filter(Boolean).join(" · ")
 
   // Keep the hidden source hit-testable so another drag can interrupt its return animation
-  return <Card
-    className={cn("absolute inset-x-1 z-10 gap-0 overflow-hidden rounded-md border-[color-mix(in_srgb,var(--appointment-color)_32%,var(--background))] bg-[color-mix(in_srgb,var(--appointment-color)_18%,var(--background))] px-2 py-1 pl-3.5 text-foreground shadow-none before:hidden dark:bg-[color-mix(in_srgb,var(--appointment-color)_24%,var(--background))]", !floating && !hidden && "after:pointer-events-none after:absolute after:inset-0 after:bg-foreground/0 after:transition-colors after:duration-150 [@media(hover:hover)]:hover:after:bg-foreground/4 [@media(hover:none)]:active:after:bg-foreground/4 motion-reduce:after:transition-none", !horizontal && duration < 45 && "py-0.5", appointment.status === "CANCELLED" && "border-dashed opacity-60", appointment.status === "NO_SHOW" && "opacity-60", appointment.draft && "border-dashed", appointment.draft && !floating && !hidden && "motion-safe:animate-[calendar-draft-pulse_3s_ease-in-out_infinite]", dragging && "shadow-xl ring-1 ring-black/10", hidden && "opacity-0")}
+  return <>
+    {!hidden ? <CalendarAppointmentBuffers appointment={appointment} startMinute={startMinute} endMinute={endMinute} horizontal={horizontal} floating={floating} /> : null}
+    <Card
+    className={cn("absolute inset-x-1 z-10 gap-0 overflow-hidden rounded-md border-[color-mix(in_srgb,var(--appointment-color)_32%,var(--background))] bg-[color-mix(in_srgb,var(--appointment-color)_18%,var(--background))] px-2 py-1 pl-3.5 text-foreground shadow-none before:hidden dark:bg-[color-mix(in_srgb,var(--appointment-color)_24%,var(--background))]", !floating && !hidden && "after:pointer-events-none after:absolute after:inset-0 after:bg-foreground/0 after:transition-colors after:duration-150 [@media(hover:hover)]:hover:after:bg-foreground/4 [@media(hover:none)]:active:after:bg-foreground/4 motion-reduce:after:transition-none", !horizontal && duration < 45 && "py-0.5", appointment.status !== "CANCELLED" && appointment.status !== "NO_SHOW" && (appointment.bufferBeforeMinutes ?? 0) > 0 && (horizontal ? "rounded-l-none" : "rounded-t-none"), appointment.status !== "CANCELLED" && appointment.status !== "NO_SHOW" && (appointment.bufferAfterMinutes ?? 0) > 0 && (horizontal ? "rounded-r-none" : "rounded-b-none"), appointment.status === "CANCELLED" && "border-dashed opacity-60", appointment.status === "NO_SHOW" && "opacity-60", appointment.draft && "border-dashed", appointment.draft && !floating && !hidden && "motion-safe:animate-[calendar-draft-pulse_3s_ease-in-out_infinite]", dragging && "shadow-xl ring-1 ring-black/10", hidden && "opacity-0")}
     data-draft={appointment.draft === true ? "true" : undefined}
     data-appointment-id={appointment.id}
     data-service-id={appointment.service.id}
@@ -71,6 +74,7 @@ export const CalendarAppointmentCard = memo(function CalendarAppointmentCard({ a
       data-slot="calendar-booking-resize-handle"
     ><span className={horizontal ? "h-5 w-0.5 rounded-full bg-foreground/30" : "h-0.5 w-5 rounded-full bg-foreground/30"} /></span> : null}
   </Card>
+  </>
 }, (previous, next) => {
   if (previous.startMinute !== next.startMinute || previous.endMinute !== next.endMinute || previous.formatPreference !== next.formatPreference
     || previous.horizontal !== next.horizontal || previous.canDrag !== next.canDrag || previous.floating !== next.floating || previous.dragging !== next.dragging || previous.hidden !== next.hidden) return false

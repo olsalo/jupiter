@@ -19,7 +19,7 @@ export function SettingsFormFooter({ formId, isMobile, onCancel, state }: {
   return (
     <Footer className={isMobile ? "shrink-0" : "shrink-0 rounded-b-2xl"}>
       <Button disabled={state.isSubmitting} onClick={onCancel} type="button" variant="ghost">{t("settings.cancel")}</Button>
-      <Button disabled={!state.canSubmit || state.isSubmitting} form={formId} type="submit">
+      <Button disabled={state.isSubmitting} form={formId} type="submit">
         {state.isSubmitting ? <><Spinner className="size-4" />{t("settings.saving")}</> : t("settings.save")}
       </Button>
     </Footer>

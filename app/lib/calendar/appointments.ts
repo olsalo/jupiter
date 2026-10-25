@@ -1,4 +1,4 @@
-import { canRescheduleAppointment } from "../appointment-status.ts"
+import { blocksAppointmentTime, canRescheduleAppointment } from "../appointment-status.ts"
 import type { BookingAvailabilityIssue } from "./booking-issues.ts"
 import type { CalendarAppointment } from "./types.ts"
 import { TZDate } from "react-day-picker"
@@ -78,5 +78,5 @@ export function layoutCalendarAppointments(appointments: CalendarAppointment[]) 
 
 export function getCalendarBookingConflicts(appointments: CalendarAppointment[], allowSimultaneousBookings: boolean) {
   if (allowSimultaneousBookings) return []
-  return appointments.filter((appointment) => appointment.draft || ["PENDING", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS"].includes(appointment.status ?? ""))
+  return appointments.filter((appointment) => appointment.draft || blocksAppointmentTime(appointment.status ?? ""))
 }

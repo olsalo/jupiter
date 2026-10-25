@@ -18,6 +18,8 @@ import { useModalQueryLoading } from "~/lib/use-modal-query-loading"
 import { useHydrated } from "~/lib/use-hydrated"
 import { resources } from "~/locales"
 
+export const handle = { overlay: true }
+
 export function meta({ loaderData, matches }: Route.MetaArgs) {
   const locale = matches[0]?.loaderData?.locale
   return [{ title: loaderData?.title ?? resources[locale === "fi" ? "fi" : "en"].notes.title }]
@@ -33,13 +35,12 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   return { queryClient: dehydrate(queryClient), title: note?.title ?? null }
 }
 
-export async function clientLoader({ params }: Route.ClientLoaderArgs) {
+export function clientLoader({ params }: Route.ClientLoaderArgs) {
   const { queryClient, trpc } = getClientTRPC()
   const cachedNote = queryClient.getQueryData(trpc.example.get.queryKey({ id: params.noteId }))
     ?? queryClient.getQueryData(trpc.example.list.queryKey())?.find((note) => note.id === params.noteId)
-  const note = cachedNote ?? await queryClient.query(trpc.example.get.queryOptions({ id: params.noteId })).catch(() => undefined)
-
-  return { title: note?.title ?? null }
+  // Render the drawer immediately. Its query fetches missing data after mounting
+  return { title: cachedNote?.title ?? null }
 }
 
 export function shouldRevalidate({
@@ -76,6 +77,9 @@ export default function NoteModal({ params }: Route.ComponentProps) {
   })
   const loading = useModalQueryLoading(noteQuery, params.noteId)
   const note = noteQuery.data ?? null
+  useEffect(() => {
+    if (note && !isEditing) document.title = note.title
+  }, [note?.title, isEditing])
   useLayoutEffect(() => {
     setIsOpen(true)
   }, [])

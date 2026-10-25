@@ -6,9 +6,22 @@ The app includes sign-in, onboarding, teams, settings, billing, English and Finn
 
 ## Getting started
 
-Install dependencies with `npm ci`, configure the environment using `.env.example`, then run `npm run db:generate` and `npm run dev`.
+Install dependencies with `npm ci`, copy `.env.example` to `.env`, then configure the required settings below. Run `npm run db:generate` and `npm run dev`.
 
-The development app runs at `http://localhost:5174`.
+The development app runs at `http://localhost:5175`.
+
+### Environment settings
+
+For local development, set `DATABASE_URL` to your PostgreSQL connection string and `BETTER_AUTH_SECRET` to a random secret generated with `openssl rand -base64 32`. Keep `BETTER_AUTH_URL=http://localhost:5175` unless you use another address. In production, set it to the full public app URL.
+
+Email is optional locally: leave `EMAIL_PROVIDER` blank to print sign-in codes in the server console. Production sign-in and email delivery require `EMAIL_PROVIDER` (`plunk` or `resend`), the matching `PLUNK_API_KEY` or `RESEND_API_KEY`, and `EMAIL_FROM` with a verified sender address.
+
+The remaining settings are optional:
+
+- **Billing:** set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_PRO_PRICE_ID` together. Add `STRIPE_PRO_ANNUAL_PRICE_ID` for annual billing. Leave the Stripe settings blank to disable billing.
+- **IP location:** set `LOCATION_API_KEY` to enable lookups. `LOCATION_API_URL` already has a built-in default.
+- **Appearance:** `APP_LAYOUT_STYLE` accepts `floating` or `classic` and defaults to `classic`. Rebuild the production app after changing it.
+- **Other options:** additional auth hosts, test email recipients, demo checkout bypass, mockup generation, and a trusted booking IP header are described beside their settings in `.env.example`.
 
 ## Barber shop demo data
 
@@ -49,4 +62,4 @@ Use React Router loaders for route state and tRPC with TanStack Query for fetchi
 
 - `npm run typecheck`: generate route types and check TypeScript
 - `npm run build`: create the production build
-- `npm run start`: serve the production build
+- `npm run start`: serve the production build, loading `.env` if present (existing environment variables take precedence)

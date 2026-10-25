@@ -65,6 +65,7 @@ export function BookingServiceSelection({
             aria-label={t("search")}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={t("search")}
+            type="search"
             value={search}
           />
           <InputGroupAddon>

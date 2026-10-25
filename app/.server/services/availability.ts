@@ -1,4 +1,5 @@
 import { businessHolidayWindows } from "~/lib/business-holidays"
+import { blockingAppointmentStatuses } from "~/lib/appointment-status"
 import { calendarIntervalMinutes } from "~/lib/calendar/time-step"
 import { TRPCError } from "@trpc/server"
 import type { z } from "~/lib/zod"
@@ -9,7 +10,7 @@ import { getBlockedTimeInRange } from "./team-time-off"
 
 export type Slot = { startsAt: string; endsAt: string; staffMemberId: string; locationId: string | null; overlapsBreak?: boolean }
 type Interval = { start: number; end: number }
-export const blockingStatuses = ["PENDING", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS"] as const
+export const blockingStatuses = blockingAppointmentStatuses
 export function overlaps(a: Interval, b: Interval) { return a.start < b.end && a.end > b.start }
 export function mergeWindows(windows: Interval[]) {
   const merged: Interval[] = []

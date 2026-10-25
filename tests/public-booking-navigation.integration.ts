@@ -33,6 +33,13 @@ try {
   await router.navigate(`/book/test?${slotParams}`, { replace: true })
   render()
   assert.deepEqual(navigation.slot, slot)
+  let selectionNavigations = 0
+  const unsubscribe = router.subscribe(() => { selectionNavigations += 1 })
+  const beforeSelection = selectionNavigations
+  navigation.setSlot({ ...slot })
+  assert.equal(selectionNavigations, beforeSelection, "Pressing the selected time again does not navigate or reload route data")
+  assert.deepEqual(navigation.slot, slot, "Pressing the selected time keeps the appointment selected")
+  unsubscribe()
   slotParams.set("step", "details")
   await router.navigate(`/book/test?${slotParams}`)
   render()

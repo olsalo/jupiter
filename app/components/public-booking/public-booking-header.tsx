@@ -10,7 +10,7 @@ export function PublicBookingHeader({ organization, formatPreference, onFormatPr
   onFormatPreferenceChange: (value: FormatPreference) => void
 }) {
   return (
-    <header className="shrink-0">
+    <header className="shrink-0 pt-[env(safe-area-inset-top,0px)]">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:h-14 sm:px-6 lg:h-20 lg:w-[calc(100%_-_3rem)] lg:px-8">
         <div className="flex min-w-0 items-center gap-2.5">
           {organization ? <UserAvatar

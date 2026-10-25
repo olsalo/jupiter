@@ -75,7 +75,7 @@ try {
   ]
   const renderSlots = () => renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(BookingSlotList, {
     days: [{ date: "2026-10-14", slots: slotFixtures }],
-    members: [{ id: "bob", name: "Bob" }, { id: "alice", name: "Alice" }], locations: [],
+    members: [{ id: "bob", name: "Bob" }, { id: "alice", name: "Alice" }],
     selection: bookingSlotKey(slotFixtures[1]), invalid: false,
     format: (value: string) => value.slice(11, 16), onSelect: () => {},
   })))
@@ -130,7 +130,7 @@ try {
         const selectedRange = getCalendarBookingRange({ ...state, mode: "day", selected: calendarDateFromValue(selectedDrag.day, preferences.timezone) }, preferences.timezone)
         const durationMinutes = selectedDrag.endMinute - selectedDrag.startMinute
         const time = getCalendarTimeRange(selectedDrag.day, selectedDrag.startMinute, durationMinutes, preferences.timezone)
-        queryClient.setQueryData(options.appointment.list.queryKey({ from: time.startsAt, to: new Date(+time.startsAt + 1440 * 60000), staffMemberId: selectedDrag.member.id }), bookings)
+        queryClient.setQueryData(options.appointment.list.queryKey({ from: new Date(+time.startsAt - 240 * 60000), to: new Date(+time.startsAt + 1680 * 60000), staffMemberId: selectedDrag.member.id }), bookings)
         queryClient.setQueryData(options.appointment.getBookingTimes.queryKey({ id: booking.id, ...selectedRange, staffMemberId: null, durationMinutes, selectedStart: time.startsAt }), { days: [{ date: selectedDrag.day, slots: [{ startsAt: time.startsAt.toISOString(), endsAt: time.endsAt.toISOString(), staffMemberId: selectedDrag.member.id, locationId: null }] }] })
         const availabilityKey = options.appointment.getBookingTimes.queryKey({ id: booking.id, ...selectedRange, staffMemberId: null, durationMinutes, selectedStart: time.startsAt })
         if (availabilityState === "pending") queryClient.removeQueries({ queryKey: availabilityKey, exact: true })
@@ -310,7 +310,7 @@ try {
   const liveSave = [...liveEdit.matchAll(/<button\b[^>]*>(?:(?!<\/button>)[\s\S])*<\/button>/g)].map(([button]) => button).find((button) => button.includes("Save changes"))
   assert.match(liveSave ?? "", /\sdisabled(?:=|[ >])/, "The preview cannot be saved while the pointer is moving")
   const liveStartsAt = getCalendarTimeRange(liveSelection.day, liveSelection.startMinute, 90, "Europe/Helsinki").startsAt
-  const durationQueryKey = options.appointment.list.queryKey({ from: liveStartsAt, to: new Date(+liveStartsAt + 1440 * 60000), staffMemberId: liveSelection.member.id })
+  const durationQueryKey = options.appointment.list.queryKey({ from: new Date(+liveStartsAt - 240 * 60000), to: new Date(+liveStartsAt + 1680 * 60000), staffMemberId: liveSelection.member.id })
   assertLiveAvailability(durationQueryKey, "Duration checks during a drag", 0)
   render({ ...liveEditOptions, dragging: false })
   assertLiveAvailability(durationQueryKey, "Duration checks after release")
@@ -400,7 +400,7 @@ try {
     assert.equal(appointment.movable, status !== "CANCELLED", `${status} bookings expose the correct drag eligibility`)
   }
   const conflictFixtures = ["PENDING", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_SHOW"].map((status) => ({ ...normalized, id: status, status }))
-  assert.deepEqual(getCalendarBookingConflicts(conflictFixtures, false).map((appointment) => appointment.id), ["PENDING", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS"], "Disabled: active bookings stop calendar dragging")
+  assert.deepEqual(getCalendarBookingConflicts(conflictFixtures, false).map((appointment) => appointment.id), ["PENDING", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS", "COMPLETED"], "Disabled: active and completed bookings stop calendar dragging")
   assert.deepEqual(getCalendarBookingConflicts(conflictFixtures, true), [], "Enabled: existing bookings do not stop calendar dragging")
   const reservedPreview = { ...normalized, startMinute: 720, endMinute: 780, draft: true }
   const reservedBookings = [normalized, reservedPreview]

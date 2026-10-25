@@ -1,9 +1,9 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
-import { Link, useRouteLoaderData } from "react-router"
+import { Link } from "react-router"
 
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 import { Alert, AlertAction, AlertTitle } from "~/components/ui/alert"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
@@ -15,7 +15,7 @@ export function CustomerAppointments({ customerId, scope, page, preview = false 
   const { t } = useTranslation()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const root = useRouteLoaderData<typeof rootLoader>("root")
+  const root = useAppContext()
   const queryOptions = trpc.customer.getAppointments.infiniteQueryOptions({ id: customerId, scope: preview && scope === "history" ? "recent" : scope, limit: preview ? 1 : 20 }, { enabled: false, initialData: { pages: [page], pageParams: [null] }, getNextPageParam: (page) => page.nextCursor })
   const query = useInfiniteQuery(queryOptions)
   useEffect(() => {

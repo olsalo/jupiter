@@ -75,7 +75,7 @@ export function PageHeading({
           className={cn(
             "flex shrink-0 flex-wrap items-center gap-2",
             (controls || mobileControls) && "order-2 md:order-3 md:gap-4",
-            import.meta.env.VITE_APP_LAYOUT_STYLE !== "floating" && "[&_[data-slot=button]]:rounded-lg [&_[data-slot=button]]:before:rounded-[calc(var(--radius-lg)-1px)]",
+            import.meta.env.APP_LAYOUT_STYLE !== "floating" && "[&_[data-slot=button]]:rounded-lg [&_[data-slot=button]]:before:rounded-[calc(var(--radius-lg)-1px)]",
           )}
         >
           {controls ? <Separator className="hidden h-9 self-center md:block" orientation="vertical" /> : null}

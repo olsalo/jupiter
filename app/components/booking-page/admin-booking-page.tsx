@@ -51,15 +51,15 @@ export function AdminBookingPage() {
   }
 
   return <ScrollPage header={<RouteHeader
-    title={<span className="inline-flex items-center gap-3">{title}{data ? <Badge variant={live ? "success" : "secondary"}>{t(live ? "adminBookingPage.live" : "adminBookingPage.offline")}</Badge> : null}</span>}
+    title={<span className="inline-flex max-w-full min-w-0 items-center gap-2 md:gap-3"><span className="truncate">{title}</span>{data ? <Badge className={live ? "max-md:size-2 max-md:min-w-0 max-md:rounded-full max-md:border-0 max-md:bg-success max-md:p-0" : "max-md:size-2 max-md:min-w-0 max-md:rounded-full max-md:border-0 max-md:bg-muted-foreground max-md:p-0"} variant={live ? "success" : "secondary"}><span className="max-md:sr-only">{t(live ? "adminBookingPage.live" : "adminBookingPage.offline")}</span></Badge> : null}</span>}
     description={t("routeDescriptions.bookingPage")}
     refreshing={query.isRefetching}
     showDescriptionOnMobile={false}
-    actions={data ? <>
-      <Button aria-label={t("adminBookingPage.copyLink")} className="max-md:size-9 max-md:p-0" disabled={submitting} onClick={() => void copy()} size="lg" type="button" variant="outline"><Icon aria-hidden={true} name="copy" size={16} /><span className="hidden lg:inline">{t("adminBookingPage.copyLink")}</span></Button>
+    actions={<>
+      <Button aria-label={t("adminBookingPage.copyLink")} className="max-md:size-9 max-md:p-0" disabled={!data || submitting} onClick={() => void copy()} size="lg" type="button" variant="outline"><Icon aria-hidden={true} name="copy" size={16} /><span className="hidden lg:inline">{t("adminBookingPage.copyLink")}</span></Button>
       <Button aria-label={t("adminBookingPage.openPage")} className="max-md:size-9 max-md:p-0" disabled={!live || submitting} render={<a href={path} rel="noopener noreferrer" target="_blank" />} size="lg" type="button" variant="outline"><Icon aria-hidden={true} name="share" size={16} /><span className="hidden lg:inline">{t("adminBookingPage.openPage")}</span></Button>
-      <Button aria-label={t("adminBookingPage.save")} className="max-md:size-9 max-md:p-0" disabled={submitting || !formState.isDirty} form="admin-booking-page" loading={submitting} size="lg" type="submit"><Icon aria-hidden={true} name="save" size={18} /><span className="hidden md:inline">{t("adminBookingPage.save")}</span></Button>
-    </> : null}
+      <Button aria-label={t("adminBookingPage.save")} className="max-md:size-9 max-md:p-0" disabled={!data || !formState.isDirty || submitting} form="admin-booking-page" loading={submitting} size="lg" type="submit"><Icon aria-hidden={true} name="save" size={18} /><span className="hidden md:inline">{t("adminBookingPage.save")}</span></Button>
+    </>}
   />}>
     <title>{title}</title>
     {query.isError ? <Alert variant="error"><AlertTitle>{t("adminBookingPage.loadError")}</AlertTitle><AlertDescription>{t("adminBookingPage.retryDescription")}</AlertDescription><AlertAction><Button disabled={query.isFetching} onClick={() => void query.refetch()} type="button" variant="outline">{t("adminBookingPage.retry")}</Button></AlertAction></Alert> : !data || !initial.current ? <div className="flex min-h-64 flex-1 items-center justify-center"><Spinner aria-label={t("adminBookingPage.loading")} /></div> : <AppForm<AdminBookingPageFormValues, AdminBookingPageFormValues, AdminBookingPageFormValues>

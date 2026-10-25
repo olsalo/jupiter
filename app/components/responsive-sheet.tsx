@@ -1,13 +1,12 @@
 import { createContext, useContext, useEffect, useRef, useState, type ComponentProps } from "react"
 
-import { AnimatedDrawerPopup } from "~/components/animated-drawer-popup"
 import Icon from "~/components/icons"
 import type { ServerRenderedSheetPopup } from "~/components/server-rendered-sheet-popup"
 import { getSheetPopupClassName, getSheetViewportClassName } from "~/components/sheet-popup-styles"
 import { Button } from "~/components/ui/button"
 import {
   Drawer, DrawerBackdrop, DrawerBar, DrawerClose, DrawerDescription, DrawerFooter,
-  DrawerHeader, DrawerPanel, DrawerTitle,
+  DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle,
 } from "~/components/ui/drawer"
 import type { Sheet, SheetDescription, SheetFooter, SheetHeader, SheetPanel, SheetTitle } from "~/components/ui/sheet"
 import { useMediaQuery } from "~/lib/hooks"
@@ -101,7 +100,7 @@ export function ResponsiveSheetPopup({
     return <>
       <DrawerBackdrop data-slot="sheet-backdrop" forceRender={true} hidden={false} presentation="sheet" />
       <div className={getSheetViewportClassName({ className: cn("max-sm:grid max-sm:grid-cols-1 max-sm:grid-rows-[1fr_auto] max-sm:justify-normal max-sm:pt-12", viewportClassName), side, variant })} data-open="" data-slot="sheet-viewport" role="presentation">
-        <div aria-describedby={descriptionId} aria-labelledby={titleId} aria-modal={true} className={getSheetPopupClassName({ className: cn("max-sm:col-start-1 max-sm:row-start-2 max-sm:w-full max-sm:max-w-none max-sm:rounded-t-2xl max-sm:border-s-0 max-sm:border-t max-sm:pt-2", className, drawerClassName), side, variant })} data-open="" data-slot="sheet-popup" role="dialog" style={style} tabIndex={-1}>
+        <div aria-describedby={descriptionId} aria-labelledby={titleId} aria-modal={true} className={getSheetPopupClassName({ className: cn("max-sm:h-(--app-drawer-height) max-sm:not-has-data-[slot=sheet-footer]:pb-[env(safe-area-inset-bottom,0px)] max-sm:col-start-1 max-sm:row-start-2 max-sm:w-full max-sm:max-w-none max-sm:rounded-t-2xl max-sm:border-s-0 max-sm:border-t max-sm:pt-2", className, drawerClassName), side, variant })} data-open="" data-slot="sheet-popup" role="dialog" style={style} tabIndex={-1}>
           {content}
           <DrawerBar className="sm:hidden" position="bottom" />
         </div>
@@ -111,16 +110,15 @@ export function ResponsiveSheetPopup({
 
   // Change only presentation props, keeping the portal, popup and form mounted
   return (
-    <AnimatedDrawerPopup
+    <DrawerPopup
       aria-describedby={descriptionId}
       aria-labelledby={titleId}
       backdropClassName={initiallyServerRendered ? "data-starting-style:opacity-100" : undefined}
       className={isMobile
-        ? cn(drawerClassName, initiallyServerRendered && "data-starting-style:transform-none")
+        ? cn("h-(--app-drawer-height)", drawerClassName, initiallyServerRendered && "data-starting-style:transform-none")
         : cn(className, initiallyServerRendered && "data-starting-style:opacity-100 data-starting-style:translate-x-0 data-starting-style:translate-y-0")}
       data-slot={isMobile ? "drawer-popup" : "sheet-popup"}
       forceBackdrop={true}
-      enabled={isMobile}
       finalFocus={isMobile ? undefined : false}
       initialFocus={isMobile ? undefined : false}
       position={isMobile ? "bottom" : side}
@@ -132,7 +130,7 @@ export function ResponsiveSheetPopup({
       viewportClassName={isMobile ? undefined : viewportClassName}
     >
       {content}
-    </AnimatedDrawerPopup>
+    </DrawerPopup>
   )
 }
 

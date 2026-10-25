@@ -30,7 +30,7 @@ import FormLabel from "~/components/form-label"
 import Icon from "~/components/icons"
 import { Alert, AlertAction, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
-import { DialogFooter } from "~/components/ui/dialog"
+import { DrawerFooter } from "~/components/ui/drawer"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { Separator } from "~/components/ui/separator"
 import { Spinner } from "~/components/ui/spinner"
@@ -175,13 +175,12 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
     if (appointment.staffMember && !members.some((member) => member.id === appointment.staffMember?.id)) members.push(appointment.staffMember)
     return members
   }, [calendar.staff.data, appointment.staffMember])
-  const slotLocations = useMemo(() => appointment.location ? [appointment.location] : [], [appointment.location])
   const availableSlots = slotDays.find((day) => day.date === selectedDay)?.slots ?? []
   const chosenSlot = durationPending || appliedDrag !== dragSelection || !slots.isSuccess || slots.isFetching || !customRange ? undefined
     : getCalendarBookingEditSlot(availableSlots, customRange.startsAt, memberFilter ?? selectedSlotMemberId ?? preferredMember?.id, selection)
   const targetMemberId = chosenSlot?.staffMemberId ?? memberFilter ?? selectedSlotMemberId ?? preferredMember?.id
   const targetMember = calendar.staff.data?.find((member) => member.id === targetMemberId) ?? (preferredMember?.id === targetMemberId ? preferredMember : undefined)
-  const durationLimit = useCalendarBookingDurationLimit({ startsAt: selectedDay ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, calendarMinDurationMinutes, timeZone).startsAt : undefined, memberId: targetMemberId, appointmentId: appointment.id, length })
+  const durationLimit = useCalendarBookingDurationLimit({ startsAt: selectedDay ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, calendarMinDurationMinutes, timeZone).startsAt : undefined, memberId: targetMemberId, appointmentId: appointment.id, length, beforeMinutes: serviceChanged ? selectedService?.bufferBeforeMinutes : bookedService?.bufferBeforeMinutes, afterMinutes: serviceChanged ? selectedService?.bufferAfterMinutes : bookedService?.bufferAfterMinutes })
   useLayoutEffect(() => {
     if (dragging || saved || durationPending || appliedDrag !== dragSelection || slots.isFetching || slots.isError || !chosenSlot) return
     const local = new TZDate(chosenSlot.startsAt, timeZone)
@@ -263,7 +262,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
     }}
   >{(form) => {
     const customer = form.getControlProps("customerId")
-    const saveButton = canEdit ? <Button disabled={disabled || (changingTime && (!chosenSlot || slots.isError))} loading={form.formState.isSubmitting || pending} type="submit">{t("bookingForm.saveChanges")}</Button> : null
+    const saveButton = canEdit ? <Button disabled={disabled} loading={form.formState.isSubmitting || pending} type="submit">{t("bookingForm.saveChanges")}</Button> : null
     const deleteButton = canEdit ? <Button className={hasStackedButtons ? undefined : "sm:mr-auto"} disabled={disabled} onClick={() => setDeleteOpen(true)} type="button" variant="destructive-outline"><Icon aria-hidden={true} name="delete" size={16} />{t("bookingForm.delete")}</Button> : null
     const closeButton = <CalendarPanelClose disabled={pending} returnTo={returnTo} type="button" variant="ghost">{t("bookingForm.close")}</CalendarPanelClose>
     return <>
@@ -322,15 +321,15 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
                 setTimeError("")
               }} value={memberFilter} />
               <div aria-describedby={selectedTimeError ? timeErrorId : undefined} aria-invalid={Boolean(selectedTimeError)} aria-label={t("bookingForm.times")} className="w-full" role="group">
-                {(slots.isPending || slots.isFetching || durationPending || appliedDrag !== dragSelection) && selectedDay ? <div className="flex min-h-32 items-center justify-center"><Spinner aria-label={t("loading")} /></div> : slots.isError ? <Alert variant="error"><AlertTitle>{t("bookingForm.loadError")}</AlertTitle><AlertAction><Button disabled={slots.isFetching} onClick={() => void slots.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : availableSlots.length ? <BookingSlotList currentSlotKey={currentSlot ? bookingSlotKey(currentSlot) : undefined} disabled={disabled || durationPending || !slots.isSuccess || slots.isFetching} days={slotDays} format={format} formatPreference={formatPreference} invalid={Boolean(selectedTimeError)} locations={slotLocations} members={slotMembers} onSelect={selectSlot} selection={chosenSlot ? bookingSlotKey(chosenSlot) : ""} showDateHeadings={false} timeZone={timeZone} /> : <CalendarBookingEmpty description={t(selectedDay ? "bookingForm.tryDate" : "bookingForm.chooseDayForTimes")} icon="calendarOff" title={t("bookingForm.noTimes")} />}
+                {(slots.isPending || slots.isFetching || durationPending || appliedDrag !== dragSelection) && selectedDay ? <div className="flex min-h-32 items-center justify-center"><Spinner aria-label={t("loading")} /></div> : slots.isError ? <Alert variant="error"><AlertTitle>{t("bookingForm.loadError")}</AlertTitle><AlertAction><Button disabled={slots.isFetching} onClick={() => void slots.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : availableSlots.length ? <BookingSlotList currentSlotKey={currentSlot ? bookingSlotKey(currentSlot) : undefined} disabled={disabled || durationPending || !slots.isSuccess || slots.isFetching} days={slotDays} format={format} formatPreference={formatPreference} invalid={Boolean(selectedTimeError)} members={slotMembers} onSelect={selectSlot} selection={chosenSlot ? bookingSlotKey(chosenSlot) : ""} showDateHeadings={false} timeZone={timeZone} /> : <CalendarBookingEmpty description={t(selectedDay ? "bookingForm.tryDate" : "bookingForm.chooseDayForTimes")} icon="calendarOff" title={t("bookingForm.noTimes")} />}
               </div>
             </FormLabel>
           </> : null}
         </div>
       </ScrollArea>
-      <DialogFooter className={`shrink-0 rounded-none! bg-transparent ${hasStackedButtons ? "flex-col" : ""}`}>
+      <DrawerFooter allowSelection={false} className={`shrink-0 rounded-none! ${hasStackedButtons ? "flex-col" : ""}`}>
         {hasStackedButtons ? <>{saveButton}{deleteButton}{closeButton}</> : <>{deleteButton}{closeButton}{saveButton}</>}
-      </DialogFooter>
+      </DrawerFooter>
     </>
   }}</AppForm>
     <DeleteConfirmationDialog

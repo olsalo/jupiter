@@ -21,8 +21,9 @@ await i18n.init({ lng: "en", resources: { en: { common: { loading: "Loading" } }
 for (const style of ["classic", "floating"]) {
   const vite = await createServer({
     configFile: false,
+    cacheDir: `node_modules/.vite-tests/page-layout-${style}`,
     appType: "custom",
-    define: { "import.meta.env.VITE_APP_LAYOUT_STYLE": JSON.stringify(style) },
+    define: { "import.meta.env.APP_LAYOUT_STYLE": JSON.stringify(style) },
     resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/lib": `${appPath}/lib` } },
     server: { middlewareMode: true, ws: false, hmr: false, watch: null },
   })

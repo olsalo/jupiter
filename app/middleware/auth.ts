@@ -25,6 +25,10 @@ export const authMiddleware: MiddlewareFunction<Response> = async ({
 
   context.set(sessionContext, session)
   context.set(userContext, session?.user ?? null)
+}
+
+export const organizationMiddleware: MiddlewareFunction<Response> = async ({ context }) => {
+  const session = context.get(sessionContext)
 
   const organization = session
     ? await getActiveOrganization({

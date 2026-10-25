@@ -18,19 +18,16 @@ export function ScrollPage(props: PageLayoutProps) {
 }
 
 function PageFrame({ children, header, className, contentClassName, contained }: PageLayoutProps & { contained: boolean }) {
-  const isFloatingLayout = import.meta.env.VITE_APP_LAYOUT_STYLE === "floating"
-  const centerContent = import.meta.env.VITE_APP_CENTER_CONTENT === "true"
+  const isFloatingLayout = import.meta.env.APP_LAYOUT_STYLE === "floating"
 
   return <section
     className={cn(
       "flex min-w-0 w-full flex-1 flex-col",
       contained ? "h-full min-h-0 overflow-hidden" : "min-h-full",
       isFloatingLayout && "md:grid md:grid-cols-1",
-      isFloatingLayout && (centerContent && !contained
-        ? "md:grid-rows-[minmax(6rem,1fr)_auto_minmax(0.75rem,1fr)]"
-        : contained
-          ? "md:grid-rows-[6rem_minmax(0,1fr)]"
-          : "md:grid-rows-[6rem_auto]"),
+      isFloatingLayout && (contained
+        ? "md:grid-rows-[6rem_minmax(0,1fr)]"
+        : "md:grid-rows-[6rem_auto]"),
       className,
     )}
     data-slot={contained ? "viewport-page" : "scroll-page"}

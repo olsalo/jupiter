@@ -143,9 +143,9 @@ try {
   assert.doesNotMatch(loadingEdit, /data-slot="(?:sheet|drawer)-footer"/)
   queryClient.removeQueries(options.service.list.queryFilter())
   const loadingCategory = renderCategory()
-  assert.doesNotMatch(loadingCategory, /data-slot="(?:sheet|drawer)-footer"/)
+  assert.match(loadingCategory, /data-slot="(?:sheet|drawer)-footer"/, "Category footer is visible while services load")
   queryClient.removeQueries(options.staff.list.queryFilter())
-  assert.doesNotMatch(render(), /data-slot="(?:sheet|drawer)-footer"/)
+  assert.match(render(), /data-slot="(?:sheet|drawer)-footer"/, "New service footer is visible before assignment options load")
   console.info("PASS service and category form validation, money normalization, direct-route SSR, empty assignments and Finnish labels")
 } finally {
   queryClient.clear()

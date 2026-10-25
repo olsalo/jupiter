@@ -13,7 +13,7 @@ export function PublicBookingPlaceholder({ titleKey, management = false, back = 
   const { t } = useTranslation()
   const title = t(`routeTitles.${titleKey}`)
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 px-6 py-10 sm:py-16">
+    <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col gap-6 pl-[calc(1.5rem+env(safe-area-inset-left,0px))] pr-[calc(1.5rem+env(safe-area-inset-right,0px))] py-10 pb-[calc(2.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(2.5rem+env(safe-area-inset-top,0px))] sm:py-16 sm:pb-[calc(4rem+env(safe-area-inset-bottom,0px))] sm:pt-[calc(4rem+env(safe-area-inset-top,0px))]">
       <title>{title}</title>
       <PageHeading title={title} />
       <PlaceholderBody />

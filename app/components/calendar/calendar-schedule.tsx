@@ -143,7 +143,7 @@ export function CalendarSchedule() {
         return
       }
       if (!canEdit) return
-      setPreview({ preserveScroll: true, locationId: appointment.locationId, appointmentId: appointment.id, status: appointment.status, customerName: appointment.customerName, startsAt: range.startsAt.toISOString(), endsAt: range.endsAt.toISOString(), member, service: appointment.service })
+      setPreview({ bufferBeforeMinutes: appointment.bufferBeforeMinutes, bufferAfterMinutes: appointment.bufferAfterMinutes, preserveScroll: true, locationId: appointment.locationId, appointmentId: appointment.id, status: appointment.status, customerName: appointment.customerName, startsAt: range.startsAt.toISOString(), endsAt: range.endsAt.toISOString(), member, service: appointment.service })
       setDragUpdate?.({ appointmentId: appointment.id, selection: { ...dragSelection, member } })
       const editPath = `/calendar/${encodeURIComponent(appointment.id)}/edit`
       if ((phase === "start" || phase === "drop") && location.pathname !== editPath) void navigate(`${editPath}${location.search}`, { replace: isEditOpen || location.pathname === "/calendar/new", preventScrollReset: true, state: { draggedBooking: { ...dragSelection, member, appointmentId: appointment.id } } })

@@ -55,7 +55,7 @@ export function InviteMemberDialog({ staffMemberId, name = "", email = "", trigg
         setOpen(nextOpen)
       }}
     >
-      {trigger ? <Trigger render={trigger} /> : <Trigger render={<Button aria-label={t(staffMemberId ? "people.inviteToApp" : "invite.open")} className={import.meta.env.VITE_APP_LAYOUT_STYLE === "floating" ? "electron-no-drag h-9 rounded-xl max-md:w-9 max-md:px-0" : "electron-no-drag h-9 rounded-lg before:rounded-[calc(var(--radius-lg)-1px)] max-md:w-9 max-md:px-0"} size="lg" type="button" />}>
+      {trigger ? <Trigger render={trigger} /> : <Trigger render={<Button aria-label={t(staffMemberId ? "people.inviteToApp" : "invite.open")} className={import.meta.env.APP_LAYOUT_STYLE === "floating" ? "electron-no-drag h-9 rounded-xl max-md:w-9 max-md:px-0" : "electron-no-drag h-9 rounded-lg before:rounded-[calc(var(--radius-lg)-1px)] max-md:w-9 max-md:px-0"} size="lg" type="button" />}>
         <Icon aria-hidden="true" name="add" size={20} />
         <span className="max-md:sr-only">{t(staffMemberId ? "people.inviteToApp" : "invite.open")}</span>
       </Trigger>}

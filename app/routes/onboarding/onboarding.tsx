@@ -25,11 +25,11 @@ import { authClient } from "~/lib/auth/client"
 import { toast } from "~/lib/toast"
 import { getQueryClient } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { requireAuthMiddleware } from "~/middleware/auth"
+import { organizationMiddleware, requireAuthMiddleware } from "~/middleware/auth"
 import { useBottomScrollFade } from "~/lib/use-bottom-scroll-fade"
 import { cn } from "~/lib/utils"
 
-export const middleware: Route.MiddlewareFunction[] = [requireAuthMiddleware]
+export const middleware: Route.MiddlewareFunction[] = [requireAuthMiddleware, organizationMiddleware]
 
 type OnboardingStepId = "business" | "availability" | "holidays" | "subscription"
 
@@ -165,20 +165,21 @@ function OnboardingShell({ children, header }: {
 
   return (
     <main
-      className="floating-layout relative h-dvh w-full overflow-x-clip bg-background text-foreground"
+      className="floating-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] relative h-dvh w-full overflow-x-clip bg-background text-foreground"
       data-electron={isElectron}
     >
       <ScrollArea
         className="h-full w-full"
+        fill={true}
         scrollbarClassName="z-20 max-md:hidden [&[data-orientation=horizontal]]:hidden"
         viewportProps={{
           className: "app-page-scroll !overflow-x-hidden",
           ref: scrollViewportRef,
         }}
       >
-        <div className={cn("flex min-h-dvh flex-col", isElectron && "pt-7")}>
-          <div className="mx-auto flex w-[calc(100%-44px)] max-w-md flex-1 flex-col pb-[max(24px,env(safe-area-inset-bottom))] md:w-[calc(100%-160px)] md:pt-[max(24px,env(safe-area-inset-bottom))]">
-            <div className="flex shrink-0 items-center justify-between pt-5 md:contents">
+        <div className={cn("flex min-h-full flex-col", isElectron && "pt-7")}>
+          <div className="mx-auto flex w-[calc(100%-44px)] max-w-md flex-1 flex-col pb-[calc(1.5rem*sign(env(safe-area-inset-bottom,0px)))] md:w-[calc(100%-160px)] md:pt-24">
+            <div className="mb-[calc(1.5rem*(1-sign(env(safe-area-inset-top,0px))))] flex shrink-0 items-center justify-between pt-[calc(1.25rem+env(safe-area-inset-top,0px))] md:contents">
               <div
                 className={cn(
                   "electron-no-drag flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground md:fixed md:top-3.5 md:left-3.5 md:z-20 md:size-9",
@@ -209,28 +210,17 @@ function OnboardingShell({ children, header }: {
               </div>
             </div>
 
-            <div
-              aria-hidden="true"
-              className="min-h-8 flex-1"
-            />
-
             {header ? (
-              <header className="sticky top-0 z-10 shrink-0 md:mb-3">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-0 bottom-0 left-1/2 w-screen -translate-x-1/2 bg-background/25 backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_bottom,black_0%,black_60%,transparent_100%)] md:-bottom-3 md:bg-background/40 md:backdrop-blur-[40px] md:mask-[linear-gradient(to_bottom,black_0%,black_75%,transparent_100%)]"
-                />
-                <div className={cn("relative pt-3.5 pb-3", isElectron && "md:pt-10")}>
+              <header className="route-header shrink-0">
+                <div className={cn("relative", isElectron && "md:pt-4")}>
                   {header}
                 </div>
               </header>
             ) : null}
 
-            <section className="mt-3 flex min-w-0 shrink-0 flex-col gap-5 md:mt-0">
+            <section className="flex min-w-0 shrink-0 flex-col gap-5">
               {children}
             </section>
-
-            <div aria-hidden="true" className="min-h-8 flex-1" />
           </div>
         </div>
       </ScrollArea>

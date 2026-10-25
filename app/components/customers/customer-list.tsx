@@ -52,7 +52,7 @@ export function CustomerList({ customers, hasMore, fetchingMore, onLoadMore, sel
           aria-current={selected ? "page" : undefined}
           draggable={false}
           onDragStart={(event) => event.preventDefault()}
-          className={cn("flex min-h-15 min-w-0 items-center gap-3 rounded-lg border max-sm:bg-background p-3 text-base sm:border-0 sm:px-3 sm:min-h-14 sm:py-2 sm:text-sm transition-colors outline-none hover:bg-muted/70 active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", selected && "bg-muted font-medium hover:bg-muted active:bg-muted")}
+          className={cn("flex min-h-15 min-w-0 items-center gap-3 rounded-lg border max-sm:bg-background p-3 text-base sm:border-0 sm:px-3 sm:min-h-14 sm:py-2 sm:text-sm transition-colors outline-none hover:bg-muted/70 active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2", selected && "bg-muted sm:font-medium hover:bg-muted active:bg-muted")}
           key={customer.id}
           preventScrollReset={true}
           replace={true}

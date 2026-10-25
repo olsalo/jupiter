@@ -38,7 +38,7 @@ export function OnboardingScheduleForm({ defaultValues, nextStep, step }: {
       <p className="text-sm text-muted-foreground">{t(`${step}.description`)}</p>
     </div>
     <AppForm<BusinessScheduleValues, BusinessScheduleValues, unknown>
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-0"
       defaultValues={defaultValues}
       key={step}
       otherFormProps={{ noValidate: true }}
@@ -55,7 +55,9 @@ export function OnboardingScheduleForm({ defaultValues, nextStep, step }: {
         await navigate(nextStep ? `/onboarding/${nextStep}` : "/?welcome=true", { replace: true })
       }}
     >{(form) => <>
-      {step === "availability" ? <TeamWorkingHoursFields defaultHours={defaultValues.workingHours} scope={form.scope()} showHeader={false} showReset={false} timezone={defaultValues.timezone} /> : <BusinessHolidayFields form={form} persistCustomHolidays={false} timezone={defaultValues.timezone} />}
+      <div className="flex flex-col gap-5">
+        {step === "availability" ? <TeamWorkingHoursFields defaultHours={defaultValues.workingHours} scope={form.scope()} showHeader={false} showReset={false} timezone={defaultValues.timezone} /> : <BusinessHolidayFields form={form} persistCustomHolidays={false} timezone={defaultValues.timezone} />}
+      </div>
       <OnboardingActions>
         <Button loading={form.formState.isSubmitting || navigation.state !== "idle"} type="submit">
           {t(nextStep ? "actions.create" : "actions.finishSetup")}

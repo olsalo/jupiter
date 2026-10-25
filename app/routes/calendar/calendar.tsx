@@ -22,10 +22,8 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   const now = Date.now()
   const queryClient = getQueryClient()
   const trpc = await createTRPC(loaderArgs)
-  const [organization] = await Promise.all([
-    queryClient.query(trpc.organizations.getCurrent.queryOptions()).catch(() => undefined),
-    queryClient.query(trpc.staff.list.queryOptions()).catch(() => undefined),
-  ])
+  const staffPromise = queryClient.query(trpc.staff.list.queryOptions()).catch(() => undefined)
+  const organization = await queryClient.query(trpc.organizations.getCurrent.queryOptions()).catch(() => undefined)
   if (organization) {
     const settings = organization.settings
     const timeZone = settings?.timezone ?? defaultTimeZone
@@ -41,6 +39,7 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
       queryClient.query(trpc.appointment.list.queryOptions({ ...range, ...(state.mode === "list" ? { includeCancelled: true } : {}) })).catch(() => undefined),
     ])
   }
+  await staffPromise
   return { now, queryClient: dehydrate(queryClient) }
 }
 

@@ -12,6 +12,7 @@ import { queryCacheOptions } from "../app/lib/query-cache.ts"
 
 const vite = await createServer({
   configFile: false,
+  cacheDir: "node_modules/.vite-tests/note-modals-ssr",
   appType: "custom",
   resolve: { alias: {
     "@coss/ui/components": new URL("../app/components/ui", import.meta.url).pathname,
@@ -24,7 +25,7 @@ const vite = await createServer({
 const queryClient = new QueryClient({ defaultOptions: { queries: queryCacheOptions } })
 
 try {
-  const { default: NoteModal, meta: noteMeta } = await vite.ssrLoadModule("/app/routes/example/note-modal.tsx") as typeof import("../app/routes/example/note-modal")
+  const { default: NoteModal, meta: noteMeta, clientLoader: noteClientLoader } = await vite.ssrLoadModule("/app/routes/example/note-modal.tsx") as typeof import("../app/routes/example/note-modal")
   const { meta: notesMeta } = await vite.ssrLoadModule("/app/routes/example/example.tsx") as typeof import("../app/routes/example/example")
   const { default: NoteView } = await vite.ssrLoadModule("/app/routes/example/note-view.tsx") as typeof import("../app/routes/example/note-view")
   const { default: NoteEdit, meta: editMeta, loader: editLoader, clientLoader: editClientLoader } = await vite.ssrLoadModule("/app/routes/example/note-edit.tsx") as typeof import("../app/routes/example/note-edit")
@@ -105,6 +106,8 @@ try {
   }]
   const handler = createStaticHandler(routes)
   assert.equal(editClientLoader(), null)
+  const coldNote = noteClientLoader({ params: { noteId: "uncached-note" } } as Parameters<typeof noteClientLoader>[0])
+  assert.deepEqual(coldNote, { title: null }, "An uncached note opens synchronously while its mounted query loads the content")
 
   for (const language of ["en", "fi"] as const) {
     await i18n.changeLanguage(language)

@@ -1,9 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { FormSwitch } from "~/components/form-switch"
-import { createSettingsSaveQueue } from "~/lib/settings-save-queue"
-import { toast } from "~/lib/toast"
+import { SettingsSwitch } from "~/components/settings-switch"
 import { useTRPC } from "~/lib/trpc/client"
 
 export function BookingPageSwitch({ name, checked, disabled }: {
@@ -14,9 +11,6 @@ export function BookingPageSwitch({ name, checked, disabled }: {
   const { t } = useTranslation()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const queue = useRef(createSettingsSaveQueue())
-  const revision = useRef(0)
-  const confirmed = useRef(checked)
   const mutation = useMutation(trpc.bookingPage.updateSwitches.mutationOptions())
   const queryKey = trpc.bookingPage.get.queryKey()
 
@@ -27,27 +21,18 @@ export function BookingPageSwitch({ name, checked, disabled }: {
     return { ...current, values, published: current.bookingEnabled && values.isActive, ...(slug && current.publicPath === basePath ? { publicPath: `${basePath}/${encodeURIComponent(slug)}` } : {}) }
   })
 
-  const save = (value: boolean) => {
-    if (queue.current.pendingCount === 0) confirmed.current = checked
-    const currentRevision = ++revision.current
-    updateCache(value)
-    void queue.current.enqueue(async () => {
-      try {
-        const saved = await mutation.mutateAsync({ [name]: value })
-        confirmed.current = saved[name]
-        if (currentRevision !== revision.current) return
-        updateCache(saved[name], saved.slug)
-        await Promise.all([
-          queryClient.invalidateQueries(trpc.booking.getPage.queryFilter()),
-          queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
-        ])
-      } catch {
-        if (currentRevision !== revision.current) return
-        updateCache(confirmed.current)
-        toast.error(t("adminBookingPage.saveError"))
-      }
-    })
-  }
-
-  return <FormSwitch checked={checked} disabled={disabled} label={t(`adminBookingPage.${name}`)} description={t(`adminBookingPage.${name}Description`)} onCheckedChange={save} />
+  return <SettingsSwitch
+    checked={checked}
+    disabled={disabled}
+    label={t(`adminBookingPage.${name}`)}
+    description={t(`adminBookingPage.${name}Description`)}
+    errorMessage={t("adminBookingPage.saveError")}
+    save={(value) => mutation.mutateAsync({ [name]: value })}
+    getChecked={(saved) => saved[name]}
+    updateCache={(value, saved) => updateCache(value, saved?.slug)}
+    onSaved={() => Promise.all([
+      queryClient.invalidateQueries(trpc.booking.getPage.queryFilter()),
+      queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
+    ])}
+  />
 }

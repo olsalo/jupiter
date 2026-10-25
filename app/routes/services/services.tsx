@@ -13,7 +13,7 @@ import { useServiceOrder } from "~/components/services/use-service-order"
 import { ServiceListDetails } from "~/components/services/service-list-details"
 import { SortableServiceListItem } from "~/components/services/sortable-service-list-item"
 import { ServiceActionsMenu } from "~/components/services/service-actions-menu"
-import { ServiceCategoryControls, useServiceCategoryControls } from "~/components/services/service-category-controls"
+import { ServiceCategoryControls, ServiceCategoryProvider, useServiceCategoryControls } from "~/components/services/service-category-controls"
 import { RouteHeader } from "~/components/route-header"
 import { ScrollPage } from "~/components/page-layout"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
@@ -46,6 +46,10 @@ export function clientLoader() {
 }
 
 export default function Page() {
+  return <ServiceCategoryProvider><ServicesPage /></ServiceCategoryProvider>
+}
+
+function ServicesPage() {
   const { t } = useTranslation("services")
   const { t: common } = useTranslation()
   const location = useLocation()

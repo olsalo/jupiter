@@ -54,11 +54,11 @@ function getBaseUrl() {
     return window.location.origin
   }
 
-  if (process.env.VITE_URL) {
-    return `https://${process.env.VITE_URL}`
+  if (process.env.BETTER_AUTH_URL) {
+    return new URL(process.env.BETTER_AUTH_URL).origin
   }
 
-  return "http://localhost:5173"
+  return "http://localhost:5175"
 }
 
 let authRedirectStarted = false

@@ -15,10 +15,10 @@ import fiAuth from "~/locales/fi/auth.json"
 
 import { fallbackLanguage, supportedLanguages } from "~/locales"
 import type { BillingNotification } from "~/lib/billing"
+import { getEmailLocale } from "~/lib/auth/email-locale.server"
 import { localeCookie } from "~/lib/cookies.server"
 import {
   emailOtpExpiresInMinutes,
-  getEmailLocale,
   sendOtpEmail,
   sendEmail,
 } from "~/lib/email.server"

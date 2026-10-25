@@ -1,15 +1,14 @@
-import { useRef, type ComponentProps } from "react"
+import { useRef } from "react"
 import { useTranslation } from "react-i18next"
 import { Link, NavLink, Outlet, href } from "react-router"
 
 import { AppLogo } from "~/components/app-logo"
 import { BillingNotificationBar } from "~/components/billing-notification-bar"
-import Icon from "~/components/icons"
 import { NavigationIcon } from "~/components/navigation-icon"
+import { PageBottomFade } from "~/components/page-bottom-fade"
 import { PageBillingNotificationContext } from "~/components/page-heading"
 import { Profile } from "~/components/profile"
 import { SettingsModal } from "~/components/settings-modal"
-import { Button } from "~/components/ui/button"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import {
   Tooltip,
@@ -17,27 +16,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip"
-import type { AppNavigationItem } from "~/lib/app-navigation"
+import type { WorkspaceLayoutProps } from "~/components/workspace-layout"
 import { cn } from "~/lib/utils"
 import { useMobileMenuNavigation } from "~/lib/mobile-navigation"
-import { useBottomScrollFade } from "~/lib/use-bottom-scroll-fade"
 import { useRouteScrollRestoration } from "~/lib/use-route-scroll-restoration"
-
-type NavigationItem = AppNavigationItem
-
-type FloatingLayoutProps = {
-  animatePage: boolean
-  billingNotification: ComponentProps<
-    typeof BillingNotificationBar
-  >["notification"]
-  isDesktop: boolean
-  isElectron: boolean
-  isViewportPage: boolean
-  menuItems: readonly NavigationItem[]
-  pendingPath?: string
-  routePathname: string
-  user: ComponentProps<typeof Profile>["user"]
-}
 
 const floatingPopupGap = 8
 
@@ -48,25 +30,25 @@ export function FloatingLayout({
   isElectron,
   isViewportPage,
   menuItems,
+  pageLayout,
   pendingPath,
   routePathname,
   user,
-}: FloatingLayoutProps) {
+}: WorkspaceLayoutProps) {
   const { t } = useTranslation()
   const mobileMenuNavigation = useMobileMenuNavigation()
   const scrollViewportRef = useRef<HTMLDivElement>(null)
   useRouteScrollRestoration(scrollViewportRef, routePathname)
-  const bottomFadeRef = useRef<HTMLDivElement>(null)
-  useBottomScrollFade(scrollViewportRef, bottomFadeRef, isViewportPage)
   const navigationPrefetch = isDesktop ? "intent" : "viewport"
 
   return (
     <PageBillingNotificationContext.Provider value={isDesktop ? billingNotification : null}>
       <main
         className={cn(
-          "floating-layout relative h-dvh w-full overflow-x-clip bg-background text-foreground",
+          "floating-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] relative h-dvh w-full overflow-x-clip bg-background text-foreground",
         )}
         data-electron={isElectron}
+        data-page-layout={pageLayout}
       >
         <ScrollArea
           className="h-full w-full"
@@ -95,7 +77,7 @@ export function FloatingLayout({
                 isViewportPage && "min-h-0",
               )}
             >
-              <div className="flex shrink-0 items-center justify-between pt-5 md:hidden">
+              <div className="mb-[calc(1.5rem*(1-sign(env(safe-area-inset-top,0px))))] flex shrink-0 items-center justify-between pt-[calc(1.25rem+env(safe-area-inset-top,0px))] md:hidden">
                 <Link
                   aria-label={t("nav.overviewHome")}
                   className="electron-no-drag flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground"
@@ -142,20 +124,12 @@ export function FloatingLayout({
           </>
         ) : null}
 
-        <div
-          aria-hidden="true"
-          className={cn(
-            "pointer-events-none fixed inset-x-0 bottom-0 z-10 h-[calc(112px+env(safe-area-inset-bottom))] bg-linear-to-t from-background/75 from-50% to-transparent will-change-opacity md:h-8",
-            routePathname === "/booking-page" && "md:h-14 from-background from-20%",
-            isViewportPage && "hidden",
-          )}
-          ref={bottomFadeRef}
-        />
+        <PageBottomFade pathname={routePathname} variant="floating" />
 
         <Link
           aria-label={t("nav.overviewHome")}
           className={cn(
-            "electron-no-drag fixed top-3.5 left-3.5 z-20 hidden size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground md:flex",
+            "electron-no-drag fixed top-3.5 left-[calc(0.875rem+env(safe-area-inset-left,0px))] z-20 hidden size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground md:flex",
             isElectron && "top-[46px]",
           )}
           draggable={false}
@@ -168,7 +142,7 @@ export function FloatingLayout({
         <TooltipProvider>
           <nav
             aria-label={t("appName")}
-            className="electron-no-drag fixed bottom-[max(20px,env(safe-area-inset-bottom))] left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border bg-background p-1 shadow-[0_0_4px_rgba(0,0,0,0.1)] md:top-1/2 md:bottom-auto md:left-3.5 md:-translate-x-0 md:-translate-y-1/2 md:flex-col max-md:max-w-[calc(100vw-2rem)] max-md:overflow-x-auto md:max-h-[calc(100dvh-12rem)] md:overflow-y-auto"
+            className="electron-no-drag fixed bottom-[max(20px,env(safe-area-inset-bottom))] left-[calc((100%+env(safe-area-inset-left,0px)-env(safe-area-inset-right,0px))/2)] z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border bg-background p-1 shadow-[0_0_4px_rgba(0,0,0,0.1)] md:top-1/2 md:bottom-auto md:left-[calc(0.875rem+env(safe-area-inset-left,0px))] md:-translate-x-0 md:-translate-y-1/2 md:flex-col max-md:max-w-[calc(100vw-2rem-env(safe-area-inset-left,0px)-env(safe-area-inset-right,0px))] max-md:overflow-x-auto md:max-h-[calc(100dvh-12rem)] md:overflow-y-auto"
           >
             {menuItems.map((item) => (
               <Tooltip key={item.path}>
@@ -219,7 +193,7 @@ export function FloatingLayout({
           </nav>
         </TooltipProvider>
 
-        <div className="electron-no-drag fixed bottom-3.5 left-3.5 z-20 hidden flex-col items-center gap-1 rounded-full border border-border bg-background p-1 shadow-[0_0_4px_rgba(0,0,0,0.1)] md:flex">
+        <div className="electron-no-drag fixed bottom-3.5 left-[calc(0.875rem+env(safe-area-inset-left,0px))] z-20 hidden flex-col items-center gap-1 rounded-full border border-border bg-background p-1 shadow-[0_0_4px_rgba(0,0,0,0.1)] md:flex">
           <SettingsModal
             hashOwner={isDesktop}
             showTooltip={true}

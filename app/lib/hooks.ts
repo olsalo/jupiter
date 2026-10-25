@@ -15,7 +15,7 @@ function resolveQuery(query: string) {
   return query
 }
 
-export function useMediaQuery(query: string) {
+export function useMediaQuery(query: string, { serverMatches = false }: { serverMatches?: boolean } = {}) {
   const mediaQuery = resolveQuery(query)
 
   const subscribe = React.useCallback((onChange: () => void) => {
@@ -32,7 +32,9 @@ export function useMediaQuery(query: string) {
     [mediaQuery],
   )
 
-  return React.useSyncExternalStore(subscribe, getSnapshot, () => false)
+  const getServerSnapshot = React.useCallback(() => serverMatches, [serverMatches])
+
+  return React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
 
 export function useMinimumLoading({

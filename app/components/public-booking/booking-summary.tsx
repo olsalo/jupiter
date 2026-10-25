@@ -37,6 +37,7 @@ export function BookingSummary({
       ? undefined
       : data.staff.find((member) => member.id === slot?.staffMemberId)
   const location = data.locations.find((place) => place.id === slot?.locationId)
+  const address = [location?.addressLine1, location?.city].filter(Boolean).join(", ")
   const delivery =
     service?.deliveryType === "ONLINE"
       ? t("online")
@@ -84,9 +85,9 @@ export function BookingSummary({
             </>
           ) : null}
         </p>
-        {person || location || delivery ? (
+        {person || delivery ? (
           <p className="text-xs leading-5 wrap-anywhere text-muted-foreground">
-            {[person?.name, location?.name ?? delivery]
+            {[person?.name, delivery]
               .filter(Boolean)
               .join(" · ")}
           </p>
@@ -157,7 +158,7 @@ export function BookingSummary({
             <p className="text-muted-foreground">{t("notSelected")}</p>
           )}
         </div>
-        {person || location || delivery ? (
+        {person || address || delivery ? (
           <div className="space-y-4 border-t border-border/50 pt-4">
             {person ? (
               <div className="space-y-2">
@@ -174,7 +175,7 @@ export function BookingSummary({
                 </div>
               </div>
             ) : null}
-            {location ? (
+            {address ? (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">{t("location")}</p>
                 <div className="flex items-start gap-2">
@@ -184,11 +185,8 @@ export function BookingSummary({
                     name="buildingStore"
                   />
                   <div className="min-w-0">
-                    <p className="wrap-anywhere">{location.name}</p>
-                    <p className="mt-1 text-xs leading-5 wrap-anywhere text-muted-foreground">
-                      {[location.addressLine1, location.city]
-                        .filter(Boolean)
-                        .join(", ")}
+                    <p className="text-xs leading-5 wrap-anywhere text-muted-foreground">
+                      {address}
                     </p>
                   </div>
                 </div>

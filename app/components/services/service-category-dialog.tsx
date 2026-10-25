@@ -46,13 +46,12 @@ function ServiceCategoryDialogSession({ open, flow, mode = "create", initialCate
   })
   const [selection, setSelection] = useState(() => ({ id: initialCategoryId, values: categoryValues(initialCategoryId) }))
   const selectedId = selection.id
-  const selectedCategory = categories.find((category) => category.id === selectedId)
   const categoryItems = categories.map((category) => ({ value: category.id, label: category.name }))
   const schema = useMemo(() => serviceCategorySchema((key) => t(key)), [t])
   const [submitting, setSubmitting] = useState(false)
 
   return <ResponsiveSheet deferClose={false} open={open} onOpenChange={(next) => { if (!submitting && !create.isPending && !update.isPending) onOpenChange(next) }}>
-    <ResponsiveSheetPopup className="h-full sm:max-w-xl" closeLabel={t("close")} descriptionId={descriptionId} drawerClassName="max-sm:h-[calc(100dvh-3rem)]" open={open} side="right" titleId={titleId} variant="inset">
+    <ResponsiveSheetPopup className="h-full sm:max-w-xl" closeLabel={t("close")} descriptionId={descriptionId} drawerClassName="max-sm:h-(--app-drawer-height)" open={open} side="right" titleId={titleId} variant="inset">
       <ResponsiveSheetHeader className="shrink-0"><ResponsiveSheetTitle id={titleId}>{t(editing ? "editCategory" : "newCategory")}</ResponsiveSheetTitle><ResponsiveSheetDescription id={descriptionId}>{t(editing ? "categoryEditDescription" : "categoryServicesDescription")}</ResponsiveSheetDescription></ResponsiveSheetHeader>
       <AppForm<ServiceCategoryValues, ServiceCategoryValues, unknown> className="contents" key={editing ? selectedId : flow} defaultValues={selection.values} schema={schema} onFormStateChange={(state) => setSubmitting(state.isSubmitting)} submitFn={async (values) => {
         try {
@@ -91,7 +90,7 @@ function ServiceCategoryDialogSession({ open, flow, mode = "create", initialCate
                 {services.isPending ? <div className="flex min-h-0 flex-1 items-center justify-center"><Spinner aria-label={t("loading")} /></div> : services.isError ? <Alert variant="error"><AlertTitle>{t("loadError")}</AlertTitle><AlertDescription>{t("listRetryDescription")}</AlertDescription><AlertAction><Button disabled={services.isFetching} onClick={() => void services.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : <ServiceSelection label={t("categoryServices")} key={flow} services={services.data} value={control.value} onChange={control.onChange} onBlur={control.onBlur} inputRef={control.ref} disabled={pending} invalid={Boolean(form.error("serviceIds"))} />}
               </FormLabel>
             </ResponsiveSheetPanel>
-            {!services.isPending ? <ResponsiveSheetFooter className="shrink-0"><Button disabled={pending} onClick={() => onOpenChange(false)} type="button" variant="ghost">{t("cancel")}</Button><Button disabled={pending || !services.isSuccess || (editing && !selectedCategory)} loading={saving} type="submit">{t(editing ? saving ? "categorySaving" : "saveCategory" : saving ? "categoryCreating" : "createCategory")}</Button></ResponsiveSheetFooter> : null}
+            <ResponsiveSheetFooter className="shrink-0"><Button disabled={pending} onClick={() => onOpenChange(false)} type="button" variant="ghost">{t("cancel")}</Button><Button disabled={pending} loading={saving} type="submit">{t(editing ? saving ? "categorySaving" : "saveCategory" : saving ? "categoryCreating" : "createCategory")}</Button></ResponsiveSheetFooter>
           </>
         }}
       </AppForm>

@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate, useOutletContext } from "react-router"
 
@@ -34,7 +33,6 @@ export const shouldRevalidate = shouldRevalidateAppRoute
 export default function NoteEdit({ params }: Route.ComponentProps) {
   const { t } = useTranslation("notes")
   const { note, loading, titleId, descriptionId } = useOutletContext<NoteModalContext>()
-  const [isDirty, setIsDirty] = useState(false)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const trpc = useTRPC()
@@ -67,7 +65,6 @@ export default function NoteEdit({ params }: Route.ComponentProps) {
             defaultValues={{ body: note.body, title: note.title }}
             id="edit-note-form"
             key={note.id}
-            onDirtyChange={setIsDirty}
             submitFn={(input) => updateMutation.mutateAsync({ ...input, id: note.id })}
           />
         ) : (
@@ -80,7 +77,7 @@ export default function NoteEdit({ params }: Route.ComponentProps) {
         <Button disabled={updateMutation.isPending} onClick={() => void navigate("..", { replace: true })} type="button" variant="ghost">
           {t("form.cancel")}
         </Button>
-        <Button disabled={!note || !isDirty || updateMutation.isPending} form="edit-note-form" type="submit">
+        <Button disabled={!note || updateMutation.isPending} form="edit-note-form" type="submit">
           {updateMutation.isPending ? <Spinner aria-hidden={true} /> : null}
           {updateMutation.isPending ? t("form.saving") : t("form.save")}
         </Button>

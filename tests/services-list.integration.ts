@@ -14,7 +14,6 @@ const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vi
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } })
 try {
   const { default: Services } = await vite.ssrLoadModule("/app/routes/services/services.tsx") as typeof import("../app/routes/services/services")
-  const { ServiceCategoryProvider } = await vite.ssrLoadModule("/app/components/services/service-category-controls.tsx") as typeof import("../app/components/services/service-category-controls")
   const { TRPCProvider, trpc } = await vite.ssrLoadModule("/app/lib/trpc/client.tsx") as typeof import("../app/lib/trpc/client")
   const { resources } = await vite.ssrLoadModule("/app/locales/index.ts") as typeof import("../app/locales")
   const options = createTRPCOptionsProxy({ client: trpc, queryClient })
@@ -22,8 +21,7 @@ try {
   const i18n = createInstance()
   await i18n.init({ resources, lng: "en", defaultNS: "common", interpolation: { escapeValue: false } })
   let role = "owner"
-  const ServicesWithHeader = () => createElement(ServiceCategoryProvider, { children: createElement(Services) })
-  const handler = createStaticHandler([{ id: "root", path: "/", Component: Outlet, loader: () => ({ locale: i18n.language, org: { id: "org" }, organizations: [{ id: "org", role }], formatPreference: "eu" }), children: [{ path: "services", Component: ServicesWithHeader }] }])
+  const handler = createStaticHandler([{ id: "root", path: "/", Component: Outlet, loader: () => ({ locale: i18n.language, org: { id: "org" }, organizations: [{ id: "org", role }], formatPreference: "eu" }), children: [{ path: "services", Component: Services }] }])
   async function render(path = "/services") {
     const context = await handler.query(new Request(`https://example.invalid${path}`))
     assert.ok(!(context instanceof Response))

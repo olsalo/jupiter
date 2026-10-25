@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto"
 import { createServer } from "vite"
 
 const appPath = new URL("../app", import.meta.url).pathname
-const vite = await createServer({ configFile: false, appType: "custom", resolve: { alias: { "~": appPath } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
+const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/calendar-availability", appType: "custom", resolve: { alias: { "~": appPath } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
 const { auth } = await vite.ssrLoadModule("/app/lib/auth/server.ts") as typeof import("../app/lib/auth/server")
 const { prisma } = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as typeof import("../app/lib/prisma.server")
 const { appRouter } = await vite.ssrLoadModule("/app/.server/main.ts") as typeof import("../app/.server/main")

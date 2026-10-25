@@ -18,9 +18,9 @@ export default function NotFound() {
   const { t } = useTranslation("notFound")
 
   return (
-    <main className="relative grid min-h-dvh place-items-center bg-background px-5 text-foreground">
+    <main className="relative grid min-h-dvh place-items-center bg-background pl-[calc(1.25rem+env(safe-area-inset-left,0px))] pr-[calc(1.25rem+env(safe-area-inset-right,0px))] pb-[env(safe-area-inset-bottom,0px)] text-foreground">
       <title>{t("title")}</title>
-      <header className="absolute left-5 top-5">
+      <header className="absolute left-[calc(1.25rem+env(safe-area-inset-left,0px))] top-[calc(1.25rem+env(safe-area-inset-top,0px))]">
         <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground md:size-9">
           <AppLogo aria-hidden="true" className="size-5 md:size-6" />
         </div>

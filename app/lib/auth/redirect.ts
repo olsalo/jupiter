@@ -1,3 +1,6 @@
+// Used only to parse relative paths, never as a redirect destination
+const redirectParsingOrigin = "https://redirect.invalid"
+
 export function getSafeRedirectTo(searchParams: URLSearchParams) {
   const redirectTo = searchParams.get("redirectTo")
 
@@ -10,8 +13,8 @@ export function getSafeRedirectTo(searchParams: URLSearchParams) {
     return "/"
   }
 
-  const redirectUrl = new URL(redirectTo, "http://comet.local")
-  if (redirectUrl.origin !== "http://comet.local" || redirectUrl.pathname.startsWith("//")) {
+  const redirectUrl = new URL(redirectTo, redirectParsingOrigin)
+  if (redirectUrl.origin !== redirectParsingOrigin || redirectUrl.pathname.startsWith("//")) {
     return "/"
   }
   let pathname = redirectUrl.pathname

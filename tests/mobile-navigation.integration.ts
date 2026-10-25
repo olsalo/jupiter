@@ -6,6 +6,7 @@ import { createServer } from "vite"
 const appPath = new URL("../app", import.meta.url).pathname
 const vite = await createServer({
   configFile: false,
+  cacheDir: "node_modules/.vite-tests/mobile-navigation",
   appType: "custom",
   resolve: { alias: {
     "~": appPath,
@@ -26,6 +27,9 @@ try {
     ["/team", "/app/routes/team/team.tsx"],
     ["/team-v2", "/app/routes/team-v2/team.tsx"],
     ["/services", "/app/routes/services/services.tsx"],
+    ["/booking-page", "/app/routes/booking-pages/booking-pages.tsx"],
+    ["/customers", "/app/routes/customers/customers.tsx"],
+    ["/calendar", "/app/routes/calendar/calendar.tsx"],
   ]) {
     const { clientLoader } = await vite.ssrLoadModule(module) as { clientLoader: ClientLoader }
     routes.push({ path, clientLoader })
@@ -41,6 +45,9 @@ try {
       for (const { path, clientLoader } of routes) {
         const keys: QueryKey[] = path === "/services"
           ? [trpc.service.list.queryKey(), trpc.service.categories.queryKey()]
+          : path === "/booking-page" ? [trpc.bookingPage.get.queryKey()]
+          : path === "/customers" ? [trpc.customer.list.queryKey()]
+          : path === "/calendar" ? [trpc.appointment.list.queryKey({ from: new Date("2026-10-19T00:00:00Z"), to: new Date("2026-10-26T00:00:00Z") })]
           : [path === "/example" ? trpc.example.list.queryKey() : trpc.team.list.queryKey()]
 
         for (const queryKey of keys) {

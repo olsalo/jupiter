@@ -3,9 +3,6 @@ import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
 import { ResponsiveSheet, ResponsiveSheetPopup, ResponsiveSheetHeader, ResponsiveSheetTitle, ResponsiveSheetDescription } from "~/components/responsive-sheet"
 import { useRouteSheet } from "~/components/use-route-sheet"
-import { cn } from "~/lib/utils"
-
-const mobileContentHeight = "max-sm:min-h-[min(36rem,calc(100dvh-3rem))]"
 
 export function CustomerSheet({ title, description, children, pending = false, profile = false, basePath = "/customers", defaultReturnTo = basePath, onCloseStart }: {
   title: string
@@ -33,7 +30,7 @@ export function CustomerSheet({ title, description, children, pending = false, p
   }
   return (
     <ResponsiveSheet deferClose={false} open={open} onOpenChange={(next) => { if (!next && !pending) close() }} onOpenChangeComplete={(next) => { if (!next) finishClosing() }}>
-      <ResponsiveSheetPopup closeLabel={t("customerPage.close")} className={cn("sm:max-w-xl [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col", mobileContentHeight)} drawerClassName={mobileContentHeight} open={open} side="right" variant="inset" titleId={titleId} descriptionId={descriptionId}>
+      <ResponsiveSheetPopup closeLabel={t("customerPage.close")} className="sm:max-w-xl [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col" open={open} side="right" variant="inset" titleId={titleId} descriptionId={descriptionId}>
         <ResponsiveSheetHeader className={profile ? "sr-only p-0!" : undefined}>
           <ResponsiveSheetTitle id={titleId}>{title}</ResponsiveSheetTitle>
           <ResponsiveSheetDescription id={descriptionId}>{description}</ResponsiveSheetDescription>

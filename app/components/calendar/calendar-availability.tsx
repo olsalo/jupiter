@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query"
 import { useId, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useLocation, useNavigate, useRouteLoaderData, useSearchParams } from "react-router"
+import { useLocation, useNavigate, useSearchParams } from "react-router"
 
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 import { CalendarWeeklyAvailability } from "~/components/calendar/calendar-weekly-availability"
 import { CalendarTimeOff } from "~/components/calendar/calendar-time-off"
 import { CalendarExtraHours } from "~/components/calendar/calendar-extra-hours"
@@ -25,7 +25,7 @@ type ScheduleKind = "workingHours" | "breaks" | "timeOff" | "extraHours"
 export function CalendarAvailability({ initialKind = "workingHours" }: { initialKind?: ScheduleKind }) {
   const { t } = useTranslation()
   const trpc = useTRPC()
-  const root = useRouteLoaderData<typeof rootLoader>("root")
+  const root = useAppContext()
   const organizationRole = useCurrentOrganizationRole()
   const navigate = useNavigate()
   const location = useLocation()
@@ -50,7 +50,7 @@ export function CalendarAvailability({ initialKind = "workingHours" }: { initial
 
   return <ResponsiveSheet deferClose={false} open={open} onOpenChange={(next) => { if (!next && !pending) close() }} onOpenChangeComplete={(next) => { if (!next) finishClosing() }}>
     <title>{t("routeTitles.availability")}</title>
-    <ResponsiveSheetPopup className="sm:max-w-xl" drawerClassName="max-sm:h-[calc(100dvh-3rem)] max-sm:border-t max-sm:border-border" closeLabel={t("team:people.close")} descriptionId={descriptionId} open={open} side="right" titleId={titleId} variant="inset">
+    <ResponsiveSheetPopup className="sm:max-w-xl" drawerClassName="max-sm:h-(--app-drawer-height) max-sm:border-t max-sm:border-border" closeLabel={t("team:people.close")} descriptionId={descriptionId} open={open} side="right" titleId={titleId} variant="inset">
       <ResponsiveSheetHeader className="pb-3!">
         <ResponsiveSheetTitle id={titleId}>{t("routeTitles.availability")}</ResponsiveSheetTitle>
         <ResponsiveSheetDescription id={descriptionId}>{t("calendarAvailability.description")}</ResponsiveSheetDescription>

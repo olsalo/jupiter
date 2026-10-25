@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next"
-import { useRouteLoaderData } from "react-router"
 
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 import Icon from "~/components/icons"
 import { IconListItem } from "~/components/icon-list-item"
 import { InvitationActionsMenu } from "~/components/invitation-actions-menu"
@@ -21,7 +20,7 @@ import type { TeamPerson } from "./team-types"
 
 export function TeamPersonAccess({ person, disabled = false }: { person: TeamPerson; disabled?: boolean }) {
   const { t } = useTranslation("team")
-  const root = useRouteLoaderData<typeof rootLoader>("root")
+  const root = useAppContext()
   const ownRole = useCurrentOrganizationRole()
   const canManage = hasOrganizationRole(ownRole, "owner") || hasOrganizationRole(ownRole, "admin")
   const ownMember = person.member?.user.id === root?.user?.id

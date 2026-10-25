@@ -12,7 +12,7 @@ import { cn } from "~/lib/utils"
 
 type BookingSlot = { startsAt: string; endsAt: string; staffMemberId: string; locationId: string | null }
 type BookingMember = { id: string; name: string; image?: string | null }
-type SlotItem = { key: string; member: BookingMember; label: string; time: string; locationName?: string }
+type SlotItem = { key: string; member: BookingMember; label: string; time: string }
 
 const dayPeriods = [
   { key: "night", from: 0, to: 6 },
@@ -23,10 +23,9 @@ const dayPeriods = [
 
 export const bookingSlotKey = (slot: Pick<BookingSlot, "startsAt" | "staffMemberId" | "locationId">) => `${slot.startsAt}/${slot.staffMemberId}/${slot.locationId ?? ""}`
 
-export function BookingSlotList({ days, members, locations, selection, currentSlotKey, invalid, disabled = false, format, onSelect, showDateHeadings = true, timeZone = defaultTimeZone, formatPreference = "eu" }: {
+export function BookingSlotList({ days, members, selection, currentSlotKey, invalid, disabled = false, format, onSelect, showDateHeadings = true, timeZone = defaultTimeZone, formatPreference = "eu" }: {
   days: { date: string; slots: BookingSlot[] }[]
   members: BookingMember[]
-  locations: { id: string; name: string | null }[]
   selection: string
   currentSlotKey?: string
   invalid: boolean
@@ -40,7 +39,6 @@ export function BookingSlotList({ days, members, locations, selection, currentSl
   const { t } = useTranslation()
   const slotDays = useMemo(() => {
     const memberMap = new Map(members.map((member) => [member.id, member]))
-    const locationMap = new Map(locations.map((location) => [location.id, location]))
     const memberFor = (id: string): BookingMember => memberMap.get(id) ?? { id, name: t("routeTitles.staffMember") }
 
     return days.filter((day) => day.slots.length > 0).map((day) => {
@@ -51,18 +49,17 @@ export function BookingSlotList({ days, members, locations, selection, currentSl
         const period = periods.find((item) => hour >= item.from && hour < item.to)
         if (!period) continue
         const member = memberFor(slot.staffMemberId)
-        const location = slot.locationId ? locationMap.get(slot.locationId) : undefined
         const startTime = format(slot.startsAt, false)
         const endTime = format(slot.endsAt, false)
         period.slots.push({
-          key: bookingSlotKey(slot), member, locationName: location?.name ?? undefined,
-          label: `${member.name} · ${startTime} – ${endTime}${location?.name ? ` · ${location.name}` : ""}`,
+          key: bookingSlotKey(slot), member,
+          label: `${member.name} · ${startTime} – ${endTime}`,
           time: `${startTime} – ${endTime}`,
         })
       }
       return { date: day.date, label: showDateHeadings ? format(day.slots[0].startsAt, true, false, true) : "", periods: periods.filter((period) => period.slots.length > 0) }
     })
-  }, [days, members, locations, format, timeZone, showDateHeadings, t])
+  }, [days, members, format, timeZone, showDateHeadings, t])
 
   return <TooltipProvider><div className="flex w-full min-w-0 flex-col gap-5" data-slot="booking-slot-list">
     {slotDays.map((day) => <section className="flex min-w-0 flex-col gap-4" data-slot="booking-slot-day" key={day.date}>
@@ -106,7 +103,6 @@ const BookingSlotButton = memo(function BookingSlotButton({ slot, selected, curr
         <span className="text-xs leading-4 whitespace-nowrap">
           {slot.time}
         </span>
-        {slot.locationName ? <span className="truncate text-[10px] font-normal opacity-80">{slot.locationName}</span> : null}
       </span>
       {current ? <Badge className="pointer-events-none absolute top-0 left-1/2 h-3.5 min-w-0 -translate-x-1/2 -translate-y-1/2 bg-background px-1 text-[9px] leading-none sm:h-3.5 sm:min-w-0 sm:text-[9px] dark:bg-background" size="sm" variant="outline">{t("bookingForm.currentTime")}</Badge> : null}
       </TooltipTrigger>

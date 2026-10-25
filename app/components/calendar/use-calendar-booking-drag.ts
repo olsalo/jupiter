@@ -369,7 +369,7 @@ export function useCalendarBookingDrag({ appointments, conflictAppointments = ap
         } else {
           active.current = null
           // Pointer capture targets the grid, so restore the card's normal click action
-          event.currentTarget.querySelector<HTMLElement>(`[data-appointment-id="${CSS.escape(drag.appointment.id)}"]`)?.click()
+          event.currentTarget.querySelector<HTMLElement>(`[data-slot="calendar-appointment"][data-appointment-id="${CSS.escape(drag.appointment.id)}"]`)?.click()
         }
       },
       onPointerCancel: returnToOrigin,

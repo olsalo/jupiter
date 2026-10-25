@@ -21,6 +21,8 @@ import { useHydrated } from "~/lib/use-hydrated"
 import type { Route } from "./+types/new-note-modal"
 import { resources } from "~/locales"
 
+export const handle = { overlay: true }
+
 export function meta({ matches }: Route.MetaArgs) {
   const locale = matches[0]?.loaderData?.locale
   return [{ title: resources[locale === "fi" ? "fi" : "en"].notes.form.createTitle }]

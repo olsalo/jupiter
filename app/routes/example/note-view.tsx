@@ -1,8 +1,8 @@
 import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
-import { useNavigate, useOutletContext, useRouteLoaderData } from "react-router"
+import { useNavigate, useOutletContext } from "react-router"
 
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 import Icon from "~/components/icons"
 import type { NoteModalContext } from "~/components/notes/note-modal-context"
 import { NoteModalSkeleton } from "~/components/notes/note-modal-skeleton"
@@ -22,7 +22,7 @@ export function clientLoader() {
 export default function NoteView() {
   const { i18n, t } = useTranslation("notes")
   const { note, loading, titleId, descriptionId } = useOutletContext<NoteModalContext>()
-  const rootData = useRouteLoaderData<typeof rootLoader>("root")
+  const rootData = useAppContext()
   const navigate = useNavigate()
   const hasError = !note
   const dateTimeFormatter = useMemo(

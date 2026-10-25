@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useRouteLoaderData } from "react-router"
 
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 import Icon from "~/components/icons"
 import { SettingsSectionHeader } from "~/components/settings-section-header"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
@@ -18,7 +17,7 @@ import type { TeamPerson } from "./team-types"
 
 export function TeamPersonTimeOff({ staff, canManage, self = false }: { self?: boolean; staff: NonNullable<TeamPerson["staff"]>; canManage: boolean }) {
   const { t } = useTranslation("team")
-  const root = useRouteLoaderData<typeof rootLoader>("root")
+  const root = useAppContext()
   const trpc = useTRPC()
   const timeOff = useQuery(trpc.availability.getTimeOff.queryOptions({ staffMemberId: staff.id }))
   const [open, setOpen] = useState(false)

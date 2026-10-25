@@ -2,14 +2,14 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouteLoaderData } from "react-router"
 
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 import type { loader as overviewLoader } from "~/routes/overview"
 import { defaultTimeZone } from "~/lib/format-preference"
 import { getGreetingPeriod } from "~/lib/overview-time"
 
 export function useOverviewGreeting() {
   const { t } = useTranslation("dashboard")
-  const root = useRouteLoaderData<typeof rootLoader>("root")
+  const root = useAppContext()
   const overview = useRouteLoaderData<typeof overviewLoader>("routes/overview")
   const [now, setNow] = useState<string | null>(null)
 

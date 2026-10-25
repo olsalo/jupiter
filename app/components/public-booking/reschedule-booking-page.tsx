@@ -24,7 +24,7 @@ export function RescheduleBookingPage({ bookingCode }: { bookingCode: string }) 
   const navigation = useNavigation()
   const queryClient = useQueryClient()
   const preference = useFormatPreference()
-  const page = useQuery(trpc.booking.getReschedulePage.queryOptions({ bookingCode }, { retry: false }))
+  const page = useQuery(trpc.booking.getReschedulePage.queryOptions({ bookingCode }, { retry: false, retryOnMount: false }))
   const mutation = useMutation(trpc.booking.reschedule.mutationOptions())
   const [slot, setSlot] = useState<BookingSlot | null>(null)
   const [ready, setReady] = useState(false)
@@ -74,7 +74,7 @@ export function RescheduleBookingPage({ bookingCode }: { bookingCode: string }) 
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground" style={bookingPageColorStyle(data?.accentColor)}>
+    <div className="flex h-dvh pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] flex-col overflow-hidden bg-background pb-[env(safe-area-inset-bottom,0px)] text-foreground" style={bookingPageColorStyle(data?.accentColor)}>
       <title>{data ? `${t("rescheduleTitle")} · ${data.organization.name}` : t("rescheduleTitle")}</title>
       <PublicBookingHeader
         formatPreference={preference.value}
@@ -172,7 +172,7 @@ export function RescheduleBookingPage({ bookingCode }: { bookingCode: string }) 
         )}
       </ScrollArea>
       {data && booking && canReschedule ? (
-        <footer className="shrink-0 border-t border-border/50 bg-background pb-[max(.75rem,env(safe-area-inset-bottom))] lg:py-4">
+        <footer className="shrink-0 border-t border-border/50 bg-background pb-3 lg:py-4">
           <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 pt-3 sm:px-6 lg:w-[calc(100%_-_3rem)] lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:px-8 lg:pt-0">
             <div className="flex min-w-0 flex-1 flex-col gap-1" aria-live="polite" aria-atomic={true}>
               <p className="min-w-0 text-sm leading-5 font-medium wrap-anywhere">{t("newTime")}</p>

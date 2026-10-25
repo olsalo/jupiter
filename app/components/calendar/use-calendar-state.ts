@@ -10,7 +10,7 @@ import { defaultTimeZone } from "~/lib/format-preference"
 import { useMediaQuery } from "~/lib/hooks"
 import { sortCalendarMembers } from "~/lib/calendar/schedule"
 import { useTRPC } from "~/lib/trpc/client"
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 import type { clientLoader as calendarClientLoader } from "~/routes/calendar/calendar"
 
 export function useCalendarState({ preview: showPreview = true, mobile }: { preview?: boolean, mobile?: boolean } = {}) {
@@ -22,7 +22,7 @@ export function useCalendarState({ preview: showPreview = true, mobile }: { prev
   const staff = useQuery({ ...trpc.staff.list.queryOptions(), ...calendarReferenceQueryOptions })
   const calendar = useRouteLoaderData<typeof calendarClientLoader>("routes/calendar/calendar")
   const now = calendar?.now ?? Date.now()
-  const root = useRouteLoaderData<typeof rootLoader>("root")
+  const root = useAppContext()
   const [searchParams, setSearchParams] = useSearchParams()
   const memberId = organization.data?.memberId
   const bookableMembers = useMemo(() => sortCalendarMembers(staff.data?.filter((member) => member.isActive && member.acceptsAppointments) ?? []), [staff.data])

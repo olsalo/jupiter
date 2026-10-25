@@ -1,10 +1,10 @@
-"use client";
+"use client"
 
-import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
+import { Tabs as TabsPrimitive } from "@base-ui/react/tabs"
 
-import { cn } from "@coss/ui/lib/utils";
+import { cn } from "@coss/ui/lib/utils"
 
-type TabsVariant = "default" | "underline";
+type TabsVariant = "default" | "underline"
 
 function Tabs({ className, ...props }: TabsPrimitive.Root.Props) {
   return (
@@ -16,7 +16,7 @@ function Tabs({ className, ...props }: TabsPrimitive.Root.Props) {
       data-slot="tabs"
       {...props}
     />
-  );
+  )
 }
 
 function TabsList({
@@ -25,15 +25,21 @@ function TabsList({
   children,
   ...props
 }: TabsPrimitive.List.Props & {
-  variant?: TabsVariant;
+  variant?: TabsVariant
 }) {
+  // The measured indicator is hidden during SSR, so style the active tab until it is ready.
   return (
     <TabsPrimitive.List
       className={cn(
         "relative z-0 flex w-fit items-center justify-center gap-x-0.5 text-muted-foreground",
         "data-[orientation=vertical]:flex-col",
         variant === "default"
-          ? "rounded-lg bg-muted p-0.5 text-muted-foreground/72"
+          ? [
+              "rounded-lg bg-muted p-0.5 text-muted-foreground/72",
+              "[&:not(:has(>[data-slot=tab-indicator]:not([hidden])))>[data-slot=tabs-tab][data-active]]:bg-background",
+              "[&:not(:has(>[data-slot=tab-indicator]:not([hidden])))>[data-slot=tabs-tab][data-active]]:shadow-sm/5",
+              "dark:[&:not(:has(>[data-slot=tab-indicator]:not([hidden])))>[data-slot=tabs-tab][data-active]]:bg-input",
+            ]
           : "data-[orientation=vertical]:px-1 data-[orientation=horizontal]:py-1 *:data-[slot=tabs-tab]:hover:bg-accent",
         className,
       )}
@@ -51,14 +57,14 @@ function TabsList({
         data-slot="tab-indicator"
       />
     </TabsPrimitive.List>
-  );
+  )
 }
 
 function TabsTab({ className, onDragStart, ...props }: TabsPrimitive.Tab.Props) {
   return (
     <TabsPrimitive.Tab
       className={cn(
-        "[&_svg]:-mx-0.5 relative flex h-9 shrink-0 grow cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-[calc(--spacing(2.5)-1px)] font-medium text-base outline-none transition-[color,background-color,box-shadow] hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start data-active:text-foreground data-disabled:opacity-64 sm:h-8 sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "[&_svg]:-mx-0.5 relative flex h-9 shrink-0 grow cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-transparent px-[calc(--spacing(2.5)-1px)] font-medium text-base outline-none transition-[color] hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start data-active:text-foreground data-disabled:opacity-64 sm:h-8 sm:text-sm [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       data-slot="tabs-tab"
@@ -69,7 +75,7 @@ function TabsTab({ className, onDragStart, ...props }: TabsPrimitive.Tab.Props) 
         onDragStart?.(event)
       }}
     />
-  );
+  )
 }
 
 function TabsPanel({ className, ...props }: TabsPrimitive.Panel.Props) {
@@ -79,7 +85,7 @@ function TabsPanel({ className, ...props }: TabsPrimitive.Panel.Props) {
       data-slot="tabs-content"
       {...props}
     />
-  );
+  )
 }
 
 export {
@@ -89,4 +95,4 @@ export {
   TabsTab as TabsTrigger,
   TabsPanel,
   TabsPanel as TabsContent,
-};
+}

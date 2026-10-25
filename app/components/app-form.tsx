@@ -17,6 +17,7 @@ import {
   type Ref,
 } from "react"
 import { cn } from "~/lib/utils"
+import { useHydrated } from "~/lib/use-hydrated"
 
 type MutationError = {
   errors?: FieldErrors
@@ -81,7 +82,7 @@ export function AppForm<
   DefaultValues,
   FormInputData
 >): ReactElement {
-  const [isHydrated, setIsHydrated] = useState(false)
+  const isHydrated = useHydrated()
   const [submitValidationErrors, setSubmitValidationErrors] = useState<FieldErrors>()
   const mutationValidationErrors = useMemo(
     () =>
@@ -122,13 +123,39 @@ export function AppForm<
     serverValidationErrors,
   } as FormOpts<SchemaInput, SchemaOutput, SubmitResponseData, DefaultValues, FormInputData>
 
-  const form = useForm<SchemaInput, SchemaOutput, SubmitResponseData, DefaultValues, FormInputData>(options)
+  const rvfForm = useForm<SchemaInput, SchemaOutput, SubmitResponseData, DefaultValues, FormInputData>(options)
+  const form: typeof rvfForm = {
+    ...rvfForm,
+    getInputProps: (fieldName, props) => {
+      const inputProps = rvfForm.getInputProps(fieldName, props)
+
+      return {
+        ...inputProps,
+        ref: (element: HTMLElement | null) => {
+          // RVF writes its initial value when attaching the ref, so adopt early typing first
+          if (
+            !isHydrated &&
+            (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) &&
+            !["checkbox", "radio", "file", "hidden", "submit", "reset", "button", "image"].includes(element.type) &&
+            element.value !== element.defaultValue
+          ) {
+            const value = element instanceof HTMLInputElement && element.type === "number"
+              ? element.value === "" ? null : element.valueAsNumber
+              : element.value
+            rvfForm.setValue(fieldName, value as ReturnType<typeof rvfForm.value<typeof fieldName>>)
+            rvfForm.setDirty(fieldName, value !== rvfForm.defaultValue(fieldName))
+          }
+
+          if (typeof inputProps.ref === "function") {
+            return inputProps.ref(element)
+          }
+          if (inputProps.ref) inputProps.ref.current = element
+        },
+      }
+    },
+  }
 
   useImperativeHandle(ref, () => form)
-
-  useEffect(() => {
-    setIsHydrated(true)
-  }, [])
 
   useEffect(() => {
     onFormStateChange?.({
@@ -144,9 +171,7 @@ export function AppForm<
   return (
     <FormProvider scope={form.scope()}>
       <form {...form.getFormProps()} className={cn("flex flex-col gap-5", className)} method="post" noValidate>
-        <fieldset className="contents" disabled={!isHydrated}>
-          {typeof children === "function" ? children(form) : children}
-        </fieldset>
+        {typeof children === "function" ? children(form) : children}
       </form>
     </FormProvider>
   )

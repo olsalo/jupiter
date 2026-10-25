@@ -59,7 +59,6 @@ export function TeamTimeOffDialog({ staffMemberId, timezone, open, onOpenChange,
             }
           }}>
           {(form) => {
-            const values = form.value()
             const pending = form.formState.isSubmitting
             return <>
               <DialogPanel className="grid gap-5">
@@ -67,7 +66,7 @@ export function TeamTimeOffDialog({ staffMemberId, timezone, open, onOpenChange,
               </DialogPanel>
               <DialogFooter>
                 <Button disabled={pending} onClick={() => onOpenChange(false)} type="button" variant="ghost">{t("cancel")}</Button>
-                <Button disabled={pending || !values.title.trim()} type="submit">{pending ? <Spinner /> : null}{t(pending ? "timeOff.adding" : "timeOff.addButton")}</Button>
+                <Button disabled={pending} type="submit">{pending ? <Spinner /> : null}{t(pending ? "timeOff.adding" : "timeOff.addButton")}</Button>
               </DialogFooter>
             </>
           }}

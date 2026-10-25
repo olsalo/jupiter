@@ -158,7 +158,7 @@ export function BookingDetailsForm({
         ) as Record<string, Answer>,
       }}
       schema={schema}
-      className="gap-5 max-sm:[&_[data-slot=select-trigger]]:min-h-11"
+      className="gap-5"
       id="public-booking-details"
       submitFn={async (values) => {
         submit({
@@ -276,6 +276,7 @@ export function BookingDetailsForm({
                   >
                     <SelectTrigger
                       aria-invalid={Boolean(form.error(path))}
+                      className="max-sm:min-h-11"
                       onBlur={control.onBlur}
                       ref={control.ref}
                     >
@@ -295,6 +296,7 @@ export function BookingDetailsForm({
                   >
                     <SelectTrigger
                       aria-invalid={Boolean(form.error(path))}
+                      className="max-sm:min-h-11"
                       onBlur={control.onBlur}
                       ref={control.ref}
                     >

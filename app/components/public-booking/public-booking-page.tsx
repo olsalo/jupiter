@@ -4,6 +4,7 @@ import { useNavigate, useNavigation } from "react-router"
 import { useTranslation } from "react-i18next"
 
 import Icon from "~/components/icons"
+import { AppLogo } from "~/components/app-logo"
 import { LanguageSwitch } from "~/components/language-switch"
 import { UserAvatar } from "~/components/user-avatar"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
@@ -36,18 +37,18 @@ export function PublicBookingPage(scope: BookingScope) {
   const trpc = useTRPC()
   const formatPreference = useFormatPreference()
   const page = useQuery(
-    trpc.booking.getPage.queryOptions(scope, { retry: false }),
+    trpc.booking.getPage.queryOptions(scope, { retry: false, retryOnMount: false }),
   )
   const data = page.data
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground" style={bookingPageColorStyle(data?.page?.accentColor)}>
+    <div className="flex h-dvh pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] flex-col overflow-hidden bg-background pb-[env(safe-area-inset-bottom,0px)] text-foreground" style={bookingPageColorStyle(data?.page?.accentColor)}>
       <title>
         {data
           ? `${data.page?.title ?? t("title")} · ${data.organization.name}`
           : t("title")}
       </title>
-      <header className="shrink-0">
+      <header className="shrink-0 pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:h-14 sm:px-6 lg:h-20 lg:w-[calc(100%_-_3rem)] lg:px-8">
           <div className="flex min-w-0 items-center gap-2.5">
             {data ? (
@@ -59,7 +60,11 @@ export function PublicBookingPage(scope: BookingScope) {
                 src={data.organization.logo}
                 stableId={data.organization.slug}
               />
-            ) : null}
+            ) : (
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground md:size-9">
+                <AppLogo aria-hidden={true} className="size-5 md:size-6" />
+              </div>
+            )}
             <span className="truncate text-sm font-medium">
               {data?.organization.name}
             </span>
@@ -409,7 +414,7 @@ function BookingFlow({
       </div>
       <footer
         className={cn(
-          "sticky bottom-0 z-20 shrink-0 border-t border-border/50 bg-background pb-[max(1rem,env(safe-area-inset-bottom))] lg:h-20 lg:border-t-0 lg:py-0",
+          "sticky bottom-0 z-20 shrink-0 border-t border-border/50 bg-background pb-4 lg:h-20 lg:border-t-0 lg:py-0",
           screen === "service" && !service && "hidden",
         )}
       >

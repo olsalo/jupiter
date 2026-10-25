@@ -11,9 +11,8 @@ import { Button } from "~/components/ui/button"
 import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "~/components/ui/number-field"
 import { Separator } from "~/components/ui/separator"
 import { Spinner } from "~/components/ui/spinner"
-import { Switch } from "~/components/ui/switch"
+import { SettingsSwitch } from "~/components/settings-switch"
 import { bookingWindowSchema, type BookingSettingsValues, type BookingWindowValues } from "~/lib/schemas/booking-settings"
-import { createSettingsSaveQueue } from "~/lib/settings-save-queue"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 
@@ -121,34 +120,20 @@ function BookingSettingSwitch({ name, checked }: { name: ToggleName; checked: bo
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const queryKey = trpc.organizations.bookingSettings.queryKey()
-  const queue = useRef(createSettingsSaveQueue())
-  const revision = useRef(0)
-  const confirmed = useRef(checked)
   const mutation = useMutation(trpc.organizations.updateBookingSettings.mutationOptions())
 
-  const save = (value: boolean) => {
-    if (queue.current.pendingCount === 0) confirmed.current = checked
-    const currentRevision = ++revision.current
-    queryClient.setQueryData(queryKey, (current) => current ? { ...current, [name]: value } : current)
-    void queue.current.enqueue(async () => {
-      try {
-        const saved = await mutation.mutateAsync({ [name]: value })
-        confirmed.current = saved[name]
-        if (currentRevision !== revision.current) return
-        queryClient.setQueryData(queryKey, (current) => current ? { ...current, [name]: saved[name] } : saved)
-        await Promise.all([
-          queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
-          queryClient.invalidateQueries(trpc.availability.pathFilter()),
-        ])
-      } catch {
-        if (currentRevision !== revision.current) return
-        queryClient.setQueryData(queryKey, (current) => current ? { ...current, [name]: confirmed.current } : current)
-        toast.error(t("settings.saveError"))
-      }
-    })
-  }
-
-  return <FormLabel className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1" description={t(`bookingSettings.${name}Description`)} descriptionClassName="col-start-1 row-start-2" label={t(`bookingSettings.${name}`)}>
-    <Switch checked={checked} className="col-start-2 row-span-2 row-start-1" disabled={false} onCheckedChange={save} />
-  </FormLabel>
+  return <SettingsSwitch
+    checked={checked}
+    disabled={false}
+    label={t(`bookingSettings.${name}`)}
+    description={t(`bookingSettings.${name}Description`)}
+    errorMessage={t("settings.saveError")}
+    save={(value) => mutation.mutateAsync({ [name]: value })}
+    getChecked={(saved) => saved[name]}
+    updateCache={(value, saved) => queryClient.setQueryData(queryKey, (current) => current ? { ...current, [name]: value } : saved)}
+    onSaved={() => Promise.all([
+      queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
+      queryClient.invalidateQueries(trpc.availability.pathFilter()),
+    ])}
+  />
 }

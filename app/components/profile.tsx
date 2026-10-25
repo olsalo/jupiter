@@ -2,9 +2,9 @@ import { useMutation } from "@tanstack/react-query"
 import type { ComponentProps } from "react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { href, useNavigate, useRouteLoaderData } from "react-router"
+import { href, useNavigate } from "react-router"
 
-import type { loader as rootLoader } from "~/root"
+import { useAppContext } from "~/lib/use-app-context"
 import Icon from "~/components/icons"
 import { UserAvatar } from "~/components/user-avatar"
 import { Badge } from "~/components/ui/badge"
@@ -48,7 +48,7 @@ export function Profile({
   const { t: tTeam } = useTranslation("team")
   const navigate = useNavigate()
   const trpc = useTRPC()
-  const rootData = useRouteLoaderData<typeof rootLoader>("root")
+  const rootData = useAppContext()
   const [menuOpen, setMenuOpen] = useState(false)
   const organizations = rootData?.organizations ?? []
   const setActive = useMutation(trpc.organizations.setActive.mutationOptions({

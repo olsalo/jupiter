@@ -23,7 +23,7 @@ export function BookingManagementPage({ bookingCode }: { bookingCode: string }) 
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const preference = useFormatPreference()
-  const page = useQuery(trpc.booking.getManagementPage.queryOptions({ bookingCode }, { retry: false }))
+  const page = useQuery(trpc.booking.getManagementPage.queryOptions({ bookingCode }, { retry: false, retryOnMount: false }))
   const cancel = useMutation(trpc.booking.cancel.mutationOptions())
   const [cancelOpen, setCancelOpen] = useState(false)
   const location = useLocation()
@@ -69,7 +69,7 @@ export function BookingManagementPage({ bookingCode }: { bookingCode: string }) 
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground" style={bookingPageColorStyle(data?.accentColor)}>
+    <div className="flex h-dvh pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] flex-col overflow-hidden bg-background pb-[env(safe-area-inset-bottom,0px)] text-foreground" style={bookingPageColorStyle(data?.accentColor)}>
       <title>{data ? `${t("bookingDetailsTitle")} · ${data.organization.name}` : t("bookingDetailsTitle")}</title>
       <PublicBookingHeader
         formatPreference={preference.value}

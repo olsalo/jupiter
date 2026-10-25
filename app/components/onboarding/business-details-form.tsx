@@ -69,7 +69,7 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
       </div>
 
       <AppForm
-        className="flex flex-col gap-3.5"
+        className="flex flex-col gap-0"
         defaultValues={defaultValues}
         otherFormProps={{ noValidate: true }}
         ref={formApi}
@@ -101,151 +101,153 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
 
           return (
             <>
-              <FormLabel error={form.error("name")} label={t("name.label")}>
-                <InputGroup>
-                  <InputGroupInput
-                    {...form.getInputProps("name", {
-                      "aria-invalid": Boolean(form.error("name")) || undefined,
-                      autoComplete: "off",
-                      onChange: () => {
-                        form.unstable_setCustomError("name", null)
-                      },
-                      placeholder: t("name.placeholder"),
-                      type: "text",
-                    })}
-                  />
-                </InputGroup>
-              </FormLabel>
+              <div className="flex flex-col gap-3.5">
+                <FormLabel error={form.error("name")} label={t("name.label")}>
+                  <InputGroup>
+                    <InputGroupInput
+                      {...form.getInputProps("name", {
+                        "aria-invalid": Boolean(form.error("name")) || undefined,
+                        autoComplete: "off",
+                        onChange: () => {
+                          form.unstable_setCustomError("name", null)
+                        },
+                        placeholder: t("name.placeholder"),
+                        type: "text",
+                      })}
+                    />
+                  </InputGroup>
+                </FormLabel>
 
-              <Separator />
+                <Separator />
 
-              <FormLabel
-                error={form.error("businessName")}
-                label={t("businessName.label")}
-              >
-                <InputGroup>
-                  <InputGroupInput
-                    {...form.getInputProps("businessName", {
-                      "aria-invalid":
-                        Boolean(form.error("businessName")) || undefined,
-                      autoComplete: "off",
-                      onChange: () => {
-                        form.unstable_setCustomError("businessName", null)
-                      },
-                      placeholder: t("businessName.placeholder"),
-                      type: "text",
-                    })}
-                  />
-                </InputGroup>
-              </FormLabel>
-
-              <FormLabel
-                error={form.error("location")}
-                label={t("location.label")}
-              >
-                <Select
-                  items={onboardingCountries.map((country) => ({
-                    label: country.name,
-                    value: country.code,
-                  }))}
-                  onValueChange={(value) => {
-                    if (typeof value !== "string") {
-                      return
-                    }
-
-                    locationField.onChange(value)
-                    form.unstable_setCustomError("location", null)
-                  }}
-                  value={locationField.value}
+                <FormLabel
+                  error={form.error("businessName")}
+                  label={t("businessName.label")}
                 >
-                  <SelectTrigger
-                    aria-invalid={Boolean(form.error("location")) || undefined}
-                    onBlur={locationField.onBlur}
-                    ref={locationField.ref}
-                  >
-                    <SelectValue placeholder={t("location.placeholder")} />
-                  </SelectTrigger>
-                  <SelectPopup>
-                    {onboardingCountries.map((country) => (
-                      <SelectItem key={country.code} value={country.code}>
-                        {country.name}
-                      </SelectItem>
-                    ))}
-                  </SelectPopup>
-                </Select>
-              </FormLabel>
+                  <InputGroup>
+                    <InputGroupInput
+                      {...form.getInputProps("businessName", {
+                        "aria-invalid":
+                          Boolean(form.error("businessName")) || undefined,
+                        autoComplete: "off",
+                        onChange: () => {
+                          form.unstable_setCustomError("businessName", null)
+                        },
+                        placeholder: t("businessName.placeholder"),
+                        type: "text",
+                      })}
+                    />
+                  </InputGroup>
+                </FormLabel>
 
-              <FormLabel
-                error={form.error("currency")}
-                label={t("currency.label")}
-              >
-                <Select
-                  items={currencyItems}
-                  onValueChange={(value) => {
-                    if (typeof value !== "string") {
-                      return
-                    }
-
-                    currencyField.onChange(value)
-                    form.unstable_setCustomError("currency", null)
-                  }}
-                  value={currencyField.value}
+                <FormLabel
+                  error={form.error("location")}
+                  label={t("location.label")}
                 >
-                  <SelectTrigger
-                    aria-invalid={Boolean(form.error("currency")) || undefined}
-                    onBlur={currencyField.onBlur}
-                    ref={currencyField.ref}
+                  <Select
+                    items={onboardingCountries.map((country) => ({
+                      label: country.name,
+                      value: country.code,
+                    }))}
+                    onValueChange={(value) => {
+                      if (typeof value !== "string") {
+                        return
+                      }
+
+                      locationField.onChange(value)
+                      form.unstable_setCustomError("location", null)
+                    }}
+                    value={locationField.value}
                   >
-                    <SelectValue placeholder={t("currency.placeholder")}>
-                      {(value) => currencyItems.find((item) => item.value === value)?.label ?? t("currency.placeholder")}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectPopup>
-                    {currencyItems.map((currency) => (
-                      <SelectItem key={currency.value} value={currency.value}>
-                        <span className="flex min-w-0 items-center gap-2">
-                          <span className="truncate">{currency.label}</span>
-                          <span className="shrink-0 text-muted-foreground">{currency.value}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectPopup>
-                </Select>
-              </FormLabel>
+                    <SelectTrigger
+                      aria-invalid={Boolean(form.error("location")) || undefined}
+                      onBlur={locationField.onBlur}
+                      ref={locationField.ref}
+                    >
+                      <SelectValue placeholder={t("location.placeholder")} />
+                    </SelectTrigger>
+                    <SelectPopup>
+                      {onboardingCountries.map((country) => (
+                        <SelectItem key={country.code} value={country.code}>
+                          {country.name}
+                        </SelectItem>
+                      ))}
+                    </SelectPopup>
+                  </Select>
+                </FormLabel>
 
-              <FormLabel
-                error={form.error("timezone")}
-                label={t("timezone.label")}
-              >
-                <Select
-                  items={timezoneItems}
-                  onValueChange={(value) => {
-                    if (typeof value !== "string") {
-                      return
-                    }
-
-                    timezoneField.onChange(value)
-                    form.unstable_setCustomError("timezone", null)
-                  }}
-                  value={timezoneField.value}
+                <FormLabel
+                  error={form.error("currency")}
+                  label={t("currency.label")}
                 >
-                  <SelectTrigger
-                    aria-invalid={Boolean(form.error("timezone")) || undefined}
-                    onBlur={timezoneField.onBlur}
-                    ref={timezoneField.ref}
-                  >
-                    <SelectValue placeholder={t("timezone.placeholder")} />
-                  </SelectTrigger>
-                  <SelectPopup>
-                    {timezoneItems.map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectPopup>
-                </Select>
-              </FormLabel>
+                  <Select
+                    items={currencyItems}
+                    onValueChange={(value) => {
+                      if (typeof value !== "string") {
+                        return
+                      }
 
+                      currencyField.onChange(value)
+                      form.unstable_setCustomError("currency", null)
+                    }}
+                    value={currencyField.value}
+                  >
+                    <SelectTrigger
+                      aria-invalid={Boolean(form.error("currency")) || undefined}
+                      onBlur={currencyField.onBlur}
+                      ref={currencyField.ref}
+                    >
+                      <SelectValue placeholder={t("currency.placeholder")}>
+                        {(value) => currencyItems.find((item) => item.value === value)?.label ?? t("currency.placeholder")}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectPopup>
+                      {currencyItems.map((currency) => (
+                        <SelectItem key={currency.value} value={currency.value}>
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="truncate">{currency.label}</span>
+                            <span className="shrink-0 text-muted-foreground">{currency.value}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectPopup>
+                  </Select>
+                </FormLabel>
+
+                <FormLabel
+                  error={form.error("timezone")}
+                  label={t("timezone.label")}
+                >
+                  <Select
+                    items={timezoneItems}
+                    onValueChange={(value) => {
+                      if (typeof value !== "string") {
+                        return
+                      }
+
+                      timezoneField.onChange(value)
+                      form.unstable_setCustomError("timezone", null)
+                    }}
+                    value={timezoneField.value}
+                  >
+                    <SelectTrigger
+                      aria-invalid={Boolean(form.error("timezone")) || undefined}
+                      onBlur={timezoneField.onBlur}
+                      ref={timezoneField.ref}
+                    >
+                      <SelectValue placeholder={t("timezone.placeholder")} />
+                    </SelectTrigger>
+                    <SelectPopup>
+                      {timezoneItems.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
+                    </SelectPopup>
+                  </Select>
+                </FormLabel>
+
+              </div>
               <OnboardingActions>
                 <Button className="keyboard-focusable" disabled={isSubmitting} type="submit">
                   {isSubmitting ? (

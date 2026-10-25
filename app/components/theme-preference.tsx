@@ -5,7 +5,7 @@ import { useRevalidator, useRouteLoaderData } from "react-router"
 import type { loader as rootLoader } from "~/root"
 import FormLabel from "~/components/form-label"
 import { Tabs, TabsList, TabsTab } from "~/components/ui/tabs"
-import { syncThemeColor } from "~/lib/theme"
+import { changeThemeWithTransition, syncThemeColor } from "~/lib/theme"
 import { useBackgroundSetting } from "~/lib/use-background-setting"
 import { useTRPC } from "~/lib/trpc/client"
 import { toast } from "~/lib/toast"
@@ -39,10 +39,12 @@ export function ThemePreference() {
               return
             }
 
-            void theme.set(value, async () => {
-              await mutation.mutateAsync({ theme: value })
-              await revalidator.revalidate()
-            }, () => toast.error(t("settings.profileSaveError")))
+            changeThemeWithTransition(() => {
+              void theme.set(value, async () => {
+                await mutation.mutateAsync({ theme: value })
+                await revalidator.revalidate()
+              }, () => toast.error(t("settings.profileSaveError")))
+            })
           }}
           value={theme.value}
         >
