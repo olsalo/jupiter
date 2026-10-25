@@ -26,7 +26,7 @@ import { createInvitationEmailTemplate } from "~/lib/email-templates/invitation"
 import { prisma } from "~/lib/database/prisma.server.ts"
 import { generateId } from "~/lib/database/id"
 
-const fallbackAuthUrl = process.env.BETTER_AUTH_URL || "http://localhost:5174"
+const fallbackAuthUrl = process.env.BETTER_AUTH_URL || "http://localhost:5175"
 const oneYearInSeconds = 60 * 60 * 24 * 365
 const twoWeeksInSeconds = 60 * 60 * 24 * 14
 
@@ -76,6 +76,8 @@ export const auth = betterAuth({
     expiresIn: oneYearInSeconds,
   },
   advanced: {
+    // Local production builds use HTTP too, so NODE_ENV cannot decide cookie security.
+    useSecureCookies: new URL(fallbackAuthUrl).protocol === "https:",
     database: {
       generateId,
     },

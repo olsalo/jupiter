@@ -72,9 +72,7 @@ function CalendarRouteContent() {
     <title>{title}</title>
     <CalendarViewControls className="hidden md:flex" />
     <div className="flex min-h-0 min-w-0 flex-1 gap-4" data-slot="calendar-layout">
-      <div className={`relative isolate z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background max-md:rounded-none max-md:border-0 ${mode === "list" ? "max-md:overflow-visible max-md:bg-transparent" : ""}`} data-slot="calendar-container">
-        {mode === "list" ? <CalendarAgenda /> : <CalendarSchedule />}
-      </div>
+      {mode === "list" ? <CalendarAgenda /> : <CalendarSchedule />}
       <Outlet />
     </div>
   </Layout>

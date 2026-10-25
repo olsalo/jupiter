@@ -20,9 +20,9 @@ async function main() {
   const db = new PrismaClient({ adapter: new PrismaPg(process.env.DATABASE_URL) })
   try {
     const result = await seedBarberShop(db, parsed.data)
-    console.info(`${result.created ? "Created" : "Already exists:"} Oak & Steel Barbers (${result.organizationId})`)
+    console.info(`${result.created ? "Created" : "Already exists:"} Northside Barbers (${result.organizationId})`)
     console.info(`Owner: ${parsed.data.ownerName} <${parsed.data.ownerEmail}>`)
-    console.info("Sign in with the owner's email using the usual email code flow, then select Oak & Steel Barbers")
+    console.info("Sign in with the owner's email using the usual email code flow, then select Northside Barbers")
     console.info("Demo email delivery and reminders are disabled. Existing accounts and demo edits are preserved")
     console.info("If Stripe billing is enabled, use DEMO_BYPASS_ONBOARDING_PAYMENT=true for local demo access")
   } finally {

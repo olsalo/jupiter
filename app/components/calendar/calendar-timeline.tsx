@@ -114,30 +114,32 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
     for (const element of [headerRef.current, contentRef.current, horizontalRef.current]) {
       if (element && element.scrollLeft !== left) element.scrollLeft = left
     }
-    if (dateDividersRef.current) dateDividersRef.current.style.transform = `translateX(${-(contentRef.current?.scrollLeft ?? left)}px)`
     const header = headerRef.current
+    const actualLeft = contentRef.current?.scrollLeft ?? left
+    const overflowStart = header ? `${Math.max(0, header.scrollLeft)}px` : "0px"
+    const overflowEnd = header ? `${Math.max(0, header.scrollWidth - header.clientWidth - header.scrollLeft)}px` : "0px"
+    // Read geometry before changing inherited fade properties or transforms
+    if (dateDividersRef.current) dateDividersRef.current.style.transform = `translateX(${-actualLeft}px)`
     for (const element of [header, dateDividerViewportRef.current]) {
       if (!element || !header) continue
-      element.style.setProperty("--scroll-area-overflow-x-start", `${Math.max(0, header.scrollLeft)}px`)
-      element.style.setProperty("--scroll-area-overflow-x-end", `${Math.max(0, header.scrollWidth - header.clientWidth - header.scrollLeft)}px`)
+      element.style.setProperty("--scroll-area-overflow-x-start", overflowStart)
+      element.style.setProperty("--scroll-area-overflow-x-end", overflowEnd)
     }
   }
   const syncVertical = (top: number) => {
     for (const element of [contentRef.current, verticalRef.current]) {
       if (element && element.scrollTop !== top) element.scrollTop = top
     }
+    const viewport = contentRef.current
+    const gutter = timeGutterRef.current
+    const overflowStart = viewport ? `${Math.max(0, viewport.scrollTop)}px` : "0px"
+    const overflowEnd = viewport ? `${Math.max(0, viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop)}px` : "0px"
     if (timesRef.current) timesRef.current.style.transform = `translateY(${-top}px)`
     if (currentTimeRef.current) currentTimeRef.current.style.transform = `translateY(${-top}px)`
     if (currentTimeLineRef.current) currentTimeLineRef.current.style.transform = `translateY(${-top}px)`
-    const viewport = contentRef.current
-    const gutter = timeGutterRef.current
-    if (viewport) {
-      viewport.style.setProperty("--calendar-view-top", `${viewport.scrollTop}px`)
-      viewport.style.setProperty("--calendar-view-bottom", `${viewport.scrollTop + viewport.clientHeight}px`)
-    }
     if (viewport && gutter) {
-      gutter.style.setProperty("--scroll-area-overflow-y-start", `${Math.max(0, viewport.scrollTop)}px`)
-      gutter.style.setProperty("--scroll-area-overflow-y-end", `${Math.max(0, viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop)}px`)
+      gutter.style.setProperty("--scroll-area-overflow-y-start", overflowStart)
+      gutter.style.setProperty("--scroll-area-overflow-y-end", overflowEnd)
     }
   }
   useCalendarBookingReveal(contentRef, focusedAppointmentId, ({ left, top }) => { syncHorizontal(left); syncVertical(top) })
@@ -160,11 +162,6 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
       document.removeEventListener("visibilitychange", restartClock)
     }
   }, [])
-
-  useLayoutEffect(() => {
-    const viewport = contentRef.current
-    if (viewport && viewport.clientWidth !== viewportWidth) setViewportWidth(viewport.clientWidth)
-  })
 
   useLayoutEffect(() => {
     const viewport = contentRef.current

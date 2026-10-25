@@ -9,6 +9,7 @@ import { useCalendarState } from "~/components/calendar/use-calendar-state"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { CalendarMemberRows } from "~/components/calendar/calendar-member-rows"
 import { CalendarTimeline } from "~/components/calendar/calendar-timeline"
+import { CalendarView } from "~/components/calendar/calendar-view"
 
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
@@ -106,13 +107,13 @@ export function CalendarSchedule() {
     return { calendarMembers, appointments, conflictAppointments, schedule }
   }, [bookings.data, staff.data, scheduleQuery.data, selectedMember, bookableMembers, savedAppointments, savedCalendarAppointments, preview, days, timeZone, startMinute, endMinute, canEdit, canCreate, isCreateFlow, getBookingIssues, t])
 
-  if (showLoadError) return <Alert variant="error">
+  if (showLoadError) return <CalendarView alerts={<Alert variant="error">
     <AlertTitle>{t("calendarGrid.loadError")}</AlertTitle>
     <AlertDescription>{t("retryDescription")}</AlertDescription>
     <AlertAction><Button disabled={isFetching} onClick={retry} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
-  </Alert>
+  </Alert>} />
 
-  if (organization.data === undefined || timelineData === null) return <div className="flex min-h-0 flex-1 items-center justify-center bg-background"><Spinner aria-label={t("loading")} /></div>
+  if (organization.data === undefined || timelineData === null) return <CalendarView><div className="flex min-h-0 flex-1 items-center justify-center bg-background"><Spinner aria-label={t("loading")} /></div></CalendarView>
 
   const { calendarMembers, appointments, conflictAppointments, schedule } = timelineData
 
@@ -129,9 +130,10 @@ export function CalendarSchedule() {
 
   const Timeline = mode === "day" && state.dayLayout === "rows" ? CalendarMemberRows : CalendarTimeline
 
-  return <div className="flex min-h-0 flex-1 flex-col gap-3">
+  return <CalendarView alerts={<>
     {showRefreshError ? <Alert variant="warning"><AlertTitle>{t("calendarGrid.refreshError")}</AlertTitle><AlertDescription>{t("calendarGrid.staleDescription")}</AlertDescription><AlertAction><Button disabled={isFetching} onClick={retry} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
     {calendarMembers.length === 0 ? <Alert variant="info"><AlertTitle>{t("calendarGrid.noMembers")}</AlertTitle><AlertDescription>{t("calendarGrid.noMembersDescription")}</AlertDescription></Alert> : null}
+  </>}>
     <Timeline getDraftService={getDraftService} serviceDurations={serviceDurations} intervalMinutes={calendarIntervalMinutes} minDurationMinutes={calendarMinDurationMinutes} getBookingIssues={getBookingIssues} fullWidthTimeLine={true} expandToContent={state.isMobile} initialNow={now} focusedAppointmentId={isEditOpen || location.pathname === "/calendar/new" ? preview ? preview.appointmentId ?? "calendar-booking-draft" : editMatch?.params.appointmentId : undefined} onMoveBooking={(canEdit && (location.pathname === "/calendar" || location.pathname === "/calendar/new" || isEditOpen)) || (canCreate && isCreateFlow) ? (appointment, dragSelection, phase) => {
       if (phase !== "drop" && !appointment.creationDraft && !isEditOpen && location.pathname !== "/calendar/new") return
       const member = dragSelection.member
@@ -164,5 +166,5 @@ export function CalendarSchedule() {
       updateCreationRange(dragSelection)
       if (location.pathname !== "/calendar/new") void navigate(`/calendar/new${location.search}`, { replace: isEditOpen, preventScrollReset: true, state: { dragSelection } })
     } : undefined} bookingMembers={bookableMembers} appointments={appointments} conflictAppointments={conflictAppointments} className="rounded-none border-0" days={schedule.days} endMinute={schedule.endMinute} formatPreference={formatPreference} key={selectedMember?.id ?? "team"} members={calendarMembers} startMinute={schedule.startMinute} timeZone={timeZone} trimTimeEdges={true} breaks={schedule.breaks} unavailableTimes={schedule.unavailableTimes} viewMode={mode === "day" ? "day" : "week"} />
-  </div>
+  </CalendarView>
 }

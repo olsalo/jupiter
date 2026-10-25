@@ -70,7 +70,7 @@ export async function seedBarberShop(db: PrismaClient, input: z.input<typeof bar
       create: { id: generateId(), name: options.ownerName, email: options.ownerEmail, locale: "en" },
     })
     const organizationId = generateId()
-    await tx.organization.create({ data: { id: organizationId, name: "Oak & Steel Barbers", slug, metadata: seedKind, createdAt: now } })
+    await tx.organization.create({ data: { id: organizationId, name: "Northside Barbers", slug, metadata: seedKind, createdAt: now } })
     const locationId = generateId()
     await tx.location.create({ data: {
       id: locationId, organizationId, name: "City Centre", slug: "city-centre",
@@ -123,7 +123,7 @@ export async function seedBarberShop(db: PrismaClient, input: z.input<typeof bar
     const serviceIds: string[] = []
     for (const [sortOrder, { category, ...service }] of services.entries()) {
       const id = generateId()
-      await tx.service.create({ data: { id, organizationId, categoryId: categoryIds[category], ...service, sortOrder, bufferAfterMinutes: 5 } })
+      await tx.service.create({ data: { id, organizationId, categoryId: categoryIds[category], ...service, sortOrder, bufferBeforeMinutes: 0, bufferAfterMinutes: 0 } })
       await tx.serviceLocation.create({ data: { id: generateId(), serviceId: id, locationId } })
       serviceIds.push(id)
     }
@@ -189,12 +189,12 @@ export async function seedBarberShop(db: PrismaClient, input: z.input<typeof bar
           if ((day + staffIndex + startMinute / 15) % 5 === 0) continue
           const serviceIndex = (index + staffIndex + startMinute / 15) % services.length
           const service = services[serviceIndex]
-          const occupiedEndMinute = startMinute + service.durationMinutes + 5
+          const occupiedEndMinute = startMinute + service.durationMinutes
           if (startMinute < occupiedUntil || startMinute < businessHours.startMinute || occupiedEndMinute > Math.min(shift.endMinute, businessHours.endMinute)) continue
           if (breaks.some((pause) => startMinute < pause.endMinute && occupiedEndMinute > pause.startMinute)) continue
           const startsAt = localTime(date, Math.floor(startMinute / 60), startMinute % 60)
           const endsAt = new Date(+startsAt + service.durationMinutes * 60_000)
-          const occupiedEnd = +endsAt + 5 * 60_000
+          const occupiedEnd = +endsAt
           if (holidayWindows.some((window) => !window.isOpen && +startsAt < window.end && occupiedEnd > window.start)) continue
           // Regulars return after at least three weeks, rather than appearing every few days.
           const customer = Array.from({ length: customers.length }, (_, offset) => customers[(index * 7 + staffIndex + offset) % customers.length])
@@ -223,7 +223,7 @@ export async function seedBarberShop(db: PrismaClient, input: z.input<typeof bar
             customerNotes: index % 11 === 0 ? "Please keep a little length on top" : null,
             metadata: { seed: seedKind },
           })
-          snapshots.push({ id: generateId(), appointmentId: id, serviceId: serviceIds[serviceIndex], staffMemberId, name: service.name, durationMinutes: service.durationMinutes, unitPrice: service.price, totalPrice: service.price, bufferAfterMinutes: 5 })
+          snapshots.push({ id: generateId(), appointmentId: id, serviceId: serviceIds[serviceIndex], staffMemberId, name: service.name, durationMinutes: service.durationMinutes, unitPrice: service.price, totalPrice: service.price, bufferBeforeMinutes: 0, bufferAfterMinutes: 0 })
           attendees.push({ id: generateId(), appointmentId: id, customerId: customer.id, name: `${customer.firstName} ${customer.lastName}`, email: customer.email, status: paid ? "ATTENDED" : status === "NO_SHOW" ? "NO_SHOW" : cancelled ? "CANCELLED" : status === "PENDING" ? "BOOKED" : "CONFIRMED" })
           events.push({ id: generateId(), organizationId, appointmentId: id, type: "CREATED", message: "Appointment booked", createdAt })
           if (paid) {

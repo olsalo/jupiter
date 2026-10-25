@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { Link, useLocation, useMatch } from "react-router"
 
 import { CalendarBookingIssueMarker } from "~/components/calendar/calendar-booking-issues"
+import { CalendarView } from "~/components/calendar/calendar-view"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { useCalendarState } from "~/components/calendar/use-calendar-state"
 import Icon from "~/components/icons"
@@ -44,22 +45,21 @@ export function CalendarAgenda() {
   const isFetching = queries.some((query) => query.isFetching)
   const retry = () => void Promise.all(queries.map((query) => query.refetch()))
 
-  if (loadError) return <div className="p-4"><Alert variant="error">
+  if (loadError) return <CalendarView list={true} alerts={<Alert variant="error">
     <AlertTitle>{t("calendarGrid.loadError")}</AlertTitle>
     <AlertDescription>{t("retryDescription")}</AlertDescription>
     <AlertAction><Button disabled={isFetching} onClick={retry} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
-  </Alert></div>
+  </Alert>} />
 
-  if (organization.data === undefined || staff.data === undefined || bookings.data === undefined) return <div className="flex min-h-48 flex-1 items-center justify-center"><Spinner aria-label={t("loading")} /></div>
+  if (organization.data === undefined || staff.data === undefined || bookings.data === undefined) return <CalendarView list={true}><div className="flex min-h-48 flex-1 items-center justify-center"><Spinner aria-label={t("loading")} /></div></CalendarView>
 
-  return <div className="flex min-h-0 flex-1 flex-col">
-    {refreshError ? <div className="p-4"><Alert variant="warning">
-      <AlertTitle>{t("calendarGrid.refreshError")}</AlertTitle>
-      <AlertDescription>{t("calendarAgenda.staleDescription")}</AlertDescription>
-      <AlertAction><Button disabled={isFetching} onClick={retry} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
-    </Alert></div> : null}
+  return <CalendarView list={true} alerts={refreshError ? <Alert variant="warning">
+    <AlertTitle>{t("calendarGrid.refreshError")}</AlertTitle>
+    <AlertDescription>{t("calendarAgenda.staleDescription")}</AlertDescription>
+    <AlertAction><Button disabled={isFetching} onClick={retry} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
+  </Alert> : null}>
     <CalendarAgendaContent appointments={appointments} days={days} formatPreference={formatPreference} key={`${range.from.toISOString()}/${selectedMember?.id ?? "team"}`} members={staff.data} now={now} timeZone={timeZone} />
-  </div>
+  </CalendarView>
 }
 
 type CalendarAgendaContentProps = {
