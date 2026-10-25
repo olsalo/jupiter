@@ -2,14 +2,14 @@ import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate, useOutletContext } from "react-router"
 
-import { useAppContext } from "~/lib/use-app-context"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 import Icon from "~/components/icons"
 import type { NoteModalContext } from "~/components/notes/note-modal-context"
 import { NoteModalSkeleton } from "~/components/notes/note-modal-skeleton"
 import { Alert, AlertDescription } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
-import { ResponsiveSheetDescription, ResponsiveSheetFooter, ResponsiveSheetHeader, ResponsiveSheetPanel, ResponsiveSheetTitle } from "~/components/responsive-sheet"
-import { createDateTimeFormatter, defaultTimeZone } from "~/lib/format-preference"
+import { ResponsiveSheetDescription, ResponsiveSheetFooter, ResponsiveSheetHeader, ResponsiveSheetPanel, ResponsiveSheetTitle } from "~/components/overlays/responsive-sheet"
+import { createDateTimeFormatter, defaultTimeZone } from "~/lib/localization/format-preference"
 
 export function loader() {
   return null

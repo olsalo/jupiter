@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { getCalendarSchedule, type CalendarScheduleRule } from "../app/lib/calendar/schedule.ts"
 import { getCalendarTimelineLayout } from "../app/lib/calendar/timeline-layout.ts"
 import { calendarDateFromValue } from "../app/lib/calendar/date.ts"
-import { timeOffIntervals, type TimeOffValues } from "../app/lib/team-time-off.ts"
+import { timeOffIntervals, type TimeOffValues } from "../app/lib/team/team-time-off.ts"
 
 const timeZone = "Europe/Helsinki"
 const day = "2030-10-14"

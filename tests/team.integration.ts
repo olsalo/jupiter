@@ -13,7 +13,7 @@ const vite = await createServer({
   server: { middlewareMode: true, hmr: false, watch: null },
 })
 const { auth } = await vite.ssrLoadModule("/app/lib/auth/server.ts") as typeof import("../app/lib/auth/server")
-const { prisma } = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as typeof import("../app/lib/prisma.server")
+const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
 const { appRouter } = await vite.ssrLoadModule("/app/.server/main.ts") as typeof import("../app/.server/main")
 const { getSafeRedirectTo } = await vite.ssrLoadModule("/app/lib/auth/redirect.ts") as typeof import("../app/lib/auth/redirect")
 const suffix = randomUUID()

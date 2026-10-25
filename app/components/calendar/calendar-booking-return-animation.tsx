@@ -5,7 +5,7 @@ import { createPortal } from "react-dom"
 import { CalendarAppointmentCard } from "~/components/calendar/calendar-appointment"
 
 import { animateCalendarBookingReturn } from "~/lib/calendar/booking-return"
-import type { FormatPreference } from "~/lib/format-preference"
+import type { FormatPreference } from "~/lib/localization/format-preference"
 
 export function CalendarBookingReturnAnimation({ appointment, from, viewportRef, startMinute, endMinute, formatPreference, horizontal = false, onComplete }: {
   appointment: CalendarAppointment

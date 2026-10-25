@@ -1,6 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill"
 import { z } from "zod"
-import { timeOffSchema } from "../team-time-off.ts"
+import { timeOffSchema } from "../team/team-time-off.ts"
 
 export function extraHoursSchema(messages: { date: string; time: string; end: string }) {
   const fields = timeOffSchema({ title: "", end: messages.end, repeat: "", date: messages.date }).shape

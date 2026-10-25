@@ -1,7 +1,7 @@
 import { useLocation, useNavigate, useOutletContext } from "react-router"
 import { TeamPersonForm } from "~/components/team/team-person-form"
 import type { TeamPersonContext } from "~/components/team/team-types"
-import { ResponsiveSheetPanel } from "~/components/responsive-sheet"
+import { ResponsiveSheetPanel } from "~/components/overlays/responsive-sheet"
 import { Alert, AlertTitle } from "~/components/ui/alert"
 import { useTranslation } from "react-i18next"
 

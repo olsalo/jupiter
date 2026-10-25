@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { upcomingTimeOff, timeOffIntervals, timeOffSchema, type TimeOffValues } from "../app/lib/team-time-off.ts"
+import { upcomingTimeOff, timeOffIntervals, timeOffSchema, type TimeOffValues } from "../app/lib/team/team-time-off.ts"
 
 const schema = timeOffSchema()
 const base: TimeOffValues = { title: "Holiday", startDate: "2026-10-10", endDate: "2026-10-10", allDay: true, startTime: "09:00", endTime: "17:00", repeat: "none", repeatUntil: "" }

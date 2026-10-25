@@ -10,7 +10,7 @@ import { useCalendarBookingPreview } from "~/components/calendar/calendar-bookin
 import { useCalendarState } from "~/components/calendar/use-calendar-state"
 import { getCalendarBookingDragSelection } from "~/lib/calendar/booking-drag-selection"
 import { calendarDateFromValue } from "~/lib/calendar/date"
-import { formatDateTime } from "~/lib/format-preference"
+import { formatDateTime } from "~/lib/localization/format-preference"
 
 export default function NewAppointmentRoute() {
   const { t, i18n } = useTranslation()

@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next"
 
 import { calendarDurationStepMinutes, calendarMinDurationMinutes } from "~/lib/calendar/time-step"
 import { getCalendarBookingDurationStep } from "~/lib/calendar/booking-duration-steps"
-import FormLabel from "~/components/form-label"
+import FormLabel from "~/components/forms/form-label"
 import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "~/components/ui/number-field"
 
 export function BookingDurationField({ length, onLengthChange, disabled, lengthError, language, maxLength = 1440, minLength = calendarMinDurationMinutes, intervalMinutes = calendarDurationStepMinutes, serviceDurations }: {

@@ -1,6 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill"
-import { defaultBusinessHolidays } from "~/lib/business-holidays"
-import { z } from "~/lib/zod"
+import { defaultBusinessHolidays } from "~/lib/business/business-holidays"
+import { z } from "~/lib/validation/zod"
 const weeklyHours = z.array(z.object({
   dayOfWeek: z.number().int().min(0).max(6),
   startMinute: z.number().int().min(0).max(1439),

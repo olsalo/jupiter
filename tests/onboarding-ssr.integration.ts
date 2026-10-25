@@ -16,7 +16,7 @@ try {
   const { default: Availability } = await vite.ssrLoadModule("/app/routes/onboarding/availability.tsx") as typeof import("../app/routes/onboarding/availability")
   const { default: Holidays } = await vite.ssrLoadModule("/app/routes/onboarding/holidays.tsx") as typeof import("../app/routes/onboarding/holidays")
   const { TRPCProvider, trpc } = await vite.ssrLoadModule("/app/lib/trpc/client.tsx") as typeof import("../app/lib/trpc/client")
-  const { defaultBusinessHolidays } = await vite.ssrLoadModule("/app/lib/business-holidays.ts") as typeof import("../app/lib/business-holidays")
+  const { defaultBusinessHolidays } = await vite.ssrLoadModule("/app/lib/business/business-holidays.ts") as typeof import("../app/lib/business/business-holidays")
   const { resources } = await vite.ssrLoadModule("/app/locales/index.ts") as typeof import("../app/locales")
   const options = createTRPCOptionsProxy({ client: trpc, queryClient })
   queryClient.setQueryData(options.onboarding.schedule.queryKey(), {

@@ -5,8 +5,8 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { Temporal } from "@js-temporal/polyfill"
 import { PrismaClient } from "../generated/prisma/client.ts"
 import { barberSeedOptions, seedBarberShop } from "../scripts/lib/barber-seed.ts"
-import { generateId } from "../app/lib/id.ts"
-import { businessHolidayWindows } from "../app/lib/business-holidays.ts"
+import { generateId } from "../app/lib/database/id.ts"
+import { businessHolidayWindows } from "../app/lib/business/business-holidays.ts"
 
 assert.equal(barberSeedOptions.safeParse({ ownerName: " ", ownerEmail: "invalid" }).success, false)
 const suffix = randomUUID()

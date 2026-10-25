@@ -6,7 +6,7 @@ import { createServer } from "vite"
 process.env.NODE_ENV = "test"
 process.env.EMAIL_PROVIDER = ""
 const vite = await createServer({ configFile: false, appType: "custom", resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } }, server: { ws: false, middlewareMode: true, hmr: false, watch: null } })
-const { prisma } = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as typeof import("../app/lib/prisma.server")
+const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
 const { appRouter } = await vite.ssrLoadModule("/app/.server/main.ts") as typeof import("../app/.server/main")
 const jobs = await vite.ssrLoadModule("/app/.server/jobs/appointments.ts") as typeof import("../app/.server/jobs/appointments")
 const orgIds: string[] = []
@@ -90,7 +90,7 @@ try {
   assert.equal((await pendingReminders()).length, 2)
   const scopedDb = Object.create(prisma) as typeof prisma
   Object.defineProperty(scopedDb, "notification", { value: { ...prisma.notification, findMany: (args: Parameters<typeof prisma.notification.findMany>[0]) => prisma.notification.findMany({ ...args, where: { ...args?.where, organizationId: org.id } }), updateMany: prisma.notification.updateMany.bind(prisma.notification) } })
-  const delivered: import("../app/lib/email.server").EmailMessage[] = []
+  const delivered: import("../app/lib/email/email.server.ts").EmailMessage[] = []
   await jobs.sendPendingNotifications(scopedDb, { send: async (message) => { delivered.push(message) } })
   assert.equal(delivered.length, 1)
   assert.equal(delivered[0].senderName, "Small business")

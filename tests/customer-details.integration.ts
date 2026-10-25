@@ -5,7 +5,7 @@ import { createServer } from "vite"
 
 process.env.NODE_ENV = "test"
 const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/customer-details", appType: "custom", resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
-const { prisma } = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as typeof import("../app/lib/prisma.server")
+const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
 const { customerRouter } = await vite.ssrLoadModule("/app/.server/routers/customers.ts") as typeof import("../app/.server/routers/customers")
 const { createTRPCRouter } = await vite.ssrLoadModule("/app/.server/trpc.ts") as typeof import("../app/.server/trpc")
 const router = createTRPCRouter({ customer: customerRouter })

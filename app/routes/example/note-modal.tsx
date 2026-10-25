@@ -11,10 +11,10 @@ import {
 
 import type { Route } from "./+types/note-modal"
 import type { NoteModalContext } from "~/components/notes/note-modal-context"
-import { ResponsiveSheet, ResponsiveSheetPopup } from "~/components/responsive-sheet"
+import { ResponsiveSheet, ResponsiveSheetPopup } from "~/components/overlays/responsive-sheet"
 import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { useModalQueryLoading } from "~/lib/use-modal-query-loading"
+import { useModalQueryLoading } from "~/lib/hooks/use-modal-query-loading"
 import { useHydrated } from "~/lib/use-hydrated"
 import { resources } from "~/locales"
 

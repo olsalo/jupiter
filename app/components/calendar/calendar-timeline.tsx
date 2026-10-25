@@ -9,7 +9,7 @@ import { useCalendarBookingReveal } from "~/components/calendar/use-calendar-boo
 import { useCalendarBookingDrag } from "~/components/calendar/use-calendar-booking-drag"
 import { CalendarTimelineLane } from "~/components/calendar/calendar-timeline-lane"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
-import { UserAvatar } from "~/components/user-avatar"
+import { UserAvatar } from "~/components/data-display/user-avatar"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { Spinner } from "~/components/ui/spinner"
 import { calendarDateFromValue, calendarDateToValue } from "~/lib/calendar/date"
@@ -20,7 +20,7 @@ import { calendarIntervalMinutes, calendarMinDurationMinutes } from "~/lib/calen
 import { sortCalendarMembers } from "~/lib/calendar/schedule"
 import { isCalendarCurrentTimeVisible, subscribeCalendarClock } from "~/lib/calendar/clock"
 import { getCalendarBookingRevealScrollPosition, getCalendarBookingScrollPosition, getCalendarTodayScrollLeft } from "~/lib/calendar/scroll"
-import { formatDateTime, type FormatPreference } from "~/lib/format-preference"
+import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
 import { cn } from "~/lib/utils"
 
 const calendarDateColumnClassName = "pr-px last:pr-0"

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 import { transformWithOxc, type Plugin } from "vite"
-import { createOfflineDocument } from "../app/lib/offline-document.ts"
+import { createOfflineDocument } from "../app/lib/browser/offline-document.ts"
 
 // Serve the same standalone TypeScript worker in development and production.
 export function offlinePlugin(): Plugin {

@@ -4,7 +4,7 @@ import { Link, useLocation, useRouteLoaderData } from "react-router"
 import type { loader as rootLoader } from "~/root"
 
 import Icon from "~/components/icons"
-import { UserAvatar } from "~/components/user-avatar"
+import { UserAvatar } from "~/components/data-display/user-avatar"
 import { Badge } from "~/components/ui/badge"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "~/components/ui/empty"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"

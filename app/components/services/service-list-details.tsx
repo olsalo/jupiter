@@ -5,7 +5,7 @@ import { useRouteLoaderData } from "react-router"
 
 import type { loader as rootLoader } from "~/root"
 import { Badge } from "~/components/ui/badge"
-import { formatNumber } from "~/lib/format-preference"
+import { formatNumber } from "~/lib/localization/format-preference"
 
 type ServiceDetails = Pick<inferRouterOutputs<AppRouter>["service"]["list"][number], "durationMinutes" | "deliveryType" | "isActive" | "currency" | "description"> & { price: { toString: () => string } | null }
 

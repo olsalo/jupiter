@@ -4,7 +4,7 @@ import Icon from "~/components/icons"
 import { cn } from "~/lib/utils"
 import { Button } from "~/components/ui/button"
 import { Alert, AlertDescription } from "~/components/ui/alert"
-import type { FormatPreference } from "~/lib/format-preference"
+import type { FormatPreference } from "~/lib/localization/format-preference"
 import { BookingAppointmentCard } from "./booking-appointment-card"
 import type { BookingPageData, BookingResult } from "./booking-types"
 

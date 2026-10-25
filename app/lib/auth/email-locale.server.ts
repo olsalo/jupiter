@@ -1,7 +1,7 @@
 import { auth } from "~/lib/auth/server"
-import { localeCookie } from "~/lib/cookies.server"
+import { localeCookie } from "~/lib/http/cookies.server.ts"
 import type { EmailLocale } from "~/lib/email-templates/types"
-import { isSupportedLocale } from "~/lib/locale"
+import { isSupportedLocale } from "~/lib/localization/locale"
 import { fallbackLanguage } from "~/locales"
 
 export async function getEmailLocale(request?: Request | Headers): Promise<EmailLocale> {

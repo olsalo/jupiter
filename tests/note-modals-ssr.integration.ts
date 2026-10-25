@@ -8,7 +8,7 @@ import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query"
 import { createInstance } from "i18next"
 import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
-import { queryCacheOptions } from "../app/lib/query-cache.ts"
+import { queryCacheOptions } from "../app/lib/query/query-cache.ts"
 
 const vite = await createServer({
   configFile: false,
@@ -45,7 +45,7 @@ try {
   const i18n = createInstance()
   await i18n.init({ lng: "en", resources, defaultNS: "notes", interpolation: { escapeValue: false } })
   const { NoteModalSkeleton } = await vite.ssrLoadModule("/app/components/notes/note-modal-skeleton.tsx") as typeof import("../app/components/notes/note-modal-skeleton")
-  const { ResponsiveSheet, ResponsiveSheetPopup } = await vite.ssrLoadModule("/app/components/responsive-sheet.tsx") as typeof import("../app/components/responsive-sheet")
+  const { ResponsiveSheet, ResponsiveSheetPopup } = await vite.ssrLoadModule("/app/components/overlays/responsive-sheet.tsx") as typeof import("../app/components/overlays/responsive-sheet")
   for (const isEditing of [true, false]) {
     const skeleton = createElement(NoteModalSkeleton, { descriptionId: "loading-description", titleId: "loading-title", isEditing })
     const popup = createElement(ResponsiveSheetPopup, { open: true, closeLabel: i18n.t("actions.close"), descriptionId: "loading-description", titleId: "loading-title", children: skeleton })

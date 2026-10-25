@@ -19,7 +19,7 @@ const bookingProcedure = publicProcedure.use(async ({ ctx, next, path }) => {
   }))
   return result
 })
-async function bookingIdentity(ctx: { prisma: typeof import("~/lib/prisma.server").prisma; headers: Headers }, bookingCode: string, mutation: boolean) {
+async function bookingIdentity(ctx: { prisma: typeof import("~/lib/database/prisma.server.ts").prisma; headers: Headers }, bookingCode: string, mutation: boolean) {
   const appointment = await ctx.prisma.appointment.findUnique({ where: { bookingCode }, select: { id: true, organizationId: true } })
   if (!appointment) notFound()
   await limitPublicBooking(ctx.prisma, ctx.headers, appointment.organizationId, mutation)

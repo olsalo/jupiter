@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 
-const { createSettingsSaveQueue } = await import(new URL("../app/lib/settings-save-queue.ts", import.meta.url).href) as typeof import("../app/lib/settings-save-queue")
+const { createSettingsSaveQueue } = await import(new URL("../app/lib/preferences/settings-save-queue.ts", import.meta.url).href) as typeof import("../app/lib/preferences/settings-save-queue")
 
 function deferred() {
   let resolve!: () => void

@@ -6,12 +6,12 @@ import { Link, Outlet, useLocation, useNavigate, useRevalidator, useSearchParams
 
 import type { Route } from "./+types/team"
 import type { AppRouter } from "~/.server/main"
-import { useAppContext } from "~/lib/use-app-context"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 import Icon from "~/components/icons"
-import { InvitationActionsMenu } from "~/components/invitation-actions-menu"
-import { ViewportPage } from "~/components/page-layout"
-import { RouteHeader } from "~/components/route-header"
-import { TanStackTable, type TanStackTableColumn } from "~/components/tanstack-table"
+import { InvitationActionsMenu } from "~/components/team/invitation-actions-menu"
+import { ViewportPage } from "~/components/layout/page-layout"
+import { RouteHeader } from "~/components/layout/route-header"
+import { TanStackTable, type TanStackTableColumn } from "~/components/data-display/tanstack-table"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { Badge } from "~/components/ui/badge"
@@ -26,12 +26,12 @@ import {
   EmptyTitle,
 } from "~/components/ui/empty"
 import { Tabs, TabsList, TabsPanel, TabsTab } from "~/components/ui/tabs"
-import { formatDateTime } from "~/lib/format-preference"
-import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
+import { formatDateTime } from "~/lib/localization/format-preference"
+import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { hasOrganizationRole } from "~/lib/utils"
-import { useCurrentOrganizationRole } from "~/lib/use-organization-access"
+import { useCurrentOrganizationRole } from "~/lib/hooks/use-organization-access"
 
 type TeamListOutput = inferRouterOutputs<AppRouter>["team"]["list"]
 

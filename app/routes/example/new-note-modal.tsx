@@ -3,7 +3,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
 
-import { NoteForm } from "~/components/note-form"
+import { NoteForm } from "~/components/notes/note-form"
 import { Button } from "~/components/ui/button"
 import { Spinner } from "~/components/ui/spinner"
 import {
@@ -14,7 +14,7 @@ import {
   ResponsiveSheetHeader,
   ResponsiveSheetPanel,
   ResponsiveSheetTitle,
-} from "~/components/responsive-sheet"
+} from "~/components/overlays/responsive-sheet"
 import { useTRPC } from "~/lib/trpc/client"
 import { toast } from "~/lib/toast"
 import { useHydrated } from "~/lib/use-hydrated"

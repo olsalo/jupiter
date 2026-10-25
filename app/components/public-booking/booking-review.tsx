@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next"
 import Icon from "~/components/icons"
 import { Button } from "~/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
-import { formatDateTime, type FormatPreference } from "~/lib/format-preference"
+import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
 import { BookingSummary } from "./booking-summary"
 import type {
   BookingDetails,

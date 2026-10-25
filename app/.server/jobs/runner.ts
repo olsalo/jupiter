@@ -1,4 +1,4 @@
-import { prisma } from "~/lib/prisma.server"
+import { prisma } from "~/lib/database/prisma.server.ts"
 import { expirePendingAppointments, pruneBookingRateLimits, sendPendingNotifications } from "./appointments"
 
 try {

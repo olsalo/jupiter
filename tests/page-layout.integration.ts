@@ -5,7 +5,7 @@ import { createInstance } from "i18next"
 import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
 
-import { resolvePageLayout } from "../app/lib/page-layout.ts"
+import { resolvePageLayout } from "../app/lib/routing/page-layout.ts"
 
 assert.equal(resolvePageLayout("viewport", false), "viewport")
 assert.equal(resolvePageLayout("viewport", true), "viewport")
@@ -28,8 +28,8 @@ for (const style of ["classic", "floating"]) {
     server: { middlewareMode: true, ws: false, hmr: false, watch: null },
   })
   try {
-    const { ViewportPage, ScrollPage } = await vite.ssrLoadModule("/app/components/page-layout.tsx") as typeof import("../app/components/page-layout")
-    const { RouteHeader } = await vite.ssrLoadModule("/app/components/route-header.tsx") as typeof import("../app/components/route-header")
+    const { ViewportPage, ScrollPage } = await vite.ssrLoadModule("/app/components/layout/page-layout.tsx") as typeof import("../app/components/layout/page-layout")
+    const { RouteHeader } = await vite.ssrLoadModule("/app/components/layout/route-header.tsx") as typeof import("../app/components/layout/route-header")
     const header = createElement(RouteHeader, {
       title: "Calendar",
       description: "Appointments",

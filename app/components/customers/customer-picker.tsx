@@ -9,7 +9,7 @@ import { Combobox, ComboboxInput, ComboboxItem, ComboboxList, ComboboxPopup, Com
 import { SelectButton } from "~/components/ui/select"
 import { Spinner } from "~/components/ui/spinner"
 import { calendarPanelQueryOptions } from "~/lib/calendar/query-options"
-import { useDebouncedValue } from "~/lib/use-debounced-value"
+import { useDebouncedValue } from "~/lib/hooks/use-debounced-value"
 import { useTRPC } from "~/lib/trpc/client"
 import { cn } from "~/lib/utils"
 

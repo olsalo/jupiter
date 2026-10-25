@@ -1,5 +1,5 @@
-import { customerInput, id } from "~/lib/schemas/appointments"
-import { z } from "~/lib/zod"
+import { customerInput, id, updateAppointmentInput } from "~/lib/schemas/appointments"
+import { z } from "~/lib/validation/zod"
 
 export const calendarBookingCustomerSchema = z.object({
   name: customerInput.shape.firstName,
@@ -13,4 +13,8 @@ export const calendarCustomerCreateSchema = calendarBookingCustomerSchema.omit({
 export const calendarBookingSchema = z.object({
   customerId: id,
   notes: z.string().trim().max(2000),
+})
+
+export const calendarBookingEditSchema = calendarBookingSchema.extend({
+  notes: updateAppointmentInput.shape.internalNotes,
 })

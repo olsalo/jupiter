@@ -8,7 +8,7 @@ import { APIError } from "better-auth/api"
 import { adminProcedure, protectedProcedure, publicProcedure } from "../trpc"
 import { auth } from "~/lib/auth/server"
 import { addPersonSchema, updatePersonSchema, personIdSchema, memberRoleSchema, inviteFormSchema } from "~/lib/schemas/team"
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 export const teamRouter = {
   invitationPreview: publicProcedure

@@ -1,7 +1,7 @@
 import { Link, data, href } from "react-router"
 import { useTranslation } from "react-i18next"
 
-import { AppLogo } from "~/components/app-logo"
+import { AppLogo } from "~/components/navigation/app-logo"
 import Icon from "~/components/icons"
 import { Button } from "~/components/ui/button"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia } from "~/components/ui/empty"

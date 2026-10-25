@@ -1,8 +1,8 @@
 import { useId, useRef, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate } from "react-router"
-import { ResponsiveSheet, ResponsiveSheetPopup, ResponsiveSheetHeader, ResponsiveSheetTitle, ResponsiveSheetDescription } from "~/components/responsive-sheet"
-import { useRouteSheet } from "~/components/use-route-sheet"
+import { ResponsiveSheet, ResponsiveSheetPopup, ResponsiveSheetHeader, ResponsiveSheetTitle, ResponsiveSheetDescription } from "~/components/overlays/responsive-sheet"
+import { useRouteSheet } from "~/components/overlays/use-route-sheet"
 
 export function TeamPersonSheet({ title, description, children, pending = false, profile = false, basePath = "/team", defaultReturnTo = basePath, onCloseStart }: {
   title: string

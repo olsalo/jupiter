@@ -1,4 +1,4 @@
-import { UserAvatar } from "~/components/user-avatar"
+import { UserAvatar } from "~/components/data-display/user-avatar"
 import { cn } from "~/lib/utils"
 import { TeamPersonStatusBadges } from "./team-person-status-badges"
 import { TeamPersonTabs } from "./team-person-tabs"

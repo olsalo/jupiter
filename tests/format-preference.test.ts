@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 
-import { formatDateTime } from "../app/lib/format-preference.ts"
+import { formatDateTime } from "../app/lib/localization/format-preference.ts"
 
 const value = "2026-10-19T09:30:00Z"
 const base = { formatPreference: "eu", language: "fi", timeZone: "Europe/Helsinki" } as const

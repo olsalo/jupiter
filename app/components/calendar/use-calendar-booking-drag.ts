@@ -1,4 +1,4 @@
-import { canRescheduleAppointment } from "~/lib/appointment-status"
+import { canRescheduleAppointment } from "~/lib/booking/appointment-status"
 import type { CalendarAppointment, CalendarBookingReturnMotion, CalendarDragSelection, CalendarMember, CalendarUnavailableTime } from "~/lib/calendar/types"
 import { startTransition, useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type MouseEvent, type DragEvent, type RefObject, type SetStateAction } from "react"
 

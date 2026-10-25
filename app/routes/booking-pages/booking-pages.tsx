@@ -3,7 +3,7 @@ import type { Route } from "./+types/booking-pages"
 import { AdminBookingPage } from "~/components/booking-page/admin-booking-page"
 import { getQueryClient } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
+import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 
 export const handle = { workspace: true, pageLayout: "scroll" } as const
 export const shouldRevalidate = shouldRevalidateAppRoute

@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next"
 import Icon from "~/components/icons"
-import { UserAvatar } from "~/components/user-avatar"
+import { UserAvatar } from "~/components/data-display/user-avatar"
 import { Badge } from "~/components/ui/badge"
 import { Card, CardHeader, CardPanel, CardTitle } from "~/components/ui/card"
-import { formatDateTime, formatNumber, type FormatPreference } from "~/lib/format-preference"
+import { formatDateTime, formatNumber, type FormatPreference } from "~/lib/localization/format-preference"
 import type { BookingResult } from "./booking-types"
 
 export function BookingAppointmentCard({ booking, formatPreference, showPrice = false }: {

@@ -1,4 +1,4 @@
-import { blocksAppointmentTime } from "../appointment-status.ts"
+import { blocksAppointmentTime } from "../booking/appointment-status.ts"
 
 type Booking = {
   id: string

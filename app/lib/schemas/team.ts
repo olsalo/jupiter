@@ -1,4 +1,4 @@
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 import { ruleInput } from "~/lib/schemas/appointments"
 
 export function workingHoursSchema(endTimeError = "End time must be after start time") {

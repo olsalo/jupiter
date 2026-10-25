@@ -8,7 +8,7 @@ try {
   const { createOtpEmailTemplate } = await vite.ssrLoadModule("/app/lib/email-templates/otp.ts") as typeof import("../app/lib/email-templates/otp")
   const { createInvitationEmailTemplate } = await vite.ssrLoadModule("/app/lib/email-templates/invitation.ts") as typeof import("../app/lib/email-templates/invitation")
   const { createAppointmentEmailTemplate } = await vite.ssrLoadModule("/app/lib/email-templates/appointment.ts") as typeof import("../app/lib/email-templates/appointment")
-  const { sendEmail } = await vite.ssrLoadModule("/app/lib/email.server.ts") as typeof import("../app/lib/email.server")
+  const { sendEmail } = await vite.ssrLoadModule("/app/lib/email/email.server.ts") as typeof import("../app/lib/email/email.server.ts")
   for (const locale of ["fi", "en"] as const) {
     for (const type of ["sign-in", "email-verification", "forget-password", "change-email"] as const) {
       const template = await createOtpEmailTemplate({ locale, type, expiresInMinutes: 5, otp: "12<34&" })

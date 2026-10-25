@@ -1,5 +1,5 @@
 import { businessLocationSchema } from "~/lib/schemas/business-location"
-import { generateId } from "~/lib/id"
+import { generateId } from "~/lib/database/id"
 import type { TRPCRouterRecord } from "@trpc/server"
 import { permissionProcedure, organizationProcedure } from "../trpc"
 import { idInput, locationInput, locationUpdateInput } from "~/lib/schemas/appointments"

@@ -4,13 +4,13 @@ import { redirect } from "react-router"
 import type { Route } from "./+types/overview"
 
 import Icon, { type AppIconName } from "~/components/icons"
-import { JoinedTeamDialog } from "~/components/joined-team-dialog"
-import { RouteHeader } from "~/components/route-header"
-import { ScrollPage } from "~/components/page-layout"
+import { JoinedTeamDialog } from "~/components/team/joined-team-dialog"
+import { RouteHeader } from "~/components/layout/route-header"
+import { ScrollPage } from "~/components/layout/page-layout"
 import { Badge } from "~/components/ui/badge"
 import { Card, CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
-import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
-import { useOverviewGreeting } from "~/lib/use-overview-greeting"
+import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
+import { useOverviewGreeting } from "~/lib/hooks/use-overview-greeting"
 
 export function loader({ request }: Route.LoaderArgs): { greetingDate: string } {
   throw redirect(`/calendar${new URL(request.url).search}`)

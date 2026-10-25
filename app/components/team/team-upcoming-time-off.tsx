@@ -6,7 +6,7 @@ import Icon from "~/components/icons"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
-import { upcomingTimeOff } from "~/lib/team-time-off"
+import { upcomingTimeOff } from "~/lib/team/team-time-off"
 import { useTRPC } from "~/lib/trpc/client"
 import { TeamTimeOffList } from "./team-time-off-list"
 import { Spinner } from "~/components/ui/spinner"
@@ -24,7 +24,7 @@ export function TeamUpcomingTimeOff({ staffMemberId, timezone, action }: { staff
       <AlertTitle>{t("timeOff.loadError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription>
       <AlertAction><Button disabled={timeOff.isFetching} onClick={() => void timeOff.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
     </Alert> : entries.length === 0 ? <Empty className="min-h-0 w-full flex-1 border-0 bg-transparent px-4 py-3 md:px-4 md:py-3">
-      <EmptyHeader className="mx-auto"><EmptyMedia className="mb-3" variant="icon"><Icon aria-hidden={true} name="calendarEvent" /></EmptyMedia><EmptyTitle className="text-sm">{t("timeOff.emptyUpcoming")}</EmptyTitle><EmptyDescription>{t("timeOff.emptyDescription")}</EmptyDescription></EmptyHeader>
+      <EmptyHeader className="mx-auto"><EmptyMedia className="mb-3" variant="icon"><Icon aria-hidden={true} name="calendarEvent" /></EmptyMedia><EmptyTitle>{t("timeOff.emptyUpcoming")}</EmptyTitle><EmptyDescription>{t("timeOff.emptyDescription")}</EmptyDescription></EmptyHeader>
     </Empty> : <TeamTimeOffList canManage={true} entries={entries} staffMemberId={staffMemberId} timezone={timezone} />}
   </section>
 }

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { useMemo } from "react"
 
-import { useAppContext } from "~/lib/use-app-context"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 
 import { useTRPC } from "~/lib/trpc/client"
 

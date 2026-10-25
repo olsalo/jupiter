@@ -1,5 +1,5 @@
 import { calendarMinDurationMinutes } from "~/lib/calendar/time-step"
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 export const id = z.string().trim().min(1).max(128)
 export const idInput = z.object({ id })
@@ -10,6 +10,8 @@ const slug = z.string().trim().min(1).max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$
 const email = z.string().trim().toLowerCase().max(254).pipe(z.email())
 export const phone = z.string().trim().max(40).transform((value) => value.replace(/[\s().-]/g, "")).pipe(z.string().regex(/^\+?[0-9]{5,20}$/))
 const text = z.string().trim().max(2000)
+// Editing can combine two existing 2000-character notes with a blank line
+const internalNotes = z.string().trim().max(4002)
 export const serviceInput = z.object({
   name: z.string().trim().min(1).max(120), slug, description: text.nullable().optional(),
   durationMinutes: z.number().int().min(5).max(1440), bufferBeforeMinutes: z.number().int().min(0).max(240).default(0),
@@ -66,8 +68,8 @@ export const rescheduleInput = idInput.extend({ startsAt: z.coerce.date() })
 export const publicRescheduleInput = bookingCodeInput.extend({ startsAt: z.coerce.date() })
 export const listAppointmentsInput = rangeInput.safeExtend({ ...scopeInput.shape, customerId: id.optional(), includeCancelled: z.boolean().optional(), status: z.enum(["PENDING", "CONFIRMED", "CHECKED_IN", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_SHOW"]).optional() })
 export const paginationInput = z.object({ cursor: id.optional(), limit: z.number().int().min(1).max(100).default(50), search: z.string().trim().max(120).optional() })
-export const notesInput = idInput.extend({ customerNotes: text.nullable().optional(), internalNotes: text.nullable().optional() })
-export const updateAppointmentInput = idInput.extend({ customerId: id, internalNotes: text, serviceId: id.optional(), staffMemberId: id.optional(), durationMinutes: bookingDuration.optional(), allowBreakOverlap: z.boolean().optional(), startsAt: z.coerce.date().optional() })
+export const notesInput = idInput.extend({ customerNotes: text.nullable().optional(), internalNotes: internalNotes.nullable().optional() })
+export const updateAppointmentInput = idInput.extend({ customerId: id, customerNotes: z.null().optional(), internalNotes, serviceId: id.optional(), staffMemberId: id.optional(), durationMinutes: bookingDuration.optional(), allowBreakOverlap: z.boolean().optional(), startsAt: z.coerce.date().optional() })
 export const appointmentSlotsInput = idInput.extend({ durationMinutes: bookingDuration.optional(), selectedStart: z.coerce.date().optional(), from: slotInput.shape.from, to: slotInput.shape.to }).refine(({ from, to }) => to > from && +to - +from <= 31 * 86400000)
 
 // Zod defaults also run inside partial schemas, so explicitly remove them for

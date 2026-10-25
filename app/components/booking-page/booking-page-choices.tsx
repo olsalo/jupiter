@@ -1,6 +1,6 @@
 import type { Ref } from "react"
 import { useTranslation } from "react-i18next"
-import FormLabel from "~/components/form-label"
+import FormLabel from "~/components/forms/form-label"
 import Icon from "~/components/icons"
 import { Button } from "~/components/ui/button"
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "~/components/ui/select"

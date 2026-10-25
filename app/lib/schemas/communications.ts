@@ -1,4 +1,4 @@
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 export const communicationsSettingsSchema = z.object({
   sendBookingConfirmations: z.boolean(),

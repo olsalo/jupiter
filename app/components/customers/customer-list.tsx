@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next"
 import { Link, useLocation } from "react-router"
 
 import Icon from "~/components/icons"
-import { UserAvatar } from "~/components/user-avatar"
+import { UserAvatar } from "~/components/data-display/user-avatar"
 import { Badge } from "~/components/ui/badge"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "~/components/ui/empty"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"

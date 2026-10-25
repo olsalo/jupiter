@@ -89,6 +89,16 @@ try {
   queryClient.setQueryData([...options.organizations.getCurrent.queryKey()], { ...organization, role: "owner" })
   assert.match(await render("?member=other"), /Other member holiday/, "The time off tab uses the selected member")
   initialKind = "workingHours"
+  assert.match(await render("?tab=workingHours"), /data-slot="working-hours-week"/, "Working hours action opens its tab")
+  const linkedBreaks = await render("?tab=breaks&date=2030-10-14&member=own")
+  assert.match(linkedBreaks, /data-slot="breaks-week"/, "Breaks action selects its tab through the URL")
+  assert.doesNotMatch(linkedBreaks, /data-slot="working-hours-week"/)
+  assert.match(await render("?tab=timeOff&member=other"), /Other member holiday/, "Time off action preserves the selected member")
+  assert.match(await render("?tab=extraHours&member=other"), /Actions for extra hours on/, "Extra hours action opens its tab for the selected member")
+  assert.match(await render("?tab=unknown"), /data-slot="working-hours-week"/, "Invalid tab values fall back to working hours")
+  initialKind = "extraHours"
+  assert.match(await render("?tab=breaks"), /data-slot="breaks-week"/, "An explicit tab takes priority over the legacy route default")
+  initialKind = "workingHours"
   queryClient.setQueryData([...options.organizations.getCurrent.queryKey()], { ...organization, role: "member" })
   const member = await render("?member=other")
   assert.doesNotMatch(member, /aria-label="Team member"/, "Standard members cannot select someone else")

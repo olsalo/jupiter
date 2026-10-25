@@ -35,7 +35,7 @@ const vite = await createServer({
 
 try {
   const { authMiddleware, organizationMiddleware, userContext, sessionContext, organizationContext, membershipContext } = await vite.ssrLoadModule("/app/middleware/auth.ts") as typeof import("../app/middleware/auth")
-  const fixture = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as { calls: { organizations: number; memberships: number; updates: number }; resetCalls: () => void }
+  const fixture = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as { calls: { organizations: number; memberships: number; updates: number }; resetCalls: () => void }
   const sessionFixture = await vite.ssrLoadModule("/app/lib/auth/server.ts") as { resetSession: () => void }
   const { createTRPCContext, createTRPCRouter, publicProcedure, protectedProcedure, organizationProcedure } = await vite.ssrLoadModule("/app/.server/trpc.ts") as typeof import("../app/.server/trpc")
   const context = new RouterContextProvider()

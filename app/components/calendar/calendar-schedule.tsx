@@ -2,7 +2,7 @@ import type { CalendarAppointment, CalendarDragSelection, CalendarMember } from 
 import { useCallback, useEffect, useMemo, useRef } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useLocation, useMatch, useNavigate } from "react-router"
-import { useOrganizationPermission } from "~/lib/use-organization-access"
+import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 import { useTranslation } from "react-i18next"
 
 import { useCalendarState } from "~/components/calendar/use-calendar-state"

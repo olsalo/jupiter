@@ -11,12 +11,12 @@ import type { FormApi } from "@rvf/react"
 
 import type { Route } from "./+types/auth"
 import type { loader as rootLoader } from "~/root"
-import { AppLogo } from "~/components/app-logo"
-import { AppForm } from "~/components/app-form"
-import FormLabel from "~/components/form-label"
+import { AppLogo } from "~/components/navigation/app-logo"
+import { AppForm } from "~/components/forms/app-form"
+import FormLabel from "~/components/forms/form-label"
 import Icon from "~/components/icons"
-import { ThemeSwitch } from "~/components/theme-switch"
-import { LanguageSwitch } from "~/components/language-switch"
+import { ThemeSwitch } from "~/components/settings/preferences/theme-switch"
+import { LanguageSwitch } from "~/components/settings/preferences/language-switch"
 import { Button } from "~/components/ui/button"
 import {
   InputGroup,

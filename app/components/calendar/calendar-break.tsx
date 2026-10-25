@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 
 import Icon from "~/components/icons"
 import { Card } from "~/components/ui/card"
-import { formatDateTime, type FormatPreference } from "~/lib/format-preference"
+import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
 import { cn } from "~/lib/utils"
 
 type BreakPeriod = { startMinute: number; endMinute: number }

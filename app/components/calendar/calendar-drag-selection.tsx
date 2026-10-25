@@ -8,7 +8,7 @@ import { calendarDateToValue } from "~/lib/calendar/date"
 import { calendarIntervalMinutes, calendarMinDurationMinutes } from "~/lib/calendar/time-step"
 import { getCalendarBookingDragDuration } from "~/lib/calendar/booking-duration-steps"
 import { calendarTimelinePadding } from "~/lib/calendar/timeline-layout"
-import type { FormatPreference } from "~/lib/format-preference"
+import type { FormatPreference } from "~/lib/localization/format-preference"
 
 export function CalendarDragLane({ day, timeZone, mobile = false, horizontal = false, member, startMinute, endMinute, blocked, formatPreference, onSelect, onSelectStart, onSelectUpdate, onSelectCancel, onDraggingChange, children, getDraftService, serviceDurations, intervalMinutes = calendarIntervalMinutes, minDurationMinutes = calendarMinDurationMinutes }: {
   day: Date

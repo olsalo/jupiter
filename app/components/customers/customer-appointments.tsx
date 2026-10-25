@@ -3,11 +3,11 @@ import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 
-import { useAppContext } from "~/lib/use-app-context"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 import { Alert, AlertAction, AlertTitle } from "~/components/ui/alert"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
-import { formatDateTime } from "~/lib/format-preference"
+import { formatDateTime } from "~/lib/localization/format-preference"
 import { useTRPC } from "~/lib/trpc/client"
 import type { Customer } from "./customer-types"
 

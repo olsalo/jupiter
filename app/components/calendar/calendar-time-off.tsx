@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import Icon from "~/components/icons"
-import { ResponsiveSheetPanel, ResponsiveSheetFooter } from "~/components/responsive-sheet"
+import { ResponsiveSheetPanel, ResponsiveSheetFooter } from "~/components/overlays/responsive-sheet"
 import { TeamTimeOffDialog } from "~/components/team/team-time-off-dialog"
 import { TeamUpcomingTimeOff } from "~/components/team/team-upcoming-time-off"
 import { Button } from "~/components/ui/button"

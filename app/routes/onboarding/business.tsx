@@ -5,7 +5,7 @@ import type { Route } from "./+types/business"
 import type { Route as OnboardingRoute } from "./+types/onboarding"
 import { BusinessDetailsForm } from "~/components/onboarding/business-details-form"
 import { OnboardingStepError, OnboardingStepLoading } from "~/components/onboarding/step-state"
-import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
+import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 

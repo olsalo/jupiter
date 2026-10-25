@@ -5,7 +5,7 @@ import { transformWithOxc } from "vite"
 
 const workerPath = new URL("../app/service-worker.ts", import.meta.url)
 const { code } = await transformWithOxc(await readFile(workerPath, "utf8"), workerPath.pathname, { lang: "ts" })
-const { createOfflineDocument } = await import(new URL("../app/lib/offline-document.ts", import.meta.url).href) as typeof import("../app/lib/offline-document")
+const { createOfflineDocument } = await import(new URL("../app/lib/browser/offline-document.ts", import.meta.url).href) as typeof import("../app/lib/browser/offline-document")
 const document = createOfflineDocument("en")
 const finnishDocument = createOfflineDocument("fi")
 assert.match(finnishDocument, /<html lang="fi">/)

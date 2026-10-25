@@ -6,7 +6,7 @@ import type { ReactNode, RefObject } from "react"
 import { useTranslation } from "react-i18next"
 
 import Icon from "~/components/icons"
-import { IconListItem } from "~/components/icon-list-item"
+import { IconListItem } from "~/components/data-display/icon-list-item"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
 

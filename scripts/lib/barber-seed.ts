@@ -2,8 +2,8 @@ import { createHash } from "node:crypto"
 import { Temporal } from "@js-temporal/polyfill"
 import { z } from "zod"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.ts"
-import { generateId } from "../../app/lib/id.ts"
-import { businessHolidayWindows, defaultBusinessHolidays } from "../../app/lib/business-holidays.ts"
+import { generateId } from "../../app/lib/database/id.ts"
+import { businessHolidayWindows, defaultBusinessHolidays } from "../../app/lib/business/business-holidays.ts"
 
 export const barberSeedOptions = z.object({
   ownerName: z.string().trim().min(1).max(100),

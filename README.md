@@ -54,6 +54,8 @@ Run `npm run test:barber-seed` to check the dataset without a database. `npm run
 - `app/locales`: English and Finnish UI text
 - `app/.server/routers`: tRPC queries and mutations
 
+See [code organization](docs/code-organization.md) for component and library folders, import examples, and guidance on where new files belong.
+
 The template uses `prisma/schema_blank.prisma`, which contains the shared app models without the form builder feature.
 
 Use React Router loaders for route state and tRPC with TanStack Query for fetching data and submitting changes. See `AGENTS.md` for project conventions.

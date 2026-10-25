@@ -1,11 +1,11 @@
-import { getSafeSettingsHash } from "~/lib/settings-navigation"
+import { getSafeSettingsHash } from "~/lib/routing/settings-navigation"
 import { redirect } from "react-router"
 
 import type { Route } from "./+types/locale"
 import { auth } from "~/lib/auth/server"
 import { fallbackLanguage, supportedLanguages } from "~/locales"
-import { localeCookie } from "~/lib/cookies.server"
-import { syncUserLocale } from "~/lib/locale.server"
+import { localeCookie } from "~/lib/http/cookies.server.ts"
+import { syncUserLocale } from "~/lib/localization/locale.server.ts"
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData()

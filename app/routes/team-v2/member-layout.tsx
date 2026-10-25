@@ -4,17 +4,17 @@ import { useTranslation } from "react-i18next"
 import { Outlet, useMatches, useNavigate, useOutletContext } from "react-router"
 
 import type { Route } from "./+types/member-layout"
-import { ResponsiveSheetPanel } from "~/components/responsive-sheet"
+import { ResponsiveSheetPanel } from "~/components/overlays/responsive-sheet"
 import { TeamPersonSheet } from "~/components/team/team-person-sheet"
 import type { TeamMasterDetailContext, TeamPersonContext } from "~/components/team/team-types"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
-import { OverlayLoading } from "~/components/overlay-loading"
+import { OverlayLoading } from "~/components/overlays/overlay-loading"
 import { useMediaQuery } from "~/lib/hooks"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { useModalQueryLoading } from "~/lib/use-modal-query-loading"
-import { useOrganizationPermission } from "~/lib/use-organization-access"
+import { useModalQueryLoading } from "~/lib/hooks/use-modal-query-loading"
+import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 
 export async function loader(args: Route.LoaderArgs) {
   const queryClient = getQueryClient()

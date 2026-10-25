@@ -3,7 +3,7 @@ import { createInstance } from "i18next"
 import enEmail from "~/locales/en/email.json"
 import fiEmail from "~/locales/fi/email.json"
 import { fallbackLanguage } from "~/locales"
-import type { AppLocale } from "~/lib/locale"
+import type { AppLocale } from "~/lib/localization/locale"
 
 // Keep email translations independent of the active browser/request language
 const emailI18n = createInstance()

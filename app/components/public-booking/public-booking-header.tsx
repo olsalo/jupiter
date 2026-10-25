@@ -1,7 +1,7 @@
-import { FormatPreferenceSwitch } from "~/components/format-preference-switch"
-import { LanguageSwitch } from "~/components/language-switch"
-import { UserAvatar } from "~/components/user-avatar"
-import type { FormatPreference } from "~/lib/format-preference"
+import { FormatPreferenceSwitch } from "~/components/settings/preferences/format-preference-switch"
+import { LanguageSwitch } from "~/components/settings/preferences/language-switch"
+import { UserAvatar } from "~/components/data-display/user-avatar"
+import type { FormatPreference } from "~/lib/localization/format-preference"
 import type { BookingPageData } from "./booking-types"
 
 export function PublicBookingHeader({ organization, formatPreference, onFormatPreferenceChange }: {

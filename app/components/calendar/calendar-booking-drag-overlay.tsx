@@ -4,7 +4,7 @@ import { createPortal } from "react-dom"
 import { CalendarAppointmentCard } from "~/components/calendar/calendar-appointment"
 import type { CalendarBookingDragPreviewStore } from "~/lib/calendar/booking-drag-preview"
 import { calendarBookingReturnDuration, calendarBookingReturnEasing } from "~/lib/calendar/booking-return"
-import type { FormatPreference } from "~/lib/format-preference"
+import type { FormatPreference } from "~/lib/localization/format-preference"
 
 export function CalendarBookingDragOverlay({ store, startMinute, endMinute, formatPreference, horizontal = false }: {
   horizontal?: boolean

@@ -6,7 +6,7 @@ import { createServer } from "vite"
 const appPath = new URL("../app", import.meta.url).pathname
 const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/calendar-availability", appType: "custom", resolve: { alias: { "~": appPath } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
 const { auth } = await vite.ssrLoadModule("/app/lib/auth/server.ts") as typeof import("../app/lib/auth/server")
-const { prisma } = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as typeof import("../app/lib/prisma.server")
+const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
 const { appRouter } = await vite.ssrLoadModule("/app/.server/main.ts") as typeof import("../app/.server/main")
 const { scheduleAt } = await vite.ssrLoadModule("/app/lib/calendar/availability.ts") as typeof import("../app/lib/calendar/availability")
 const suffix = randomUUID()

@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next"
 import Icon from "~/components/icons"
 import { Button } from "~/components/ui/button"
-import { UserAvatar } from "~/components/user-avatar"
-import { formatDateTime, formatNumber, type FormatPreference } from "~/lib/format-preference"
+import { UserAvatar } from "~/components/data-display/user-avatar"
+import { formatDateTime, formatNumber, type FormatPreference } from "~/lib/localization/format-preference"
 import type {
   BookingPageData,
   BookingScreen,

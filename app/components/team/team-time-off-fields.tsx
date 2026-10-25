@@ -3,14 +3,14 @@ import { useTranslation } from "react-i18next"
 import { useRouteLoaderData } from "react-router"
 
 import type { loader as rootLoader } from "~/root"
-import { DatePicker } from "~/components/date-picker"
-import FormLabel from "~/components/form-label"
-import { FormSwitch } from "~/components/form-switch"
-import { TimePicker } from "~/components/time-picker"
+import { DatePicker } from "~/components/forms/date-picker"
+import FormLabel from "~/components/forms/form-label"
+import { FormSwitch } from "~/components/forms/form-switch"
+import { TimePicker } from "~/components/forms/time-picker"
 import { Badge } from "~/components/ui/badge"
 import { Input } from "~/components/ui/input"
 import { Select, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "~/components/ui/select"
-import type { TimeOffValues } from "~/lib/team-time-off"
+import type { TimeOffValues } from "~/lib/team/team-time-off"
 
 export function TeamTimeOffFields({ form, timezone }: { form: FormApi<TimeOffValues>; timezone: string }) {
   const { t } = useTranslation("team")

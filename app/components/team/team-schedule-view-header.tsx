@@ -1,4 +1,4 @@
-import { SettingsSectionHeader } from "~/components/settings-section-header"
+import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
 
 export function TeamScheduleViewHeader({ title, description }: { title: string; description: string }) {
   return (

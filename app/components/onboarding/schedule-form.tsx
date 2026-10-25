@@ -3,15 +3,15 @@ import { useTranslation } from "react-i18next"
 import { useNavigate, useNavigation } from "react-router"
 
 import { OnboardingActions } from "~/components/onboarding/onboarding-actions"
-import { AppForm } from "~/components/app-form"
-import { BusinessHolidayFields } from "~/components/business-holiday-fields"
+import { AppForm } from "~/components/forms/app-form"
+import { BusinessHolidayFields } from "~/components/settings/business/business-holiday-fields"
 import Icon from "~/components/icons"
 import { TeamWorkingHoursFields } from "~/components/team/team-working-hours-fields"
 import { Button } from "~/components/ui/button"
 import { businessScheduleSchema, type BusinessScheduleValues } from "~/lib/schemas/business-schedule"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 const availabilitySchema = z.object({
   workingHours: businessScheduleSchema.shape.workingHours,

@@ -15,7 +15,7 @@ import {
   EmptyTitle,
   EmptyContent,
 } from "~/components/ui/empty"
-import { formatNumber, type FormatPreference } from "~/lib/format-preference"
+import { formatNumber, type FormatPreference } from "~/lib/localization/format-preference"
 import type { BookingPageData } from "./booking-types"
 
 export function BookingServiceSelection({

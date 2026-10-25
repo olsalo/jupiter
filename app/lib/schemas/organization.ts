@@ -1,7 +1,7 @@
-import { isOnboardingCountryCode } from "~/lib/countries"
-import countries from "~/lib/files/countries.json"
-import { z } from "~/lib/zod"
-import { isCurrencyCode } from "~/lib/currencies"
+import { isOnboardingCountryCode } from "~/lib/localization/countries"
+import countries from "~/lib/localization/data/countries.json"
+import { z } from "~/lib/validation/zod"
+import { isCurrencyCode } from "~/lib/localization/currencies"
 
 export const timezone = z.string().trim().min(1).max(100).refine((value) => {
   try {

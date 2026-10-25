@@ -1,5 +1,5 @@
 import { customerInput } from "~/lib/schemas/appointments"
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 export const customerFormSchema = customerInput.pick({ firstName: true, lastName: true, email: true, phone: true }).extend({
   lastName: z.string().trim().max(120).transform((value) => value || null),

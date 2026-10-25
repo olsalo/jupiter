@@ -53,7 +53,37 @@ try {
   assert.match(markup, /type="submit"/, "The save button remains available")
   assert.match(markup, /Booking notes/, "The loaded booking form renders")
   assert.doesNotMatch(markup, /role="dialog"/, "The desktop panel does not need a modal wrapper")
+
+  const appointmentKey = options.appointment.get.queryKey({ id: "booking" })
+  const appointment = queryClient.getQueryData(appointmentKey)
+  assert.ok(appointment)
+  const render = () => renderToStaticMarkup(createElement(I18nextProvider, { i18n },
+    createElement(QueryClientProvider, { client: queryClient },
+      createElement(TRPCProvider, { trpcClient: trpc, queryClient, children: createElement(StaticRouterProvider, { router, context, hydrate: false }) }))))
+  for (const [customerNotes, internalNotes, expected] of [
+    ["Customer message", "Member note", "Customer message\n\nMember note"],
+    ["Customer message", null, "Customer message"],
+    [null, "Member note", "Member note"],
+    [null, "Saved combined note", "Saved combined note"],
+    [null, null, ""],
+    ["<script>Customer message</script>", "Member note", "&lt;script&gt;Customer message&lt;/script&gt;\n\nMember note"],
+  ]) {
+    queryClient.setQueryData(appointmentKey, { ...appointment, customerNotes, internalNotes })
+    const html = render()
+    assert.equal(html.match(/<textarea\b[^>]*name="notes"[^>]*>([\s\S]*?)<\/textarea>/)?.[1], expected, "Both notes share one editable field, including after reopening a saved booking")
+    assert.doesNotMatch(html, /data-slot="alert-title">From the customer/, "The customer message is not duplicated in a read-only alert")
+    assert.doesNotMatch(html, /<script>/, "Note contents remain escaped")
+  }
+
+  const { calendarBookingEditSchema, calendarBookingSchema } = await vite.ssrLoadModule("/app/lib/calendar/booking-schema.ts") as typeof import("../app/lib/calendar/booking-schema")
+  const { updateAppointmentInput } = await vite.ssrLoadModule("/app/lib/schemas/appointments.ts") as typeof import("../app/lib/schemas/appointments")
+  const combined = `${"a".repeat(2000)}\n\n${"b".repeat(2000)}`
+  assert.equal(calendarBookingEditSchema.parse({ customerId: customer.id, notes: combined }).notes, combined)
+  assert.equal(updateAppointmentInput.parse({ id: "booking", customerId: customer.id, customerNotes: null, internalNotes: combined }).internalNotes, combined)
+  assert.equal(calendarBookingEditSchema.safeParse({ customerId: customer.id, notes: `${combined}c` }).success, false)
+  assert.equal(calendarBookingSchema.safeParse({ customerId: customer.id, notes: combined }).success, false, "New booking limits remain unchanged")
   console.info("PASS desktop booking panel renders its form and footer without dialog context")
+  console.info("PASS customer and member notes share one editable field without duplicating customer details, with matching client/server validation")
 } finally {
   queryClient.clear()
   await vite.close()

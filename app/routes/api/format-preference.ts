@@ -1,9 +1,9 @@
-import { getSafeSettingsHash } from "~/lib/settings-navigation"
+import { getSafeSettingsHash } from "~/lib/routing/settings-navigation"
 import { redirect } from "react-router"
 
 import type { Route } from "./+types/format-preference"
-import { formatPreferenceCookie } from "~/lib/cookies.server"
-import { isFormatPreference } from "~/lib/format-preference"
+import { formatPreferenceCookie } from "~/lib/http/cookies.server.ts"
+import { isFormatPreference } from "~/lib/localization/format-preference"
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData()

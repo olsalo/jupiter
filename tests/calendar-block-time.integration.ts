@@ -1,7 +1,7 @@
 import "dotenv/config"
 import assert from "node:assert/strict"
 import { createServer } from "vite"
-import type { TimeOffValues } from "../app/lib/team-time-off.ts"
+import type { TimeOffValues } from "../app/lib/team/team-time-off.ts"
 
 const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/calendar-block-time", appType: "custom", resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
 try {

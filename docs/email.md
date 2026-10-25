@@ -11,7 +11,7 @@ Templates use the unified `react-email` 6 package. Each email follows the same p
 - `app/lib/email-templates/otp.ts`, `invitation.ts`, `appointment.ts`: select translated copy and prepare template data
 - `app/components/emails/`: React Email layouts for each template, sharing `layout.tsx`
 - `app/lib/email-templates/render.ts`: one renderer returning `{ subject, html, text }` from `types.ts`
-- `app/lib/email.server.ts`: provider delivery through Resend or Plunk
+- `app/lib/email/email.server.ts`: provider delivery through Resend or Plunk
 
 The appointment template handles confirmations, cancellations, reschedules and
 reminders through its `kind` option. Scheduling and notification services call the

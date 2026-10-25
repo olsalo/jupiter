@@ -7,7 +7,7 @@ import {
   resources,
   supportedLanguages,
 } from "~/locales"
-import { localeCookie } from "~/lib/cookies.server"
+import { localeCookie } from "~/lib/http/cookies.server.ts"
 
 export { localeCookie }
 

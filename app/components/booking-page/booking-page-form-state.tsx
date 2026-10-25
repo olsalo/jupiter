@@ -1,6 +1,6 @@
 import type { FormApi } from "@rvf/react"
 import { useEffect } from "react"
-import type { AppFormState } from "~/components/app-form"
+import type { AppFormState } from "~/components/forms/app-form"
 import { adminBookingPageFormSchema, type AdminBookingPageFormValues } from "~/lib/schemas/admin-booking-page"
 
 export function BookingPageFormState({ form, saved, onChange }: {

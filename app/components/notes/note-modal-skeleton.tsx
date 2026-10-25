@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next"
 
-import FormLabel from "~/components/form-label"
+import FormLabel from "~/components/forms/form-label"
 import { Skeleton } from "~/components/ui/skeleton"
-import { ResponsiveSheetDescription, ResponsiveSheetHeader, ResponsiveSheetPanel, ResponsiveSheetTitle } from "~/components/responsive-sheet"
+import { ResponsiveSheetDescription, ResponsiveSheetHeader, ResponsiveSheetPanel, ResponsiveSheetTitle } from "~/components/overlays/responsive-sheet"
 
 export function NoteModalSkeleton({ descriptionId, isEditing, titleId }: { descriptionId: string, isEditing: boolean, titleId: string }) {
   const { t } = useTranslation("notes")

@@ -1,5 +1,5 @@
 import type { TRPCRouterRecord } from "@trpc/server"
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 import { customerNoteSchema } from "~/lib/schemas/customers"
 import { permissionProcedure } from "../trpc"
 import { customerInput, idInput, paginationInput } from "~/lib/schemas/appointments"

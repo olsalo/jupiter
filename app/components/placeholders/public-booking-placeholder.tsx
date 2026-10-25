@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 
 import { PlaceholderBody, type PlaceholderTitle } from "./route-placeholder"
-import { PageHeading } from "~/components/page-heading"
+import { PageHeading } from "~/components/layout/page-heading"
 import { Button } from "~/components/ui/button"
 
 export function PublicBookingPlaceholder({ titleKey, management = false, back = false }: {

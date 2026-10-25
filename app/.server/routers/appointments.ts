@@ -1,4 +1,4 @@
-import { canRescheduleAppointment } from "~/lib/appointment-status"
+import { canRescheduleAppointment } from "~/lib/booking/appointment-status"
 import type { TRPCRouterRecord } from "@trpc/server"
 import { permissionProcedure } from "../trpc"
 import { appointmentBookingTimesInput, appointmentSlotsInput, cancelInput, createAppointmentInput, createAppointmentWithCustomerInput, idInput, listAppointmentsInput, notesInput, rescheduleInput, updateAppointmentInput } from "~/lib/schemas/appointments"

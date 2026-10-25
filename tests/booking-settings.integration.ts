@@ -6,7 +6,7 @@ import { createServer } from "vite"
 process.env.NODE_ENV = "test"
 process.env.EMAIL_PROVIDER = ""
 const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/booking-settings", appType: "custom", resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } }, server: { ws: false, middlewareMode: true, hmr: false, watch: null } })
-const { prisma } = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as typeof import("../app/lib/prisma.server")
+const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
 const { appRouter } = await vite.ssrLoadModule("/app/.server/main.ts") as typeof import("../app/.server/main")
 const orgIds: string[] = []
 let userId: string | undefined

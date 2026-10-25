@@ -1,4 +1,4 @@
-import { blocksAppointmentTime, canRescheduleAppointment } from "../appointment-status.ts"
+import { blocksAppointmentTime, canRescheduleAppointment } from "../booking/appointment-status.ts"
 import type { BookingAvailabilityIssue } from "./booking-issues.ts"
 import type { CalendarAppointment } from "./types.ts"
 import { TZDate } from "react-day-picker"

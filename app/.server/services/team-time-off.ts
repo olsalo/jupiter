@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server"
 import type { PrismaClient } from "../../../generated/prisma/client"
 import { Prisma } from "../../../generated/prisma/client"
-import { readTimeOffRecurrence, timeOffIntervals, type TimeOffValues } from "~/lib/team-time-off"
+import { readTimeOffRecurrence, timeOffIntervals, type TimeOffValues } from "~/lib/team/team-time-off"
 import { assertScope, schedulingLock, type Database } from "./scheduling"
 
 export async function getBlockedTimeInRange(db: Database, organizationId: string, range: { from: Date; to: Date }, scope: { staffMemberId?: string | null; locationId?: string } = {}) {

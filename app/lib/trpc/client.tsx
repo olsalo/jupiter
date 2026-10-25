@@ -19,7 +19,7 @@ import { useState, type PropsWithChildren } from "react"
 import superjson from "superjson"
 import type { AppRouter } from "~/.server/main"
 import { useDehydratedState } from "~/lib/hooks"
-import { queryCacheOptions } from "~/lib/query-cache"
+import { queryCacheOptions } from "~/lib/query/query-cache"
 
 function makeQueryClient() {
   return new QueryClient({

@@ -1,4 +1,4 @@
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 export function createAuthFormSchemas(t: (key: string) => string) {
   const emailSchema = z

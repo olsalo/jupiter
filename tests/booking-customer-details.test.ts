@@ -18,14 +18,15 @@ try {
   const { resources } = await vite.ssrLoadModule("/app/locales/index.ts") as typeof import("../app/locales")
   const i18n = createInstance()
   await i18n.init({ lng: "en", resources, defaultNS: "common", interpolation: { escapeValue: false } })
-  const render = (message: string | null, answers: Parameters<typeof BookingCustomerDetails>[0]["answers"]) => renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(BookingCustomerDetails, { message, answers })))
-  assert.equal(render(null, []), "")
+  const render = (answers: Parameters<typeof BookingCustomerDetails>[0]["answers"]) => renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(BookingCustomerDetails, { answers })))
+  assert.equal(render([]), "")
   for (const language of ["en", "fi"]) {
     await i18n.changeLanguage(language)
-    const html = render("Ääkköset <script>alert(1)</script>", [
+    const html = render([
       { id: "second", value: false, question: { label: "First visit", sortOrder: 2 } },
       { id: "first", value: 0, question: { label: "Previous visits", sortOrder: 1 } },
       { id: "third", value: ["A", "B"], question: { label: "Preferences", sortOrder: 3 } },
+      { id: "fourth", value: "Ääkköset <script>alert(1)</script>", question: { label: "Extra details", sortOrder: 4 } },
     ])
     assert.ok(html.includes(i18n.t("bookingForm.customerDetails")))
     assert.ok(html.includes(language === "fi" ? "Ei" : "No"))
@@ -35,7 +36,7 @@ try {
     assert.ok(html.includes("&lt;script&gt;"))
     assert.ok(!html.includes("<script>"))
   }
-  console.info("PASS customer messages and ordered intake answers render safely in English and Finnish, including false and zero")
+  console.info("PASS ordered intake answers render safely in English and Finnish, including false and zero")
 } finally {
   await vite.close()
 }

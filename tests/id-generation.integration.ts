@@ -13,9 +13,9 @@ const vite = await createServer({
   resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } },
   server: { middlewareMode: true, ws: false, hmr: false, watch: null },
 })
-const { generateId } = await vite.ssrLoadModule("/app/lib/id.ts") as typeof import("../app/lib/id")
-const { createIdWriteTransformer } = await vite.ssrLoadModule("/app/lib/prisma-ids.server.ts") as typeof import("../app/lib/prisma-ids.server")
-const { prisma } = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as typeof import("../app/lib/prisma.server")
+const { generateId } = await vite.ssrLoadModule("/app/lib/database/id.ts") as typeof import("../app/lib/database/id")
+const { createIdWriteTransformer } = await vite.ssrLoadModule("/app/lib/database/prisma-ids.server.ts") as typeof import("../app/lib/database/prisma-ids.server.ts")
+const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
 const { auth } = await vite.ssrLoadModule("/app/lib/auth/server.ts") as typeof import("../app/lib/auth/server")
 const ids = new Set<string>()
 const assertId = (id: string) => assert.match(id, /^[0-9a-zA-Z]{12}$/)

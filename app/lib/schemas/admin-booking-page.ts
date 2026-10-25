@@ -1,4 +1,4 @@
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 export const adminBookingPageSchema = z.object({
   slug: z.string().trim().toLowerCase().min(1).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),

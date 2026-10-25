@@ -1,23 +1,23 @@
 import { ResourceLimitError } from "./resource-limits/errors"
-import { isSupportedLocale } from "~/lib/locale"
+import { isSupportedLocale } from "~/lib/localization/locale"
 import { initTRPC, TRPCError } from "@trpc/server"
 import { createInstance } from "i18next"
 import superjson from "superjson"
 
 import { hasOrganizationPermission, type OrganizationPermissions } from "~/lib/auth/permissions"
 import { auth } from "~/lib/auth/server"
-import { hasActiveOrganizationSubscription } from "~/lib/billing.server"
+import { hasActiveOrganizationSubscription } from "~/lib/billing/billing.server.ts"
 import {
   formatPreferenceCookie,
   localeCookie,
-} from "~/lib/cookies.server"
+} from "~/lib/http/cookies.server.ts"
 import {
   getFormatLocale,
   isFormatPreference,
-} from "~/lib/format-preference"
-import { getFormatPreferenceFromRequest } from "~/lib/format-preference.server"
-import { prisma } from "~/lib/prisma.server"
-import { configureZodI18n, ZodError } from "~/lib/zod"
+} from "~/lib/localization/format-preference"
+import { getFormatPreferenceFromRequest } from "~/lib/localization/format-preference.server.ts"
+import { prisma } from "~/lib/database/prisma.server.ts"
+import { configureZodI18n, ZodError } from "~/lib/validation/zod"
 import {
   fallbackLanguage,
   resources,

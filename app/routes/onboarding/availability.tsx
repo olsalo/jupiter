@@ -5,7 +5,7 @@ import type { Route } from "./+types/availability"
 import type { Route as OnboardingRoute } from "./+types/onboarding"
 import { OnboardingScheduleForm } from "~/components/onboarding/schedule-form"
 import { OnboardingStepError, OnboardingStepLoading } from "~/components/onboarding/step-state"
-import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
+import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 

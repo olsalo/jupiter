@@ -7,7 +7,7 @@ const appPath = new URL("../app", import.meta.url).pathname
 const vite = await createServer({ configFile: false, appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, ws: false, hmr: false, watch: null } })
 try {
   const { DrawerBackdrop, DrawerViewport } = await vite.ssrLoadModule("/app/components/ui/drawer.tsx") as typeof import("../app/components/ui/drawer")
-  const { ResponsiveModal, ResponsiveModalPopup, ResponsiveModalHeader, ResponsiveModalTitle, ResponsiveModalDescription, ResponsiveModalPanel } = await vite.ssrLoadModule("/app/components/responsive-modal.tsx") as typeof import("../app/components/responsive-modal")
+  const { ResponsiveModal, ResponsiveModalPopup, ResponsiveModalHeader, ResponsiveModalTitle, ResponsiveModalDescription, ResponsiveModalPanel } = await vite.ssrLoadModule("/app/components/overlays/responsive-modal.tsx") as typeof import("../app/components/overlays/responsive-modal")
   function render(presentation: "drawer" | "sheet" | "dialog") {
     // These presentation wrappers are pure: inspect the props they give Base UI
     // without requiring a browser portal to render during this regression check

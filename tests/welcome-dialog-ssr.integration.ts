@@ -19,7 +19,7 @@ const vite = await createServer({
 })
 
 try {
-  const { WelcomeDialog } = await vite.ssrLoadModule("/app/components/welcome-dialog.tsx") as typeof import("../app/components/welcome-dialog")
+  const { WelcomeDialog } = await vite.ssrLoadModule("/app/components/overview/welcome-dialog.tsx") as typeof import("../app/components/overview/welcome-dialog")
   const { resources } = await vite.ssrLoadModule("/app/locales/index.ts") as typeof import("../app/locales")
   const i18n = createInstance()
   await i18n.init({ lng: "en", resources, defaultNS: "common", interpolation: { escapeValue: false } })

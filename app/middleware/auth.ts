@@ -1,7 +1,7 @@
 import { createContext, redirect, type MiddlewareFunction } from "react-router"
 
 import { auth } from "~/lib/auth/server"
-import { prisma } from "~/lib/prisma.server"
+import { prisma } from "~/lib/database/prisma.server.ts"
 import { getRoutePermissions, hasOrganizationPermission } from "~/lib/auth/permissions"
 import { hasOwnerRole } from "~/lib/utils"
 

@@ -1,9 +1,9 @@
 import type { Route } from "./+types/reschedule-booking"
 import { RescheduleBookingPage } from "~/components/public-booking/reschedule-booking-page"
-import { loadPublicBookingQuery } from "~/lib/public-booking-loader.server"
+import { loadPublicBookingQuery } from "~/lib/booking/public-booking-loader.server.ts"
 import { getQueryClient } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
+import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 
 export const shouldRevalidate = shouldRevalidateAppRoute
 

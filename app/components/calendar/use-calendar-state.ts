@@ -6,11 +6,11 @@ import { useRouteLoaderData, useSearchParams } from "react-router"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { calendarDateToValue, getCalendarDateState } from "~/lib/calendar/date"
 import { calendarReferenceQueryOptions } from "~/lib/calendar/query-options"
-import { defaultTimeZone } from "~/lib/format-preference"
+import { defaultTimeZone } from "~/lib/localization/format-preference"
 import { useMediaQuery } from "~/lib/hooks"
 import { sortCalendarMembers } from "~/lib/calendar/schedule"
 import { useTRPC } from "~/lib/trpc/client"
-import { useAppContext } from "~/lib/use-app-context"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 import type { clientLoader as calendarClientLoader } from "~/routes/calendar/calendar"
 
 export function useCalendarState({ preview: showPreview = true, mobile }: { preview?: boolean, mobile?: boolean } = {}) {

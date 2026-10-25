@@ -1,4 +1,4 @@
-import { canRescheduleAppointment } from "~/lib/appointment-status"
+import { canRescheduleAppointment } from "~/lib/booking/appointment-status"
 import type { CalendarDragSelection } from "~/lib/calendar/types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { inferRouterOutputs } from "@trpc/server"
@@ -16,7 +16,7 @@ import { BookingCustomerDetails } from "~/components/calendar/booking-customer-d
 import { BookingMemberFilter } from "~/components/calendar/booking-member-filter"
 import { useCalendarBookingDurationLimit } from "~/components/calendar/use-calendar-booking-duration-limit"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
-import { AppForm } from "~/components/app-form"
+import { AppForm } from "~/components/forms/app-form"
 import { BookingSlotList, bookingSlotKey } from "~/components/calendar/booking-slot-list"
 import { CalendarBookingEmpty } from "~/components/calendar/calendar-booking-empty"
 import { CalendarPanelClose, CalendarSidePanel } from "~/components/calendar/calendar-side-panel"
@@ -24,9 +24,9 @@ import { useCalendarState } from "~/components/calendar/use-calendar-state"
 import { CreateCustomerDialog } from "~/components/customers/create-customer-dialog"
 import { CustomerPicker, type CustomerOption } from "~/components/customers/customer-picker"
 import { ServicePicker } from "~/components/services/service-picker"
-import { DeleteConfirmationDialog } from "~/components/delete-confirmation-dialog"
-import { DatePicker } from "~/components/date-picker"
-import FormLabel from "~/components/form-label"
+import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmation-dialog"
+import { DatePicker } from "~/components/forms/date-picker"
+import FormLabel from "~/components/forms/form-label"
 import Icon from "~/components/icons"
 import { Alert, AlertAction, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
@@ -36,17 +36,17 @@ import { Separator } from "~/components/ui/separator"
 import { Spinner } from "~/components/ui/spinner"
 import { Textarea } from "~/components/ui/textarea"
 import { calendarDateFromValue, calendarDateToValue, getCalendarBookingRange, getCalendarTimeRange } from "~/lib/calendar/date"
-import { formatDateTime } from "~/lib/format-preference"
+import { formatDateTime } from "~/lib/localization/format-preference"
 import { getCalendarBookingDragSelection } from "~/lib/calendar/booking-drag-selection"
 import { getCalendarBookingEditSlot, includeCurrentBookingSlot } from "~/lib/calendar/booking-slots"
 import { cacheCalendarBooking, removeCalendarBooking } from "~/lib/calendar/booking-cache"
 import { calendarAvailabilityQueryOptions, calendarPanelQueryOptions, calendarReferenceQueryOptions } from "~/lib/calendar/query-options"
 import { calendarMinDurationMinutes } from "~/lib/calendar/time-step"
 import { useMediaQuery } from "~/lib/hooks"
-import { useDebouncedValue } from "~/lib/use-debounced-value"
-import { calendarBookingSchema } from "~/lib/calendar/booking-schema"
+import { useDebouncedValue } from "~/lib/hooks/use-debounced-value"
+import { calendarBookingEditSchema } from "~/lib/calendar/booking-schema"
 import { toast } from "~/lib/toast"
-import { useOrganizationPermission } from "~/lib/use-organization-access"
+import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 import { useTRPC } from "~/lib/trpc/client"
 import type { appRouter } from "~/.server/main"
 
@@ -221,9 +221,9 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
 
   return <><AppForm
     className="min-h-0 flex-1 gap-0"
-    defaultValues={{ customerId: appointment.customerId, notes: appointment.internalNotes ?? "" }}
+    defaultValues={{ customerId: appointment.customerId, notes: [appointment.customerNotes, appointment.internalNotes].filter(Boolean).join("\n\n") }}
     ref={formRef}
-    schema={calendarBookingSchema}
+    schema={calendarBookingEditSchema}
     submitFn={async ({ customerId, notes }) => {
       if (disabled) return
       if (changingTime && (!chosenSlot || slots.isError)) {
@@ -235,7 +235,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
         const timeChanged = changingTime && chosenSlot && (serviceChanged || +new Date(chosenSlot.startsAt) !== +appointment.startsAt || length !== Math.round((+appointment.endsAt - +appointment.startsAt) / 60000) || targetMemberId !== appointment.staffMemberId)
         if (timeChanged && chosenSlot.overlapsBreak && !await confirmBreakOverlap()) return
         await queryClient.cancelQueries(trpc.appointment.list.queryFilter())
-        const result = await update.mutateAsync({ id: appointment.id, customerId, internalNotes: notes, serviceId: serviceChanged ? serviceId : undefined, staffMemberId: timeChanged && targetMemberId !== appointment.staffMemberId ? targetMemberId ?? undefined : undefined, startsAt: timeChanged && chosenSlot ? new Date(chosenSlot.startsAt) : undefined, durationMinutes: timeChanged && appointment.services.length === 1 && validLength ? length : undefined, allowBreakOverlap: Boolean(timeChanged && dragSelection && customRange && chosenSlot?.startsAt === customRange.startsAt.toISOString()) })
+        const result = await update.mutateAsync({ id: appointment.id, customerId, customerNotes: null, internalNotes: notes, serviceId: serviceChanged ? serviceId : undefined, staffMemberId: timeChanged && targetMemberId !== appointment.staffMemberId ? targetMemberId ?? undefined : undefined, startsAt: timeChanged && chosenSlot ? new Date(chosenSlot.startsAt) : undefined, durationMinutes: timeChanged && appointment.services.length === 1 && validLength ? length : undefined, allowBreakOverlap: Boolean(timeChanged && dragSelection && customRange && chosenSlot?.startsAt === customRange.startsAt.toISOString()) })
         cacheCalendarBooking(queryClient, trpc.appointment.list.queryKey(), result)
         queryClient.setQueryData(trpc.appointment.get.queryKey({ id: appointment.id }), result)
         setSaved(true)
@@ -279,7 +279,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
             <CustomerPicker onCustomerChange={setSummaryCustomer} selectedCustomer={appointment.customer} disabled={disabled} inputRef={customer.ref} invalid={Boolean(form.error("customerId"))} onBlur={customer.onBlur} onChange={customer.onChange} onCreate={() => { setCustomerFlow((flow) => flow + 1); setCustomerModalOpen(true) }} value={customer.value} />
           </FormLabel>
           <FormLabel error={form.error("notes")} label={t("bookingForm.notes")}><Textarea {...form.getInputProps("notes")} aria-invalid={Boolean(form.error("notes"))} disabled={disabled} /></FormLabel>
-          <BookingCustomerDetails answers={appointment.answers} message={appointment.customerNotes} />
+          <BookingCustomerDetails answers={appointment.answers} />
           <Separator />
           <FormLabel label={t("bookingForm.service")}>
             {appointment.services.length === 1 ? <ServicePicker disabled={disabled || !canReschedule || services.isPending} onChange={(id) => {

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next"
 
-import FormLabel from "~/components/form-label"
+import FormLabel from "~/components/forms/form-label"
 import Icon from "~/components/icons"
 import {
   Select,
@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select"
-import { UserAvatar } from "~/components/user-avatar"
+import { UserAvatar } from "~/components/data-display/user-avatar"
 import type { BookingPageData } from "./booking-types"
 
 type BookingMember = Pick<

@@ -1,5 +1,5 @@
-import countries from "~/lib/files/countries.json"
-import { z } from "~/lib/zod"
+import countries from "~/lib/localization/data/countries.json"
+import { z } from "~/lib/validation/zod"
 
 export const businessLocationSchema = z.object({
   id: z.string().min(1).max(128).nullable(),

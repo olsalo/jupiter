@@ -25,9 +25,9 @@ const vite = await createServer({
 
 try {
   const { loader } = await vite.ssrLoadModule("/app/routes/onboarding/onboarding.tsx") as typeof import("../app/routes/onboarding/onboarding")
-  const { prisma } = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as typeof import("../app/lib/prisma.server")
+  const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
   const { sessionContext } = await vite.ssrLoadModule("/app/middleware/auth.ts") as typeof import("../app/middleware/auth")
-  const { queryCacheOptions } = await vite.ssrLoadModule("/app/lib/query-cache.ts") as typeof import("../app/lib/query-cache")
+  const { queryCacheOptions } = await vite.ssrLoadModule("/app/lib/query/query-cache.ts") as typeof import("../app/lib/query/query-cache")
   const originalGcTime = queryCacheOptions.gcTime
   queryCacheOptions.gcTime = Infinity
   type AuthSession = typeof sessionContext extends RouterContext<infer Value> ? Value : never

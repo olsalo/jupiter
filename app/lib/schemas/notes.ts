@@ -1,4 +1,4 @@
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 export const noteFormSchema = z.object({
   title: z.string().trim().min(1).max(100),

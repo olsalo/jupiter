@@ -1,13 +1,13 @@
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import FormLabel from "~/components/form-label"
+import FormLabel from "~/components/forms/form-label"
 import { Select, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "~/components/ui/select"
 import { BookingMemberSelect } from "./booking-member-select"
 import { BookingTimePicker } from "./booking-time-picker"
 import { useTRPC } from "~/lib/trpc/client"
 import { cn } from "~/lib/utils"
 import { getBookingChoices } from "./booking-choices"
-import type { FormatPreference } from "~/lib/format-preference"
+import type { FormatPreference } from "~/lib/localization/format-preference"
 import type { BookingPageData, BookingScope, BookingService, BookingSlot } from "./booking-types"
 
 export function BookingTimeSelection({

@@ -1,4 +1,4 @@
-import type { AppLocale } from "~/lib/locale"
+import type { AppLocale } from "~/lib/localization/locale"
 
 export type EmailLocale = AppLocale
 

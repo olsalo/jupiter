@@ -1,5 +1,5 @@
 import { fallbackLanguage } from "~/locales"
-import { isSupportedLocale } from "~/lib/locale"
+import { isSupportedLocale } from "~/lib/localization/locale"
 import { createAppointmentEmailTemplate, type AppointmentEmailKind } from "~/lib/email-templates/appointment"
 import { queuedEmailContent } from "./email-queue"
 import type { Prisma } from "../../../generated/prisma/client"

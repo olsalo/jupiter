@@ -13,7 +13,7 @@ import { useCalendarBookingDrag } from "~/components/calendar/use-calendar-booki
 import { useCalendarBookingReveal } from "~/components/calendar/use-calendar-booking-reveal"
 import { Badge } from "~/components/ui/badge"
 import { Spinner } from "~/components/ui/spinner"
-import { UserAvatar } from "~/components/user-avatar"
+import { UserAvatar } from "~/components/data-display/user-avatar"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { calendarDateToValue } from "~/lib/calendar/date"
 import { isCalendarCurrentTimeVisible, subscribeCalendarClock } from "~/lib/calendar/clock"
@@ -22,7 +22,7 @@ import { attachCalendarWheelScroll } from "~/lib/calendar/wheel-scroll"
 import { calendarIntervalMinutes, calendarMinDurationMinutes } from "~/lib/calendar/time-step"
 import { sortCalendarMembers } from "~/lib/calendar/schedule"
 import { calendarTimelinePadding, getCalendarTimelineLayout } from "~/lib/calendar/timeline-layout"
-import { formatDateTime } from "~/lib/format-preference"
+import { formatDateTime } from "~/lib/localization/format-preference"
 import { cn } from "~/lib/utils"
 
 const empty: never[] = []

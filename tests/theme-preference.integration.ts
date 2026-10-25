@@ -17,8 +17,8 @@ const vite = await createServer({
 
 try {
   const { appRouter } = await vite.ssrLoadModule("/app/.server/main.ts") as typeof import("../app/.server/main")
-  const { prisma } = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as typeof import("../app/lib/prisma.server")
-  const { themeCookie, localeCookie } = await vite.ssrLoadModule("/app/lib/cookies.server.ts") as typeof import("../app/lib/cookies.server")
+  const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
+  const { themeCookie, localeCookie } = await vite.ssrLoadModule("/app/lib/http/cookies.server.ts") as typeof import("../app/lib/http/cookies.server.ts")
   let response: Response | undefined
   const client = createTRPCClient<AppRouter>({
     links: [httpLink({

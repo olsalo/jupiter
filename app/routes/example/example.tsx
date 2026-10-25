@@ -10,14 +10,14 @@ import {
 
 import type { AppRouter } from "~/.server/main"
 import type { Route } from "./+types/example"
-import { DeleteConfirmationDialog } from "~/components/delete-confirmation-dialog"
+import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmation-dialog"
 import Icon from "~/components/icons"
-import { ViewportPage } from "~/components/page-layout"
-import { RouteHeader } from "~/components/route-header"
+import { ViewportPage } from "~/components/layout/page-layout"
+import { RouteHeader } from "~/components/layout/route-header"
 import {
   TanStackTable,
   type TanStackTableColumn,
-} from "~/components/tanstack-table"
+} from "~/components/data-display/tanstack-table"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import {
@@ -30,13 +30,13 @@ import {
 import {
   createDateTimeFormatter,
   defaultTimeZone,
-} from "~/lib/format-preference"
+} from "~/lib/localization/format-preference"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { useDeleteConfirmation } from "~/lib/hooks"
-import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
+import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { toast } from "~/lib/toast"
-import { useAppContext } from "~/lib/use-app-context"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 import { resources } from "~/locales"
 
 type ListNotesOutput = inferRouterOutputs<AppRouter>["example"]["list"]

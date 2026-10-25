@@ -3,7 +3,7 @@ import { createContext, useContext, useRef, useState, type ReactNode } from "rea
 import { useTranslation } from "react-i18next"
 import { useSearchParams } from "react-router"
 
-import { DeleteConfirmationDialog } from "~/components/delete-confirmation-dialog"
+import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmation-dialog"
 import Icon from "~/components/icons"
 import { ServiceCategoryDialog } from "~/components/services/service-category-dialog"
 import { ServiceCategoryMenu } from "~/components/services/service-category-menu"
@@ -11,7 +11,7 @@ import { Button } from "~/components/ui/button"
 import { useIsMobile } from "~/lib/hooks"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
-import { useOrganizationPermission } from "~/lib/use-organization-access"
+import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 
 function useCategoryState() {
   const { t } = useTranslation("services")

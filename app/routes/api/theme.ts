@@ -1,9 +1,9 @@
-import { getSafeSettingsHash } from "~/lib/settings-navigation"
+import { getSafeSettingsHash } from "~/lib/routing/settings-navigation"
 import { redirect } from "react-router"
 
 import type { Route } from "./+types/theme"
-import { themeCookie } from "~/lib/cookies.server"
-import { defaultTheme, isTheme } from "~/lib/theme"
+import { themeCookie } from "~/lib/http/cookies.server.ts"
+import { defaultTheme, isTheme } from "~/lib/preferences/theme"
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData()

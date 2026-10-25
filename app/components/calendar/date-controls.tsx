@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button"
 import { Calendar } from "~/components/ui/calendar"
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "~/components/ui/popover"
 import { calendarDateFromValue, calendarDateToValue } from "~/lib/calendar/date"
-import { formatDateTime } from "~/lib/format-preference"
+import { formatDateTime } from "~/lib/localization/format-preference"
 
 export function CalendarDateControls({ mobile }: { mobile?: boolean }) {
   const { t, i18n } = useTranslation()

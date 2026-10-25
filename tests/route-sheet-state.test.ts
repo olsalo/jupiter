@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { createRouteSheetState } from "../app/lib/route-sheet-state.ts"
+import { createRouteSheetState } from "../app/lib/routing/route-sheet-state.ts"
 
 let nextTimer = 0
 const timers = new Map<number, () => void>()

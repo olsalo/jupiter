@@ -1,6 +1,6 @@
 import type { Route } from "./+types/invite"
 import { useTranslation } from "react-i18next"
-import { JoinTeamInvitation } from "~/components/join-team-invitation"
+import { JoinTeamInvitation } from "~/components/team/join-team-invitation"
 import { requireAuthMiddleware } from "~/middleware/auth"
 
 export const middleware: Route.MiddlewareFunction[] = [requireAuthMiddleware]

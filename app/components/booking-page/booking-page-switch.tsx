@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { SettingsSwitch } from "~/components/settings-switch"
+import { SettingsSwitch } from "~/components/settings/settings-switch"
 import { useTRPC } from "~/lib/trpc/client"
 
 export function BookingPageSwitch({ name, checked, disabled }: {

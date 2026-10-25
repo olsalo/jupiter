@@ -6,7 +6,7 @@ import { Link, useLocation } from "react-router"
 import { CalendarBookingIssueMarker } from "~/components/calendar/calendar-booking-issues"
 import { CalendarAppointmentBuffers } from "~/components/calendar/calendar-appointment-buffers"
 import { Card } from "~/components/ui/card"
-import { formatDateTime, type FormatPreference } from "~/lib/format-preference"
+import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
 import { cn } from "~/lib/utils"
 
 export const CalendarAppointmentCard = memo(function CalendarAppointmentCard({ appointment, startMinute, endMinute, formatPreference, canDrag = false, floating = false, dragging = false, hidden = false, horizontal = false }: {

@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { mock } from "node:test"
 
 import { calendarBookingsQueryOptions, calendarAvailabilityQueryOptions, calendarPanelQueryOptions, calendarReferenceQueryOptions } from "../app/lib/calendar/query-options.ts"
-import { queryCacheOptions } from "../app/lib/query-cache.ts"
+import { queryCacheOptions } from "../app/lib/query/query-cache.ts"
 
 // Enable QueryObserver's browser timers without a DOM or a running app
 Object.defineProperty(globalThis, "window", { configurable: true, value: { addEventListener() {}, removeEventListener() {} } })

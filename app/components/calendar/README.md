@@ -1,5 +1,9 @@
 # Calendar structure
 
+The calendar Actions menu links directly to Working hours, Breaks, Time off, and Extra hours in the Availability sheet with `?tab=workingHours`, `?tab=breaks`, `?tab=timeOff`, and `?tab=extraHours`. Links retain the calendar filters and selected member. Switching tabs updates the query parameter without adding history entries, and closing returns to the original calendar URL. Legacy block-time and extra-availability routes still supply their default tab when no valid `tab` is present.
+
+The booking editor combines the customer message and member note in one editable Booking notes field, separated by a blank line. Saving stores the combined text in `internalNotes` and clears `customerNotes` in the same appointment update, so reopening does not duplicate the customer message. The edit schema allows both original 2000-character notes plus the separator. Intake answers remain read-only in the customer details alert.
+
 `CalendarRoute` owns the route layout and initial server data. `CalendarSchedule` queries bookings and availability, then prepares the visible members, previews and schedule. `CalendarTimeline` renders the shared day, week and mobile timeline. `CalendarTimelineLane` renders one member's bookings and unavailable periods.
 
 `CalendarMemberRows` provides the desktop day alternative selected with `layout=rows`. It shares availability, overlap layout, range selection and booking drag/resize behavior with the column timeline. Members stay on the left, hours stay at the top, and the current-time marker runs vertically in the business timezone. Mobile continues to use the column day view.

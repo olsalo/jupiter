@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 import { TZDate } from "react-day-picker"
 import { Button } from "~/components/ui/button"
-import { formatDateTime, type FormatPreference } from "~/lib/format-preference"
+import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
 import type { BookingSlot } from "./booking-types"
 
 export const publicSlotKey = (slot: BookingSlot) =>

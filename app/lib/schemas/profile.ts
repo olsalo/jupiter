@@ -1,4 +1,4 @@
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 export const profileFormSchema = z.object({
   name: z.string().trim().min(1).max(100),

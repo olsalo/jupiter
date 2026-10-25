@@ -1,5 +1,5 @@
 import { workingHoursSchema } from "./team"
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 export function calendarAvailabilitySchema(endTimeError?: string) {
   return z.object({

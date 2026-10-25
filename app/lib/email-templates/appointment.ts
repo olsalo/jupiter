@@ -1,7 +1,7 @@
 import { createElement } from "react"
 
 import { AppointmentEmail } from "~/components/emails/appointment"
-import { formatDateTime, getFormatPreferenceFromCountry } from "~/lib/format-preference"
+import { formatDateTime, getFormatPreferenceFromCountry } from "~/lib/localization/format-preference"
 import { getEmailTranslations } from "./translations"
 import { renderEmail } from "./render"
 import type { EmailLocale, EmailTemplate } from "./types"

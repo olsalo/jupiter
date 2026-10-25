@@ -5,14 +5,14 @@ import { Outlet, useMatches } from "react-router"
 import type { Route } from "./+types/person-sheet"
 import { TeamPersonSheet } from "~/components/team/team-person-sheet"
 import type { TeamPersonContext } from "~/components/team/team-types"
-import { ResponsiveSheetPanel } from "~/components/responsive-sheet"
+import { ResponsiveSheetPanel } from "~/components/overlays/responsive-sheet"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
-import { OverlayLoading } from "~/components/overlay-loading"
+import { OverlayLoading } from "~/components/overlays/overlay-loading"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { useModalQueryLoading } from "~/lib/use-modal-query-loading"
-import { useOrganizationPermission } from "~/lib/use-organization-access"
+import { useModalQueryLoading } from "~/lib/hooks/use-modal-query-loading"
+import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 
 export const handle = { overlay: true }
 export async function loader(args: Route.LoaderArgs) {

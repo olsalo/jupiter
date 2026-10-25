@@ -8,13 +8,13 @@ import { TRPCError } from "@trpc/server"
 
 import { permissionProcedure, organizationProcedure, protectedProcedure } from "../trpc"
 import { throwIfForcedServerError } from "../forced-error"
-import { generateId } from "~/lib/id"
+import { generateId } from "~/lib/database/id"
 import { organizationSettingsFormSchema } from "~/lib/schemas/organization"
 import { bookingSettingsSchema, defaultBookingSettings } from "~/lib/schemas/booking-settings"
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 import { Temporal } from "@js-temporal/polyfill"
-import { readBusinessExceptions, readHolidaySettings, upcomingBusinessHolidays } from "~/lib/business-holidays"
+import { readBusinessExceptions, readHolidaySettings, upcomingBusinessHolidays } from "~/lib/business/business-holidays"
 import { businessExceptionSchema, businessHolidaySchema, businessScheduleSchema } from "~/lib/schemas/business-schedule"
 
 export const organizationsRouter = {
@@ -204,7 +204,7 @@ function requireOrganizationId(organizationId: string | null) {
 }
 
 function getMember(
-  ctx: { prisma: typeof import("~/lib/prisma.server").prisma; user: { id: string } },
+  ctx: { prisma: typeof import("~/lib/database/prisma.server.ts").prisma; user: { id: string } },
   organizationId: string,
 ) {
   return ctx.prisma.member.findFirst({

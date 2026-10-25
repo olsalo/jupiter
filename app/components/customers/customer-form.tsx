@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 
-import { AppForm } from "~/components/app-form"
-import FormLabel from "~/components/form-label"
-import { PhoneInput } from "~/components/phone-input"
-import { ResponsiveSheetFooter, ResponsiveSheetHeader, ResponsiveSheetPanel } from "~/components/responsive-sheet"
+import { AppForm } from "~/components/forms/app-form"
+import FormLabel from "~/components/forms/form-label"
+import { PhoneInput } from "~/components/forms/phone-input"
+import { ResponsiveSheetFooter, ResponsiveSheetHeader, ResponsiveSheetPanel } from "~/components/overlays/responsive-sheet"
 import { Alert, AlertTitle } from "~/components/ui/alert"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
@@ -12,7 +12,7 @@ import { Input } from "~/components/ui/input"
 import { customerFormSchema } from "~/lib/schemas/customers"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
-import { useOrganizationPermission } from "~/lib/use-organization-access"
+import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 import type { Customer } from "./customer-types"
 
 export function CustomerForm({ customer, close, onPendingChange }: {

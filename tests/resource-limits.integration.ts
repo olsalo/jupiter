@@ -7,7 +7,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch"
 process.env.NODE_ENV = "test"
 process.env.EMAIL_PROVIDER = ""
 const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/resource-limits", appType: "custom", resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
-const { prisma } = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as typeof import("../app/lib/prisma.server")
+const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
 const { auth } = await vite.ssrLoadModule("/app/lib/auth/server.ts") as typeof import("../app/lib/auth/server")
 const { appRouter } = await vite.ssrLoadModule("/app/.server/main.ts") as typeof import("../app/.server/main")
 const { createResourceLimits } = await vite.ssrLoadModule("/app/.server/resource-limits/service.ts") as typeof import("../app/.server/resource-limits/service")

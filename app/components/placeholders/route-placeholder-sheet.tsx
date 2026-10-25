@@ -7,8 +7,8 @@ import { Button } from "~/components/ui/button"
 import {
   ResponsiveSheet, ResponsiveSheetPopup, ResponsiveSheetHeader,
   ResponsiveSheetTitle, ResponsiveSheetDescription, ResponsiveSheetPanel, ResponsiveSheetFooter,
-} from "~/components/responsive-sheet"
-import { useRouteSheet } from "~/components/use-route-sheet"
+} from "~/components/overlays/responsive-sheet"
+import { useRouteSheet } from "~/components/overlays/use-route-sheet"
 
 export function RoutePlaceholderSheet({ titleKey, returnTo, children }: {
   titleKey: PlaceholderTitle

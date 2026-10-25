@@ -3,22 +3,22 @@ import { useId, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate, useSearchParams } from "react-router"
 
-import { useAppContext } from "~/lib/use-app-context"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 import { CalendarWeeklyAvailability } from "~/components/calendar/calendar-weekly-availability"
 import { CalendarTimeOff } from "~/components/calendar/calendar-time-off"
 import { CalendarExtraHours } from "~/components/calendar/calendar-extra-hours"
 import Icon from "~/components/icons"
-import FormLabel from "~/components/form-label"
-import { ResponsiveSheet, ResponsiveSheetPopup, ResponsiveSheetHeader, ResponsiveSheetTitle, ResponsiveSheetDescription, ResponsiveSheetPanel } from "~/components/responsive-sheet"
+import FormLabel from "~/components/forms/form-label"
+import { ResponsiveSheet, ResponsiveSheetPopup, ResponsiveSheetHeader, ResponsiveSheetTitle, ResponsiveSheetDescription, ResponsiveSheetPanel } from "~/components/overlays/responsive-sheet"
 import { TeamPanelLoading } from "~/components/team/team-panel-loading"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { Tabs, TabsList, TabsTab } from "~/components/ui/tabs"
-import { useRouteSheet } from "~/components/use-route-sheet"
+import { useRouteSheet } from "~/components/overlays/use-route-sheet"
 import { hasOrganizationPermission, isBookableStaff } from "~/lib/auth/permissions"
 import { useTRPC } from "~/lib/trpc/client"
-import { useCurrentOrganizationRole } from "~/lib/use-organization-access"
+import { useCurrentOrganizationRole } from "~/lib/hooks/use-organization-access"
 
 type ScheduleKind = "workingHours" | "breaks" | "timeOff" | "extraHours"
 
@@ -29,15 +29,18 @@ export function CalendarAvailability({ initialKind = "workingHours" }: { initial
   const organizationRole = useCurrentOrganizationRole()
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const organization = useQuery(trpc.organizations.getCurrent.queryOptions())
   const staff = useQuery(trpc.staff.list.queryOptions())
   const [selectedId, setSelectedId] = useState<string | null>(searchParams.get("member"))
-  const [kind, setKind] = useState<ScheduleKind>(initialKind)
+  const tab = searchParams.get("tab")
+  const kind: ScheduleKind = tab === "workingHours" || tab === "breaks" || tab === "timeOff" || tab === "extraHours" ? tab : initialKind
   const [pending, setPending] = useState(false)
   const titleId = useId()
   const descriptionId = useId()
-  const destination = useRef(typeof location.state?.returnTo === "string" && /^\/calendar(?:\?|$)/.test(location.state.returnTo) ? location.state.returnTo : `/calendar${location.search}`)
+  const returnParams = new URLSearchParams(searchParams)
+  returnParams.delete("tab")
+  const destination = useRef(typeof location.state?.returnTo === "string" && /^\/calendar(?:\?|$)/.test(location.state.returnTo) ? location.state.returnTo : `/calendar${returnParams.size ? `?${returnParams}` : ""}`)
   const { open, version, close, finishClosing } = useRouteSheet({ onCloseComplete: () => { void navigate(destination.current, { replace: true }) } })
   const canManage = hasOrganizationPermission(organization.data?.role ?? organizationRole, { availability: ["manage"] })
   const members = (staff.data ?? []).filter(isBookableStaff)
@@ -61,7 +64,11 @@ export function CalendarAvailability({ initialKind = "workingHours" }: { initial
             <SelectPopup>{items.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
           </Select></FormLabel> : null}
         </div>
-        <Tabs className="flex min-h-0 flex-1 flex-col gap-0" value={kind} onValueChange={(value) => setKind(value as ScheduleKind)}>
+        <Tabs className="flex min-h-0 flex-1 flex-col gap-0" value={kind} onValueChange={(value) => {
+          const params = new URLSearchParams(searchParams)
+          params.set("tab", String(value))
+          setSearchParams(params, { replace: true, preventScrollReset: true, state: location.state })
+        }}>
           <div className="shrink-0 px-6 pb-4"><TabsList className="grid w-full grid-cols-2 sm:flex">
             <TabsTab disabled={pending} value="workingHours"><Icon aria-hidden={true} name="clock" size={16} />{t("team:people.availability")}</TabsTab>
             <TabsTab disabled={pending} value="breaks"><Icon aria-hidden={true} name="coffee" size={16} />{t("team:people.breaks")}</TabsTab>

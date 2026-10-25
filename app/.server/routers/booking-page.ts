@@ -2,7 +2,7 @@ import { TRPCError, type TRPCRouterRecord } from "@trpc/server"
 import { permissionProcedure } from "../trpc"
 import { schedulingLock } from "../services/scheduling"
 import { adminBookingPageFormSchema, adminBookingPageSchema } from "~/lib/schemas/admin-booking-page"
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 
 const configure = permissionProcedure({ bookingPage: ["configure"] })
 

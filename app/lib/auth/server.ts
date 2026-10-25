@@ -14,17 +14,17 @@ import enAuth from "~/locales/en/auth.json"
 import fiAuth from "~/locales/fi/auth.json"
 
 import { fallbackLanguage, supportedLanguages } from "~/locales"
-import type { BillingNotification } from "~/lib/billing"
+import type { BillingNotification } from "~/lib/billing/billing"
 import { getEmailLocale } from "~/lib/auth/email-locale.server"
-import { localeCookie } from "~/lib/cookies.server"
+import { localeCookie } from "~/lib/http/cookies.server.ts"
 import {
   emailOtpExpiresInMinutes,
   sendOtpEmail,
   sendEmail,
-} from "~/lib/email.server"
+} from "~/lib/email/email.server.ts"
 import { createInvitationEmailTemplate } from "~/lib/email-templates/invitation"
-import { prisma } from "~/lib/prisma.server"
-import { generateId } from "~/lib/id"
+import { prisma } from "~/lib/database/prisma.server.ts"
+import { generateId } from "~/lib/database/id"
 
 const fallbackAuthUrl = process.env.BETTER_AUTH_URL || "http://localhost:5174"
 const oneYearInSeconds = 60 * 60 * 24 * 365

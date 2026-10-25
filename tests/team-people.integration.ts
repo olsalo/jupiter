@@ -7,7 +7,7 @@ process.env.NODE_ENV = "test"
 process.env.EMAIL_PROVIDER = ""
 const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/team-people", appType: "custom", resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
 const { auth } = await vite.ssrLoadModule("/app/lib/auth/server.ts") as typeof import("../app/lib/auth/server")
-const { prisma } = await vite.ssrLoadModule("/app/lib/prisma.server.ts") as typeof import("../app/lib/prisma.server")
+const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
 const { appRouter } = await vite.ssrLoadModule("/app/.server/main.ts") as typeof import("../app/.server/main")
 const { currentScheduleDate, scheduleAt } = await vite.ssrLoadModule("/app/lib/calendar/availability.ts") as typeof import("../app/lib/calendar/availability")
 const jobs = await vite.ssrLoadModule("/app/.server/jobs/appointments.ts") as typeof import("../app/.server/jobs/appointments")
@@ -214,7 +214,7 @@ try {
   assert.equal((await admin.team.count()).people, list.people.length)
   const scopedDb = Object.create(prisma) as typeof prisma
   Object.defineProperty(scopedDb, "notification", { value: { ...prisma.notification, findMany: (args: Parameters<typeof prisma.notification.findMany>[0]) => prisma.notification.findMany({ ...args, where: { ...args?.where, organizationId: org.id } }), updateMany: prisma.notification.updateMany.bind(prisma.notification) } })
-  const delivered: import("../app/lib/email.server").EmailMessage[] = []
+  const delivered: import("../app/lib/email/email.server.ts").EmailMessage[] = []
   await jobs.sendPendingNotifications(scopedDb, { send: async (message) => { delivered.push(message) } })
   assert.equal(delivered.length, 0, "Accepted and cancelled invitations are not emailed by the worker")
   await admin.team.addPerson({ name: "Mail check", email: `mail-${suffix}@example.invalid`, takesAppointments: true, giveAppAccess: true, sendEmail: true })

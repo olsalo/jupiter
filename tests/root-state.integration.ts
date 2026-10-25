@@ -75,9 +75,9 @@ try {
 
   const { loader, links } = await vite.ssrLoadModule("/app/root.tsx") as typeof import("../app/root")
   const { setQuery } = await vite.ssrLoadModule("/app/lib/trpc/server.ts") as { setQuery: (query: () => Promise<unknown>) => void }
-  const { synced } = await vite.ssrLoadModule("/app/lib/locale.server.ts") as { synced: unknown[] }
+  const { synced } = await vite.ssrLoadModule("/app/lib/localization/locale.server.ts") as { synced: unknown[] }
   const { userContext, organizationContext, membershipContext } = await vite.ssrLoadModule("/app/middleware/auth.ts") as typeof import("../app/middleware/auth")
-  const { formatPreferenceCookie, themeCookie, localeCookie } = await vite.ssrLoadModule("/app/lib/cookies.server.ts") as typeof import("../app/lib/cookies.server")
+  const { formatPreferenceCookie, themeCookie, localeCookie } = await vite.ssrLoadModule("/app/lib/http/cookies.server.ts") as typeof import("../app/lib/http/cookies.server.ts")
   let user: { id: string; locale: string | null } | null = null
   let queryCalls = 0
   setQuery(async () => { queryCalls += 1; return caller().getAppContext() })

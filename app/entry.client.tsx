@@ -10,7 +10,7 @@ import {
   resources,
   supportedLanguages,
 } from "~/locales"
-import { configureZodI18n } from "~/lib/zod"
+import { configureZodI18n } from "~/lib/validation/zod"
 
 async function hydrate() {
   await i18next.use(initReactI18next).init({

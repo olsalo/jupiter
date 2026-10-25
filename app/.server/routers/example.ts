@@ -3,8 +3,8 @@ import { TRPCError } from "@trpc/server"
 
 import { protectedProcedure } from "../trpc"
 import { throwIfForcedServerError } from "../forced-error"
-import { generateId } from "~/lib/id"
-import { z } from "~/lib/zod"
+import { generateId } from "~/lib/database/id"
+import { z } from "~/lib/validation/zod"
 
 const noteInput = z.object({
   title: z.string().trim().min(1).max(100),

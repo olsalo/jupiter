@@ -3,9 +3,9 @@ import { useTranslation } from "react-i18next"
 import { useRouteLoaderData } from "react-router"
 
 import type { loader as rootLoader } from "~/root"
-import FormLabel from "~/components/form-label"
-import { TimePicker } from "~/components/time-picker"
-import { isBreakTimeAvailable } from "~/lib/team-breaks"
+import FormLabel from "~/components/forms/form-label"
+import { TimePicker } from "~/components/forms/time-picker"
+import { isBreakTimeAvailable } from "~/lib/team/team-breaks"
 import type { PersonFormFields } from "~/lib/schemas/team"
 import { workingTimeValue } from "./team-working-hours-week"
 

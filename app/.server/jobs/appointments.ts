@@ -1,9 +1,9 @@
 import { fallbackLanguage } from "~/locales"
-import { isSupportedLocale } from "~/lib/locale"
+import { isSupportedLocale } from "~/lib/localization/locale"
 import { getEmailTranslations } from "~/lib/email-templates/translations"
 import { randomUUID } from "node:crypto"
 import type { PrismaClient } from "../../../generated/prisma/client"
-import { sendEmail } from "~/lib/email.server"
+import { sendEmail } from "~/lib/email/email.server.ts"
 import { cancelOutdatedNotifications } from "../services/notifications"
 import { schedulingLock } from "../services/scheduling"
 

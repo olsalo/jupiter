@@ -5,8 +5,8 @@ import { Link, Outlet, useLocation, useParams } from "react-router"
 
 import type { Route } from "./+types/team"
 import Icon from "~/components/icons"
-import { ScrollPage, ViewportPage } from "~/components/page-layout"
-import { RouteHeader } from "~/components/route-header"
+import { ScrollPage, ViewportPage } from "~/components/layout/page-layout"
+import { RouteHeader } from "~/components/layout/route-header"
 import { TeamMemberList } from "~/components/team/team-member-list"
 import type { TeamMasterDetailContext } from "~/components/team/team-types"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
@@ -14,10 +14,10 @@ import { Button } from "~/components/ui/button"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 import { useMediaQuery } from "~/lib/hooks"
-import { shouldRevalidateAppRoute } from "~/lib/should-revalidate"
+import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { useOrganizationPermission } from "~/lib/use-organization-access"
+import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 
 export const handle = { workspace: true, pageLayout: "viewport-desktop" }
 export const shouldRevalidate = shouldRevalidateAppRoute

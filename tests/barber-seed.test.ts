@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { Temporal } from "@js-temporal/polyfill"
 import type { PrismaClient } from "../generated/prisma/client.ts"
 import { barberSeedOptions, seedBarberShop } from "../scripts/lib/barber-seed.ts"
-import { businessHolidayWindows } from "../app/lib/business-holidays.ts"
+import { businessHolidayWindows } from "../app/lib/business/business-holidays.ts"
 
 // Capture the proposed dataset so scheduling and relationship checks need no remote database.
 type Row = Record<string, any>

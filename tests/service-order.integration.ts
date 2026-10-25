@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { applyServiceOrder, createServiceOrderQueue } from "../app/lib/service-order.ts"
+import { applyServiceOrder, createServiceOrderQueue } from "../app/lib/services/service-order.ts"
 
 function deferred() {
   let resolve!: () => void

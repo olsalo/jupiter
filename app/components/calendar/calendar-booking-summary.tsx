@@ -5,8 +5,8 @@ import Icon from "~/components/icons"
 import type { CustomerOption } from "~/components/customers/customer-picker"
 import { Badge } from "~/components/ui/badge"
 import { Card } from "~/components/ui/card"
-import { UserAvatar } from "~/components/user-avatar"
-import { formatDateTime, type FormatPreference } from "~/lib/format-preference"
+import { UserAvatar } from "~/components/data-display/user-avatar"
+import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
 
 export function CalendarBookingSummary({ service, startsAt, endsAt, member, customer, timeZone, formatPreference, children }: {
   children?: ReactNode

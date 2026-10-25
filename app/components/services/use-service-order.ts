@@ -3,7 +3,7 @@ import { useRef, useState } from "react"
 import { flushSync } from "react-dom"
 import { useTranslation } from "react-i18next"
 
-import { applyServiceOrder, createServiceOrderQueue } from "~/lib/service-order"
+import { applyServiceOrder, createServiceOrderQueue } from "~/lib/services/service-order"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 

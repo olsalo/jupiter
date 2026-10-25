@@ -1,6 +1,6 @@
-import { isOnboardingCountryCode } from "~/lib/countries"
-import { isCurrencyCode } from "~/lib/currencies"
-import { z } from "~/lib/zod"
+import { isOnboardingCountryCode } from "~/lib/localization/countries"
+import { isCurrencyCode } from "~/lib/localization/currencies"
+import { z } from "~/lib/validation/zod"
 
 export const onboardingFormSchema = z.object({
   businessName: z.string().trim().min(1).max(100),

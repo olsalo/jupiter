@@ -8,7 +8,7 @@ import { createServer } from "vite"
 const appPath = new URL("../app", import.meta.url).pathname
 const vite = await createServer({ configFile: false, appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
 try {
-  const { getVisibleSettingsItems, getSettingsItemIdFromHash, getSafeSettingsHash } = await vite.ssrLoadModule("/app/lib/settings-navigation.ts") as typeof import("../app/lib/settings-navigation")
+  const { getVisibleSettingsItems, getSettingsItemIdFromHash, getSafeSettingsHash } = await vite.ssrLoadModule("/app/lib/routing/settings-navigation.ts") as typeof import("../app/lib/routing/settings-navigation")
   assert.deepEqual(getVisibleSettingsItems("member").map((item) => item.id), ["profile"])
   assert.deepEqual(getVisibleSettingsItems("admin").map((item) => item.id), ["profile", "business", "locations", "booking", "communications"])
   assert.deepEqual(getVisibleSettingsItems("owner").map((item) => item.id), ["profile", "business", "locations", "booking", "communications", "billing"])

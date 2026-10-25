@@ -18,8 +18,8 @@ const vite = await createServer({
 })
 
 try {
-  const { AccentColorSelect } = await vite.ssrLoadModule("/app/components/accent-color-select.tsx") as typeof import("../app/components/accent-color-select")
-  const { bookingPageAccentColors, bookingPageColorStyle } = await vite.ssrLoadModule("/app/lib/booking-page-colors.ts") as typeof import("../app/lib/booking-page-colors")
+  const { AccentColorSelect } = await vite.ssrLoadModule("/app/components/settings/preferences/accent-color-select.tsx") as typeof import("../app/components/settings/preferences/accent-color-select")
+  const { bookingPageAccentColors, bookingPageColorStyle } = await vite.ssrLoadModule("/app/lib/booking/booking-page-colors.ts") as typeof import("../app/lib/booking/booking-page-colors")
   const { resources } = await vite.ssrLoadModule("/app/locales/index.ts") as typeof import("../app/locales")
   const i18n = createInstance()
   await i18n.init({ lng: "en", resources, defaultNS: "common", interpolation: { escapeValue: false } })

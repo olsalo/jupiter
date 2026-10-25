@@ -1,4 +1,4 @@
-import { z } from "~/lib/zod"
+import { z } from "~/lib/validation/zod"
 import { serviceCreateInput } from "./appointments"
 
 export function serviceFormSchema(message: (key: string) => string) {

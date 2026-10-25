@@ -2,18 +2,18 @@ import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import { useAppContext } from "~/lib/use-app-context"
-import { AppForm } from "~/components/app-form"
-import FormLabel from "~/components/form-label"
+import { useAppContext } from "~/lib/hooks/use-app-context"
+import { AppForm } from "~/components/forms/app-form"
+import FormLabel from "~/components/forms/form-label"
 import { Alert, AlertAction, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Spinner } from "~/components/ui/spinner"
 import { Textarea } from "~/components/ui/textarea"
-import { formatDateTime } from "~/lib/format-preference"
+import { formatDateTime } from "~/lib/localization/format-preference"
 import { customerNoteSchema } from "~/lib/schemas/customers"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
-import { useOrganizationPermission } from "~/lib/use-organization-access"
+import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 
 export function CustomerNotes({ customerId, onPendingChange }: { customerId: string; onPendingChange: (pending: boolean) => void }) {
   const { t } = useTranslation()

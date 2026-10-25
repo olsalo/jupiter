@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { shouldRevalidateRootRoute, shouldRevalidateWorkspaceRoute } from "../app/lib/should-revalidate.ts"
+import { shouldRevalidateRootRoute, shouldRevalidateWorkspaceRoute } from "../app/lib/routing/should-revalidate.ts"
 
 const url = (path: string) => new URL(path, "https://example.invalid")
 const revalidates = (current: string, next: string, formMethod?: "GET" | "POST") => shouldRevalidateWorkspaceRoute({ currentUrl: url(current), nextUrl: url(next), formMethod })

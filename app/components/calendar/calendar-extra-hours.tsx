@@ -4,14 +4,14 @@ import { useTranslation } from "react-i18next"
 import { useRouteLoaderData } from "react-router"
 
 import type { loader as rootLoader } from "~/root"
-import { AppForm } from "~/components/app-form"
-import { DatePicker } from "~/components/date-picker"
-import { DeleteConfirmationDialog } from "~/components/delete-confirmation-dialog"
-import FormLabel from "~/components/form-label"
+import { AppForm } from "~/components/forms/app-form"
+import { DatePicker } from "~/components/forms/date-picker"
+import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmation-dialog"
+import FormLabel from "~/components/forms/form-label"
 import Icon from "~/components/icons"
-import { IconListItem } from "~/components/icon-list-item"
-import { ResponsiveSheetPanel, ResponsiveSheetFooter } from "~/components/responsive-sheet"
-import { TimePicker } from "~/components/time-picker"
+import { IconListItem } from "~/components/data-display/icon-list-item"
+import { ResponsiveSheetPanel, ResponsiveSheetFooter } from "~/components/overlays/responsive-sheet"
+import { TimePicker } from "~/components/forms/time-picker"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Badge } from "~/components/ui/badge"
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "~/components/ui/menu"
@@ -20,7 +20,7 @@ import { Button } from "~/components/ui/button"
 import { Dialog, DialogPopup, DialogHeader, DialogTitle, DialogDescription, DialogPanel, DialogFooter } from "~/components/ui/dialog"
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "~/components/ui/empty"
 import { Spinner } from "~/components/ui/spinner"
-import { formatDateTime } from "~/lib/format-preference"
+import { formatDateTime } from "~/lib/localization/format-preference"
 import { extraHoursInterval, extraHoursSchema, type ExtraHoursValues } from "~/lib/schemas/calendar-extra-hours"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
@@ -71,7 +71,7 @@ export function CalendarExtraHours({ staffMemberId, timezone, close, onBusyChang
         <section aria-labelledby={titleId} className="flex flex-1 flex-col gap-4">
           <div className="flex items-center justify-between gap-4"><h3 className="text-sm font-medium" id={titleId}>{t("calendarExtraHours.tab")}</h3><span className="shrink-0">{addButton}</span></div>
           {entries.isPending ? <div className="flex flex-1 items-center justify-center py-6"><Spinner aria-label={t("loading")} /></div> : entries.isError ? <Alert variant="error"><AlertTitle>{t("calendarExtraHours.loadError")}</AlertTitle><AlertDescription>{t("team:retryDescription")}</AlertDescription><AlertAction><Button disabled={entries.isFetching} onClick={() => void entries.refetch()} size="sm" type="button" variant="outline">{t("team:retry")}</Button></AlertAction></Alert> : entries.data.length === 0 ? <Empty className="min-h-0 w-full flex-1 border-0 bg-transparent px-4 py-3 md:px-4 md:py-3">
-            <EmptyHeader className="mx-auto"><EmptyMedia className="mb-3" variant="icon"><Icon aria-hidden={true} name="calendarEvent" /></EmptyMedia><EmptyTitle className="text-sm">{t("calendarExtraHours.empty")}</EmptyTitle><EmptyDescription>{t("calendarExtraHours.emptyDescription")}</EmptyDescription></EmptyHeader>
+            <EmptyHeader className="mx-auto"><EmptyMedia className="mb-3" variant="icon"><Icon aria-hidden={true} name="calendarEvent" /></EmptyMedia><EmptyTitle>{t("calendarExtraHours.empty")}</EmptyTitle><EmptyDescription>{t("calendarExtraHours.emptyDescription")}</EmptyDescription></EmptyHeader>
           </Empty> : <ul className="flex flex-col gap-3">{entries.data.map((entry) => <IconListItem icon="calendarEvent" key={entry.id} actions={<Menu>
             <MenuTrigger aria-label={t("calendarExtraHours.actionsFor", { date: format(entry.startsAt, false) })} render={<Button size="icon" type="button" variant="ghost" />}><Icon aria-hidden={true} className="size-4.5 sm:size-4" name="dotsVertical" size={18} /></MenuTrigger>
             <MenuPopup align="end" className="min-w-48" sideOffset={6}><MenuItem closeOnClick={true} onClick={() => setRemovingId(entry.id)} variant="destructive"><Icon aria-hidden={true} name="delete" />{t("calendarExtraHours.remove")}</MenuItem></MenuPopup>

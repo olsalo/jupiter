@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 const { getGreetingPeriod, getOverviewDays, getOverviewRange, getStartOfWeek } = await import(
-  new URL("../app/lib/overview-time.ts", import.meta.url).href
-) as typeof import("../app/lib/overview-time")
+  new URL("../app/lib/overview/overview-time.ts", import.meta.url).href
+) as typeof import("../app/lib/overview/overview-time")
 
 const timeZone = "Europe/Helsinki"
 assert.equal(getGreetingPeriod(new Date("2026-10-02T08:59:00Z"), timeZone), "morning")

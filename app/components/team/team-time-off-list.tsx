@@ -3,10 +3,10 @@ import { useTranslation } from "react-i18next"
 import { useRouteLoaderData } from "react-router"
 
 import type { loader as rootLoader } from "~/root"
-import { IconListItem } from "~/components/icon-list-item"
+import { IconListItem } from "~/components/data-display/icon-list-item"
 import { Badge } from "~/components/ui/badge"
-import { formatDateTime } from "~/lib/format-preference"
-import { readTimeOffRecurrence } from "~/lib/team-time-off"
+import { formatDateTime } from "~/lib/localization/format-preference"
+import { readTimeOffRecurrence } from "~/lib/team/team-time-off"
 import { TeamTimeOffActionsMenu } from "./team-time-off-actions-menu"
 
 type TimeOffEntry = { id: string; title: string | null; startsAt: Date; endsAt: Date; recurrence: unknown }
