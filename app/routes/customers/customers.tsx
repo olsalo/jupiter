@@ -58,7 +58,7 @@ export default function Customers() {
         refreshing={customers.isRefetching}
         showDescriptionOnMobile={false}
         mobileControls={<InputGroup className="w-full" data-customer-mobile-search={true}>
-          <InputGroupInput aria-label={t("customerPage.search")} onChange={(event) => setSearch(event.target.value)} placeholder={t("customerPage.search")} type="search" value={search} />
+          <InputGroupInput nativeInput={true} aria-label={t("customerPage.search")} onChange={(event) => setSearch(event.target.value)} placeholder={t("customerPage.search")} type="search" value={search} />
           <InputGroupAddon><Icon aria-hidden={true} name="search" size={16} /></InputGroupAddon>
         </InputGroup>}
         actions={canCreate ? <Button aria-label={t("customerPage.add")} className="max-md:size-9 max-md:p-0" render={<Link to={customerId ? `${location.pathname.replace(/\/new\/?$/, "")}/new${location.search}` : "new"} state={{ returnTo: `${location.pathname}${location.search}` }} />} size="lg" type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("customerPage.add")}</span></Button> : null}

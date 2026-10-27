@@ -1,7 +1,7 @@
 import type { CalendarAppointment, CalendarBookingReturnMotion } from "./types.ts"
 
-export const calendarBookingReturnDuration = 400
-export const calendarBookingReturnEasing = "cubic-bezier(0.4, 0, 0.2, 1)"
+export const calendarBookingReturnDuration = 320
+export const calendarBookingReturnEasing = "cubic-bezier(0.22, 1.12, 0.36, 1)"
 
 export function animateCalendarBookingReturn(
   element: HTMLElement,

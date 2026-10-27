@@ -130,7 +130,8 @@ try {
         const selectedRange = getCalendarBookingRange({ ...state, mode: "day", selected: calendarDateFromValue(selectedDrag.day, preferences.timezone) }, preferences.timezone)
         const durationMinutes = selectedDrag.endMinute - selectedDrag.startMinute
         const time = getCalendarTimeRange(selectedDrag.day, selectedDrag.startMinute, durationMinutes, preferences.timezone)
-        queryClient.setQueryData(options.appointment.list.queryKey({ from: new Date(+time.startsAt - 240 * 60000), to: new Date(+time.startsAt + 1680 * 60000), staffMemberId: selectedDrag.member.id }), bookings)
+        const bookedService = booking.services[0]
+        queryClient.setQueryData(options.appointment.list.queryKey({ from: new Date(+time.startsAt - (240 + (bookedService?.bufferBeforeMinutes ?? 0)) * 60000), to: new Date(+time.startsAt + (1680 + (bookedService?.bufferAfterMinutes ?? 0)) * 60000), staffMemberId: selectedDrag.member.id }), bookings)
         queryClient.setQueryData(options.appointment.getBookingTimes.queryKey({ id: booking.id, ...selectedRange, staffMemberId: null, durationMinutes, selectedStart: time.startsAt }), { days: [{ date: selectedDrag.day, slots: [{ startsAt: time.startsAt.toISOString(), endsAt: time.endsAt.toISOString(), staffMemberId: selectedDrag.member.id, locationId: null }] }] })
         const availabilityKey = options.appointment.getBookingTimes.queryKey({ id: booking.id, ...selectedRange, staffMemberId: null, durationMinutes, selectedStart: time.startsAt })
         if (availabilityState === "pending") queryClient.removeQueries({ queryKey: availabilityKey, exact: true })
@@ -176,7 +177,7 @@ try {
   assert.doesNotMatch(requestedMobileHeader, /data-slot="badge"/, "Other members do not receive a You badge")
   assert.match(renderHeader(render({ url: "/calendar?view=list&date=2026-10-14" })), /<button(?=[^>]*aria-label="List")(?=[^>]*aria-pressed="true")[^>]*>/, "Mobile controls preserve an explicitly selected list view")
   assert.match(regularCreate, /aria-label="Length \(min\)"/, "Creating without dragging offers an editable duration")
-  assert.match(regularCreate, /cursor-crosshair/, "A new drag selection remains available while the create form is open")
+  assert.match(regularCreate, /class="[^"]*cursor-default"[^>]*data-slot="calendar-member-lane"/, "Drag lanes start with the default cursor until the pointer enters free time")
   const regularEdit = render({ url: "/calendar/saved-booking/edit?view=day&date=2026-10-14", bookings: [booking] })
   const subtitleText = (markup: string) => markup.match(/data-slot="calendar-panel-subtitle"[^>]*>([^<]+)</)?.[1]
   const loadingEdit = render({ appointmentPending: true, url: "/calendar/saved-booking/edit?view=day&date=2026-10-14", bookings: [booking] })
@@ -310,7 +311,7 @@ try {
   const liveSave = [...liveEdit.matchAll(/<button\b[^>]*>(?:(?!<\/button>)[\s\S])*<\/button>/g)].map(([button]) => button).find((button) => button.includes("Save changes"))
   assert.match(liveSave ?? "", /\sdisabled(?:=|[ >])/, "The preview cannot be saved while the pointer is moving")
   const liveStartsAt = getCalendarTimeRange(liveSelection.day, liveSelection.startMinute, 90, "Europe/Helsinki").startsAt
-  const durationQueryKey = options.appointment.list.queryKey({ from: new Date(+liveStartsAt - 240 * 60000), to: new Date(+liveStartsAt + 1680 * 60000), staffMemberId: liveSelection.member.id })
+  const durationQueryKey = options.appointment.list.queryKey({ from: new Date(+liveStartsAt - (240 + booking.services[0].bufferBeforeMinutes) * 60000), to: new Date(+liveStartsAt + (1680 + booking.services[0].bufferAfterMinutes) * 60000), staffMemberId: liveSelection.member.id })
   assertLiveAvailability(durationQueryKey, "Duration checks during a drag", 0)
   render({ ...liveEditOptions, dragging: false })
   assertLiveAvailability(durationQueryKey, "Duration checks after release")

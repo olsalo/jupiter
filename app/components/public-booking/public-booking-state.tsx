@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import Icon from "~/components/icons"
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "~/components/ui/empty"
 import { Spinner } from "~/components/ui/spinner"
@@ -39,8 +39,8 @@ export function PublicBookingUnavailable({ notFound, title, onRetry, retrying }:
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>
         {t("unavailableHint")}
-        <Button className="mt-2 self-start" loading={retrying} onClick={onRetry} type="button" variant="outline">{t("retry")}</Button>
       </AlertDescription>
+      <AlertAction><Button loading={retrying} onClick={onRetry} type="button" variant="outline">{t("retry")}</Button></AlertAction>
     </Alert>
   )
 }

@@ -7,7 +7,7 @@ import type { Route } from "./+types/customer-sheet"
 import { ResponsiveSheetPanel } from "~/components/overlays/responsive-sheet"
 import { CustomerSheet } from "~/components/customers/customer-sheet"
 import type { CustomerMasterDetailContext, CustomerContext } from "~/components/customers/customer-types"
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { OverlayLoading } from "~/components/overlays/overlay-loading"
 import { useMediaQuery } from "~/lib/hooks"
@@ -43,7 +43,7 @@ export default function CustomerLayout({ params }: Route.ComponentProps) {
 
   function content(close: (destination?: string) => void) {
     if (loading) return <OverlayLoading data-slot="customer-loading" label={t("customerPage.loading")} />
-    if (!query.data) return <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("customerPage.loadError")}</AlertTitle><AlertDescription>{t("customerPage.retryDescription")}</AlertDescription></Alert><Button className="mt-4" disabled={query.isFetching} onClick={() => void query.refetch()} type="button" variant="outline">{t("customerPage.retry")}</Button></ResponsiveSheetPanel>
+    if (!query.data) return <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("customerPage.loadError")}</AlertTitle><AlertDescription>{t("customerPage.retryDescription")}</AlertDescription><AlertAction><Button disabled={query.isFetching} onClick={() => void query.refetch()} type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction></Alert></ResponsiveSheetPanel>
     return <Outlet context={{ customer: query.data, close, onPendingChange: setPending } satisfies CustomerContext} />
   }
 

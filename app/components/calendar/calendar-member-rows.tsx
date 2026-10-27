@@ -26,6 +26,7 @@ import { formatDateTime } from "~/lib/localization/format-preference"
 import { cn } from "~/lib/utils"
 
 const empty: never[] = []
+const viewportInsets = { left: 176, top: 44 }
 const horizontalFade = "linear-gradient(to right, transparent var(--calendar-scroll-left, 0px), #000 calc(var(--calendar-scroll-left, 0px) + min(1.5rem, var(--calendar-scroll-left, 0px))), #000 calc(var(--calendar-scroll-left, 0px) + var(--calendar-time-viewport-width, 100%) - min(1.5rem, var(--calendar-scroll-right, 0px))), transparent calc(var(--calendar-scroll-left, 0px) + var(--calendar-time-viewport-width, 100%)))"
 const verticalFade = "linear-gradient(to bottom, transparent var(--calendar-scroll-top, 0px), #000 calc(var(--calendar-scroll-top, 0px) + min(1.5rem, var(--calendar-scroll-top, 0px))), #000 calc(var(--calendar-scroll-top, 0px) + var(--calendar-member-viewport-height, 100%) - min(1.5rem, var(--calendar-scroll-bottom, 0px))), transparent calc(var(--calendar-scroll-top, 0px) + var(--calendar-member-viewport-height, 100%)))"
 
@@ -75,8 +76,8 @@ export function CalendarMemberRows({ initialNow, focusedAppointmentId, days, mem
       content.style.setProperty("--calendar-scroll-bottom", `${Math.max(0, maxTop - currentTop)}px`)
     }
   }
-  useCalendarBookingReveal(viewportRef, focusedAppointmentId, scrollTo, { left: 176, top: 44 })
-  const drag = useCalendarBookingDrag({ getDraftService, serviceDurations, intervalMinutes, minDurationMinutes, getBookingIssues, liveDragPreview, horizontal: true, appointments, conflictAppointments, members: bookingMembers ?? members, unavailableTimes: [...unavailableTimes, ...unavailableDays.map((day) => ({ ...day, startMinute, endMinute }))], startMinute, endMinute, timeZone, allowSimultaneousBookings, viewportRef, scrollTo, onMove: onMoveBooking, returnMotion, onDraggingChange: setDragging })
+  useCalendarBookingReveal(viewportRef, focusedAppointmentId, scrollTo, viewportInsets)
+  const drag = useCalendarBookingDrag({ getDraftService, serviceDurations, intervalMinutes, minDurationMinutes, getBookingIssues, liveDragPreview, horizontal: true, appointments, conflictAppointments, members: bookingMembers ?? members, unavailableTimes: [...unavailableTimes, ...unavailableDays.map((day) => ({ ...day, startMinute, endMinute }))], startMinute, endMinute, timeZone, allowSimultaneousBookings, viewportRef, viewportInsets, scrollTo, onMove: onMoveBooking, returnMotion, onDraggingChange: setDragging })
   const hiddenIds = new Set([...drag.returningPreviews.map((item) => item.appointment.id), ...(drag.dragged ? [drag.dragged.appointment.id] : [])])
 
   useEffect(() => {
@@ -245,6 +246,6 @@ export function CalendarMemberRows({ initialNow, focusedAppointmentId, days, mem
       <div aria-hidden={true} className="w-[19px] shrink-0 border-l" />
     </div>
     <CalendarBookingDragOverlay endMinute={endMinute} formatPreference={formatPreference} horizontal={true} startMinute={startMinute} store={drag.dragPreview} />
-    {drag.returningPreviews.map(({ appointment, from }) => <CalendarBookingReturnAnimation appointment={appointment} endMinute={endMinute} formatPreference={formatPreference} from={from} horizontal={true} key={appointment.id} onComplete={() => drag.finishPreviewReturn(appointment.id)} startMinute={startMinute} viewportRef={viewportRef} />)}
+    {drag.returningPreviews.map(({ appointment, from }) => <CalendarBookingReturnAnimation appointment={appointment} endMinute={endMinute} formatPreference={formatPreference} from={from} horizontal={true} key={appointment.id} onComplete={() => drag.finishPreviewReturn(appointment.id)} startMinute={startMinute} viewportRef={viewportRef} viewportInsets={viewportInsets} />)}
   </section>
 }

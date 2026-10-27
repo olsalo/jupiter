@@ -19,7 +19,8 @@ const frames = new Map<number, FrameRequestCallback>()
 let frameId = 0
 Object.defineProperty(globalThis, "requestAnimationFrame", { configurable: true, value: (callback: FrameRequestCallback) => { frames.set(++frameId, callback); return frameId } })
 Object.defineProperty(globalThis, "cancelAnimationFrame", { configurable: true, value: (id: number) => frames.delete(id) })
-Object.defineProperty(globalThis, "window", { configurable: true, value: { matchMedia: () => ({ matches: true }) } })
+let reducedMotion = true
+Object.defineProperty(globalThis, "window", { configurable: true, value: { matchMedia: () => ({ matches: reducedMotion }) } })
 const frame = () => {
   const callbacks = [...frames.values()]
   frames.clear()
@@ -31,7 +32,7 @@ try {
   mock.timers.enable({ apis: ["Date", "setTimeout"], now: Date.parse("2026-10-19T09:00:00Z") })
   const { getCalendarPreviewIssues, getCalendarAppointmentPosition } = await vite.ssrLoadModule("/app/lib/calendar/preview-issues.ts") as typeof import("../app/lib/calendar/preview-issues")
   const { createCalendarBookingDragPreview } = await vite.ssrLoadModule("/app/lib/calendar/booking-drag-preview.ts") as typeof import("../app/lib/calendar/booking-drag-preview")
-  function harness(resize = false, creationDraft = false, horizontal = false, liveIssues = false, bufferedNeighbour = false, serviceDurations?: readonly number[], appointmentStart = 600, status = "CONFIRMED") {
+  function harness(resize = false, creationDraft = false, horizontal = false, liveIssues = false, bufferedNeighbour = false, serviceDurations?: readonly number[], appointmentStart = 600, status = "CONFIRMED", viewportInsets?: { left: number; top: number }) {
     const bounds = (left: number, top: number, width: number, height: number) => ({ left, top, width, height, right: left + width, bottom: top + height })
     const measurements = { lanes: 0, queries: 0 }
     const sharedPreview = createCalendarBookingDragPreview()
@@ -49,7 +50,7 @@ try {
         conflictAppointments: bufferedNeighbour ? [{ id: "neighbour", day: "2099-10-28", memberId: "alice", customerName: "Next", startMinute: 700, endMinute: 720, bufferBeforeMinutes: 5, bufferAfterMinutes: 10, status: "CONFIRMED", service: { id: "service", name: "Short service", color: "#808080" } }] : undefined,
         getDraftService: (length) => length === 20 ? { id: "short", name: "Short service", color: "#ff9900" }
           : length === 30 ? { id: "regular", name: "Regular service", color: "#0088ff" } : undefined,
-        serviceDurations, liveDragPreview: sharedPreview,
+        serviceDurations, liveDragPreview: sharedPreview, viewportInsets,
         getBookingIssues: liveIssues ? (candidate) => getCalendarPreviewIssues(getCalendarAppointmentPosition(candidate, "UTC"), {
           rules: [
             { staffMemberId: null, windows: [{ start: Date.parse("2099-10-28T09:00:00Z"), end: Date.parse("2099-10-28T19:00:00Z") }] },
@@ -135,10 +136,29 @@ try {
   }
 
   for (const horizontal of [false, true]) {
+    const snapped = harness(false, false, horizontal)
+    snapped.drag.gridProps.onPointerDown(snapped.event(horizontal ? 190 : 150, horizontal ? 40 : 80))
+    snapped.drag.gridProps.onPointerMove(snapped.event(horizontal ? 200 : 350, horizontal ? 140 : 90))
+    const first = snapped.sharedPreview.getSnapshot()
+    assert.equal(first?.appointment.startMinute, 615, "Both layouts snap the booking time to the nearest fifteen-minute line")
+    assert.equal(first?.left, horizontal ? 177 : 304, "The card aligns with its target time or member column")
+    assert.equal(first?.top, horizontal ? 104 : 75, "The card aligns with its target member row or time")
+    snapped.drag.gridProps.onPointerMove(snapped.event(horizontal ? 201 : 351, horizontal ? 141 : 91))
+    frame()
+    assert.equal(snapped.sharedPreview.getSnapshot()?.left, first?.left, "Small pointer movements stay on the same snapped position")
+    assert.equal(snapped.sharedPreview.getSnapshot()?.top, first?.top)
+    snapped.drag.gridProps.onPointerMove(snapped.event(horizontal ? 214 : 350, horizontal ? 140 : 104))
+    frame()
+    assert.equal(snapped.sharedPreview.getSnapshot()?.appointment.startMinute, 630, "Crossing the midpoint advances to the next grid line")
+    snapped.drag.gridProps.onPointerUp(snapped.event(horizontal ? 214 : 350, horizontal ? 140 : 104))
+    assert.equal(snapped.updates.at(-1)?.selection.startMinute, 630, "Drop commits the same time shown by the snapped card")
+  }
+
+  for (const horizontal of [false, true]) {
     const offGrid = harness(false, false, horizontal, false, false, undefined, 605)
     offGrid.drag.gridProps.onPointerDown(offGrid.event(horizontal ? 185 : 150, horizontal ? 30 : 85))
     offGrid.drag.gridProps.onPointerUp(offGrid.event(horizontal ? 185 : 350, horizontal ? 140 : 85))
-    assert.equal(offGrid.updates.at(-1)?.selection.startMinute, 605, "Moving an existing off-grid booking between members preserves its exact start")
+    assert.equal(offGrid.updates.at(-1)?.selection.startMinute, 600, "Moving an existing booking snaps its start to the nearest grid line")
     assert.equal(offGrid.updates.at(-1)?.selection.member.id, "bob", "Cross-member dragging remains an explicit way to reassign a booking")
     const shorter = harness(true, false, horizontal, false, false, undefined, 605)
     shorter.drag.gridProps.onPointerDown(shorter.event(horizontal ? 219 : 150, horizontal ? 30 : 119))
@@ -161,14 +181,15 @@ try {
   moving.drag.gridProps.onPointerMove(moving.event(150, 90))
   assert.equal(moving.updates[0].phase, "start")
   assert.equal(moving.updates.length, 1, "Moving the block does not immediately rebuild the panel")
-  assert.equal(moving.drag.dragPreview.getSnapshot()?.appointment.startMinute, 610, "The floating block updates immediately before the panel")
+  assert.equal(moving.drag.dragPreview.getSnapshot()?.appointment.startMinute, 615, "The floating block snaps immediately before the panel updates")
+  assert.equal(moving.drag.dragPreview.getSnapshot()?.top, 75, "The floating card aligns visually with its snapped start")
   moving.drag.gridProps.onPointerMove(moving.event(350, 120))
   frame()
   assert.equal(moving.drag.dragPreview.getSnapshot()?.appointment.memberId, "bob", "The floating block follows the pointer immediately")
   assert.equal(moving.updates.at(-1)?.selection.member.id, "alice", "A rapid move does not synchronously rebuild the live panel")
   mock.timers.tick(120)
   assert.equal(moving.updates.at(-1)?.selection.member.id, "bob", "The panel follows the live member")
-  assert.equal(moving.updates.at(-1)?.selection.startMinute, 640)
+  assert.equal(moving.updates.at(-1)?.selection.startMinute, 645)
   const updateCount = moving.updates.length
   moving.drag.gridProps.onPointerMove(moving.event(350, 121))
   frame()
@@ -177,7 +198,7 @@ try {
   moving.drag.gridProps.onPointerUp(moving.event(350, 121))
   assert.equal(moving.updates.at(-1)?.phase, "drop")
   assert.equal(moving.grid.style.cursor, "", "Dropping restores the original grid cursor")
-  assert.equal(moving.updates.at(-1)?.selection.startMinute, liveSelection?.startMinute, "The drop keeps the latest minute-precise overlay time")
+  assert.equal(moving.updates.at(-1)?.selection.startMinute, liveSelection?.startMinute, "The drop keeps the displayed snapped time")
 
   const newBooking = harness(false, true)
   newBooking.drag.gridProps.onPointerDown(newBooking.event(150, 80))
@@ -203,7 +224,7 @@ try {
   pastTime.drag.gridProps.onPointerMove(pastTime.event(150, 30))
   const movingDraft = pastTime.drag.dragPreview.getSnapshot()
   assert.equal(movingDraft?.appointment.startMinute, 555, "Moving an existing draft is not clamped to the future selection boundary")
-  assert.equal(movingDraft?.top, 10, "The floating block follows the pointer when moving into the past")
+  assert.equal(movingDraft?.top, 15, "The floating block snaps to grid lines when moving into the past")
   mock.timers.tick(120)
   assert.equal(pastTime.updates.at(-1)?.selection.startMinute, 555, "The panel follows the moved draft without the creation-only clamp")
   pastTime.drag.gridProps.onPointerUp(pastTime.event(150, 30))
@@ -309,7 +330,7 @@ try {
   scrolling.viewport.scrollTop = 100
   scrolling.drag.gridProps.onPointerMove(scrolling.event(150, 200))
   frame()
-  assert.equal(scrolling.drag.dragPreview.getSnapshot()?.appointment.startMinute, 820, "Cached lane bounds follow vertical scrolling when calculating the time")
+  assert.equal(scrolling.drag.dragPreview.getSnapshot()?.appointment.startMinute, 825, "Cached lane bounds follow vertical scrolling when snapping the time")
   assert.equal(scrolling.measurements.lanes, measuredBeforeScroll, "Scrolling adjusts cached geometry without forcing more lane measurements")
   scrolling.viewport.clientWidth = 320
   scrolling.drag.gridProps.onPointerMove(scrolling.event(150, 210))
@@ -326,6 +347,16 @@ try {
   assert.equal(horizontal.updates.at(-1)?.phase, "drop")
   assert.equal(horizontal.updates.at(-1)?.selection.member.id, "bob")
   assert.equal(horizontal.updates.at(-1)?.selection.startMinute, 630)
+
+  const rowHeaders = harness(false, false, true, false, false, undefined, 750, "CONFIRMED", { left: 176, top: 44 })
+  rowHeaders.drag.gridProps.onPointerDown(rowHeaders.event(340, 60))
+  rowHeaders.drag.gridProps.onPointerMove(rowHeaders.event(120, 120))
+  const rowPreview = rowHeaders.sharedPreview.getSnapshot()
+  assert.equal(rowPreview?.viewport.left, 276, "Row drag clipping starts after the sticky team column")
+  assert.equal(rowPreview?.viewport.top, 44, "Row drag clipping starts below the time header")
+  assert.ok((rowPreview?.left ?? 0) >= 276, "Dragging over team names keeps the card in the time grid")
+  rowHeaders.drag.gridProps.onPointerUp(rowHeaders.event(120, 120))
+  assert.equal(rowHeaders.updates.at(-1)?.phase, "drop", "A release over team names still resolves within the time grid")
 
   const horizontalResize = harness(true, false, true)
   horizontalResize.drag.gridProps.onPointerDown(horizontalResize.event(216, 40))
@@ -351,6 +382,22 @@ try {
   mock.timers.tick(500)
   assert.equal(cancelled.updates.length, updatesAfterCancel, "A queued live update cannot overwrite cancellation")
   assert.equal(frames.size, 0, "Dropping or cancelling stops animation frames")
+  reducedMotion = false
+  for (const horizontal of [false, true]) {
+    const settled = harness(false, false, horizontal)
+    settled.drag.gridProps.onPointerDown(settled.event(horizontal ? 190 : 150, horizontal ? 40 : 80))
+    settled.drag.gridProps.onPointerMove(settled.event(horizontal ? 220 : 350, horizontal ? 140 : 120))
+    settled.drag.gridProps.onPointerUp(settled.event(horizontal ? 220 : 350, horizontal ? 140 : 120))
+    const preview = settled.sharedPreview.getSnapshot()
+    assert.equal(preview?.returning, true, "Release keeps the overlay mounted while it settles into the target lane")
+    assert.equal(preview?.appointment.memberId, "bob")
+    assert.equal(settled.updates.at(-1)?.phase, "drop", "The selection commits immediately while the visual settles")
+    assert.equal(preview?.left, horizontal ? 192 : 304)
+    assert.equal(preview?.top, horizontal ? 104 : 105)
+    mock.timers.tick(500)
+    assert.equal(settled.sharedPreview.getSnapshot(), null, "Settling removes the overlay and reveals the grid card")
+  }
+  reducedMotion = true
   console.info("PASS live drag and resize updates, quiet live forms during rapid movement, cached lane measurements, scrolling, stationary catch-up, exact drop and cancellation")
 } finally {
   mock.timers.reset()

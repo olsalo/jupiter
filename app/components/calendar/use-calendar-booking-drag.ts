@@ -12,7 +12,8 @@ type DragBounds = Pick<DOMRect, "left" | "top" | "right" | "bottom" | "width" | 
 type DragGeometry = { viewport: DragBounds; scrollLeft: number; scrollTop: number; lanes: { lane: HTMLElement; bounds: DragBounds }[] }
 type ActiveDrag = { geometry: DragGeometry | null; mode: "move" | "resize"; laneOffset: number; laneWidthRatio: number; appointment: CalendarAppointment; pointerId: number; originX: number; originY: number; x: number; y: number; moved: boolean; needsUpdate: boolean; grid: HTMLDivElement; bounds: DOMRect }
 
-export function useCalendarBookingDrag({ appointments, conflictAppointments = appointments, members, unavailableTimes, startMinute, endMinute, timeZone, allowSimultaneousBookings, viewportRef, scrollTo, onMove, returnMotion, onDraggingChange, getBookingIssues, liveDragPreview, getDraftService, serviceDurations, intervalMinutes = calendarIntervalMinutes, minDurationMinutes = calendarMinDurationMinutes, horizontal = false }: {
+export function useCalendarBookingDrag({ appointments, conflictAppointments = appointments, members, unavailableTimes, startMinute, endMinute, timeZone, allowSimultaneousBookings, viewportRef, viewportInsets = { left: 0, top: 0 }, scrollTo, onMove, returnMotion, onDraggingChange, getBookingIssues, liveDragPreview, getDraftService, serviceDurations, intervalMinutes = calendarIntervalMinutes, minDurationMinutes = calendarMinDurationMinutes, horizontal = false }: {
+  viewportInsets?: { left: number; top: number }
   getBookingIssues?: (appointment: CalendarAppointment) => CalendarAppointment["availabilityIssues"]
   liveDragPreview?: CalendarBookingDragPreviewStore
   getDraftService?: (length: number) => CalendarAppointment["service"] | undefined
@@ -34,6 +35,13 @@ export function useCalendarBookingDrag({ appointments, conflictAppointments = ap
   scrollTo: (position: { left: number; top: number }) => void
   onMove?: (appointment: CalendarAppointment, selection: CalendarDragSelection, phase: CalendarBookingDragPhase) => void
 }) {
+  const getViewportBounds = () => {
+    const bounds = viewportRef.current?.getBoundingClientRect()
+    if (!bounds) return
+    const left = Math.min(bounds.width, viewportInsets.left)
+    const top = Math.min(bounds.height, viewportInsets.top)
+    return { left: bounds.left + left, top: bounds.top + top, right: bounds.right, bottom: bounds.bottom, width: bounds.width - left, height: bounds.height - top }
+  }
   const bookingConflicts = getCalendarBookingConflicts(conflictAppointments, allowSimultaneousBookings)
   const active = useRef<ActiveDrag | null>(null)
   const pointerCursor = useRef<{ element: HTMLDivElement; cursor: string } | null>(null)
@@ -99,7 +107,8 @@ export function useCalendarBookingDrag({ appointments, conflictAppointments = ap
   const candidateAt = (drag: ActiveDrag, validate = true, displayed?: CalendarBookingDragPreview | null, visibleBounds?: DragBounds) => {
     const viewport = viewportRef.current
     if (!viewport) return null
-    const visible = visibleBounds ?? viewport.getBoundingClientRect()
+    const visible = visibleBounds ?? getViewportBounds()
+    if (!visible) return null
     const position = displayed ?? getCalendarBookingDragPosition({
       left: drag.bounds.left + drag.x - drag.originX,
       top: drag.bounds.top + drag.y - drag.originY,
@@ -141,7 +150,7 @@ export function useCalendarBookingDrag({ appointments, conflictAppointments = ap
       return { ...drag.appointment, ...range, service, durationMinutes: duration, draft: true }
     }
     const range = getCalendarBookingDragRange({
-      snapToInterval: drag.appointment.creationDraft === true,
+      snapToInterval: true,
       ...buffers, intervalMinutes, minDurationMinutes,
       minute: startMinute + (horizontal ? (position.left - bounds.left - 2) / bounds.width : (position.top - bounds.top) / bounds.height) * (endMinute - startMinute),
       offset: 0,
@@ -168,7 +177,7 @@ export function useCalendarBookingDrag({ appointments, conflictAppointments = ap
     height: (appointment.endMinute - appointment.startMinute) / (endMinute - startMinute) * lane.height - 4,
   }
   const updateDragged = (drag: ActiveDrag, visibleBounds?: DragBounds) => {
-    const visible = visibleBounds ?? viewportRef.current?.getBoundingClientRect()
+    const visible = visibleBounds ?? getViewportBounds()
     if (!visible) return
     const position = getCalendarBookingDragPosition({
       left: drag.bounds.left + drag.x - drag.originX,
@@ -178,9 +187,9 @@ export function useCalendarBookingDrag({ appointments, conflictAppointments = ap
     }, visible)
     const positionCandidate = candidateAt(drag, true, undefined, visible) ?? candidateAt(drag, false, undefined, visible)
     const candidate = positionCandidate && getBookingIssues ? { ...positionCandidate, availabilityIssues: getBookingIssues(positionCandidate) } : positionCandidate
-    const lane = drag.mode === "resize" ? getDragLanes(drag, visible)
-      .find(({ lane }) => lane.dataset.day === drag.appointment.day && lane.dataset.memberId === drag.appointment.memberId)?.bounds : null
-    const resizedPosition = lane && candidate ? appointmentBounds(lane, candidate, drag) : null
+    const lane = candidate ? getDragLanes(drag, visible)
+      .find(({ lane }) => lane.dataset.day === candidate.day && lane.dataset.memberId === candidate.memberId)?.bounds : null
+    const snappedPosition = lane && candidate ? appointmentBounds(lane, candidate, drag) : null
     const previous = dragPreview.getSnapshot()
     const sameTime = candidate && previous
       && candidate.day === previous.appointment.day && candidate.memberId === previous.appointment.memberId
@@ -193,7 +202,7 @@ export function useCalendarBookingDrag({ appointments, conflictAppointments = ap
         viewport: { left: visible.left, top: visible.top, width: visible.width, height: visible.height },
         width: drag.bounds.width,
         height: drag.bounds.height,
-        ...resizedPosition,
+        ...snappedPosition,
         returning: false,
         resizing: drag.mode === "resize",
       }
@@ -225,7 +234,7 @@ export function useCalendarBookingDrag({ appointments, conflictAppointments = ap
     const lane = Array.from(drag.grid.querySelectorAll<HTMLElement>('[data-slot="calendar-member-lane"]'))
       .find((lane) => lane.dataset.day === drag.appointment.day && lane.dataset.memberId === drag.appointment.memberId)?.getBoundingClientRect()
     const bounds = lane ? appointmentBounds(lane, drag.appointment, drag) : drag.bounds
-    const visible = viewportRef.current?.getBoundingClientRect()
+    const visible = getViewportBounds()
     if (!visible) { setDragged(null); return }
     setDragged({
       appointment: drag.appointment,
@@ -270,7 +279,8 @@ export function useCalendarBookingDrag({ appointments, conflictAppointments = ap
     const drag = active.current
     const viewport = viewportRef.current
     if (!drag?.moved || !viewport) return
-    const visible = viewport.getBoundingClientRect()
+    const visible = getViewportBounds()
+    if (!visible) return
     const preview = dragPreview.getSnapshot()
     if (preview && (preview.viewport.left !== visible.left || preview.viewport.top !== visible.top || preview.viewport.width !== visible.width || preview.viewport.height !== visible.height)) drag.needsUpdate = true
     const delta = getCalendarDragScrollDelta(drag, visible, lastFrame.current === null ? 16 : time - lastFrame.current)
@@ -361,7 +371,16 @@ export function useCalendarBookingDrag({ appointments, conflictAppointments = ap
         if (candidate && member) {
           stopAnimation()
           active.current = null
-          setDragged(null)
+          const preview = dragPreview.getSnapshot()
+          const visible = getViewportBounds()
+          const lane = visible ? getDragLanes(drag, visible).find(({ lane }) => lane.dataset.day === candidate.day && lane.dataset.memberId === candidate.memberId)?.bounds : null
+          if (preview && lane && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            setDragged({ ...preview, appointment: candidate, ...appointmentBounds(lane, candidate, drag), returning: true })
+            returnTimer.current = setTimeout(() => {
+              setDragged(null)
+              returnTimer.current = null
+            }, calendarBookingReturnDuration)
+          } else setDragged(null)
           onDraggingChange?.(false)
           onMove?.(drag.appointment, { member, day: candidate.day, startMinute: candidate.startMinute, endMinute: candidate.endMinute }, "drop")
         } else if (drag.moved) {

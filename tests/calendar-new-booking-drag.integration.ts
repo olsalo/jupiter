@@ -11,10 +11,13 @@ import type { CalendarDragSelection } from "../app/lib/calendar/types"
 const appPath = new URL("../app", import.meta.url).pathname
 const vite = await createServer({
   configFile: false,
+  cacheDir: "node_modules/.vite-tests/calendar-new-booking-drag",
   appType: "custom",
   resolve: { alias: { "~": appPath, "@coss/ui/lib": `${appPath}/lib` } },
   server: { middlewareMode: true, hmr: false, ws: false, watch: null },
 })
+
+const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window")
 
 try {
   const i18n = createInstance()
@@ -25,8 +28,10 @@ try {
   assert.equal(bookingDuration.safeParse(15).success, true, "Booking mutations accept a fifteen-minute drag duration")
   assert.equal(bookingDuration.safeParse(14).success, false, "Booking mutations reject durations below the grid interval")
   mock.timers.enable({ apis: ["Date", "setTimeout"], now: +new Date("2026-10-19T09:43:25Z") })
+  let finePointer = true
+  Object.defineProperty(globalThis, "window", { configurable: true, value: { matchMedia: () => ({ matches: finePointer }) } })
 
-  function harness(day = "2026-10-19", horizontal = false, minDurationMinutes?: number, intervalMinutes?: number, serviceDurations?: readonly number[], blocked: { startMinute: number; endMinute: number }[] = []) {
+  function harness(day = "2026-10-19", horizontal = false, minDurationMinutes?: number, intervalMinutes?: number, serviceDurations?: readonly number[], blocked: { startMinute: number; endMinute: number }[] = [], { mobile = false, canSelect = true, pointerType = "mouse" } = {}) {
     const selections: CalendarDragSelection[] = []
     const previews: CalendarDragSelection[] = []
     const dragging: boolean[] = []
@@ -34,18 +39,42 @@ try {
     let lane!: ReactElement<ComponentProps<"div">>
     function Capture() {
       lane = CalendarDragLane({
-        serviceDurations, minDurationMinutes, intervalMinutes, horizontal, day: new Date(`${day}T00:00:00Z`), timeZone: "UTC", member: { id: "alice", name: "Alice" },
+        serviceDurations, minDurationMinutes, intervalMinutes, horizontal, mobile, day: new Date(`${day}T00:00:00Z`), timeZone: "UTC", member: { id: "alice", name: "Alice" },
         startMinute: 540, endMinute: 1020, blocked, formatPreference: "eu", children: null,
-        onSelect: (selection) => selections.push(selection), onSelectUpdate: (selection) => previews.push(selection),
+        onSelect: canSelect ? (selection) => selections.push(selection) : undefined, onSelectUpdate: (selection) => previews.push(selection),
         onSelectStart: () => { starts += 1 }, onDraggingChange: (value) => dragging.push(value),
       })
       return null
     }
     renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(Capture)))
-    const element = { getBoundingClientRect: () => ({ left: 100, width: 960, top: 0, height: 480 }), setPointerCapture: () => {} }
-    const event = (minute: number) => ({ currentTarget: element, target: { closest: () => null }, pointerId: 1, pointerType: "mouse", button: 0, clientX: 100 + (minute - 540) * 2, clientY: minute - 540, preventDefault: () => {} }) as unknown as Parameters<NonNullable<typeof lane.props.onPointerDown>>[0]
-    return { selections, previews, dragging, get starts() { return starts }, down: (minute: number) => lane.props.onPointerDown?.(event(minute)), move: (minute: number) => lane.props.onPointerMove?.(event(minute)), release: (minute: number) => lane.props.onPointerUp?.(event(minute)), lostCapture: () => lane.props.onLostPointerCapture?.(event(600)), up: (minute: number) => { lane.props.onPointerUp?.(event(minute)); mock.timers.tick(0) } }
+    const element = { style: { cursor: "" }, getBoundingClientRect: () => ({ left: 100, width: 960, top: 0, height: 480 }), setPointerCapture: () => {} }
+    const event = (minute: number) => ({ currentTarget: element, target: { closest: () => null }, pointerId: 1, pointerType, button: 0, clientX: 100 + (minute - 540) * 2, clientY: minute - 540, preventDefault: () => {} }) as unknown as Parameters<NonNullable<typeof lane.props.onPointerDown>>[0]
+    return { selections, previews, dragging, get starts() { return starts }, get cursor() { return element.style.cursor }, enter: (minute: number) => lane.props.onPointerEnter?.(event(minute)), leave: () => lane.props.onPointerLeave?.(event(600)), down: (minute: number) => lane.props.onPointerDown?.(event(minute)), move: (minute: number) => lane.props.onPointerMove?.(event(minute)), release: (minute: number) => lane.props.onPointerUp?.(event(minute)), lostCapture: () => lane.props.onLostPointerCapture?.(event(600)), up: (minute: number) => { lane.props.onPointerUp?.(event(minute)); mock.timers.tick(0) } }
   }
+
+  for (const horizontal of [false, true]) {
+    const cursor = harness("2026-10-19", horizontal, undefined, undefined, undefined, [{ startMinute: 660, endMinute: 720 }])
+    cursor.enter(600)
+    assert.equal(cursor.cursor, "crosshair", "Free time offers drag selection on pointer enter")
+    cursor.move(680)
+    assert.equal(cursor.cursor, "default", "Occupied time uses the default cursor")
+    cursor.move(530)
+    assert.equal(cursor.cursor, "default", "Time outside the lane uses the default cursor")
+    cursor.move(600)
+    assert.equal(cursor.cursor, "crosshair", "Moving back to free time restores the crosshair")
+    cursor.leave()
+    assert.equal(cursor.cursor, "default", "Leaving the lane clears the crosshair")
+  }
+  for (const options of [{ mobile: true }, { canSelect: false }, { pointerType: "touch" }]) {
+    const cursor = harness("2026-10-19", false, undefined, undefined, undefined, [], options)
+    cursor.enter(600)
+    assert.equal(cursor.cursor, "default", "Mobile, touch and non-selectable lanes use the default cursor")
+  }
+  finePointer = false
+  const coarse = harness()
+  coarse.enter(600)
+  assert.equal(coarse.cursor, "default", "Devices without a fine hovering pointer use the default cursor")
+  finePointer = true
 
   const rows = harness("2026-10-19", true)
   rows.down(600)
@@ -169,8 +198,10 @@ try {
   click.up(600)
   assert.equal(click.selections.length, 0, "A plain click does not create a booking")
 
-  console.info("PASS past-time selection, first quick drag near now, release without pointer moves, minimum duration and plain clicks")
+  console.info("PASS pointer cursor states, past-time selection, first quick drag near now, release without pointer moves, minimum duration and plain clicks")
 } finally {
   mock.timers.reset()
+  if (originalWindow) Object.defineProperty(globalThis, "window", originalWindow)
+  else Reflect.deleteProperty(globalThis, "window")
   await vite.close()
 }

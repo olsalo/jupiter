@@ -37,7 +37,7 @@ export function CustomerList({ customers, hasMore, fetchingMore, onLoadMore, sel
           {!loading && !failed ? <Badge className="tabular-nums" variant="secondary">{customers.length}</Badge> : null}
         </div>
         <InputGroup>
-          <InputGroupInput aria-label={t("customerPage.search")} onChange={(event) => onSearchChange(event.target.value)} placeholder={t("customerPage.search")} type="search" value={search} />
+          <InputGroupInput nativeInput={true} aria-label={t("customerPage.search")} onChange={(event) => onSearchChange(event.target.value)} placeholder={t("customerPage.search")} type="search" value={search} />
           <InputGroupAddon><Icon aria-hidden={true} name="search" size={16} /></InputGroupAddon>
         </InputGroup>
       </div>

@@ -5,7 +5,7 @@ import Icon from "~/components/icons"
 import { cn } from "@coss/ui/lib/utils"
 
 const alertVariants = cva(
-  "relative grid w-full items-start gap-x-2 gap-y-0.5 rounded-xl border px-3.5 py-3 text-card-foreground text-sm has-[>svg]:has-data-[slot=alert-action]:grid-cols-[calc(var(--spacing)*4)_1fr_auto] has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-data-[slot=alert-action]:grid-cols-[1fr_auto] has-[>svg]:gap-x-2 [&>svg]:h-lh [&>svg]:w-4",
+  "@container/alert relative grid w-full min-w-0 grid-cols-[minmax(0,1fr)] items-start gap-x-3 gap-y-0.5 rounded-xl border px-3.5 py-3 text-card-foreground text-sm has-[>svg]:has-data-[slot=alert-action]:grid-cols-[calc(var(--spacing)*4)_minmax(0,1fr)_auto] has-[>svg]:grid-cols-[calc(var(--spacing)*4)_minmax(0,1fr)] has-data-[slot=alert-action]:grid-cols-[minmax(0,1fr)_auto] [&>svg]:h-lh [&>svg]:w-4",
   {
     defaultVariants: {
       variant: "default",
@@ -55,7 +55,7 @@ function Alert({
 function AlertTitle({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={cn("font-medium [svg~&]:col-start-2", className)}
+      className={cn("col-start-1 -col-end-1 min-w-0 font-medium wrap-anywhere [svg~&]:col-start-2 @sm/alert:col-end-auto", className)}
       data-slot="alert-title"
       {...props}
     />
@@ -69,7 +69,7 @@ function AlertDescription({
   return (
     <div
       className={cn(
-        "flex flex-col gap-2.5 text-muted-foreground [svg~&]:col-start-2",
+        "col-start-1 -col-end-1 flex min-w-0 flex-col gap-2.5 text-muted-foreground wrap-anywhere [svg~&]:col-start-2 @sm/alert:col-end-auto",
         className,
       )}
       data-slot="alert-description"
@@ -82,7 +82,7 @@ function AlertAction({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
       className={cn(
-        "flex gap-1 max-sm:col-start-2 max-sm:mt-2 sm:row-start-1 sm:row-end-3 sm:self-center sm:[[data-slot=alert-description]~&]:col-start-2 sm:[[data-slot=alert-title]~&]:col-start-2 sm:[svg~&]:col-start-2 sm:[svg~[data-slot=alert-description]~&]:col-start-3 sm:[svg~[data-slot=alert-title]~&]:col-start-3",
+        "col-start-1 -col-end-1 mt-2 flex flex-wrap items-center gap-2 [svg~&]:col-start-2 @sm/alert:col-start-2 @sm/alert:col-end-auto @sm/alert:row-start-1 @sm/alert:row-end-3 @sm/alert:mt-0 @sm/alert:self-center @sm/alert:[svg~&]:col-start-3",
         className,
       )}
       data-slot="alert-action"

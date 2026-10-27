@@ -1,13 +1,13 @@
 import type { CalendarAppointment, CalendarBookingReturnMotion } from "~/lib/calendar/types"
 import { useLayoutEffect, useRef, type RefObject } from "react"
-import { createPortal } from "react-dom"
 
 import { CalendarAppointmentCard } from "~/components/calendar/calendar-appointment"
 
 import { animateCalendarBookingReturn } from "~/lib/calendar/booking-return"
 import type { FormatPreference } from "~/lib/localization/format-preference"
 
-export function CalendarBookingReturnAnimation({ appointment, from, viewportRef, startMinute, endMinute, formatPreference, horizontal = false, onComplete }: {
+export function CalendarBookingReturnAnimation({ appointment, from, viewportRef, viewportInsets = { left: 0, top: 0 }, startMinute, endMinute, formatPreference, horizontal = false, onComplete }: {
+  viewportInsets?: { left: number; top: number }
   appointment: CalendarAppointment
   from: CalendarBookingReturnMotion["bounds"]
   viewportRef: RefObject<HTMLDivElement | null>
@@ -64,12 +64,12 @@ export function CalendarBookingReturnAnimation({ appointment, from, viewportRef,
     }
   }, [appointment.id, appointment.day, appointment.memberId, from, viewportRef])
 
-  return createPortal(<div
+  return <div
     aria-hidden={true}
     className="pointer-events-none fixed z-40 overflow-hidden"
     data-slot="calendar-return-boundary"
     ref={boundaryRef}
-    style={{ width: 0, height: 0, visibility: "hidden" }}
+    style={{ width: 0, height: 0, visibility: "hidden", clipPath: `inset(${viewportInsets.top}px 0 0 ${viewportInsets.left}px)` }}
   ><div
     aria-hidden={true}
     className="pointer-events-none absolute top-0 left-0 will-change-transform"
@@ -79,5 +79,5 @@ export function CalendarBookingReturnAnimation({ appointment, from, viewportRef,
     style={{ width: from.width, height: from.height }}
   >
     <CalendarAppointmentCard appointment={appointment} horizontal={horizontal} dragging={false} endMinute={endMinute} floating={true} formatPreference={formatPreference} startMinute={startMinute} />
-  </div></div>, document.body)
+  </div></div>
 }

@@ -13,6 +13,7 @@ import {
 
 import type { Route } from "./+types/root"
 import { AppStatusDialog } from "~/components/feedback/app-status-dialog"
+import { NativeReady } from "~/components/layout/native-ready"
 import { ToastProvider } from "~/components/ui/toast"
 import { TooltipProvider } from "~/components/ui/tooltip"
 import { formatPreferenceCookie, localeCookie, themeCookie } from "~/lib/http/cookies.server.ts"
@@ -133,6 +134,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
     <ToastProvider>
       <TooltipProvider>
         <TRPCReactProvider>
+          <NativeReady />
           <AppStatusDialog />
           <Outlet />
         </TRPCReactProvider>

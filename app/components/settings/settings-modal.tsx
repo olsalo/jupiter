@@ -33,6 +33,7 @@ import {
 } from "~/components/ui/card"
 import {
   Alert,
+  AlertAction,
   AlertDescription,
   AlertTitle,
 } from "~/components/ui/alert"
@@ -459,7 +460,7 @@ export function SettingsModal({
             >
               <div className={cn("relative flex min-h-[18rem] flex-1 flex-col gap-4 px-5 pb-5 max-sm:min-h-[14rem] max-sm:px-4 max-sm:pb-4", (activeItemId === "profile" || activeItemId === "business") && "pt-5 max-sm:pt-4")}>
                 {activeItemId === "profile" ? (
-                  profilePerson.isPending ? null : profilePerson.isError ? <Alert variant="error"><AlertTitle>{tTeam("people.loadFailed")}</AlertTitle><AlertDescription>{tTeam("retryDescription")}</AlertDescription><Button disabled={profilePerson.isFetching} onClick={() => void profilePerson.refetch()} size="sm" type="button" variant="outline">{tTeam("retry")}</Button></Alert> : (
+                  profilePerson.isPending ? null : profilePerson.isError ? <Alert variant="error"><AlertTitle>{tTeam("people.loadFailed")}</AlertTitle><AlertDescription>{tTeam("retryDescription")}</AlertDescription><AlertAction><Button disabled={profilePerson.isFetching} onClick={() => void profilePerson.refetch()} size="sm" type="button" variant="outline">{tTeam("retry")}</Button></AlertAction></Alert> : (
                     profileForm
                   )
                 ) : settingsContent}

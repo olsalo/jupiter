@@ -37,7 +37,7 @@ export function TeamMemberList({ people, selectedId, loading, failed, search, on
           {!loading && !failed ? <Badge className="tabular-nums" variant="secondary">{filteredPeople.length}</Badge> : null}
         </div>
         <InputGroup>
-          <InputGroupInput aria-label={t("people.search")} onChange={(event) => onSearchChange(event.target.value)} placeholder={t("people.search")} type="search" value={search} />
+          <InputGroupInput nativeInput={true} aria-label={t("people.search")} onChange={(event) => onSearchChange(event.target.value)} placeholder={t("people.search")} type="search" value={search} />
           <InputGroupAddon><Icon aria-hidden={true} name="search" size={16} /></InputGroupAddon>
         </InputGroup>
       </div>

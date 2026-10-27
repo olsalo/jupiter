@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { TZDate } from "react-day-picker"
 
 import Icon from "~/components/icons"
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Spinner } from "~/components/ui/spinner"
 import { calendarDateFromValue, calendarDateToValue } from "~/lib/calendar/date"
@@ -273,16 +273,15 @@ export function BookingTimePicker({
           {query.isError && !query.data ? (
             <Alert className="border-0" variant="error">
               <AlertTitle>{t("slotsError")}</AlertTitle>
-              <AlertDescription>
+              <AlertAction>
                 <Button
-                  className="mt-2 self-start"
                   onClick={() => void query.refetch()}
                   type="button"
                   variant="ghost"
                 >
                   {t("retry")}
                 </Button>
-              </AlertDescription>
+              </AlertAction>
             </Alert>
           ) : !selectedDay && !query.isPending ? (
             <Alert className="border-0" variant="info">
@@ -291,9 +290,10 @@ export function BookingTimePicker({
               </AlertTitle>
               <AlertDescription>
                 {t(exhausted ? "noFutureTimesHint" : "noTimesHint")}
-                {!exhausted && !atEnd ? (
+              </AlertDescription>
+              {!exhausted && !atEnd ? (
+                <AlertAction>
                   <Button
-                    className="mt-2 self-start"
                     onClick={() => void findNextAvailable()}
                     type="button"
                     variant="ghost"
@@ -301,8 +301,8 @@ export function BookingTimePicker({
                     {t("nextAvailable")}
                     <Icon aria-hidden={true} name="arrowRight" />
                   </Button>
-                ) : null}
-              </AlertDescription>
+                </AlertAction>
+              ) : null}
             </Alert>
           ) : selectedDay ? (
             <BookingTimeSlots

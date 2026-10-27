@@ -7,7 +7,7 @@ import type { Route } from "./+types/member-layout"
 import { ResponsiveSheetPanel } from "~/components/overlays/responsive-sheet"
 import { TeamPersonSheet } from "~/components/team/team-person-sheet"
 import type { TeamMasterDetailContext, TeamPersonContext } from "~/components/team/team-types"
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { OverlayLoading } from "~/components/overlays/overlay-loading"
 import { useMediaQuery } from "~/lib/hooks"
@@ -46,7 +46,7 @@ export default function MemberLayout({ params }: Route.ComponentProps) {
 
   function content(close: (destination?: string) => void) {
     if (loading) return <OverlayLoading data-slot="person-loading" label={t("people.loading")} />
-    if (!query.data) return <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("people.loadFailed")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription></Alert><Button className="mt-4" disabled={query.isFetching} onClick={() => void query.refetch()} type="button" variant="outline">{t("retry")}</Button></ResponsiveSheetPanel>
+    if (!query.data) return <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("people.loadFailed")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={query.isFetching} onClick={() => void query.refetch()} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert></ResponsiveSheetPanel>
     return <Outlet context={{ person: query.data, canManage, close, onPendingChange: setPending, sideNavigation: !mobile } satisfies TeamPersonContext} />
   }
 

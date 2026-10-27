@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 
 import Icon from "~/components/icons"
 import { bookingPageColorStyle } from "~/lib/booking/booking-page-colors"
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { Spinner } from "~/components/ui/spinner"
@@ -96,10 +96,12 @@ export function RescheduleBookingPage({ bookingCode }: { bookingCode: string }) 
                 <AlertTitle>{t("rescheduleUnavailable")}</AlertTitle>
                 <AlertDescription>
                   {t("unavailableHint")}
-                  <Button className="self-start" onClick={() => void page.refetch()} type="button" variant="ghost">
+                </AlertDescription>
+                <AlertAction>
+                  <Button onClick={() => void page.refetch()} type="button" variant="ghost">
                     {t("retry")}
                   </Button>
-                </AlertDescription>
+                </AlertAction>
               </Alert>
             )}
           </main>

@@ -56,7 +56,7 @@ export default function TeamV2() {
         refreshing={team.isRefetching}
         showDescriptionOnMobile={false}
         mobileControls={<InputGroup className="w-full" data-team-mobile-search={true}>
-          <InputGroupInput aria-label={t("people.search")} onChange={(event) => setSearch(event.target.value)} placeholder={t("people.search")} type="search" value={search} />
+          <InputGroupInput nativeInput={true} aria-label={t("people.search")} onChange={(event) => setSearch(event.target.value)} placeholder={t("people.search")} type="search" value={search} />
           <InputGroupAddon><Icon aria-hidden={true} name="search" size={16} /></InputGroupAddon>
         </InputGroup>}
         actions={canManage ? <Button aria-label={t("people.addAction")} className="max-md:size-9 max-md:p-0" render={<Link to={memberId ? `${location.pathname.replace(/\/new\/?$/, "")}/new${location.search}` : "new"} state={{ returnTo: `${location.pathname}${location.search}` }} />} size="lg" type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("people.addAction")}</span></Button> : null}
