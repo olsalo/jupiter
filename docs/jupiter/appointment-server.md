@@ -97,15 +97,15 @@ than a day. Ordinary appointment audit history is retained.
 
 ## Public endpoint protection
 
-Configure `BOOKING_TRUSTED_IP_HEADER` only to a header your trusted reverse proxy
-sets after stripping client-supplied values, such as `x-real-ip`. Without it,
-clients share the conservative unknown-client limit. Organization and client
+Jupiter defaults to `X-Real-IP` supplied by Traefik. `TRUSTED_CLIENT_IP_HEADER`
+can override the header, with `BOOKING_TRUSTED_IP_HEADER` as a legacy fallback.
+The trusted proxy must strip client-supplied values and set the visitor's IP.
+Production rejects missing or invalid IP headers instead of sharing an unknown-client bucket. Organization and client
 limits are stored in PostgreSQL and work across app instances: 600 reads or 100
 writes per organization per minute, with 120 reads or 10 writes per client.
 
-A bounded in-process prelookup limit also protects invalid slug/code lookups.
-That preliminary limit is per instance; configure edge limits for cross-instance
-invalid-code abuse. No raw booking codes, customer answers, notes, or contact
+A PostgreSQL-backed prelookup limit also protects invalid slug/code lookups
+across app instances. No raw booking codes, customer answers, notes, or contact
 fields are logged. Booking procedure outcome/latency logs and transactional
 appointment events/audit records provide basic observability.
 

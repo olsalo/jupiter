@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
-import { useId, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useLocation, useNavigate, useSearchParams } from "react-router"
+import { useLocation, useSearchParams } from "react-router"
 
 import { useAppContext } from "~/lib/hooks/use-app-context"
 import { CalendarWeeklyAvailability } from "~/components/calendar/calendar-weekly-availability"
@@ -9,13 +9,13 @@ import { CalendarTimeOff } from "~/components/calendar/calendar-time-off"
 import { CalendarExtraHours } from "~/components/calendar/calendar-extra-hours"
 import Icon from "~/components/icons"
 import FormLabel from "~/components/forms/form-label"
-import { ResponsiveSheet, ResponsiveSheetPopup, ResponsiveSheetHeader, ResponsiveSheetTitle, ResponsiveSheetDescription, ResponsiveSheetPanel } from "~/components/overlays/responsive-sheet"
+import { ResponsiveSheetPanel } from "~/components/overlays/responsive-sheet"
+import { RouteFormSheet } from "~/components/overlays/route-form-sheet"
 import { TeamPanelLoading } from "~/components/team/team-panel-loading"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { Tabs, TabsList, TabsTab } from "~/components/ui/tabs"
-import { useRouteSheet } from "~/components/overlays/use-route-sheet"
 import { hasOrganizationPermission, isBookableStaff } from "~/lib/auth/permissions"
 import { useTRPC } from "~/lib/trpc/client"
 import { useCurrentOrganizationRole } from "~/lib/hooks/use-organization-access"
@@ -27,7 +27,6 @@ export function CalendarAvailability({ initialKind = "workingHours" }: { initial
   const trpc = useTRPC()
   const root = useAppContext()
   const organizationRole = useCurrentOrganizationRole()
-  const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const organization = useQuery(trpc.organizations.getCurrent.queryOptions())
@@ -36,12 +35,9 @@ export function CalendarAvailability({ initialKind = "workingHours" }: { initial
   const tab = searchParams.get("tab")
   const kind: ScheduleKind = tab === "workingHours" || tab === "breaks" || tab === "timeOff" || tab === "extraHours" ? tab : initialKind
   const [pending, setPending] = useState(false)
-  const titleId = useId()
-  const descriptionId = useId()
   const returnParams = new URLSearchParams(searchParams)
   returnParams.delete("tab")
   const destination = useRef(typeof location.state?.returnTo === "string" && /^\/calendar(?:\?|$)/.test(location.state.returnTo) ? location.state.returnTo : `/calendar${returnParams.size ? `?${returnParams}` : ""}`)
-  const { open, version, close, finishClosing } = useRouteSheet({ onCloseComplete: () => { void navigate(destination.current, { replace: true }) } })
   const canManage = hasOrganizationPermission(organization.data?.role ?? organizationRole, { availability: ["manage"] })
   const members = (staff.data ?? []).filter(isBookableStaff)
   const own = members.find((member) => member.memberId === organization.data?.memberId)
@@ -51,13 +47,7 @@ export function CalendarAvailability({ initialKind = "workingHours" }: { initial
   const error = organization.isError || staff.isError
   const timezone = selected?.timezone ?? organization.data?.settings?.timezone ?? root?.organizationTimezone ?? "Europe/Helsinki"
 
-  return <ResponsiveSheet deferClose={false} open={open} onOpenChange={(next) => { if (!next && !pending) close() }} onOpenChangeComplete={(next) => { if (!next) finishClosing() }}>
-    <title>{t("routeTitles.availability")}</title>
-    <ResponsiveSheetPopup className="sm:max-w-xl" drawerClassName="max-sm:h-(--app-drawer-height) max-sm:border-t max-sm:border-border" closeLabel={t("team:people.close")} descriptionId={descriptionId} open={open} side="right" titleId={titleId} variant="inset">
-      <ResponsiveSheetHeader className="pb-3!">
-        <ResponsiveSheetTitle id={titleId}>{t("routeTitles.availability")}</ResponsiveSheetTitle>
-        <ResponsiveSheetDescription id={descriptionId}>{t("calendarAvailability.description")}</ResponsiveSheetDescription>
-      </ResponsiveSheetHeader>
+  return <RouteFormSheet closeLabel={t("team:people.close")} description={t("calendarAvailability.description")} drawerClassName="max-sm:h-(--app-drawer-height) max-sm:border-t max-sm:border-border" headerClassName="pb-3!" pending={pending} returnTo={destination.current} title={t("routeTitles.availability")}>{(close) => <>
         <div className="grid gap-4 px-6 pb-4">
           {canManage ? <FormLabel label={t("calendarControls.member")}><Select disabled={loading || pending || items.length === 0} items={items} value={selected?.id ?? null} onValueChange={(value) => { if (value) setSelectedId(value) }}>
             <SelectTrigger aria-label={t("calendarControls.member")}><SelectValue placeholder={t("team:v2.selectMember")} /></SelectTrigger>
@@ -77,10 +67,9 @@ export function CalendarAvailability({ initialKind = "workingHours" }: { initial
           </TabsList></div>
           {loading ? <div className="relative min-h-0 flex-1"><TeamPanelLoading label={t("team:people.loadingAvailability")} /></div> : error ? <ResponsiveSheetPanel>
             <Alert variant="error"><AlertTitle>{t("team:people.availabilityError")}</AlertTitle><AlertDescription>{t("team:retryDescription")}</AlertDescription><AlertAction><Button disabled={organization.isFetching || staff.isFetching} onClick={() => void Promise.all([organization.refetch(), staff.refetch()])} type="button" variant="outline">{t("team:retry")}</Button></AlertAction></Alert>
-          </ResponsiveSheetPanel> : selected ? <div className="flex min-h-0 flex-1 flex-col" key={`${selected.id}-${version}`}>
+          </ResponsiveSheetPanel> : selected ? <div className="flex min-h-0 flex-1 flex-col" key={selected.id}>
             {kind === "timeOff" ? <CalendarTimeOff staffMemberId={selected.id} timezone={timezone} close={close} onBusyChange={setPending} /> : kind === "extraHours" ? <CalendarExtraHours staffMemberId={selected.id} timezone={timezone} close={close} onBusyChange={setPending} /> : <CalendarWeeklyAvailability key={kind} staffMemberId={selected.id} kind={kind} onPendingChange={setPending} close={close} />}
           </div> : <ResponsiveSheetPanel><Alert><AlertTitle>{t("team:people.notBookable")}</AlertTitle><AlertDescription>{t("team:people.noStaffDescription")}</AlertDescription></Alert></ResponsiveSheetPanel>}
         </Tabs>
-    </ResponsiveSheetPopup>
-  </ResponsiveSheet>
+  </>}</RouteFormSheet>
 }

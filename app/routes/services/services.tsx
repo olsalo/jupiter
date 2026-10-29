@@ -23,12 +23,10 @@ import { Spinner } from "~/components/ui/spinner"
 import { toast } from "~/lib/toast"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 import { cn } from "~/lib/utils"
 
 export const handle = { workspace: true, pageLayout: "scroll" } as const
-export const shouldRevalidate = shouldRevalidateAppRoute
 
 export async function loader(args: Route.LoaderArgs) {
   const queryClient = getQueryClient()

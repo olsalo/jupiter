@@ -12,14 +12,14 @@ export function ProfileSettingsHeader({ disabled, person, bookable = isBookableS
   bookable?: boolean
 }) {
   const { t } = useTranslation("common")
-  const initials = person?.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()
+  const initial = person?.name.trim().charAt(0).toUpperCase()
 
   return (
     <header className="border-b bg-background px-5 pt-5 max-sm:px-4 max-sm:pt-4" data-slot="profile-settings-header">
       <div className="flex items-center gap-3 pb-4 pe-8">
         <Avatar className="size-12 text-base">
           {person?.image ? <AvatarImage alt={person.name} src={person.image} /> : null}
-          <AvatarFallback>{initials || <Icon aria-hidden={true} name="user" size={20} />}</AvatarFallback>
+          <AvatarFallback>{initial || <Icon aria-hidden={true} name="user" size={20} />}</AvatarFallback>
         </Avatar>
         <div className="grid min-w-0 gap-2">
           <h2 className="break-words font-heading text-xl font-semibold leading-none">{person?.name ?? t("settings.profile")}</h2>

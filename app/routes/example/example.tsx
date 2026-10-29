@@ -34,7 +34,6 @@ import {
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { useDeleteConfirmation } from "~/lib/hooks"
-import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { toast } from "~/lib/toast"
 import { useAppContext } from "~/lib/hooks/use-app-context"
 import { resources } from "~/locales"
@@ -67,8 +66,6 @@ export function clientLoader() {
 }
 
 export const handle = { workspace: true, pageLayout: "viewport" }
-
-export const shouldRevalidate = shouldRevalidateAppRoute
 
 export default function Notes() {
   const { i18n, t } = useTranslation("notes")

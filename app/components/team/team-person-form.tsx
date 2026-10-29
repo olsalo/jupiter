@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { FormApi } from "@rvf/react"
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
 import { Link, useLocation, useNavigate, useRevalidator, useRouteLoaderData } from "react-router"
 import type { loader as rootLoader } from "~/root"
 import { useTranslation } from "react-i18next"
@@ -18,7 +18,8 @@ import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
 import { Separator } from "~/components/ui/separator"
-import { Tabs, TabsPanel } from "~/components/ui/tabs"
+import { Tabs } from "~/components/ui/tabs"
+import { LazyTabsPanel } from "~/components/navigation/lazy-tabs-panel"
 import { Textarea } from "~/components/ui/textarea"
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip"
 import { personFormSchema, type PersonFormFields, type PersonFormInput, type PersonFormValues } from "~/lib/schemas/team"
@@ -39,7 +40,8 @@ import type { TeamPerson } from "./team-types"
 
 export type SettingsPersonFormState = AppFormState & { canSubmit: boolean; isLoading?: boolean }
 
-export function TeamPersonForm({ person, close, onPendingChange, selfSettings = false, settingsTab = "general", onSettingsTabChange, settingsFormApi, settingsResetRef, settingsFormId, onSettingsFormStateChange, generalContent, sideNavigation = false }: {
+// Closing the drawer updates its parent without changing the form's data
+export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPendingChange, selfSettings = false, settingsTab = "general", onSettingsTabChange, settingsFormApi, settingsResetRef, settingsFormId, onSettingsFormStateChange, generalContent, sideNavigation = false }: {
   sideNavigation?: boolean
   settingsFormApi?: { current: FormApi<PersonFormFields> | null }
   settingsResetRef?: { current: (() => void) | null }
@@ -145,15 +147,15 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
     <TeamPersonNavigationLayout enabled={sideNavigation && Boolean(person) && !selfSettings} mode="edit" value={editTab} onValueChange={setEditTab} disabled={formSubmitting || update.isPending}>
     <TabsRoot className="contents" {...(selfSettings ? {} : { value: editTab, onValueChange: (value: unknown) => setEditTab(String(value)) })}>
     {person && !selfSettings ? <TeamPersonEditHeader person={person} disabled={formSubmitting || update.isPending} sideNavigation={sideNavigation} /> : null}
-    {person && !selfSettings ? <TabsPanel className={editTab === "access" ? "flex min-h-0 flex-1 flex-col [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col" : "hidden"} keepMounted={true} value="access">
+    {person && !selfSettings ? <PersonFormSection editing={true} selectedTab={editTab} tab="access" className="flex min-h-0 flex-1 flex-col [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col">
       <TeamPersonAccess person={person} disabled={formSubmitting || update.isPending} />
-    </TabsPanel> : null}
+    </PersonFormSection> : null}
     {person && selfSettings ? <PersonFormSection settings={true} editing={true} selectedTab={editTab} tab="time-off">
       {person.staff ? <TeamPersonTimeOff staff={person.staff} canManage={true} self={selfSettings} /> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
     </PersonFormSection> : null}
-    {person && !selfSettings ? <TabsPanel className={editTab === "time-off" ? "flex min-h-0 flex-1 flex-col [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col" : "hidden"} keepMounted={true} value="time-off">
+    {person && !selfSettings ? <PersonFormSection editing={true} selectedTab={editTab} tab="time-off" className="flex min-h-0 flex-1 flex-col [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col">
       {person.staff ? <TeamPersonTimeOff staff={person.staff} canManage={true} self={false} /> : <Alert className="m-6"><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
-    </TabsPanel> : null}
+    </PersonFormSection> : null}
     <AppForm<PersonFormInput, PersonFormValues, unknown, PersonFormFields, PersonFormFields>
       className="contents"
       ref={setFormApi}
@@ -346,11 +348,14 @@ export function TeamPersonForm({ person, close, onPendingChange, selfSettings = 
     </TabsRoot>
     </TeamPersonNavigationLayout>
   )
-}
+})
 
-function PersonFormSection({ editing, settings = false, selectedTab, tab, children }: { settings?: boolean; editing: boolean; selectedTab: string; tab: string; children: ReactNode }) {
-  if (settings) return <TabsPanel className={selectedTab === tab ? "relative flex flex-1 flex-col gap-5" : "hidden"} keepMounted={true} value={tab}>{children}</TabsPanel>
-  return editing ? <TabsPanel className={selectedTab === tab ? "relative flex min-h-0 flex-1 flex-col gap-5 px-6 pb-6" : "hidden"} keepMounted={true} value={tab}>{children}</TabsPanel> : <>{children}</>
+function PersonFormSection({ editing, settings = false, selectedTab, tab, children, className }: { settings?: boolean; editing: boolean; selectedTab: string; tab: string; children: ReactNode; className?: string }) {
+  const active = selectedTab === tab
+
+  if (!editing && !settings) return <>{children}</>
+
+  return <LazyTabsPanel active={active} className={active ? className ?? (settings ? "relative flex flex-1 flex-col gap-5" : "relative flex min-h-0 flex-1 flex-col gap-5 px-6 pb-6") : "hidden"} value={tab}>{children}</LazyTabsPanel>
 }
 
 function profileSnapshot({ workingHours, breaks, serviceIds, locationIds, ...values }: PersonFormFields) {

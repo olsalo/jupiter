@@ -9,14 +9,16 @@ import { SettingsSectionHeader } from "~/components/settings/settings-section-he
 import { Alert, AlertAction, AlertDescription } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "~/components/ui/number-field"
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { Separator } from "~/components/ui/separator"
-import { Spinner } from "~/components/ui/spinner"
+import { SettingsLoading } from "~/components/settings/settings-loading"
 import { SettingsSwitch } from "~/components/settings/settings-switch"
 import { bookingWindowSchema, type BookingSettingsValues, type BookingWindowValues } from "~/lib/schemas/booking-settings"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 
 export const bookingSettingsFormId = "booking-settings-form"
+const noticeTimingOptions = [0, 60, 120, 180, 360, 720, 1440, 2880, 4320, 10080]
 
 export function BookingSettings({ onFormStateChange, resetRef }: {
   onFormStateChange: (state: AppFormState) => void
@@ -38,7 +40,7 @@ export function BookingSettings({ onFormStateChange, resetRef }: {
       <Button disabled={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("bookingSettings.retry")}</Button>
     </AlertAction>
   </Alert>
-  if (!query.data) return <div className="flex flex-1 items-center justify-center"><Spinner aria-label={t("settings.loading")} /></div>
+  if (!query.data) return <SettingsLoading />
 
   return <AppForm<BookingWindowValues, BookingWindowValues, BookingSettingsValues>
     defaultValues={bookingWindowSchema.parse(query.data)}
@@ -77,6 +79,28 @@ function BookingSettingsFields({ busy, form, onFormStateChange, settings }: {
     onFormStateChange({ isDirty, isSubmitting: busy })
   }, [isDirty, busy, onFormStateChange])
   const toggle = (name: ToggleName) => <BookingSettingSwitch name={name} checked={settings[name]} />
+  const notice = (name: "cancellationNoticeMinutes" | "rescheduleNoticeMinutes") => {
+    const control = form.getControlProps(name)
+    const items = [...new Set([...noticeTimingOptions, settings[name]])].sort((a, b) => a - b).map((minutes) => ({
+      value: minutes,
+      label: minutes === 0 ? t("bookingSettings.upToStartTime") : minutes % 1440 === 0 ? t("bookingSettings.daysBefore", { count: minutes / 1440 }) : minutes % 60 === 0 ? t("bookingSettings.hoursBefore", { count: minutes / 60 }) : t("bookingSettings.minutesBefore", { count: minutes }),
+    }))
+
+    return <FormLabel description={t(`bookingSettings.${name}Description`)} error={form.error(name)} label={t(`bookingSettings.${name}`)}>
+      <Select disabled={busy} items={items} onValueChange={(value) => {
+        if (value === null) return
+        control.onChange(value)
+        form.unstable_setCustomError(name, null)
+      }} value={control.value}>
+        <SelectTrigger aria-invalid={Boolean(form.error(name))} className="w-full" onBlur={control.onBlur} ref={control.ref}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectPopup>
+          {items.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
+        </SelectPopup>
+      </Select>
+    </FormLabel>
+  }
   const number = (name: NumberName) => {
     const control = form.getControlProps(name)
     return <FormLabel description={t(`bookingSettings.${name}Description`)} error={form.error(name)} label={t(`bookingSettings.${name}`)}>
@@ -104,9 +128,9 @@ function BookingSettingsFields({ busy, form, onFormStateChange, settings }: {
     <section className="flex flex-col gap-5">
       <SettingsSectionHeader title={t("bookingSettings.changesTitle")} description={t("bookingSettings.changesDescription")} />
       {toggle("allowCustomerCancellation")}
-      {settings.allowCustomerCancellation ? number("cancellationNoticeMinutes") : null}
+      {settings.allowCustomerCancellation ? notice("cancellationNoticeMinutes") : null}
       {toggle("allowCustomerRescheduling")}
-      {settings.allowCustomerRescheduling ? number("rescheduleNoticeMinutes") : null}
+      {settings.allowCustomerRescheduling ? notice("rescheduleNoticeMinutes") : null}
     </section>
     <Separator />
     <section className="flex flex-col gap-5">

@@ -6,7 +6,7 @@ import { createServer } from "vite"
 process.env.NODE_ENV = "test"
 process.env.EMAIL_PROVIDER = ""
 // Model separate clients behind the trusted test proxy
-process.env.BOOKING_TRUSTED_IP_HEADER = "x-forwarded-for"
+process.env.TRUSTED_CLIENT_IP_HEADER = "x-real-ip"
 const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/appointments", appType: "custom", resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } }, server: { ws: false, middlewareMode: true, hmr: false, watch: null } })
 const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
 const { appRouter } = await vite.ssrLoadModule("/app/.server/main.ts") as typeof import("../app/.server/main")
@@ -26,7 +26,7 @@ try {
   const other = await prisma.organization.create({ data: { name: "Other booking test", slug: `other-${suffix}`, createdAt: new Date() } })
   orgIds.push(other.id)
   const session = await prisma.session.create({ data: { token: randomUUID(), userId: owner.id, activeOrganizationId: organization.id, expiresAt: new Date(Date.now() + 86400000) } })
-  const context = { headers: new Headers(), request: undefined, prisma, user: owner, session, organizationId: organization.id, formatLocale: "en-GB", formatPreference: "eu" as const, locale: "en" as const }
+  const context = { headers: new Headers({ "x-real-ip": "192.0.2.25" }), request: undefined, prisma, user: owner, session, organizationId: organization.id, formatLocale: "en-GB", formatPreference: "eu" as const, locale: "en" as const }
   const caller = appRouter.createCaller(context)
   const anonymous = appRouter.createCaller({ ...context, user: undefined, session: undefined, organizationId: null })
   await assert.rejects(anonymous.service.list(), { code: "UNAUTHORIZED" })
@@ -357,7 +357,7 @@ try {
   assert.equal(retained.services[0].durationMinutes, originalSnapshot.durationMinutes)
   assert.equal(await prisma.notification.count({ where: { appointmentId: retainedAppointment.id } }), notificationCount)
   assert.ok((await caller.appointment.list({ from, to })).some((item) => item.id === retainedAppointment.id))
-  const publicDeleted = appRouter.createCaller({ ...context, user: undefined, session: undefined, headers: new Headers({ "x-forwarded-for": "203.0.113.58" }) })
+  const publicDeleted = appRouter.createCaller({ ...context, user: undefined, session: undefined, headers: new Headers({ "x-real-ip": "203.0.113.58" }) })
   assert.equal((await publicDeleted.booking.getPage({ organizationSlug: organization.slug })).services.some((item) => item.id === service.id), false)
   await assert.rejects(publicDeleted.booking.getAvailableSlots(publicQuery), { code: "NOT_FOUND" })
   await assert.rejects(caller.availability.getSlots(slotQuery), { code: "NOT_FOUND" })

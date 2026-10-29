@@ -98,9 +98,9 @@ export function Profile({
         title={displayName}
       >
         <UserAvatar
-          className="size-full bg-foreground text-xs text-background"
+          className="size-full bg-muted-foreground text-xs text-background"
           decorative={true}
-          fallbackClassName="bg-foreground text-background"
+          fallbackClassName="bg-muted-foreground text-background"
           initialsCount={1}
           name={displayName}
           src={user?.image}

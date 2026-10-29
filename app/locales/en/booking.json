@@ -1,5 +1,7 @@
 {
-  "title": "Book an appointment",
+  "openingHours": "Opening hours",
+  "closed": "Closed",
+  "title": "Appointment booking",
   "appointment": "Appointment",
   "otherServices": "Other services",
   "service": "Service",

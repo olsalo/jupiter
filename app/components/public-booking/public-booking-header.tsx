@@ -17,6 +17,7 @@ export function PublicBookingHeader({ organization, formatPreference, onFormatPr
             className="size-8 shrink-0 rounded-lg bg-primary text-xs text-primary-foreground"
             fallbackClassName="bg-primary text-primary-foreground"
             decorative={true}
+            initialsCount={1}
             name={organization.name}
             src={organization.logo}
             stableId={organization.slug}

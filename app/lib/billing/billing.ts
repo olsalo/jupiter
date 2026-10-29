@@ -12,6 +12,7 @@ export type SubscriptionEntitlement = {
   canceledAt: Date | null
   endedAt: Date | null
   status: string
+  periodEnd?: Date | null
 }
 
 export function isSubscriptionEntitled(
@@ -22,10 +23,9 @@ export function isSubscriptionEntitled(
       entitledSubscriptionStatuses.includes(
         subscription.status as (typeof entitledSubscriptionStatuses)[number],
       ) &&
-      !subscription.cancelAtPeriodEnd &&
-      !subscription.cancelAt &&
-      !subscription.canceledAt &&
-      !subscription.endedAt,
+      (!subscription.periodEnd || +subscription.periodEnd > Date.now()) &&
+      (!subscription.cancelAt || +subscription.cancelAt > Date.now()) &&
+      (!subscription.endedAt || +subscription.endedAt > Date.now()),
   )
 }
 

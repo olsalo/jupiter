@@ -3,7 +3,10 @@ import { ResourceLimitError } from "~/.server/resource-limits/errors"
 import { hasOrganizationPermission, organizationAccessControl, organizationRoles } from "~/lib/auth/permissions"
 import { i18n } from "@better-auth/i18n"
 import { stripe } from "@better-auth/stripe"
-import { APIError } from "better-auth/api"
+import { APIError, createAuthMiddleware } from "better-auth/api"
+import { TRPCError } from "@trpc/server"
+import { consumeRequestBudgets, otpRequestBudgets } from "~/.server/services/request-budget"
+import { trustedClientIp, trustedIpHeader } from "~/lib/http/client-ip.server"
 import { linkInvitationStaff } from "~/.server/services/team"
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
@@ -76,11 +79,39 @@ export const auth = betterAuth({
     expiresIn: oneYearInSeconds,
   },
   advanced: {
+    ipAddress: { ipAddressHeaders: [trustedIpHeader()] },
     // Local production builds use HTTP too, so NODE_ENV cannot decide cookie security.
     useSecureCookies: new URL(fallbackAuthUrl).protocol === "https:",
     database: {
       generateId,
     },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/list-sessions") {
+        // Viewing sessions requires a valid sign-in, regardless of its age.
+        ctx.context.sessionConfig = { ...ctx.context.sessionConfig, freshAge: 0 }
+        return
+      }
+      // Run before OTP creation so rejected sends do not invalidate a code that
+      // is already in the customer's inbox. These limits do not depend on IP.
+      if (!["/email-otp/send-verification-otp", "/email-otp/request-password-reset", "/forget-password/email-otp", "/email-otp/request-email-change"].includes(ctx.path)) return
+      const email = ctx.path === "/email-otp/request-email-change" ? ctx.body?.newEmail : ctx.body?.email
+      if (typeof email !== "string" || email.length > 254) throw new APIError("BAD_REQUEST", { message: "Add a valid email address" })
+      const ip = trustedClientIp(ctx.headers ?? new Headers())
+      if (!ip && process.env.NODE_ENV === "production") {
+        throw new APIError("SERVICE_UNAVAILABLE", { message: "Sign-in client IP configuration is missing or invalid" })
+      }
+      try {
+        await consumeRequestBudgets(prisma, [
+          ...otpRequestBudgets(email),
+          ...(ip ? [{ key: `otp:client:${ip}`, maximum: 10, windowMs: 60000 }] : []),
+        ])
+      } catch (error) {
+        if (error instanceof TRPCError && error.code === "TOO_MANY_REQUESTS") throw new APIError("TOO_MANY_REQUESTS", { message: error.message })
+        throw error
+      }
+    }),
   },
   user: {
     additionalFields: {

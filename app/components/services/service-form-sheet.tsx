@@ -1,13 +1,14 @@
 import type { FormApi } from "@rvf/react"
-import { useId, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { useLocation, useNavigate, useSearchParams } from "react-router"
+import { useLocation, useSearchParams } from "react-router"
 import { AppForm } from "~/components/forms/app-form"
 import FormLabel from "~/components/forms/form-label"
 import { ColorPicker, colorPickerPalette } from "~/components/forms/color-picker"
 import { FormSwitch } from "~/components/forms/form-switch"
-import { ResponsiveSheet, ResponsiveSheetPopup, ResponsiveSheetHeader, ResponsiveSheetTitle, ResponsiveSheetDescription, ResponsiveSheetPanel, ResponsiveSheetFooter } from "~/components/overlays/responsive-sheet"
+import { ResponsiveSheetPanel, ResponsiveSheetFooter } from "~/components/overlays/responsive-sheet"
+import { RouteFormSheet } from "~/components/overlays/route-form-sheet"
 import { ServiceCategoryNameDialog } from "~/components/services/service-category-name-dialog"
 import { ServiceCategoryPicker } from "~/components/services/service-category-picker"
 import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
@@ -22,7 +23,6 @@ import { Textarea } from "~/components/ui/textarea"
 import { serviceFormSchema, type ServiceFormInput, type ServiceFormValues } from "~/lib/schemas/services"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
-import { useRouteSheet } from "~/components/overlays/use-route-sheet"
 
 const defaultValues: ServiceFormInput = {
   name: "", categoryId: "", description: "", durationMinutes: "60", bufferBeforeMinutes: "0", bufferAfterMinutes: "0",
@@ -63,29 +63,23 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
   const staffItems = (staff.data ?? []).filter((person) => (person.isActive && person.acceptsAppointments) || initialValues.current?.staffIds.includes(person.id)).map((person) => ({ value: person.id, label: person.name }))
   const locationItems = (locations.data ?? []).filter((location) => location.isActive || initialValues.current?.locationIds.includes(location.id)).map((location) => ({ value: location.id, label: location.name }))
   const deliveryItems = (["IN_PERSON", "ONLINE", "PHONE", "FLEXIBLE"] as const).map((value) => ({ value, label: t(value) }))
-  const navigate = useNavigate()
   const location = useLocation()
   const [submitting, setSubmitting] = useState(false)
   const [saved, setSaved] = useState(false)
   const [categoryOpen, setCategoryOpen] = useState(false)
   const [categoryFlow, setCategoryFlow] = useState(0)
   const formApi = useRef<FormApi<ServiceFormInput>>(null)
-  const titleId = useId()
-  const descriptionId = useId()
   const returnParams = new URLSearchParams(location.search)
   returnParams.delete("duplicate")
   const defaultReturnTo = `/services${returnParams.size ? `?${returnParams}` : ""}`
   const destination = useRef(typeof location.state?.returnTo === "string" && location.state.returnTo.startsWith("/services?") ? location.state.returnTo : defaultReturnTo)
-  const { open, version, close, finishClosing } = useRouteSheet({
-    onCloseComplete: () => { void navigate(destination.current, { replace: true }) },
-    onReopen: () => {
-      setSaved(false)
-      setSubmitting(false)
-      create.reset()
-      update.reset()
-      initialValues.current = null
-    },
-  })
+  const onReopen = () => {
+    setSaved(false)
+    setSubmitting(false)
+    create.reset()
+    update.reset()
+    initialValues.current = null
+  }
   const pending = submitting || create.isPending || update.isPending || saved
   const optionsError = staff.isError || locations.isError || organization.isError
 
@@ -93,15 +87,8 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
   if (service.data?.category && !categoryOptions.some((category) => category.id === service.data?.categoryId)) categoryOptions.push(service.data.category)
 
   return (
-    <ResponsiveSheet deferClose={false} open={open} onOpenChange={(next) => { if (!next && !pending && !categoryOpen) close() }} onOpenChangeComplete={(next) => { if (!next) finishClosing() }}>
-      <title>{t(editing ? "editTitle" : "createTitle")}</title>
-      <ResponsiveSheetPopup className="sm:max-w-xl" closeLabel={t("close")} descriptionId={descriptionId} open={open} side="right" titleId={titleId} variant="inset">
-        <ResponsiveSheetHeader>
-          <ResponsiveSheetTitle id={titleId}>{t(editing ? "editTitle" : "createTitle")}</ResponsiveSheetTitle>
-          <ResponsiveSheetDescription id={descriptionId}>{t(editing ? "editDescription" : "createDescription")}</ResponsiveSheetDescription>
-        </ResponsiveSheetHeader>
+    <RouteFormSheet closeLabel={t("close")} description={t(editing ? "editDescription" : "createDescription")} onReopen={onReopen} pending={pending || categoryOpen} returnTo={destination.current} title={t(editing ? "editTitle" : "createTitle")}>{(close) => <>
         {initialValues.current ? <AppForm<ServiceFormInput, ServiceFormValues, unknown>
-          key={version}
           ref={formApi}
           className="contents"
           defaultValues={initialValues.current}
@@ -219,7 +206,6 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
           {service.isError ? <ResponsiveSheetFooter><Button onClick={close} type="button" variant="ghost">{t("cancel")}</Button></ResponsiveSheetFooter> : null}
         </>}
         <ServiceCategoryNameDialog open={categoryOpen} flow={categoryFlow} onOpenChange={setCategoryOpen} onSaved={(id) => formApi.current?.setValue("categoryId", id)} />
-      </ResponsiveSheetPopup>
-    </ResponsiveSheet>
+    </>}</RouteFormSheet>
   )
 }

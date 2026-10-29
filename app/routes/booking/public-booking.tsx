@@ -3,9 +3,8 @@ import { PublicBookingPage } from "~/components/public-booking/public-booking-pa
 import { loadPublicBookingQuery } from "~/lib/booking/public-booking-loader.server.ts"
 import { getQueryClient } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 
-export const shouldRevalidate = shouldRevalidateAppRoute
+export const handle = { theme: "light" }
 
 export async function loader(args: Route.LoaderArgs) {
   const queryClient = getQueryClient()

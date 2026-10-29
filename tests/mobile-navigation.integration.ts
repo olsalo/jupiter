@@ -30,6 +30,10 @@ try {
     ["/booking-page", "/app/routes/booking-pages/booking-pages.tsx"],
     ["/customers", "/app/routes/customers/customers.tsx"],
     ["/calendar", "/app/routes/calendar/calendar.tsx"],
+    ["/onboarding/business", "/app/routes/onboarding/business.tsx"],
+    ["/onboarding/availability", "/app/routes/onboarding/availability.tsx"],
+    ["/onboarding/holidays", "/app/routes/onboarding/holidays.tsx"],
+    ["/onboarding/subscription", "/app/routes/onboarding/subscription.tsx"],
   ]) {
     const { clientLoader } = await vite.ssrLoadModule(module) as { clientLoader: ClientLoader }
     routes.push({ path, clientLoader })
@@ -48,6 +52,9 @@ try {
           : path === "/booking-page" ? [trpc.bookingPage.get.queryKey()]
           : path === "/customers" ? [trpc.customer.list.queryKey()]
           : path === "/calendar" ? [trpc.appointment.list.queryKey({ from: new Date("2026-10-19T00:00:00Z"), to: new Date("2026-10-26T00:00:00Z") })]
+          : path === "/onboarding/business" ? [trpc.onboarding.business.queryKey()]
+          : path === "/onboarding/subscription" ? [trpc.onboarding.subscription.queryKey()]
+          : path.startsWith("/onboarding/") ? [trpc.onboarding.schedule.queryKey()]
           : [path === "/example" ? trpc.example.list.queryKey() : trpc.team.list.queryKey()]
 
         for (const queryKey of keys) {

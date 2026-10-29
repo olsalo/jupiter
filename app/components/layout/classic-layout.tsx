@@ -77,7 +77,7 @@ export function ClassicLayout({
                           cn(
                             "relative flex shrink-0 aspect-square items-center justify-center rounded-md text-sm transition-[background-color,color] duration-300 ease-out before:absolute before:-left-3 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r-sm before:bg-primary before:content-[''] before:transition-[opacity,scale] before:duration-300 before:ease-out motion-reduce:transition-none motion-reduce:before:transition-none",
                             (pendingPath ? pendingPath === item.path : isActive)
-                              ? "bg-[color-mix(in_oklab,var(--sidebar-accent)_97.5%,black)] text-sidebar-accent-foreground before:scale-y-100 before:opacity-100"
+                              ? "bg-[color-mix(in_oklab,var(--sidebar-accent)_97.5%,black)] text-primary before:scale-y-100 before:opacity-100"
                               : "text-muted-foreground before:scale-y-50 before:opacity-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                           )
                         }
@@ -174,7 +174,7 @@ export function ClassicLayout({
               cn(
                 "flex aspect-square w-full max-w-12 items-center justify-center rounded-lg border transition-[background-color,color,border-color,box-shadow] duration-300 ease-out [-webkit-touch-callout:none] motion-reduce:transition-none",
                 (pendingPath ? pendingPath === item.path : isActive)
-                  ? "border-border bg-sidebar-accent text-sidebar-accent-foreground shadow-xs"
+                  ? "border-border bg-sidebar-accent text-primary shadow-xs"
                   : "border-transparent text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
               )
             }

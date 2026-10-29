@@ -10,6 +10,8 @@ import { RouteInformationArchitecture } from "~/components/information-architect
 import { CommunicationsSettings, communicationsSettingsFormId } from "~/components/settings/communications-settings"
 import { getSettingsItemIdFromHash, getVisibleSettingsItems, isSettingsHash, type SettingsItemId } from "~/lib/routing/settings-navigation"
 import { ProfilePreferences } from "~/components/settings/profile/profile-preferences"
+import { SessionsSettings } from "~/components/settings/sessions-settings"
+import { SettingsLoading } from "~/components/settings/settings-loading"
 import { SettingsFormFooter } from "~/components/settings/settings-form-footer"
 import type { PersonFormFields } from "~/lib/schemas/team"
 import { ProfileSettingsHeader } from "~/components/settings/profile/profile-settings-header"
@@ -74,7 +76,8 @@ import {
 import { Separator } from "~/components/ui/separator"
 import { Radio, RadioGroup } from "~/components/ui/radio-group"
 import { Spinner } from "~/components/ui/spinner"
-import { Tabs, TabsPanel } from "~/components/ui/tabs"
+import { Tabs } from "~/components/ui/tabs"
+import { LazyTabsPanel } from "~/components/navigation/lazy-tabs-panel"
 import {
   Tooltip,
   TooltipPopup,
@@ -196,23 +199,24 @@ export function SettingsModal({
   const settingsContent = useMemo(() => {
     if (activeItemId === "business") return (
       <>
-        <TabsPanel className="m-0" keepMounted={true} value="general">
+        <LazyTabsPanel active={businessTab === "general"} className={businessTab === "general" ? "m-0 flex flex-1 flex-col" : "hidden"} value="general">
           <GeneralSettingsContent formApi={generalFormApi} onLoadingChange={setIsGeneralLoading} onFormStateChange={setGeneralFormState} />
-        </TabsPanel>
-        <TabsPanel className="m-0" keepMounted={true} value="location">
+        </LazyTabsPanel>
+        <LazyTabsPanel active={businessTab === "location"} className={businessTab === "location" ? "m-0 flex flex-1 flex-col" : "hidden"} value="location">
           <BusinessLocationSettings onFormStateChange={setBusinessLocationState} resetRef={businessLocationReset} />
-        </TabsPanel>
+        </LazyTabsPanel>
         <div className={businessTab === "general" || businessTab === "location" ? "hidden" : "flex flex-1 flex-col"}>
-          <BusinessScheduleSettings onTabChange={setBusinessTab} onFormStateChange={setBusinessScheduleState} resetRef={businessScheduleReset} />
+          <BusinessScheduleSettings activeTab={businessTab} onTabChange={setBusinessTab} onFormStateChange={setBusinessScheduleState} resetRef={businessScheduleReset} />
         </div>
       </>
     )
     if (activeItemId === "booking") return <BookingSettings onFormStateChange={setBookingFormState} resetRef={bookingResetRef} />
     if (activeItemId === "billing") return <BillingSettingsContent onLoadingChange={setIsBillingLoading} />
     if (activeItemId === "communications") return <CommunicationsSettings onFormStateChange={setCommunicationsFormState} resetRef={communicationsResetRef} />
+    if (activeItemId === "sessions") return <SessionsSettings active={open} />
     if (activeItemId === "profile") return null
     return <div className="@container min-w-0"><RouteInformationArchitecture section={activeItemId} icon={activeItem.icon} /></div>
-  }, [activeItemId, activeItem.icon, businessTab])
+  }, [activeItemId, activeItem.icon, businessTab, open])
 
   const updateSettingsNavOverflow = useCallback(() => {
     const nav = settingsNavRef.current
@@ -447,7 +451,7 @@ export function SettingsModal({
             )}
             scrollAreaClassName={cn(
               "min-h-0 flex-1 [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col",
-              activeItemId !== "billing" && activeItemId !== "profile" && activeItemId !== "business" && activeItemId !== "booking" && activeItemId !== "communications" &&
+              activeItemId !== "billing" && activeItemId !== "profile" && activeItemId !== "business" && activeItemId !== "booking" && activeItemId !== "communications" && activeItemId !== "sessions" &&
                 "[&_[data-slot=scroll-area-content]]:h-full",
               isMobile && "touch-auto",
             )}
@@ -455,21 +459,15 @@ export function SettingsModal({
             <div
               className={cn(
                 "flex min-h-full flex-1 flex-col",
-                activeItemId !== "billing" && activeItemId !== "profile" && activeItemId !== "business" && activeItemId !== "booking" && activeItemId !== "communications" && "h-full",
+                activeItemId !== "billing" && activeItemId !== "profile" && activeItemId !== "business" && activeItemId !== "booking" && activeItemId !== "communications" && activeItemId !== "sessions" && "h-full",
               )}
             >
               <div className={cn("relative flex min-h-[18rem] flex-1 flex-col gap-4 px-5 pb-5 max-sm:min-h-[14rem] max-sm:px-4 max-sm:pb-4", (activeItemId === "profile" || activeItemId === "business") && "pt-5 max-sm:pt-4")}>
                 {activeItemId === "profile" ? (
-                  profilePerson.isPending ? null : profilePerson.isError ? <Alert variant="error"><AlertTitle>{tTeam("people.loadFailed")}</AlertTitle><AlertDescription>{tTeam("retryDescription")}</AlertDescription><AlertAction><Button disabled={profilePerson.isFetching} onClick={() => void profilePerson.refetch()} size="sm" type="button" variant="outline">{tTeam("retry")}</Button></AlertAction></Alert> : (
-                    profileForm
-                  )
+                  profilePerson.isPending ? null : profilePerson.isError ? <Alert variant="error"><AlertTitle>{tTeam("people.loadFailed")}</AlertTitle><AlertDescription>{tTeam("retryDescription")}</AlertDescription><AlertAction><Button disabled={profilePerson.isFetching} onClick={() => void profilePerson.refetch()} size="sm" type="button" variant="outline">{tTeam("retry")}</Button></AlertAction></Alert> : profileForm
                 ) : settingsContent}
                 {viewLoading ? (
-                  <div
-                    className="absolute inset-0 z-10 flex items-center justify-center bg-background"
-                  >
-                    <Spinner aria-label={t("settings.loading")} className="size-6 text-muted-foreground" />
-                  </div>
+                  <SettingsLoading className="absolute inset-0 z-10 bg-background" />
                 ) : null}
               </div>
             </div>

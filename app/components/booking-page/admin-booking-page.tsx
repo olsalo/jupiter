@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRef, useState, type ChangeEvent } from "react"
 import { useTranslation } from "react-i18next"
 import { Outlet } from "react-router"
+import { QrCodeDialog } from "~/components/overlays/qr-code-dialog"
 import { AppForm, type AppFormState } from "~/components/forms/app-form"
 import FormLabel from "~/components/forms/form-label"
 import { AccentColorSelect } from "~/components/settings/preferences/accent-color-select"
@@ -11,18 +12,18 @@ import { Badge } from "~/components/ui/badge"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
 import { ScrollPage } from "~/components/layout/page-layout"
 import { RouteHeader } from "~/components/layout/route-header"
-import { UserAvatar } from "~/components/data-display/user-avatar"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
-import { Input } from "~/components/ui/input"
 import { Separator } from "~/components/ui/separator"
 import { Spinner } from "~/components/ui/spinner"
 import { Textarea } from "~/components/ui/textarea"
 import { adminBookingPageFormSchema, type AdminBookingPageFormValues } from "~/lib/schemas/admin-booking-page"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
+import { BookingPageImage } from "./booking-page-image"
 import { BookingPageSwitch } from "./booking-page-switch"
 import { BookingPageFormState } from "./booking-page-form-state"
+import { BookingPageServices } from "./booking-page-services"
 import { BookingPageChoices } from "./booking-page-choices"
 import { BookingPageSection } from "./booking-page-section"
 
@@ -33,6 +34,8 @@ export function AdminBookingPage() {
   const query = useQuery(trpc.bookingPage.get.queryOptions())
   const formRef = useRef<FormApi<AdminBookingPageFormValues>>(null)
   const [formState, setFormState] = useState<AppFormState>({ isDirty: false, isSubmitting: false })
+  const [qrCodeOpen, setQrCodeOpen] = useState(false)
+  const [qrCodeUrl, setQrCodeUrl] = useState("")
   const submitting = formState.isSubmitting
   const mutation = useMutation(trpc.bookingPage.save.mutationOptions())
   const title = t("routeTitles.bookingPage")
@@ -57,6 +60,10 @@ export function AdminBookingPage() {
     showDescriptionOnMobile={false}
     actions={<>
       <Button aria-label={t("adminBookingPage.copyLink")} className="max-md:size-9 max-md:p-0" disabled={!data || submitting} onClick={() => void copy()} size="lg" type="button" variant="outline"><Icon aria-hidden={true} name="copy" size={16} /><span className="hidden lg:inline">{t("adminBookingPage.copyLink")}</span></Button>
+      <Button aria-label={t("adminBookingPage.showQrCode")} className="max-md:size-9 max-md:p-0" disabled={!data || submitting} onClick={() => {
+        setQrCodeUrl(new URL(path, window.location.origin).href)
+        setQrCodeOpen(true)
+      }} size="lg" type="button" variant="outline"><Icon aria-hidden={true} name="qrCode" size={16} /><span className="hidden lg:inline">{t("adminBookingPage.showQrCode")}</span></Button>
       <Button aria-label={t("adminBookingPage.openPage")} className="max-md:size-9 max-md:p-0" disabled={!live || submitting} render={<a href={path} rel="noopener noreferrer" target="_blank" />} size="lg" type="button" variant="outline"><Icon aria-hidden={true} name="share" size={16} /><span className="hidden lg:inline">{t("adminBookingPage.openPage")}</span></Button>
       <Button aria-label={t("adminBookingPage.save")} className="max-md:size-9 max-md:p-0" disabled={!data || !formState.isDirty || submitting} form="admin-booking-page" loading={submitting} size="lg" type="submit"><Icon aria-hidden={true} name="save" size={18} /><span className="hidden md:inline">{t("adminBookingPage.save")}</span></Button>
     </>}
@@ -87,24 +94,20 @@ export function AdminBookingPage() {
         ])
       }}
     >{(form) => {
-      const text = (name: "title" | "description" | "successMessage") => {
+      const text = (name: "description" | "successMessage") => {
         const control = form.getControlProps(name)
         const props = { name: control.name, value: control.value, onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => control.onChange(event.target.value), onBlur: control.onBlur, ref: control.ref, "aria-invalid": Boolean(form.error(name)) }
         return <FormLabel label={t(`adminBookingPage.${name}`)} error={form.error(name)}>
-          {name === "title" ? <Input {...props} placeholder={data.organization.name} type="text" /> : <Textarea {...props} rows={4} />}
+          <Textarea {...props} rows={4} />
         </FormLabel>
       }
       return <fieldset className="flex min-w-0 flex-col gap-7 md:gap-0" disabled={submitting}>
         <BookingPageFormState form={form} saved={adminBookingPageFormSchema.parse(data.values)} onChange={setFormState} />
         <div className="min-w-0 md:order-1 [&>section:first-child]:pt-0">
           <BookingPageSection title={t("adminBookingPage.general")} description={t("adminBookingPage.generalDescription")}>
-            <div className="flex items-center gap-3">
-              <UserAvatar className="size-10 shrink-0 rounded-lg" decorative={true} name={data.organization.name} src={data.organization.logo} stableId={data.organization.slug} />
-              <div className="min-w-0"><p className="truncate text-sm font-medium">{data.organization.name}</p><p className="text-xs leading-5 text-muted-foreground">{t("adminBookingPage.businessBranding")}</p></div>
-            </div>
+            <BookingPageImage accentColor={form.value("accentColor")} organization={data.organization} imageKey={data.values.imageKey} imageUrl={data.imageUrl} enabled={data.imageUploadEnabled} disabled={submitting} />
             {!data.bookingEnabled ? <Alert variant="info"><AlertDescription>{t("adminBookingPage.bookingDisabled")}</AlertDescription></Alert> : null}
             <BookingPageSwitch name="isActive" checked={data.values.isActive} disabled={submitting} />
-            {text("title")}
             {text("description")}
             <FormLabel label={t("adminBookingPage.accentColor")} description={t("adminBookingPage.accentColorDescription")} error={form.error("accentColor")}>
               <AccentColorSelect
@@ -127,7 +130,7 @@ export function AdminBookingPage() {
           </BookingPageSection>
           <Separator />
           <BookingPageSection title={t("adminBookingPage.services")} description={t("adminBookingPage.servicesDescription")}>
-            <BookingPageChoices {...form.getControlProps("serviceIds")} inputRef={form.getControlProps("serviceIds").ref} label={t("adminBookingPage.visibleServices")} description={t("adminBookingPage.serviceSelectionHint")} items={data.services} error={form.error("serviceIds")} disabled={submitting} ordered={true} />
+            <BookingPageServices {...form.getControlProps("serviceIds")} hiddenServiceIds={form.value("hiddenServiceIds")} onHiddenServiceIdsChange={form.getControlProps("hiddenServiceIds").onChange} inputRef={form.getControlProps("serviceIds").ref} label={t("adminBookingPage.visibleServices")} description={t("adminBookingPage.serviceSelectionHint")} items={data.services} error={form.error("serviceIds") || form.error("hiddenServiceIds")} disabled={submitting} />
             {data.services.length === 0 ? <Alert variant="info"><AlertDescription>{t("adminBookingPage.noServices")}</AlertDescription></Alert> : null}
           </BookingPageSection>
           <Separator />
@@ -142,6 +145,7 @@ export function AdminBookingPage() {
         </div>
       </fieldset>
     }}</AppForm>}
+    <QrCodeDialog open={qrCodeOpen} onOpenChange={setQrCodeOpen} value={qrCodeUrl} title={t("adminBookingPage.qrCodeTitle")} description={t("adminBookingPage.qrCodeDescription")} filename={`booking-${data?.organization.slug ?? "page"}`} />
     <Outlet />
   </ScrollPage>
 }

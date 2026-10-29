@@ -6,8 +6,7 @@ import { useNavigate, useSearchParams } from "react-router"
 import type { Route } from "./+types/subscription"
 import { OnboardingActions } from "~/components/onboarding/onboarding-actions"
 import { OnboardingStepError, OnboardingStepLoading } from "~/components/onboarding/step-state"
-import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
-import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
+import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import Icon from "~/components/icons"
 import { Badge } from "~/components/ui/badge"
@@ -28,14 +27,10 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   return { queryClient: dehydrate(queryClient) }
 }
 
-export async function clientLoader() {
-  const { queryClient, trpc } = getClientTRPC()
-  await queryClient.query(trpc.onboarding.subscription.queryOptions()).catch(() => undefined)
-
+export function clientLoader() {
+  // Client queries own fetching and freshness after the initial server render.
   return null
 }
-
-export const shouldRevalidate = shouldRevalidateAppRoute
 
 export default function SubscriptionStep() {
   const trpc = useTRPC()

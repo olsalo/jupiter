@@ -8,6 +8,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useMatches,
   useRouteLoaderData,
 } from "react-router"
 
@@ -81,10 +82,11 @@ export function Layout({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation()
   const rootData = useRouteLoaderData<typeof loader>("root")
   const themeSetting = useBackgroundSetting(`${rootData?.user?.id}:theme`, rootData?.theme ?? defaultTheme)
-  const theme = themeSetting.value === "dark" ? "dark" : undefined
+  const forceLightTheme = useMatches().some(({ handle }) => (handle as { theme?: string } | undefined)?.theme === "light")
+  const theme = !forceLightTheme && themeSetting.value === "dark" ? "dark" : undefined
   const language = i18n.resolvedLanguage || i18n.language
 
-  useEffect(syncThemeColor, [themeSetting.value])
+  useEffect(syncThemeColor, [theme])
 
   return (
     <html lang={language} dir={i18n.dir(language)} className={theme}>

@@ -10,7 +10,7 @@ import { Alert, AlertAction, AlertDescription } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Select, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "~/components/ui/select"
-import { Spinner } from "~/components/ui/spinner"
+import { SettingsLoading } from "~/components/settings/settings-loading"
 import countries from "~/lib/localization/data/countries.json"
 import { businessLocationSchema, type BusinessLocationValues } from "~/lib/schemas/business-location"
 import { toast } from "~/lib/toast"
@@ -37,7 +37,7 @@ export function BusinessLocationSettings({ onFormStateChange, resetRef }: {
       <Button disabled={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("businessSchedule.retry")}</Button>
     </AlertAction>
   </Alert>
-  if (!query.data) return <div className="flex flex-1 items-center justify-center"><Spinner aria-label={t("settings.loading")} /></div>
+  if (!query.data) return <SettingsLoading />
 
   return <AppForm<BusinessLocationValues, BusinessLocationValues, BusinessLocationValues>
     className="gap-5"

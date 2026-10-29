@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useLayoutEffect, useRef, useState } from "react"
 import { useNavigate, useNavigation } from "react-router"
 import { useTranslation } from "react-i18next"
 
@@ -20,6 +20,7 @@ import { bookingPageColorStyle } from "~/lib/booking/booking-page-colors"
 import type { FormatPreference } from "~/lib/localization/format-preference"
 import { BookingDetailsForm, type BookingDraft } from "./booking-details-form"
 import { useBookingNavigation } from "./use-booking-navigation"
+import { PublicBookingProfile } from "./public-booking-profile"
 import { BookingReview } from "./booking-review"
 import { BookingServiceSelection } from "./booking-service-selection"
 import { BookingSummary } from "./booking-summary"
@@ -45,7 +46,7 @@ export function PublicBookingPage(scope: BookingScope) {
     <div className="flex h-dvh pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] flex-col overflow-hidden bg-background pb-[env(safe-area-inset-bottom,0px)] text-foreground" style={bookingPageColorStyle(data?.page?.accentColor)}>
       <title>
         {data
-          ? `${data.page?.title ?? t("title")} · ${data.organization.name}`
+          ? `${t("title")} · ${data.organization.name}`
           : t("title")}
       </title>
       <header className="shrink-0 pt-[env(safe-area-inset-top,0px)]">
@@ -56,6 +57,7 @@ export function PublicBookingPage(scope: BookingScope) {
                 className="size-8 shrink-0 rounded-lg bg-primary text-xs text-primary-foreground"
                 fallbackClassName="bg-primary text-primary-foreground"
                 decorative={true}
+                initialsCount={1}
                 name={data.organization.name}
                 src={data.organization.logo}
                 stableId={data.organization.slug}
@@ -104,7 +106,8 @@ export function PublicBookingPage(scope: BookingScope) {
               scope={scope}
             />
           ) : (
-            <main className="mx-auto w-full max-w-5xl p-4 sm:p-6">
+            <main className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
+              <PublicBookingProfile data={data} formatPreference={formatPreference.value} />
               <Alert className="border-0" variant="info">
                 <AlertTitle>{t("noServices")}</AlertTitle>
                 <AlertDescription>{t("noServicesHint")}</AlertDescription>
@@ -153,6 +156,14 @@ function BookingFlow({
   const create = useMutation(trpc.booking.create.mutationOptions())
   const bookingNavigation = useBookingNavigation(data, savedDetails?.serviceId)
   const { serviceId, service, screen, slot, locationChoice, staffChoice, setSlot, setLocationChoice, setStaffChoice } = bookingNavigation
+  const previousStep = useRef({ screen, serviceId })
+  useLayoutEffect(() => {
+    if (previousStep.current.screen === screen && previousStep.current.serviceId === serviceId) return
+    previousStep.current = { screen, serviceId }
+    // Keep the previous screen in place until the next step has committed.
+    scroll.current?.scrollTo({ top: 0, behavior: "instant" })
+    heading.current?.focus({ preventScroll: true })
+  }, [screen, serviceId])
   const details = savedDetails?.serviceId === serviceId ? savedDetails.values : null
   const stage =
     screen === "service" || screen === "time" ? 0 : screen === "details" ? 1 : 2
@@ -165,8 +176,6 @@ function BookingFlow({
 
   function goTo(next: BookingScreen) {
     bookingNavigation.goTo(next)
-    scroll.current?.scrollTo({ top: 0 })
-    requestAnimationFrame(() => heading.current?.focus())
   }
 
   function selectService(id: string) {
@@ -177,8 +186,6 @@ function BookingFlow({
     }
     setConflict(false)
     bookingNavigation.selectService(id)
-    scroll.current?.scrollTo({ top: 0 })
-    requestAnimationFrame(() => heading.current?.focus())
   }
 
   async function confirm() {
@@ -318,10 +325,8 @@ function BookingFlow({
               viewportProps={{ ref: scroll }}
             >
               <div className="min-w-0 space-y-5 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-5 lg:mx-auto lg:w-[calc(100%_-_3rem)] lg:max-w-5xl lg:pt-4 lg:pb-8 lg:pr-[344px] lg:pl-8">
-                {(screen === "service" || (screen === "time" && data.services.length === 1)) && data.page?.description ? (
-                  <p className="text-sm leading-6 text-muted-foreground">
-                    {data.page.description}
-                  </p>
+                {screen === "service" || (screen === "time" && data.services.length === 1) ? (
+                  <PublicBookingProfile data={data} formatPreference={formatPreference} />
                 ) : null}
                 {screen === "service" ? (
                   <BookingServiceSelection

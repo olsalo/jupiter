@@ -36,7 +36,7 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
     const range = getCalendarBookingRange(state, timeZone)
     await Promise.all([
       ...(state.mode !== "list" ? [queryClient.query(trpc.availability.calendarSchedule.queryOptions(range)).catch(() => undefined)] : []),
-      queryClient.query(trpc.appointment.list.queryOptions({ ...range, ...(state.mode === "list" ? { includeCancelled: true } : {}) })).catch(() => undefined),
+      queryClient.query(trpc.appointment.list.queryOptions({ ...range, includeCancelled: false })).catch(() => undefined),
     ])
   }
   await staffPromise

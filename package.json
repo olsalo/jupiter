@@ -38,6 +38,8 @@
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "latest",
+    "@aws-sdk/s3-request-presigner": "latest",
     "@base-ui/react": "latest",
     "@better-auth/i18n": "latest",
     "@better-auth/prisma-adapter": "latest",
@@ -67,6 +69,7 @@
     "lucide-react": "latest",
     "nanoid": "latest",
     "pg": "latest",
+    "qrcode.react": "latest",
     "react": "latest",
     "react-day-picker": "latest",
     "react-dom": "latest",
@@ -75,6 +78,7 @@
     "react-router": "latest",
     "remix-i18next": "latest",
     "resend": "latest",
+    "sharp": "latest",
     "stripe": "latest",
     "superjson": "latest",
     "tailwind-merge": "latest",
@@ -89,7 +93,6 @@
     "@types/react-dom": "latest",
     "dotenv": "latest",
     "prisma": "latest",
-    "sharp": "latest",
     "tailwindcss": "latest",
     "typescript": "latest",
     "vite": "latest"

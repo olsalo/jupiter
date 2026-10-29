@@ -34,7 +34,7 @@ export function CalendarAgenda() {
   const { pathname } = useLocation()
   const range = getCalendarBookingRange(state, timeZone)
   const interacting = Boolean(preview || pathname !== "/calendar")
-  const bookings = useQuery({ ...trpc.appointment.list.queryOptions({ ...range, includeCancelled: true }), ...calendarBookingsQueryOptions(interacting) })
+  const bookings = useQuery({ ...trpc.appointment.list.queryOptions({ ...range, includeCancelled: false }), ...calendarBookingsQueryOptions(interacting) })
   const appointments = useMemo(() => {
     const visible = selectedMember ? bookings.data?.filter((booking) => booking.staffMember?.id === selectedMember.id) : bookings.data
     return getCalendarAppointments(visible ?? [], days, timeZone)

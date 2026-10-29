@@ -1,5 +1,5 @@
 import { dehydrate, useQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { startTransition, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link, Outlet, useLocation, useParams } from "react-router"
 
@@ -14,13 +14,11 @@ import { Button } from "~/components/ui/button"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 import { useMediaQuery } from "~/lib/hooks"
-import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 
 export const handle = { workspace: true, pageLayout: "viewport-desktop" }
-export const shouldRevalidate = shouldRevalidateAppRoute
 
 export async function loader(args: Route.LoaderArgs) {
   const queryClient = getQueryClient()
@@ -44,7 +42,10 @@ export default function TeamV2() {
   const Page = mobile ? ScrollPage : ViewportPage
   const [search, setSearch] = useState("")
   const [closingLocationKey, setClosingLocationKey] = useState<string | null>(null)
-  const detailContext: TeamMasterDetailContext = { onPersonCloseStart: () => setClosingLocationKey(location.key) }
+  const detailContext: TeamMasterDetailContext = { onPersonCloseStart: () => {
+    // Updating the list selection should not block the drawer's release animation
+    startTransition(() => setClosingLocationKey(location.key))
+  } }
   const canManage = useOrganizationPermission({ team: ["manage"] })
 
   return (

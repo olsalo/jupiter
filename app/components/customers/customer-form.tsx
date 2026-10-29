@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { memo } from "react"
 import { useTranslation } from "react-i18next"
 
 import { AppForm } from "~/components/forms/app-form"
@@ -15,7 +16,7 @@ import { useTRPC } from "~/lib/trpc/client"
 import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 import type { Customer } from "./customer-types"
 
-export function CustomerForm({ customer, close, onPendingChange }: {
+export const CustomerForm = memo(function CustomerForm({ customer, close, onPendingChange }: {
   customer?: Customer
   close: () => void | Promise<void>
   onPendingChange: (pending: boolean) => void
@@ -66,4 +67,4 @@ export function CustomerForm({ customer, close, onPendingChange }: {
       </>
     }}
   </AppForm>
-}
+})

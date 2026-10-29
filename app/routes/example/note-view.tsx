@@ -16,6 +16,7 @@ export function loader() {
 }
 
 export function clientLoader() {
+  // Client queries own fetching and freshness after the initial server render.
   return null
 }
 

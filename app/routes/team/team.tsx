@@ -27,7 +27,6 @@ import {
 } from "~/components/ui/empty"
 import { Tabs, TabsList, TabsPanel, TabsTab } from "~/components/ui/tabs"
 import { formatDateTime } from "~/lib/localization/format-preference"
-import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { hasOrganizationRole } from "~/lib/utils"
@@ -58,8 +57,6 @@ export function clientLoader() {
 }
 
 export const handle = { workspace: true, pageLayout: "viewport" }
-
-export const shouldRevalidate = shouldRevalidateAppRoute
 
 export default function Team() {
   const { t } = useTranslation("team")

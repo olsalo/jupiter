@@ -1,5 +1,5 @@
 - Always use TypeScript
-- Follow docs/code-organization.md when adding or moving components and library modules
+- Follow docs/generic/code-organization.md when adding or moving components and library modules
 - Do not use semicolons at the end of lines
 - Do not use lint
 - If you start a dev server while testing, always shut it down before finishing

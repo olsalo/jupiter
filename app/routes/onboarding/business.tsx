@@ -5,8 +5,7 @@ import type { Route } from "./+types/business"
 import type { Route as OnboardingRoute } from "./+types/onboarding"
 import { BusinessDetailsForm } from "~/components/onboarding/business-details-form"
 import { OnboardingStepError, OnboardingStepLoading } from "~/components/onboarding/step-state"
-import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
-import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
+import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 
 export async function loader(loaderArgs: Route.LoaderArgs) {
@@ -17,14 +16,10 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   return { queryClient: dehydrate(queryClient) }
 }
 
-export async function clientLoader() {
-  const { queryClient, trpc } = getClientTRPC()
-  await queryClient.query(trpc.onboarding.business.queryOptions()).catch(() => undefined)
-
+export function clientLoader() {
+  // Client queries own fetching and freshness after the initial server render.
   return null
 }
-
-export const shouldRevalidate = shouldRevalidateAppRoute
 
 export default function BusinessDetailsStep() {
   const { nextStep } =

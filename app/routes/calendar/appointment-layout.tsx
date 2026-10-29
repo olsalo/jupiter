@@ -14,6 +14,7 @@ export async function loader(args: Route.LoaderArgs) {
 }
 
 export function clientLoader() {
+  // Client queries own fetching and freshness after the initial server render.
   return null
 }
 

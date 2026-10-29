@@ -1,5 +1,5 @@
 import { dehydrate, useInfiniteQuery } from "@tanstack/react-query"
-import { useState } from "react"
+import { startTransition, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link, Outlet, useLocation, useParams } from "react-router"
 
@@ -15,13 +15,11 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/in
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 import { useDebouncedValue } from "~/lib/hooks/use-debounced-value"
 import { useMediaQuery } from "~/lib/hooks"
-import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
 
 export const handle = { workspace: true, pageLayout: "viewport-desktop" }
-export const shouldRevalidate = shouldRevalidateAppRoute
 
 export async function loader(args: Route.LoaderArgs) {
   const queryClient = getQueryClient()
@@ -46,7 +44,9 @@ export default function Customers() {
   const debouncedSearch = useDebouncedValue(search.trim())
   const customers = useInfiniteQuery(trpc.customer.list.infiniteQueryOptions({ limit: 50, search: debouncedSearch || undefined }, { getNextPageParam: (page) => page.nextCursor }))
   const [closingLocationKey, setClosingLocationKey] = useState<string | null>(null)
-  const detailContext: CustomerMasterDetailContext = { onCustomerCloseStart: () => setClosingLocationKey(location.key) }
+  const detailContext: CustomerMasterDetailContext = { onCustomerCloseStart: () => {
+    startTransition(() => setClosingLocationKey(location.key))
+  } }
   const canCreate = useOrganizationPermission({ customers: ["create"] })
 
   return (

@@ -39,7 +39,7 @@ try {
   for (const mode of ["day", "week", "list"] as const) {
     const search = new URLSearchParams({ view: mode, date: "2030-10-14" })
     const range = getCalendarBookingRange(getCalendarDateState(search, { now, timeZone, weekStartsOn: 1 }), timeZone)
-    const bookingsKey = options.appointment.list.queryKey({ ...range, ...(mode === "list" ? { includeCancelled: true } : {}) })
+    const bookingsKey = options.appointment.list.queryKey({ ...range, includeCancelled: false })
     const scheduleKey = options.availability.calendarSchedule.queryKey(range)
     queryClient.setQueryData([...options.organizations.getCurrent.queryKey()], { id: "business", role: "owner", settings })
     queryClient.setQueryData([...options.staff.list.queryKey()], [{ id: "member", name: "Aino", isActive: true, acceptsAppointments: true }])

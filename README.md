@@ -54,7 +54,7 @@ Run `npm run test:barber-seed` to check the dataset without a database. `npm run
 - `app/locales`: English and Finnish UI text
 - `app/.server/routers`: tRPC queries and mutations
 
-See [code organization](docs/code-organization.md) for component and library folders, import examples, and guidance on where new files belong.
+See the [documentation index](docs/README.md) for generic template guidance and Jupiter-specific documentation. Start with [code organization](docs/generic/code-organization.md), [data handling](docs/generic/data-handling.md), and [routing](docs/generic/routing.md). The [Jupiter code map](docs/jupiter/code-map.md) lists the current feature folders.
 
 The template uses `prisma/schema_blank.prisma`, which contains the shared app models without the form builder feature.
 

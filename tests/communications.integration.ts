@@ -50,8 +50,13 @@ try {
   assert.equal((await reminders())[0].scheduledAt!.getTime(), +startsAt - 3600000)
   await caller.organizations.updateCommunicationsSettings({ enableAppointmentReminders: false })
   assert.equal((await reminders()).length, 0)
+  const disabledSettings = await caller.organizations.updateCommunicationsSettings({ reminderOffsetsMinutes: [1440, 120] })
+  assert.equal(disabledSettings.enableAppointmentReminders, false)
+  assert.deepEqual((await caller.organizations.communicationsSettings()).reminderOffsetsMinutes, [1440, 120])
+  assert.equal((await reminders()).length, 0, "Saving timing while reminders are off does not schedule reminders")
   await caller.organizations.updateCommunicationsSettings({ enableAppointmentReminders: true })
   assert.equal((await reminders()).length, 1)
+  assert.equal((await reminders())[0].scheduledAt!.getTime(), +startsAt - 7200000, "Enabling reminders uses the timing saved while disabled")
   // Scope the worker to this test's outbox so other tenants' emails are untouched
   const scopedDb = Object.create(prisma) as typeof prisma
   Object.defineProperty(scopedDb, "notification", { value: { ...prisma.notification, findMany: (args: Parameters<typeof prisma.notification.findMany>[0]) => prisma.notification.findMany({ ...args, where: { ...args?.where, organizationId: org.id } }), updateMany: prisma.notification.updateMany.bind(prisma.notification) } })

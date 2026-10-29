@@ -272,6 +272,26 @@
     "removed": "Poissaolo poistettu",
     "removeError": "Poissaolon poistaminen epäonnistui"
   },
+  "sessions": {
+    "tab": "Istunnot",
+    "title": "Kirjautuneet laitteet",
+    "description": "Tarkista aktiiviset istuntosi ja kirjaa tarpeettomat laitteet ulos",
+    "loading": "Ladataan istuntoja",
+    "loadError": "Istuntojen lataaminen epäonnistui",
+    "unknownDevice": "Tuntematon laite",
+    "desktopApp": "Työpöytäsovellus",
+    "mobileApp": "Mobiilisovellus",
+    "current": "Tämä istunto",
+    "created": "Kirjauduttu {{date}}",
+    "ipAddress": "IP-osoite: {{ip}}",
+    "signOut": "Kirjaa ulos",
+    "signOutDevice": "Kirjaa ulos {{device}}",
+    "signOutOthers": "Kirjaa muut istunnot ulos",
+    "noOthers": "Olet kirjautunut vain tähän istuntoon",
+    "signedOut": "Istunto kirjattu ulos",
+    "othersSignedOut": "Muut istunnot kirjattu ulos",
+    "signOutError": "Istunnon uloskirjaus epäonnistui"
+  },
   "ownSettings": {
     "general": "Yleiset",
     "account": "Käyttäjätili",

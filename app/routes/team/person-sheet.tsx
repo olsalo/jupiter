@@ -23,6 +23,7 @@ export async function loader(args: Route.LoaderArgs) {
 }
 // Client navigation mounts the sheet without waiting for its detail query
 export function clientLoader() {
+  // Client queries own fetching and freshness after the initial server render.
   return null
 }
 

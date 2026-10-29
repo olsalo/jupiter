@@ -68,5 +68,6 @@ export async function expirePendingAppointments(db: PrismaClient, now = new Date
 }
 
 export async function pruneBookingRateLimits(db: PrismaClient, now = new Date()) {
+  await db.verification.deleteMany({ where: { identifier: "request-budget", expiresAt: { lt: now } } })
   return db.auditLog.deleteMany({ where: { entityType: "booking-request", action: { in: ["booking.request.read", "booking.request.write"] }, createdAt: { lt: new Date(+now - 86400000) } } })
 }

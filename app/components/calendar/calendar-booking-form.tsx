@@ -146,7 +146,9 @@ export function CalendarBookingForm({ dragSelection, selectedDay, onSelectedDayC
   const preferredStart = selectedDay && startTime && Number.isFinite(startHour) && Number.isFinite(startMinute)
     ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, calendarMinDurationMinutes, timeZone).startsAt : undefined
   const chosenSlot = durationPending || appliedDrag !== dragSelection || !slots.isSuccess || slots.isFetching ? undefined : availableSlots.find((slot) => slotKey(slot) === selection)
-    ?? (preferredStart ? getClosestBookingSlot(availableSlots, preferredStart, selectedSlotMemberId ?? dragSelection?.member.id) : undefined)
+    ?? (preferredStart ? dragSelection
+      ? availableSlots.find((slot) => +new Date(slot.startsAt) === +preferredStart && slot.staffMemberId === (selectedSlotMemberId ?? dragSelection.member.id))
+      : getClosestBookingSlot(availableSlots, preferredStart, selectedSlotMemberId) : undefined)
   const durationLimit = useCalendarBookingDurationLimit({ startsAt: preferredStart, memberId: staffMemberId ?? chosenSlot?.staffMemberId ?? selectedSlotMemberId, length: validLength ? durationMinutes : null, beforeMinutes: service?.bufferBeforeMinutes, afterMinutes: service?.bufferAfterMinutes })
   useLayoutEffect(() => {
     if (dragging || saved || durationPending || appliedDrag !== dragSelection || slots.isFetching || slots.isError || !chosenSlot) return

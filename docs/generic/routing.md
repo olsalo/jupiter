@@ -4,7 +4,7 @@ This app uses React Router Framework Mode with explicit route configuration in `
 
 Routes are not inferred from filenames. A URL exists only when `app/routes.ts` declares it with helpers from `@react-router/dev/routes`, such as `route`, `index`, or `layout`.
 
-Data handling conventions are documented in `docs/data-handling.md`. In short: use React Router loaders for route/app state only, and use tRPC with TanStack Query for client data fetching and mutations. Do not add React Router actions for application form submissions.
+Data handling conventions are documented in `docs/generic/data-handling.md`. In short: use React Router loaders for route/app state only, and use tRPC with TanStack Query for client data fetching and mutations. Do not add React Router actions for application form submissions.
 
 The first argument is the URL pattern. The second argument is the route module file:
 

@@ -102,7 +102,7 @@ try {
     customer: { id: "aino", firstName: "Aino", lastName: "Virtanen" }, staffMember: { id: "alice", name: "Alice" },
     services: [{ serviceId: "consultation", name: "Booked consultation", durationMinutes: 60, bufferBeforeMinutes: 5, bufferAfterMinutes: 10, service: { color: "#30968d" } }],
   }
-  function render({ appointmentPending = false, membersPending = false, availabilityState = "ready" as "ready" | "pending" | "fetching", now = Date.now(), url = "/calendar?date=2026-10-14", settings = {}, members = staff, rules = [] as CalendarScheduleRule[], refreshError = false, duringNavigation = false, dragging = false, dragUpdate = undefined as import("../app/lib/calendar/types").CalendarBookingDragUpdate | undefined, bookings = [] as Booking[], preview = undefined as CalendarBookingPreview | null | undefined, currentMemberId = undefined as string | undefined, dragSelection = undefined as import("../app/lib/calendar/types").CalendarDragSelection | undefined, draggedBooking = undefined as (import("../app/lib/calendar/types").CalendarDragSelection & { appointmentId: string }) | undefined } = {}) {
+  function render({ appointmentPending = false, membersPending = false, availabilityState = "ready" as "ready" | "pending" | "fetching", now = Date.now(), url = "/calendar?date=2026-10-14", settings = {}, members = staff, rules = [] as CalendarScheduleRule[], refreshError = false, duringNavigation = false, dragging = false, dragUpdate = undefined as import("../app/lib/calendar/types").CalendarBookingDragUpdate | undefined, bookings = [] as Booking[], preview = undefined as CalendarBookingPreview | null | undefined, currentMemberId = undefined as string | undefined, dragSelection = undefined as import("../app/lib/calendar/types").CalendarDragSelection | undefined, draftSlots = undefined as import("../app/lib/calendar/booking-slots").CalendarBookingSlot[] | undefined, draggedBooking = undefined as (import("../app/lib/calendar/types").CalendarDragSelection & { appointmentId: string }) | undefined } = {}) {
     queryClient.setQueryData([...options.organizations.getCurrent.queryKey()], { id: "business", memberId: currentMemberId, settings: { ...defaults, ...settings } })
     queryClient.setQueryData([...options.staff.list.queryKey()], members)
     if (membersPending) queryClient.removeQueries({ queryKey: options.staff.list.queryKey(), exact: true })
@@ -115,13 +115,12 @@ try {
       const draftRange = getCalendarBookingRange({ ...state, mode: "day", selected: calendarDateFromValue(dragSelection.day, preferences.timezone) }, preferences.timezone)
       const durationMinutes = dragSelection.endMinute - dragSelection.startMinute
       const selectedStart = getCalendarTimeRange(dragSelection.day, dragSelection.startMinute, durationMinutes, preferences.timezone).startsAt
-      queryClient.setQueryData(options.availability.getBookingTimes.queryKey({ from: draftRange.from, to: draftRange.to, durationMinutes, selectedStart }), { days: [{ date: dragSelection.day, slots: [{ startsAt: "2026-10-14T07:05:00.000Z", endsAt: "2026-10-14T07:50:00.000Z", staffMemberId: dragSelection.member.id, locationId: null }] }] })
+      queryClient.setQueryData(options.availability.getBookingTimes.queryKey({ from: draftRange.from, to: draftRange.to, durationMinutes, selectedStart }), { days: [{ date: dragSelection.day, slots: draftSlots ?? [{ startsAt: "2026-10-14T07:05:00.000Z", endsAt: "2026-10-14T07:50:00.000Z", staffMemberId: dragSelection.member.id, locationId: null }] }] })
       if (availabilityState === "pending") queryClient.removeQueries({ queryKey: options.availability.getBookingTimes.queryKey({ from: draftRange.from, to: draftRange.to, durationMinutes, selectedStart }), exact: true })
     }
     const scheduleKey = options.availability.calendarSchedule.queryKey(range)
     queryClient.setQueryData([...scheduleKey], rules)
-    queryClient.setQueryData(options.appointment.list.queryKey(range), bookings)
-    if (state.mode === "list") queryClient.setQueryData(options.appointment.list.queryKey({ ...range, includeCancelled: true }), bookings)
+    queryClient.setQueryData(options.appointment.list.queryKey({ ...range, includeCancelled: false }), bookings)
     for (const booking of bookings) {
       queryClient.setQueryData([...options.appointment.get.queryKey({ id: booking.id })], { ...booking, services: booking.services.map((item, index) => ({ ...item, id: `${booking.id}/${index}`, service: item.service ? { ...item.service, durationMinutes: 30 } : null })), customer: { ...booking.customer, email: "aino@example.invalid", phone: "+358401234567" }, customerId: booking.customer.id, staffMemberId: booking.staffMember?.id, locationId: null, answers: [], customerNotes: null, internalNotes: "Saved booking notes" })
       queryClient.setQueryData([...options.customer.get.queryKey({ id: booking.customer.id })], { ...booking.customer, email: null, phone: null })
@@ -209,6 +208,21 @@ try {
   assert.match(draggedForm, /data-slot="booking-slot-list"/, "Dragged creation shows the available-time list before choosing a service")
   assert.doesNotMatch(draggedForm, /data-slot="dialog-footer"/, "A dragged time without a service keeps the footer hidden")
   assert.match(draggedForm, /Choose a service/, "A custom forty-five-minute draft leaves the service blank")
+  const dragPosition = { day: "2026-10-14", member: { id: "alice", name: "Alice" }, startMinute: 605, endMinute: 650 }
+  const exactDraftSlot = { startsAt: "2026-10-14T07:05:00.000Z", endsAt: "2026-10-14T07:50:00.000Z", staffMemberId: "alice", locationId: null }
+  const otherMemberSlot = { ...exactDraftSlot, staffMemberId: "bob" }
+  const laterDraftSlot = { ...exactDraftSlot, startsAt: "2026-10-14T08:05:00.000Z", endsAt: "2026-10-14T08:50:00.000Z" }
+  const dragPanel = (draftSlots: typeof exactDraftSlot[]) => {
+    const markup = render({ url: "/calendar/new?view=day&date=2026-10-14", dragSelection: dragPosition, draftSlots })
+    return markup.slice(markup.indexOf('data-slot="calendar-side-panel"'))
+  }
+  const selectedButtons = (markup: string) => markup.match(/<button[^>]*aria-pressed="true"[^>]*>[\s\S]*?<\/button>/g) ?? []
+  const availableDrag = selectedButtons(dragPanel([otherMemberSlot, exactDraftSlot]))
+  assert.equal(availableDrag.length, 1, "Opening a drag-created booking selects one slot")
+  assert.match(availableDrag[0], /Alice/, "The dragged member wins regardless of availability order")
+  assert.equal(selectedButtons(dragPanel([otherMemberSlot, laterDraftSlot])).length, 0, "An unavailable dragged time never selects another member or a later time")
+  assert.equal(selectedButtons(dragPanel([laterDraftSlot])).length, 0, "Opening the panel never shifts the dragged start to the nearest time")
+  assert.equal(selectedButtons(dragPanel([])).length, 0, "Unavailable drag positions remain unselected")
   const defaultServices = queryClient.getQueryData(options.service.list.queryKey())
   queryClient.setQueryData([...options.service.list.queryKey()], [
     { id: "consultation", name: "Consultation", durationMinutes: 30, isActive: true },

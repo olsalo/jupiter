@@ -6,7 +6,7 @@ import superjson from "superjson"
 
 import { hasOrganizationPermission, type OrganizationPermissions } from "~/lib/auth/permissions"
 import { auth } from "~/lib/auth/server"
-import { hasActiveOrganizationSubscription } from "~/lib/billing/billing.server.ts"
+import { assertOrganizationSubscription } from "~/lib/billing/billing.server.ts"
 import {
   formatPreferenceCookie,
   localeCookie,
@@ -135,18 +135,13 @@ export const protectedProcedure = resourceLimitProcedure.use(async ({ ctx, next 
 })
 
 export const subscribedProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  if (
-    !ctx.organizationId ||
-    !(await hasActiveOrganizationSubscription({
-      organizationId: ctx.organizationId,
-    }))
-  ) {
+  if (!ctx.organizationId) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "An active subscription is required",
     })
   }
-
+  await assertOrganizationSubscription(ctx.organizationId, ctx.prisma)
   return next()
 })
 
@@ -160,6 +155,7 @@ export const organizationProcedure = protectedProcedure.use(async ({ ctx, next }
     include: { organization: { include: { settings: true } }, staffProfile: true },
   })
   if (!member || !member.role.split(",").some((role) => ["owner", "admin", "member"].includes(role.trim()))) throw new TRPCError({ code: "FORBIDDEN" })
+  await assertOrganizationSubscription(organizationId, ctx.prisma)
   return next({ ctx: { organizationId, organization: member.organization, member } })
 })
 

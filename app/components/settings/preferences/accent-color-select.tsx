@@ -49,7 +49,7 @@ export function AccentColorSelect({ disabled, inputRef, invalid, label, name, on
 function ColorLabel({ color, label }: { color: string | null, label: string }) {
   return (
     <span className="flex min-w-0 items-center gap-2">
-      <span aria-hidden="true" className="size-3 shrink-0 rounded-full border border-foreground/10" style={{ backgroundColor: color ?? "var(--primary)" }} />
+      <span aria-hidden={true} className="size-3 shrink-0 rounded-full border border-foreground/10" style={{ backgroundColor: color ?? "var(--color-neutral-800)" }} />
       <span className="truncate">{label}</span>
     </span>
   )

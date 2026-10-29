@@ -1,5 +1,7 @@
 {
-  "title": "Varaa aika",
+  "openingHours": "Aukioloajat",
+  "closed": "Suljettu",
+  "title": "Ajanvaraus",
   "appointment": "Ajanvaraus",
   "otherServices": "Muut palvelut",
   "service": "Palvelu",

@@ -272,6 +272,26 @@
     "removed": "Time off removed",
     "removeError": "Couldn’t remove time off"
   },
+  "sessions": {
+    "tab": "Sessions",
+    "title": "Where you’re signed in",
+    "description": "Check your active sessions and sign out devices you no longer use",
+    "loading": "Loading sessions",
+    "loadError": "Couldn’t load your sessions",
+    "unknownDevice": "Unknown device",
+    "desktopApp": "Desktop app",
+    "mobileApp": "Mobile app",
+    "current": "This session",
+    "created": "Signed in {{date}}",
+    "ipAddress": "IP address: {{ip}}",
+    "signOut": "Sign out",
+    "signOutDevice": "Sign out {{device}}",
+    "signOutOthers": "Sign out all other sessions",
+    "noOthers": "You’re only signed in here",
+    "signedOut": "Session signed out",
+    "othersSignedOut": "All other sessions signed out",
+    "signOutError": "Couldn’t sign out the session"
+  },
   "ownSettings": {
     "general": "General",
     "account": "Account",

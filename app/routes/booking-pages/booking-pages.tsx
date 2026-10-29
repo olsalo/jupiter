@@ -3,10 +3,8 @@ import type { Route } from "./+types/booking-pages"
 import { AdminBookingPage } from "~/components/booking-page/admin-booking-page"
 import { getQueryClient } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 
 export const handle = { workspace: true, pageLayout: "scroll" } as const
-export const shouldRevalidate = shouldRevalidateAppRoute
 
 export async function loader(args: Route.LoaderArgs) {
   const queryClient = getQueryClient()
@@ -16,6 +14,7 @@ export async function loader(args: Route.LoaderArgs) {
 }
 
 export function clientLoader() {
+  // Client queries own fetching and freshness after the initial server render.
   return null
 }
 

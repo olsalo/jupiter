@@ -79,6 +79,7 @@ export default [
     route("holidays", "routes/onboarding/holidays.tsx"),
     route("subscription", "routes/onboarding/subscription.tsx"),
   ]),
+  route("api/booking-image/:organizationSlug/:bookingPageSlug", "routes/api/booking-image.ts"),
   route("api/locale", "routes/api/locale.ts"),
   route("api/format-preference", "routes/api/format-preference.ts"),
   route("api/theme", "routes/api/theme.ts"),

@@ -1396,6 +1396,7 @@ model BookingPage {
   description String?
 
   logo String?
+  image String?
 
   defaultLocationId String?
   defaultLocation   Location? @relation("BookingPageDefaultLocation", fields: [defaultLocationId], references: [id], onDelete: SetNull)

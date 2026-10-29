@@ -6,14 +6,16 @@ import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
 
 const appPath = new URL("../app", import.meta.url).pathname
-const vite = await createServer({ configFile: false, appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
+const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/settings-navigation", appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
 try {
   const { getVisibleSettingsItems, getSettingsItemIdFromHash, getSafeSettingsHash } = await vite.ssrLoadModule("/app/lib/routing/settings-navigation.ts") as typeof import("../app/lib/routing/settings-navigation")
-  assert.deepEqual(getVisibleSettingsItems("member").map((item) => item.id), ["profile"])
-  assert.deepEqual(getVisibleSettingsItems("admin").map((item) => item.id), ["profile", "business", "locations", "booking", "communications"])
-  assert.deepEqual(getVisibleSettingsItems("owner").map((item) => item.id), ["profile", "business", "locations", "booking", "communications", "billing"])
-  assert.equal(getSettingsItemIdFromHash("#settings/locations", "owner"), "locations")
-  assert.equal(getSettingsItemIdFromHash("#settings/locations/", "owner"), "locations")
+  assert.deepEqual(getVisibleSettingsItems("member").map((item) => item.id), ["profile", "sessions"])
+  assert.deepEqual(getVisibleSettingsItems("admin").map((item) => item.id), ["profile", "sessions", "business", "booking", "communications"])
+  assert.deepEqual(getVisibleSettingsItems("owner").map((item) => item.id), ["profile", "sessions", "business", "booking", "communications", "billing"])
+  assert.equal(getSettingsItemIdFromHash("#settings/sessions", "member"), "sessions")
+  assert.equal(getSettingsItemIdFromHash("#settings/sessions/", "owner"), "sessions")
+  assert.equal(getSettingsItemIdFromHash("#settings/locations", "owner"), "profile")
+  assert.equal(getSettingsItemIdFromHash("#settings/locations/", "owner"), "profile")
   assert.equal(getSettingsItemIdFromHash("#settings/locations", "member"), "profile")
   assert.equal(getSettingsItemIdFromHash("#settings/billing", "admin"), "profile")
   assert.equal(getSettingsItemIdFromHash("#settings/general", "admin"), "business")

@@ -54,7 +54,7 @@ export function CalendarSchedule() {
     ? getCalendarPreviewIssues(getCalendarAppointmentPosition(appointment, timeZone), { rules: scheduleQuery.data, timeZone, defaultStartMinute: startMinute, defaultEndMinute: endMinute, now })
     : appointment.availabilityIssues, [scheduleQuery.data, timeZone, startMinute, endMinute, now])
   const interacting = Boolean(dragging || bookingPreview || isEditOpen || location.pathname === "/calendar/new")
-  const bookings = useQuery({ ...trpc.appointment.list.queryOptions(range), ...calendarBookingsQueryOptions(interacting) })
+  const bookings = useQuery({ ...trpc.appointment.list.queryOptions({ ...range, includeCancelled: false }), ...calendarBookingsQueryOptions(interacting) })
   const rangeKey = `${range.from.toISOString()}/${range.to.toISOString()}`
   const savedCalendarAppointments = useMemo(() => getCalendarAppointments(bookings.data ?? [], days, timeZone), [bookings.data, days, timeZone])
   const savedAppointments = useMemo(() => selectedMember ? savedCalendarAppointments.filter((appointment) => appointment.memberId === selectedMember.id) : savedCalendarAppointments, [savedCalendarAppointments, selectedMember?.id])

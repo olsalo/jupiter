@@ -11,8 +11,8 @@ import { TeamWorkingHoursFields } from "~/components/team/team-working-hours-fie
 import { useBusinessWorkingHours } from "~/components/team/use-business-working-hours"
 import { Alert, AlertAction, AlertDescription } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
-import { Spinner } from "~/components/ui/spinner"
-import { TabsPanel } from "~/components/ui/tabs"
+import { SettingsLoading } from "~/components/settings/settings-loading"
+import { LazyTabsPanel } from "~/components/navigation/lazy-tabs-panel"
 import { upcomingBusinessHolidays } from "~/lib/business/business-holidays"
 import { BusinessHolidayFields } from "~/components/settings/business/business-holiday-fields"
 import { businessScheduleSchema, type BusinessScheduleValues } from "~/lib/schemas/business-schedule"
@@ -21,7 +21,8 @@ import { useTRPC } from "~/lib/trpc/client"
 
 export const businessScheduleFormId = "business-schedule-form"
 
-export function BusinessScheduleSettings({ onFormStateChange, onTabChange, resetRef }: {
+export function BusinessScheduleSettings({ activeTab, onFormStateChange, onTabChange, resetRef }: {
+  activeTab: string
   onTabChange: (tab: string) => void
   onFormStateChange: (state: AppFormState) => void
   resetRef: { current: (() => void) | null }
@@ -40,7 +41,7 @@ export function BusinessScheduleSettings({ onFormStateChange, onTabChange, reset
       <Button onClick={() => void Promise.all([business.refetch(), organization.refetch()])} size="sm" type="button" variant="outline">{t("businessSchedule.retry")}</Button>
     </AlertAction>
   </Alert>
-  if (business.isPending || !organization.data) return <div className="flex flex-1 items-center justify-center"><Spinner aria-label={t("settings.loading")} /></div>
+  if (business.isPending || !organization.data) return <SettingsLoading />
   const hours = business.hours.map(({ dayOfWeek, startMinute, endMinute, isActive }) => ({ dayOfWeek, startMinute, endMinute, isActive, timezone: business.timezone, validFrom: null, validUntil: null }))
   return <AppForm<BusinessScheduleValues, BusinessScheduleValues, unknown>
     className="flex flex-1 flex-col"
@@ -65,14 +66,14 @@ export function BusinessScheduleSettings({ onFormStateChange, onTabChange, reset
     schema={businessScheduleSchema}
     submitFn={(values) => mutation.mutateAsync(values)}
   >{(form) => <>
-    <TabsPanel className="m-0" keepMounted={true} value="opening-hours">
+    <LazyTabsPanel active={activeTab === "opening-hours"} className="m-0" value="opening-hours">
       <SettingsSectionHeader title={t("businessSchedule.openingHours")} description={t("businessSchedule.hoursDescription")} />
       <div className="mt-4"><TeamWorkingHoursFields defaultHours={[1, 2, 3, 4, 5].map((dayOfWeek) => ({ dayOfWeek, startMinute: 480, endMinute: 1080, isActive: true, timezone: business.timezone }))} showReset={false} scope={form.scope()} showHeader={false} timezone={business.timezone} /></div>
       <BusinessOpeningExceptions disabled={form.formState.isSubmitting} timezone={business.timezone} />
-    </TabsPanel>
-    <TabsPanel className="m-0" keepMounted={true} value="holidays">
+    </LazyTabsPanel>
+    <LazyTabsPanel active={activeTab === "holidays"} className="m-0" value="holidays">
       <BusinessHolidayFields form={form} timezone={business.timezone} />
-    </TabsPanel>
+    </LazyTabsPanel>
   </>}</AppForm>
 }
 

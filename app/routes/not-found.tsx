@@ -1,10 +1,9 @@
-import { Link, data, href } from "react-router"
+import { data } from "react-router"
 import { useTranslation } from "react-i18next"
 
 import { AppLogo } from "~/components/navigation/app-logo"
 import Icon from "~/components/icons"
-import { Button } from "~/components/ui/button"
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia } from "~/components/ui/empty"
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "~/components/ui/empty"
 
 export function loader() {
   return data(null, { status: 404 })
@@ -37,15 +36,6 @@ export default function NotFound() {
             {t("description")}
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent>
-          <Button
-            className="keyboard-focusable"
-            render={<Link reloadDocument to={href("/")} />}
-          >
-            <Icon aria-hidden="true" name="arrowLeft" />
-            {t("goToOverview")}
-          </Button>
-        </EmptyContent>
       </Empty>
     </main>
   )

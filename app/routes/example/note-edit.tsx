@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Spinner } from "~/components/ui/spinner"
 import { ResponsiveSheetDescription, ResponsiveSheetFooter, ResponsiveSheetHeader, ResponsiveSheetPanel, ResponsiveSheetTitle } from "~/components/overlays/responsive-sheet"
-import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 import { resources } from "~/locales"
@@ -25,10 +24,9 @@ export function loader() {
 }
 
 export function clientLoader() {
+  // Client queries own fetching and freshness after the initial server render.
   return null
 }
-
-export const shouldRevalidate = shouldRevalidateAppRoute
 
 export default function NoteEdit({ params }: Route.ComponentProps) {
   const { t } = useTranslation("notes")

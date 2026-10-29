@@ -1,3 +1,5 @@
+import { getBookingPageImageKey } from "~/lib/booking/booking-page-image"
+import { getObjectUrl } from "~/lib/storage/object-storage.server"
 import type { TRPCRouterRecord } from "@trpc/server"
 import { publicProcedure } from "../trpc"
 import { bookingCodeInput, createBookingInput, pageInput, publicCancelInput, publicRescheduleInput, publicRescheduleSlotsInput, publicSlotInput } from "~/lib/schemas/appointments"
@@ -11,7 +13,7 @@ import { getReschedulePage, getRescheduleSlots } from "../services/booking-resch
 
 const bookingProcedure = publicProcedure.use(async ({ ctx, next, path }) => {
   const started = performance.now()
-  limitBookingLookup(ctx.headers)
+  await limitBookingLookup(ctx.prisma, ctx.headers)
   const result = await next()
   console.info(JSON.stringify({
     event: result.ok ? "booking.success" : "booking.error", procedure: path,
@@ -26,6 +28,13 @@ async function bookingIdentity(ctx: { prisma: typeof import("~/lib/database/pris
   return appointment
 }
 export const bookingRouter = {
+  getImage: bookingProcedure.input(pageInput).query(async ({ ctx, input }) => {
+    const { organization, page } = await resolveBookingPage(ctx.prisma, input)
+    await limitPublicBooking(ctx.prisma, ctx.headers, organization.id, false)
+    const key = getBookingPageImageKey(page?.metadata)
+    if (!key) notFound()
+    return getObjectUrl(key)
+  }),
   getPage: bookingProcedure.input(pageInput).query(async ({ ctx, input }) => {
     const { organization } = await resolveBookingPage(ctx.prisma, input)
     await limitPublicBooking(ctx.prisma, ctx.headers, organization.id, false)

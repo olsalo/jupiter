@@ -1,7 +1,7 @@
 import type { TRPCRouterRecord } from "@trpc/server"
 import { TRPCError } from "@trpc/server"
 
-import { protectedProcedure } from "../trpc"
+import { subscribedProcedure as protectedProcedure } from "../trpc"
 import { throwIfForcedServerError } from "../forced-error"
 import { generateId } from "~/lib/database/id"
 import { z } from "~/lib/validation/zod"

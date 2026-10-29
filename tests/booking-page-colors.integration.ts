@@ -33,6 +33,7 @@ try {
       assert.ok(html.includes('role="combobox"'))
       assert.ok(html.includes('name="accentColor"'))
       assert.ok(html.includes(color ? `background-color:${color}` : language === "fi" ? "Karhunvatukka" : "Blackberry"))
+      if (!color) assert.ok(html.includes("background-color:var(--color-neutral-800)"), "The blackberry swatch uses the same dark color in either app theme")
     }
   }
   assert.equal(bookingPageColorStyle(null), undefined)

@@ -84,6 +84,11 @@ try {
   const buffered = client.getQueryData<Booking[]>(key(week))?.find((item) => item.id === moved.id)
   assert.equal(buffered?.services[0].bufferBeforeMinutes, 5, "Saved calendar cache keeps preparation buffers")
   assert.equal(buffered?.services[0].bufferAfterMinutes, 10, "Saved calendar cache keeps cleanup buffers")
+  const activeWeekKey = key({ ...week, includeCancelled: false })
+  client.setQueryData(activeWeekKey, [moved, neighbor])
+  cacheCalendarBooking(client, listKey, { ...moved, status: "CANCELLED" })
+  assert.deepEqual(client.getQueryData(activeWeekKey), [neighbor], "Cancelling immediately removes the booking from calendars that hide cancelled bookings")
+  assert.equal(client.getQueryData<Booking[]>(cancelledKey)?.[0]?.id, moved.id, "Cancelled bookings remain available in explicitly filtered history")
   removeCalendarBooking(client, listKey, moved.id)
   for (const query of client.getQueryCache().findAll({ queryKey: listKey })) {
     assert.equal((query.state.data as Booking[]).some((booking) => booking.id === moved.id), false, "Deletion removes the booking from every cached calendar range")

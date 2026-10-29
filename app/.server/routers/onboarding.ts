@@ -8,6 +8,7 @@ import { upcomingBusinessHolidays } from "~/lib/business/business-holidays"
 import { schedulingLock } from "../services/scheduling"
 import { protectedProcedure } from "../trpc"
 import { auth, stripeBillingEnabled } from "~/lib/auth/server"
+import { hasActiveOrganizationSubscription } from "~/lib/billing/billing.server.ts"
 import { isOnboardingCountryCode } from "~/lib/localization/countries"
 import { isCurrencyCode } from "~/lib/localization/currencies"
 import { defaultTimeZone } from "~/lib/localization/format-preference"
@@ -18,7 +19,7 @@ import { generateId } from "~/lib/database/id"
 import { onboardingFormSchema } from "~/lib/schemas/onboarding"
 
 const demoOnboardingPaymentBypassEnabled =
-  process.env.DEMO_BYPASS_ONBOARDING_PAYMENT === "true"
+  process.env.NODE_ENV !== "production" && process.env.DEMO_BYPASS_ONBOARDING_PAYMENT === "true"
 
 export const onboardingRouter = {
   status: protectedProcedure.query(async ({ ctx }) => {
@@ -34,15 +35,7 @@ export const onboardingRouter = {
       },
     })
     const settings = membership?.organization.settings
-    const subscription = membership
-      ? await ctx.prisma.subscription.findFirst({
-          select: { id: true },
-          where: {
-            referenceId: membership.organizationId,
-            status: { in: ["active", "past_due", "trialing"] },
-          },
-        })
-      : null
+    const subscription = membership ? await hasActiveOrganizationSubscription({ organizationId: membership.organizationId, db: ctx.prisma }) : false
 
     return {
       billingEnabled: stripeBillingEnabled || demoOnboardingPaymentBypassEnabled,
