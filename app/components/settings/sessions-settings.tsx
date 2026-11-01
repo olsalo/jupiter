@@ -87,7 +87,7 @@ export function SessionsSettings({ active }: { active: boolean }) {
         <Alert variant="error">
           <AlertTitle>{t("sessions.loadError")}</AlertTitle>
           <AlertDescription>{t("retryDescription")}</AlertDescription>
-          <AlertAction><Button disabled={sessions.isFetching} onClick={() => void sessions.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
+          <AlertAction><Button disabled={sessions.isFetching} loading={sessions.isFetching} onClick={() => void sessions.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
         </Alert>
       ) : null}
       {sessions.data && !sessions.isError ? (
@@ -110,7 +110,7 @@ export function SessionsSettings({ active }: { active: boolean }) {
               )
             })}
           </ul>
-          {otherSessions.length > 0 ? <div><Button disabled={revoke.isPending || sessions.isFetching} loading={revoke.isPending && revoke.variables === "others"} onClick={() => revoke.mutate("others")} size="sm" type="button" variant="outline">{t("sessions.signOutOthers")}</Button></div> : <p className="text-sm text-muted-foreground">{t("sessions.noOthers")}</p>}
+          {otherSessions.length > 0 ? <div><Button disabled={revoke.isPending || sessions.isFetching} loading={revoke.isPending && revoke.variables === "others"} onClick={() => revoke.mutate("others")} size="sm" type="button" variant="outline">{t("sessions.signOutOthers")}</Button></div> : null}
         </>
       ) : null}
     </section>

@@ -1,3 +1,4 @@
+import { Empty, EmptyHeader, EmptyTitle } from "~/components/ui/empty"
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -56,8 +57,8 @@ export function CustomerNotes({ customerId, onPendingChange }: { customerId: str
       <FormLabel error={form.error("body")} label={t(editing.id ? "customerPage.editNote" : "customerPage.newNote")}><Textarea {...form.getInputProps("body")} aria-invalid={Boolean(form.error("body"))} disabled={form.formState.isSubmitting} rows={4} /></FormLabel>
       <div className="flex justify-end gap-2"><Button disabled={form.formState.isSubmitting} onClick={() => setEditing(null)} type="button" variant="ghost">{t("customerPage.cancel")}</Button><Button disabled={form.formState.isSubmitting} loading={form.formState.isSubmitting} type="submit">{t("customerPage.saveNote")}</Button></div>
     </>}</AppForm> : null}
-    {query.isError ? <Alert variant="error"><AlertTitle>{t("customerPage.notesError")}</AlertTitle><AlertAction><Button disabled={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction></Alert> : null}
-    {query.isPending ? <div className="flex justify-center py-6"><Spinner aria-label={t("customerPage.loading")} /></div> : !notes.length && !query.isError ? <p className="py-3 text-sm text-muted-foreground">{t("customerPage.noNotes")}</p> : null}
+    {query.isError ? <Alert variant="error"><AlertTitle>{t("customerPage.notesError")}</AlertTitle><AlertAction><Button disabled={query.isFetching} loading={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction></Alert> : null}
+    {query.isPending ? <div className="flex justify-center py-6"><Spinner aria-label={t("customerPage.loading")} /></div> : !notes.length && !query.isError ? <Empty><EmptyHeader><EmptyTitle>{t("customerPage.noNotes")}</EmptyTitle></EmptyHeader></Empty> : null}
     <ul className="grid gap-3">{notes.map((note) => <li className="grid gap-3 rounded-lg border p-4" key={note.id}>
       <div className="flex items-start justify-between gap-3"><div className="grid gap-1"><span className="text-sm font-medium">{note.authorName ?? t("customerPage.staffNote")}</span><time className="text-xs text-muted-foreground" dateTime={new Date(note.createdAt).toISOString()}>{formatDateTime(note.createdAt, options)}{+new Date(note.updatedAt) > +new Date(note.createdAt) ? ` · ${t("customerPage.edited")}` : ""}</time></div>{canUpdate ? <Button disabled={pending || Boolean(editing)} onClick={() => setEditing({ id: note.id, body: note.body })} size="sm" type="button" variant="ghost">{t("customerPage.editNote")}</Button> : null}</div>
       <p className="whitespace-pre-wrap break-words text-sm leading-6">{note.body}</p>

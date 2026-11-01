@@ -78,13 +78,16 @@ try {
   const replacementInput = { id: booking.id, from, to, durationMinutes: 45, serviceId: replacement.id, staffMemberId: null }
   const replacementSlots = (await caller.appointment.getBookingTimes(replacementInput)).days.flatMap((day) => day.slots)
   assert.ok(replacementSlots.length > 0)
-  assert.ok(replacementSlots.every((slot) => slot.staffMemberId === liisa.id), "A service change only offers members assigned to the new service")
+  assert.deepEqual(new Set(replacementSlots.map((slot) => slot.staffMemberId)), new Set([aino.id, liisa.id]), "Calendar service changes offer every active bookable member")
+  assert.ok(replacementSlots.filter((slot) => slot.staffMemberId === aino.id).every((slot) => slot.unassignedService === true), "Unassigned members carry a warning")
+  assert.ok(replacementSlots.filter((slot) => slot.staffMemberId === liisa.id).every((slot) => !slot.unassignedService), "Assigned members do not need an assignment warning")
   assert.ok(replacementSlots.every((slot) => slot.startsAt !== originalSlot.startsAt), "Availability uses the new service's buffers")
   assert.equal((await caller.appointment.get({ id: booking.id })).services[0].serviceId, service.id, "Previewing service availability does not change the booking")
   const replacementStart = new Date(+from + 600 * 60000)
   assert.ok(replacementSlots.some((slot) => slot.startsAt === replacementStart.toISOString()))
   const replacementUpdate = { id: booking.id, customerId: customer.id, internalNotes: "Changed service", serviceId: replacement.id, startsAt: replacementStart, durationMinutes: 45, staffMemberId: liisa.id }
-  await assert.rejects(caller.appointment.getBookingTimes({ ...replacementInput, staffMemberId: aino.id }), { code: "NOT_FOUND" })
+  const unassignedSlots = (await caller.appointment.getBookingTimes({ ...replacementInput, staffMemberId: aino.id })).days.flatMap((day) => day.slots)
+  assert.ok(unassignedSlots.length > 0 && unassignedSlots.every((slot) => slot.unassignedService === true), "Filtering to an unassigned member returns bookable times with a warning")
   await assert.rejects(caller.appointment.update({ ...replacementUpdate, staffMemberId: aino.id }), { code: "NOT_FOUND" })
   await assert.rejects(caller.appointment.update({ ...replacementUpdate, serviceId: "missing-service" }), { code: "NOT_FOUND" })
   const unavailable = await caller.service.create({ name: "Hidden service", durationMinutes: 30, deliveryType: "ONLINE", isActive: false })
@@ -111,6 +114,13 @@ try {
   const durationOnly = await caller.appointment.update({ id: booking.id, customerId: customer.id, internalNotes: "Keep snapshot", durationMinutes: 50 })
   assert.equal(durationOnly.services[0].name, replacement.name, "Time edits preserve the booked service name")
   assert.equal(durationOnly.services[0].unitPrice, "55", "Time edits preserve the booked service price")
+  const reassigned = await caller.appointment.update({ id: booking.id, customerId: customer.id, internalNotes: "Confirmed unassigned member", staffMemberId: aino.id, startsAt: replacementStart, durationMinutes: 50, allowUnassignedStaff: true })
+  assert.equal(reassigned.staffMemberId, aino.id, "Explicit confirmation allows moving a booking to an unassigned member")
+  assert.equal(reassigned.services[0].staffMemberId, aino.id)
+  const extraStart = new Date(+from + 665 * 60000)
+  await assert.rejects(caller.appointment.create({ serviceId: replacement.id, customerId: customer.id, staffMemberId: aino.id, startsAt: extraStart }), { code: "NOT_FOUND" }, "New bookings also require confirmation for an unassigned member")
+  const createdUnassigned = await caller.appointment.create({ serviceId: replacement.id, customerId: customer.id, staffMemberId: aino.id, startsAt: extraStart, allowUnassignedStaff: true })
+  assert.equal(createdUnassigned.staffMemberId, aino.id, "New calendar bookings accept a confirmed unassigned member")
   console.info("PASS service changes use new availability, staff assignments, buffers, duration, prices and snapshots, with atomic rejection of invalid or conflicting changes")
 } finally {
   try {

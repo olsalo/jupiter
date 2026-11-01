@@ -12,8 +12,8 @@ import Icon from "~/components/icons"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
-import { Spinner } from "~/components/ui/spinner"
 import { Tabs, TabsList, TabsTab } from "~/components/ui/tabs"
+import { getAfterOnboardingRedirect } from "~/lib/auth/redirect"
 import { authClient } from "~/lib/auth/client"
 import type { BillingInterval } from "~/lib/billing/billing"
 import type { StripePriceData } from "~/lib/billing/stripe.server.ts"
@@ -67,7 +67,7 @@ export default function SubscriptionStep() {
   const chooseSubscription = async () => {
     if (subscriptionData?.demoOnboardingPaymentBypassEnabled) {
       setIsChoosingSubscription(true)
-      await navigate("/?welcome=true", { replace: true })
+      await navigate(getAfterOnboardingRedirect(searchParams, true), { replace: true })
       return
     }
 
@@ -78,17 +78,18 @@ export default function SubscriptionStep() {
 
     setIsChoosingSubscription(true)
 
-    const result = await authClient.subscription.upgrade({
-      annual: billingInterval === "year",
-      cancelUrl: window.location.href,
-      customerType: "organization",
-      locale: i18n.resolvedLanguage === "fi" ? "fi" : "en",
-      plan: subscriptionData.plan.id,
-      referenceId: subscriptionData.organizationId,
-      successUrl: `${window.location.origin}/?welcome=true`,
-    })
-
-    if (result.error) {
+    try {
+      const result = await authClient.subscription.upgrade({
+        annual: billingInterval === "year",
+        cancelUrl: window.location.href,
+        customerType: "organization",
+        locale: i18n.resolvedLanguage === "fi" ? "fi" : "en",
+        plan: subscriptionData.plan.id,
+        referenceId: subscriptionData.organizationId,
+        successUrl: `${window.location.origin}${getAfterOnboardingRedirect(searchParams, true)}`,
+      })
+      if (result.error) throw new Error(result.error.message)
+    } catch {
       toast.error(t("errors.subscription"))
       setIsChoosingSubscription(false)
     }
@@ -184,17 +185,11 @@ export default function SubscriptionStep() {
             isChoosingSubscription ||
             (!annualEnabled && billingInterval === "year")
           }
+          loading={isChoosingSubscription}
           onClick={() => void chooseSubscription()}
           type="button"
         >
-          {isChoosingSubscription ? (
-            <>
-              <Spinner className="size-4" />
-              {t("actions.choosingSubscription")}
-            </>
-          ) : (
-            t("actions.chooseSubscription")
-          )}
+          {t("actions.chooseSubscription")}
         </Button>
       </OnboardingActions>
     </div>

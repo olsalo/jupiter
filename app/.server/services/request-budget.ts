@@ -29,8 +29,8 @@ export function otpRequestBudgets(email: string): RequestBudget[] {
   return [
     { key: "otp:global:hour", maximum: 200, windowMs: 3600000 },
     { key: "otp:global:day", maximum: 1000, windowMs: 86400000 },
-    { key: `otp:${recipient}:cooldown`, maximum: 1, windowMs: 60000 },
-    { key: `otp:${recipient}:hour`, maximum: 5, windowMs: 3600000 },
+    { key: `otp:${recipient}:cooldown`, maximum: 5, windowMs: 60000 },
+    { key: `otp:${recipient}:hour`, maximum: 10, windowMs: 3600000 },
     { key: `otp:${recipient}:day`, maximum: 10, windowMs: 86400000 },
   ]
 }

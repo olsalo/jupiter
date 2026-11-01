@@ -14,7 +14,7 @@ export function createAuthFormSchemas(t: (key: string) => string) {
     }),
     signIn: z.object({
       email: emailSchema,
-      otp: z.string().trim().min(6, t("otp.invalid")),
+      otp: z.string().trim().regex(/^\d{6}$/, t("otp.invalid")),
     }),
   }
 }

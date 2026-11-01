@@ -1,6 +1,6 @@
 {
   "createTitle": "New service",
-  "createDescription": "Add a service and choose who provides it and where",
+  "createDescription": "Add a service and choose who provides it",
   "general": "General",
   "name": "Name",
   "namePlaceholder": "e.g. Haircut",
@@ -34,7 +34,8 @@
   "assignments": "Staff & locations",
   "assignmentsDescription": "Choose who provides this service and where it is offered",
   "staff": "Team members",
-  "staffDescription": "You can choose more than one team member",
+  "serviceTeam": "Service team",
+  "staffDescription": "Choose who provides this service",
   "chooseStaff": "Choose team members",
   "locations": "Locations",
   "locationsDescription": "You can choose more than one location",

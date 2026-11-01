@@ -1,4 +1,5 @@
 import { businessHolidayWindows } from "~/lib/business/business-holidays"
+import { inheritAvailabilityWindows, subtractAvailabilityWindows } from "~/lib/booking/availability-windows"
 import { blockingAppointmentStatuses } from "~/lib/booking/appointment-status"
 import { calendarIntervalMinutes } from "~/lib/calendar/time-step"
 import { TRPCError } from "@trpc/server"
@@ -8,7 +9,7 @@ import { localDate, localWindows, minuteMs } from "./time"
 import { notFound, type Database } from "./scheduling"
 import { getBlockedTimeInRange } from "./team-time-off"
 
-export type Slot = { startsAt: string; endsAt: string; staffMemberId: string; locationId: string | null; overlapsBreak?: boolean }
+export type Slot = { startsAt: string; endsAt: string; staffMemberId: string; locationId: string | null; overlapsBreak?: boolean; unassignedService?: boolean }
 type Interval = { start: number; end: number }
 export const blockingStatuses = blockingAppointmentStatuses
 export function overlaps(a: Interval, b: Interval) { return a.start < b.end && a.end > b.start }
@@ -50,7 +51,7 @@ export function generateSlots({ windows, conflicts, breakConflicts = [], allowBr
   return [...starts].sort((a, b) => a - b)
 }
 
-export async function getAvailableSlots(db: Database, organizationId: string, input: Omit<z.infer<typeof slotInput>, "serviceId"> & { serviceId?: string }, options: { bookingPolicy?: { minBookingNoticeMinutes: number; maxBookingAdvanceDays: number | null }; preferAdjacentStarts?: boolean; allowPast?: boolean; allowBreakOverlapStart?: number; listStarts?: boolean; durationMinutes?: number; purpose?: "new-booking" | "reschedule"; replacingService?: boolean; useOrganizationDefaults?: boolean; excludeAppointmentId?: string; now?: Date; allowedStaffIds?: string[]; snapshot?: { durationMinutes: number; bufferBeforeMinutes: number; bufferAfterMinutes: number } } = {}) {
+export async function getAvailableSlots(db: Database, organizationId: string, input: Omit<z.infer<typeof slotInput>, "serviceId"> & { serviceId?: string }, options: { allowUnassignedStaff?: boolean; bookingPolicy?: { minBookingNoticeMinutes: number; maxBookingAdvanceDays: number | null }; preferAdjacentStarts?: boolean; allowPast?: boolean; allowBreakOverlapStart?: number; listStarts?: boolean; durationMinutes?: number; purpose?: "new-booking" | "reschedule"; replacingService?: boolean; useOrganizationDefaults?: boolean; excludeAppointmentId?: string; now?: Date; allowedStaffIds?: string[]; snapshot?: { durationMinutes: number; bufferBeforeMinutes: number; bufferAfterMinutes: number } } = {}) {
   const now = options.now ?? new Date()
   const rescheduling = options.purpose === "reschedule"
   if (!input.serviceId && (!options.listStarts || !options.durationMinutes || rescheduling)) throw new TRPCError({ code: "BAD_REQUEST" })
@@ -66,8 +67,8 @@ export async function getAvailableSlots(db: Database, organizationId: string, in
   const staff = await db.staffMember.findMany({
     where: { organizationId, isActive: true, acceptsAppointments: true,
       ...(input.staffMemberId ? { id: input.staffMemberId } : options.allowedStaffIds ? { id: { in: options.allowedStaffIds } } : {}),
-      ...(service ? { staffServices: { some: { serviceId: service.id, isActive: true } } } : {}),
-    }, include: { staffLocations: { where: { isActive: true }, include: { location: true } } }, take: 51,
+      ...(service && !options.allowUnassignedStaff ? { staffServices: { some: { serviceId: service.id, isActive: true } } } : {}),
+    }, include: { staffServices: { where: { serviceId: service?.id, isActive: true } }, staffLocations: { where: { isActive: true }, include: { location: true } } }, take: 51,
   })
   if (staff.length > 50) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a staff member" })
   if (input.staffMemberId && (!staff.length || (options.allowedStaffIds && !options.allowedStaffIds.includes(input.staffMemberId)))) notFound()
@@ -91,6 +92,7 @@ export async function getAvailableSlots(db: Database, organizationId: string, in
   const preferredStarts = new Set<string>()
   const slotKey = (slot: Slot) => `${slot.startsAt}/${slot.staffMemberId}/${slot.locationId ?? ""}`
   for (const person of staff) {
+    const unassignedService = Boolean(service && options.allowUnassignedStaff && !person.staffServices?.some((assignment) => assignment.serviceId === service.id))
     const locations = eligibleLocations.filter((link) => (!locationId || link.locationId === locationId) && person.staffLocations.some((assignment) => assignment.locationId === link.locationId && assignment.location.isActive && assignment.location.organizationId === organizationId)).map((link) => link.location)
     const candidates = service?.serviceLocations.length ? locations : !locationId ? [null] : []
     for (const location of candidates) {
@@ -98,15 +100,23 @@ export async function getAvailableSlots(db: Database, organizationId: string, in
       // A member's own schedule replaces business hours, including disabled days
       const workingRules = rules.filter((rule) => !rule.isBreak && applies(rule))
       const ownRules = workingRules.filter((rule) => rule.staffMemberId === person.id)
-      const effectiveRules = ownRules.length ? ownRules : workingRules.filter((rule) => rule.staffMemberId === null)
-      const windows = effectiveRules.filter((rule) => rule.isActive).flatMap((rule) => localWindows(input.from, input.to, rule.timezone, rule.dayOfWeek, rule.startMinute, rule.endMinute).map((window) => ({ start: Math.max(window.start, rule.validFrom ? +rule.validFrom : -Infinity), end: Math.min(window.end, rule.validUntil ? +rule.validUntil : Infinity) })).filter((window) => window.end > window.start))
+      const businessRules = workingRules.filter((rule) => rule.staffMemberId === null)
+      const windowsFor = (rule: typeof rules[number]) => rule.isActive ? localWindows(input.from, input.to, rule.timezone, rule.dayOfWeek, rule.startMinute, rule.endMinute)
+        .map((window) => ({ start: Math.max(window.start, rule.validFrom ? +rule.validFrom : -Infinity), end: Math.min(window.end, rule.validUntil ? +rule.validUntil : Infinity) }))
+        .filter((window) => window.end > window.start) : []
+      const businessWindows = businessRules.length ? businessRules.flatMap(windowsFor) : [1, 2, 3, 4, 5].flatMap((day) => localWindows(input.from, input.to, settings?.timezone ?? "Europe/Helsinki", day, (settings?.defaultStartHour ?? 8) * 60, (settings?.defaultEndHour ?? 18) * 60))
+      const windows = inheritAvailabilityWindows(businessWindows, ownRules.map((rule) => ({ windows: windowsFor(rule), validFrom: rule.validFrom ? +rule.validFrom : null, validUntil: rule.validUntil ? +rule.validUntil : null })))
       const relevantOverrides = overrides.filter(applies)
-      windows.push(...relevantOverrides.filter((override) => override.isAvailable).map((override) => ({ start: +override.startsAt, end: +override.endsAt })))
+      const extraWindows = relevantOverrides.filter((override) => override.isAvailable).map((override) => ({ start: +override.startsAt, end: +override.endsAt }))
+      windows.push(...extraWindows)
       windows.push(...holidays.filter((holiday) => holiday.isOpen))
       const breakConflicts = rules.filter((rule) => rule.isActive && rule.isBreak && applies(rule)).flatMap((rule) => localWindows(conflictFrom, conflictTo, rule.timezone, rule.dayOfWeek, rule.startMinute, rule.endMinute).map((window) => ({ start: Math.max(window.start, rule.validFrom ? +rule.validFrom : -Infinity), end: Math.min(window.end, rule.validUntil ? +rule.validUntil : Infinity) })).filter((window) => window.end > window.start))
       const conflicts = [
-        ...holidays.filter((holiday) => !holiday.isOpen),
-        ...blocked.filter(applies).map((block) => ({ start: +block.startsAt, end: +block.endsAt })),
+        ...subtractAvailabilityWindows(holidays.filter((holiday) => !holiday.isOpen), extraWindows),
+        ...blocked.filter(applies).flatMap((block) => {
+          const periods = [{ start: +block.startsAt, end: +block.endsAt }]
+          return block.staffMemberId === null ? subtractAvailabilityWindows(periods, extraWindows) : periods
+        }),
         ...relevantOverrides.filter((override) => !override.isAvailable).map((override) => ({ start: +override.startsAt, end: +override.endsAt })),
         ...appointments.filter((appointment) => appointment.staffMemberId === person.id).map((appointment) => ({ start: +appointment.startsAt - Math.max(0, ...appointment.services.map((snapshot) => snapshot.bufferBeforeMinutes)) * minuteMs, end: +appointment.endsAt + Math.max(0, ...appointment.services.map((snapshot) => snapshot.bufferAfterMinutes)) * minuteMs })),
       ]
@@ -118,7 +128,7 @@ export async function getAvailableSlots(db: Database, organizationId: string, in
       slots.push(...starts.map((start) => {
         const end = start + (options.durationMinutes ?? snapshot.durationMinutes) * minuteMs
         const overlapsBreak = start === options.allowBreakOverlapStart && breakConflicts.some((conflict) => overlaps({ start, end }, conflict))
-        const slot = { startsAt: new Date(start).toISOString(), endsAt: new Date(end).toISOString(), staffMemberId: person.id, locationId: location?.id ?? null, ...(overlapsBreak ? { overlapsBreak: true } : {}) }
+        const slot = { startsAt: new Date(start).toISOString(), endsAt: new Date(end).toISOString(), staffMemberId: person.id, locationId: location?.id ?? null, ...(overlapsBreak ? { overlapsBreak: true } : {}), ...(unassignedService ? { unassignedService: true } : {}) }
         if ([...conflicts, ...breakConflicts].some((conflict) => conflict.end === start - snapshot.bufferBeforeMinutes * minuteMs || conflict.start === end + snapshot.bufferAfterMinutes * minuteMs)) preferredStarts.add(slotKey(slot))
         return slot
       }))

@@ -1,4 +1,5 @@
 import { getBookingAvailabilityIssues, type BookingAvailabilityIssue } from "~/lib/calendar/booking-issues"
+import { inheritAvailabilityWindows } from "~/lib/booking/availability-windows"
 import { localWindows } from "./time"
 import type { Database } from "./scheduling"
 
@@ -31,11 +32,11 @@ export async function withAppointmentAvailabilityIssues<Appointment extends Book
     const applies = (rule: { staffMemberId: string | null; locationId: string | null }) => (!rule.staffMemberId || rule.staffMemberId === appointment.staffMember?.id) && (!rule.locationId || rule.locationId === appointment.location?.id)
     const working = rules.filter((rule) => !rule.isBreak && applies(rule))
     const own = working.filter((rule) => rule.staffMemberId === appointment.staffMember?.id)
-    const effective = own.length ? own : working.filter((rule) => rule.staffMemberId === null)
+    const business = working.filter((rule) => rule.staffMemberId === null)
     return { ...appointment, availabilityIssues: getBookingAvailabilityIssues({
       ...appointment, now,
       workingWindows: [
-        ...(effective.length ? effective.flatMap((rule) => windows.get(rule.id) ?? []) : defaultWindows),
+        ...inheritAvailabilityWindows(business.length ? business.flatMap((rule) => windows.get(rule.id) ?? []) : defaultWindows, own.map((rule) => ({ windows: windows.get(rule.id) ?? [], validFrom: rule.validFrom ? +rule.validFrom : null, validUntil: rule.validUntil ? +rule.validUntil : null }))),
         ...extraAvailability.filter(applies).map((override) => ({ start: +override.startsAt, end: +override.endsAt })),
       ],
       breakWindows: rules.filter((rule) => rule.isBreak && applies(rule)).flatMap((rule) => windows.get(rule.id) ?? []),

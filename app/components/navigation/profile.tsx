@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query"
 import type { ComponentProps } from "react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { href, useNavigate } from "react-router"
+import { href } from "react-router"
 
 import { useAppContext } from "~/lib/hooks/use-app-context"
 import Icon from "~/components/icons"
@@ -46,7 +46,6 @@ export function Profile({
 }: ProfileProps) {
   const { t } = useTranslation()
   const { t: tTeam } = useTranslation("team")
-  const navigate = useNavigate()
   const trpc = useTRPC()
   const rootData = useAppContext()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -80,7 +79,7 @@ export function Profile({
     onSuccess: async () => {
       setMenuOpen(false)
       toast.success(t("account.loggedOut"))
-      await navigate(href("/auth"), { replace: true })
+      window.location.replace(href("/auth"))
     },
     onError: () => toast.error(t("account.logOutError")),
   })
@@ -114,7 +113,7 @@ export function Profile({
               <MenuSub>
                 <MenuSubTrigger
                   aria-label={`${t("account.switchBusiness")}: ${displayName}, ${activeBusinessName}`}
-                  className="min-h-11 gap-2 whitespace-nowrap"
+                  className="h-auto min-h-12 gap-2 whitespace-nowrap px-3 py-2"
                   disabled={logOut.isPending}
                 >
                   {businessSummary}
@@ -133,7 +132,7 @@ export function Profile({
                     return (
                       <MenuItem
                         aria-current={isActive ? "true" : undefined}
-                        className="whitespace-nowrap"
+                        className="h-9 min-h-9 whitespace-nowrap py-0"
                         closeOnClick={false}
                         disabled={isActive || isPending}
                         key={organization.id}
@@ -152,7 +151,7 @@ export function Profile({
                 </MenuSubPopup>
               </MenuSub>
             ) : (
-              <div className="flex min-h-11 items-center gap-2 px-2 py-1 text-sm text-foreground">
+              <div className="flex min-h-12 items-center gap-2 px-3 py-2 text-sm text-foreground">
                 {businessSummary}
               </div>
             )}
@@ -160,7 +159,7 @@ export function Profile({
           </>
         ) : null}
         <MenuItem
-          className="whitespace-nowrap"
+          className="h-9 min-h-9 whitespace-nowrap py-0"
           closeOnClick={false}
           disabled={isPending}
           onClick={() => logOut.mutate()}

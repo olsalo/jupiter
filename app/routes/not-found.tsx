@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 
 import { AppLogo } from "~/components/navigation/app-logo"
 import Icon from "~/components/icons"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "~/components/ui/empty"
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 
 export function loader() {
   return data(null, { status: 404 })
@@ -24,14 +24,14 @@ export default function NotFound() {
           <AppLogo aria-hidden="true" className="size-5 md:size-6" />
         </div>
       </header>
-      <Empty className="w-full max-w-lg">
+      <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <Icon aria-hidden="true" name="search" />
           </EmptyMedia>
-          <h1 className="font-heading text-xl font-semibold" data-slot="empty-title">
+          <EmptyTitle aria-level={1} role="heading">
             {t("title")}
-          </h1>
+          </EmptyTitle>
           <EmptyDescription>
             {t("description")}
           </EmptyDescription>

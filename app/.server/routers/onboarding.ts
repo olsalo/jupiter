@@ -182,7 +182,7 @@ export const onboardingRouter = {
           })
 
       await ctx.prisma.$transaction(async (transaction) => {
-        if (existingMembership && demoOnboardingPaymentBypassEnabled) {
+        if (existingMembership) {
           await transaction.organization.update({
             data: { name: input.businessName },
             where: { id: organization.id },

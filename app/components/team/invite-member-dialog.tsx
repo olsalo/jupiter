@@ -18,7 +18,6 @@ import {
 } from "~/components/ui/dialog"
 import { Input } from "~/components/ui/input"
 import { PermissionLevelSelect } from "~/components/team/permission-level-select"
-import { Spinner } from "~/components/ui/spinner"
 import { Switch } from "~/components/ui/switch"
 import { useMediaQuery } from "~/lib/hooks"
 import { inviteFormSchema, type InviteFormValues } from "~/lib/schemas/team"
@@ -170,11 +169,8 @@ export function InviteMemberDialog({ staffMemberId, name = "", email = "", trigg
                   <Close render={<Button type="button" variant="ghost" disabled={form.formState.isSubmitting} />}>
                     {t("cancel")}
                   </Close>
-                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting ? <Spinner /> : null}
-                    {t(form.formState.isSubmitting
-                      ? sendEmailField.value ? "invite.sending" : "invite.creating"
-                      : sendEmailField.value ? "invite.action" : "invite.createAction")}
+                  <Button type="submit" disabled={form.formState.isSubmitting} loading={form.formState.isSubmitting}>
+                    {t(sendEmailField.value ? "invite.action" : "invite.createAction")}
                   </Button>
                 </Footer>
               </>

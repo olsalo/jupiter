@@ -4,6 +4,7 @@ import { createServer } from "vite"
 const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/appointment-availability", appType: "custom", resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } }, server: { ws: false, middlewareMode: true, hmr: false, watch: null } })
 try {
   const { generateSlots, getAvailableSlots, overlaps } = await vite.ssrLoadModule("/app/.server/services/availability.ts") as typeof import("../app/.server/services/availability")
+  const { withAppointmentAvailabilityIssues } = await vite.ssrLoadModule("/app/.server/services/appointment-availability-issues.ts") as typeof import("../app/.server/services/appointment-availability-issues")
   const { localWindows, localDate, minuteMs } = await vite.ssrLoadModule("/app/.server/services/time.ts") as typeof import("../app/.server/services/time")
   const { assertTransition } = await vite.ssrLoadModule("/app/.server/services/appointments.ts") as typeof import("../app/.server/services/appointments")
   const schemas = await vite.ssrLoadModule("/app/lib/schemas/appointments.ts") as typeof import("../app/lib/schemas/appointments")
@@ -39,16 +40,23 @@ try {
   let appointmentBuffers: { bufferBeforeMinutes: number; bufferAfterMinutes: number }[] = []
   let allowSimultaneousBookings = false
   let breakEnabled = false
-  let ownSchedule: { dayOfWeek: number; startMinute: number; endMinute: number; isActive: boolean } | undefined
+  let staffAssigned = true
+  let staffActive = true
+  let businessScheduleEnabled = true
+  let ownSchedule: { dayOfWeek: number; startMinute: number; endMinute: number; isActive: boolean; validFrom?: Date; validUntil?: Date } | undefined
   const snapshot = { durationMinutes: 30, bufferBeforeMinutes: 0, bufferAfterMinutes: 0 }
   const db = {
-    organizationSettings: { findUnique: async () => ({ allowSimultaneousBookings, timezone: "UTC" }) },
+    organizationSettings: { findUnique: async () => ({ allowSimultaneousBookings, timezone: "UTC", defaultStartHour: 9, defaultEndHour: 12 }) },
     appointmentService: { findFirst: async () => ({ id: "saved-service" }) },
     service: { findFirst: async () => ({ id: "service", ...snapshot, maxAttendees: 1, paymentRequirement: "NONE", serviceLocations: [] }) },
     serviceResource: { count: async () => 0 },
-    staffMember: { findMany: async () => [{ id: "alice", staffLocations: [] }] },
+    staffMember: { findMany: async ({ where }: { where: { staffServices?: unknown; isActive?: boolean; acceptsAppointments?: boolean } }) => {
+      assert.equal(where.isActive, true, "Calendar overrides still require active members")
+      assert.equal(where.acceptsAppointments, true, "Calendar overrides still require members who take appointments")
+      return staffActive && (!where.staffServices || staffAssigned) ? [{ id: "alice", staffLocations: [], staffServices: staffAssigned ? [{ serviceId: "service" }] : [] }] : []
+    } },
     availabilityRule: { findMany: async () => [
-      { timezone: "UTC", dayOfWeek: 1, startMinute: 540, endMinute: 720, isActive: true, isBreak: false, staffMemberId: null, locationId: null },
+      ...(businessScheduleEnabled ? [{ timezone: "UTC", dayOfWeek: 1, startMinute: 540, endMinute: 720, isActive: true, isBreak: false, staffMemberId: null, locationId: null }] : []),
       ...(ownSchedule ? [{ timezone: "UTC", isBreak: false, staffMemberId: "alice", locationId: null, ...ownSchedule }] : []),
       ...(breakEnabled ? [{ timezone: "UTC", dayOfWeek: 1, startMinute: 570, endMinute: 600, isActive: true, isBreak: true, staffMemberId: null, locationId: null }] : []),
     ] },
@@ -78,6 +86,45 @@ try {
   assert.deepEqual(await starts(), [], "A day off in a member's own schedule stays unavailable")
   ownSchedule = undefined
   assert.ok((await starts()).includes(start), "Members without their own schedule inherit business hours")
+  const businessStarts = await starts()
+  const issuesDb = { ...db, availabilityRule: { findMany: async () => (await db.availabilityRule.findMany()).map((rule, index) => ({ ...rule, id: String(index) })) } } as typeof db
+  const booking = { startsAt: new Date(start), endsAt: new Date(at(60)), status: "CONFIRMED", staffMember: { id: "alice" }, location: null }
+  const issues = async () => (await withAppointmentAvailabilityIssues(issuesDb, "business", [booking], at(-1440)))[0].availabilityIssues
+  businessScheduleEnabled = false
+  assert.deepEqual(await starts(), businessStarts, "Missing schedules inherit configured weekday business hours")
+  assert.deepEqual(await issues(), [], "Booking warnings agree with the default business hours offered as slots")
+  assert.deepEqual((await getAvailableSlots(db, "business", { ...input, from: new Date("2026-10-17T09:00Z"), to: new Date("2026-10-17T12:00Z") }, options)).days, [], "Default business hours do not open weekends")
+  ownSchedule = { dayOfWeek: 1, startMinute: 600, endMinute: 660, isActive: false }
+  assert.deepEqual(await starts(), [], "An explicitly closed personal schedule overrides default business hours")
+  assert.deepEqual(await issues(), ["outsideWorkingHours"], "Booking warnings respect explicitly closed personal hours")
+  businessScheduleEnabled = true
+  ownSchedule = { dayOfWeek: 1, startMinute: 600, endMinute: 660, isActive: true, validFrom: new Date(at(1440)) }
+  assert.deepEqual(await starts(), businessStarts, "Future personal hours do not suppress inherited business hours today")
+  assert.deepEqual(await issues(), [], "Future personal hours do not flag inherited business hours as unavailable")
+  const nextWeek = 7 * 1440
+  const spanning = await getAvailableSlots(db, "business", { ...input, to: new Date(at(nextWeek + 180)) }, options)
+  assert.deepEqual(spanning.days.find((day) => day.date === "2026-10-12")?.slots.map((slot) => +new Date(slot.startsAt)), businessStarts, "A multi-day query inherits business hours before personal hours take effect")
+  assert.deepEqual(spanning.days.find((day) => day.date === "2026-10-19")?.slots.map((slot) => +new Date(slot.startsAt)), [at(nextWeek + 60)], "The same query switches to personal hours on their effective date")
+  ownSchedule = { ...ownSchedule, validFrom: undefined, validUntil: new Date(start) }
+  assert.deepEqual(await starts(), businessStarts, "Expired personal hours restore inherited business hours")
+  ownSchedule = { ...ownSchedule, validUntil: new Date(at(60)), isActive: false }
+  assert.deepEqual(await starts(), [at(60), at(75), at(90), at(105), at(120)], "Disabled personal hours suppress inheritance only during their effective period")
+  ownSchedule = undefined
+  staffAssigned = false
+  const wholeTeamInput = { ...input, staffMemberId: undefined }
+  assert.deepEqual((await getAvailableSlots(db, "business", wholeTeamInput, options)).days, [], "Public availability excludes members not assigned to the service")
+  await assert.rejects(getAvailableSlots(db, "business", input, options), { code: "NOT_FOUND" }, "Selecting an unassigned member needs an explicit internal override")
+  const unassigned = (await getAvailableSlots(db, "business", wholeTeamInput, { ...options, allowUnassignedStaff: true })).days.flatMap((day) => day.slots)
+  assert.deepEqual(unassigned.map((slot) => +new Date(slot.startsAt)), businessStarts, "Internal calendar slots inherit business hours for an unassigned member")
+  assert.ok(unassigned.every((slot) => slot.unassignedService === true), "Every unassigned service slot carries a warning for the confirmation flow")
+  const recheck = await getAvailableSlots(db, "business", { ...input, to: new Date(start + 1) }, { ...options, listStarts: false, allowUnassignedStaff: true })
+  assert.equal(recheck.days[0].slots[0].startsAt, new Date(start).toISOString(), "The save-time recheck accepts the exact confirmed unassigned slot")
+  staffActive = false
+  assert.deepEqual((await getAvailableSlots(db, "business", wholeTeamInput, { ...options, allowUnassignedStaff: true })).days, [], "The override cannot offer inactive members")
+  staffActive = true
+  staffAssigned = true
+  const assigned = (await getAvailableSlots(db, "business", input, { ...options, allowUnassignedStaff: true })).days.flatMap((day) => day.slots)
+  assert.ok(assigned.every((slot) => !slot.unassignedService), "Assigned members need no assignment warning")
   allowSimultaneousBookings = false
   const preferred = await getAvailableSlots(db, "business", input, { ...options, durationMinutes: 20, preferAdjacentStarts: true })
   assert.equal(preferred.days[0].slots[0].startsAt, new Date(at(10)).toISOString(), "Public suggestions prefer an exact fit before the next booking")
@@ -87,6 +134,21 @@ try {
   assert.ok(bufferedStarts.includes(at(72)), "Availability includes both bookings' preparation and cleanup buffers at an off-grid edge")
   assert.ok(!bufferedStarts.includes(at(60)), "The visible end of a booking does not erase its cleanup buffer")
   appointmentBuffers = []
+  let extraMember: string | null = "alice"
+  let extraEnabled = true
+  const holidayDb = {
+    ...db,
+    organizationSettings: { findUnique: async () => ({ timezone: "UTC", businessHolidays: { exceptions: [{ id: "custom-closure", name: "Closed", date: "2026-10-12", enabled: true, closed: true, startMinute: 0, endMinute: 1440 }] } }) },
+    availabilityOverride: { findMany: async () => extraEnabled ? [{ staffMemberId: extraMember, locationId: null, isAvailable: true, startsAt: new Date(at(60)), endsAt: new Date(at(120)) }] : [] },
+  } as unknown as typeof db
+  const holidayStarts = async () => (await getAvailableSlots(holidayDb, "business", input, options)).days.flatMap((day) => day.slots.map((slot) => +new Date(slot.startsAt)))
+  assert.deepEqual(await holidayStarts(), [at(60)], "Personal extra hours allow booking within a full-day business closure")
+  extraMember = "bob"
+  assert.deepEqual(await holidayStarts(), [], "Another member's extra hours do not reopen this member")
+  extraMember = null
+  assert.deepEqual(await holidayStarts(), [at(60)], "Business-wide extra hours override the holiday")
+  extraEnabled = false
+  assert.deepEqual(await holidayStarts(), [], "The holiday remains closed without extra hours")
   assert.deepEqual(generateSlots({ ...base, windows: [] }), [])
   assert.equal(generateSlots({ ...base, windows: [...base.windows, { start: at(240), end: at(360) }], to: at(360) }).length, 14)
   assert.equal(generateSlots({ ...base, windows: [...base.windows, ...base.windows] }).length, 9)

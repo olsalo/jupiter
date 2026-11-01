@@ -20,6 +20,7 @@ import superjson from "superjson"
 import type { AppRouter } from "~/.server/main"
 import { useDehydratedState } from "~/lib/hooks"
 import { queryCacheOptions } from "~/lib/query/query-cache"
+import { fetchWithSubmissionRecovery, reloadAfterSubmissionError } from "~/lib/browser/submission-recovery"
 
 function makeQueryClient() {
   return new QueryClient({
@@ -84,7 +85,7 @@ function redirectUnauthorizedToAuth() {
   window.location.replace(`/auth?${searchParams.toString()}`)
 }
 
-function unauthorizedRedirectLink(): TRPCLink<AppRouter> {
+function responseRecoveryLink(): TRPCLink<AppRouter> {
   return () => ({ next, op }) =>
     observable((observer) => {
       const subscription = next(op).subscribe({
@@ -96,6 +97,7 @@ function unauthorizedRedirectLink(): TRPCLink<AppRouter> {
           ) {
             redirectUnauthorizedToAuth()
           }
+          if (op.type === "mutation") reloadAfterSubmissionError(error)
 
           observer.error(error)
         },
@@ -112,7 +114,7 @@ const links = [
       process.env.NODE_ENV === "development" ||
       (op.direction === "down" && op.result instanceof Error),
   }),
-  unauthorizedRedirectLink(),
+  responseRecoveryLink(),
   splitLink({
     // Preference cookies must be written before response headers are streamed.
     condition: (op) =>
@@ -120,8 +122,9 @@ const links = [
       op.path === "profile.updateTheme" ||
       op.path === "profile.updateLocale" ||
       op.path === "profile.updateFormatPreference",
-    true: httpLink({ transformer: superjson, url: `${getBaseUrl()}/api/trpc` }),
+    true: httpLink({ transformer: superjson, url: `${getBaseUrl()}/api/trpc`, fetch: fetchWithSubmissionRecovery }),
     false: httpBatchStreamLink({
+      fetch: fetchWithSubmissionRecovery,
       transformer: superjson,
       url: `${getBaseUrl()}/api/trpc`,
       headers() {

@@ -237,7 +237,7 @@ function SelectItem({
   return (
     <SelectPrimitive.Item
       className={cn(
-        "grid min-h-8 in-data-[side=none]:min-w-[calc(var(--anchor-width)+1.25rem)] cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-sm py-1 ps-2 pe-4 text-base sm:text-sm outline-none data-disabled:pointer-events-none hover:bg-accent hover:text-accent-foreground active:bg-accent active:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground data-disabled:opacity-64 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "grid min-h-9 in-data-[side=none]:min-w-[calc(var(--anchor-width)+1.25rem)] cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-sm py-1 ps-2 pe-4 text-base sm:min-h-8 sm:text-sm outline-none data-disabled:pointer-events-none hover:bg-accent hover:text-accent-foreground active:bg-accent active:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground data-disabled:opacity-64 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,
       )}
       data-slot="select-item"

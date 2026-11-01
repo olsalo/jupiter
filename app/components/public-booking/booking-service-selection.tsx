@@ -155,9 +155,9 @@ export function BookingServiceSelection({
         ))}
       </div>
       {!filtered.length ? (
-        <Empty className="py-12">
+        <Empty>
           <EmptyHeader>
-            <EmptyTitle className="text-sm">{t("noResults")}</EmptyTitle>
+            <EmptyTitle>{t("noResults")}</EmptyTitle>
           </EmptyHeader>
           <EmptyContent>
             <Button

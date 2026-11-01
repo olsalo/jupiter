@@ -75,7 +75,7 @@ export function ResourceList({
                   ? "grid-cols-[auto_minmax(0,1fr)_auto]"
                   : "grid-cols-[auto_minmax(0,1fr)]",
             )}>
-              <Skeleton className="h-full w-auto aspect-square rounded-md" />
+              <Skeleton className="size-13.5 self-center rounded-md sm:size-12.5" />
               <div className="min-w-0">
                 <div className="flex h-6 items-center">
                   <Skeleton className={cn("h-4", index % 2 === 0 ? "w-2/5" : "w-3/5")} />
@@ -122,7 +122,7 @@ export function ResourceList({
       {items.map((item) => {
         const content = (
           <>
-            <span className="flex h-full w-auto aspect-square shrink-0 items-center justify-center rounded-md border border-border/70 bg-muted/36 text-muted-foreground transition-colors group-hover:bg-muted/60 group-active:bg-muted/60">
+            <span className="flex size-13.5 shrink-0 self-center items-center justify-center rounded-md border border-border/70 bg-muted/36 text-muted-foreground transition-colors group-hover:bg-muted/60 group-active:bg-muted/60 sm:size-12.5">
               <Icon aria-hidden={true} name={item.icon} size={22} />
             </span>
             <span className="min-w-0 w-full">

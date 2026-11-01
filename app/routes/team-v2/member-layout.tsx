@@ -47,7 +47,7 @@ export default function MemberLayout({ params }: Route.ComponentProps) {
 
   function content(close: (destination?: string) => void) {
     if (loading) return <OverlayLoading data-slot="person-loading" label={t("people.loading")} />
-    if (!query.data) return <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("people.loadFailed")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={query.isFetching} onClick={() => void query.refetch()} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert></ResponsiveSheetPanel>
+    if (!query.data) return <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("people.loadFailed")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={query.isFetching} loading={query.isFetching} onClick={() => void query.refetch()} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert></ResponsiveSheetPanel>
     return <Outlet context={{ person: query.data, canManage, close, onPendingChange: setPending, sideNavigation: !mobile } satisfies TeamPersonContext} />
   }
 

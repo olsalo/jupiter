@@ -1,5 +1,6 @@
 import { Toast } from "@base-ui/react/toast"
 import type { ReactNode } from "react"
+import { getSubmissionErrorToastRemovalHandler } from "~/lib/browser/submission-recovery"
 
 export const toastManager = Toast.createToastManager()
 export const anchoredToastManager = Toast.createToastManager()
@@ -14,6 +15,7 @@ function addToast(type: string, options: ToastOptions) {
   return toastManager.add({
     ...options,
     type,
+    onRemove: type === "error" ? getSubmissionErrorToastRemovalHandler() : undefined,
   })
 }
 

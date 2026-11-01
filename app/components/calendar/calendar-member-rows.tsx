@@ -12,7 +12,6 @@ import type { CalendarTimelineProps } from "~/components/calendar/calendar-timel
 import { useCalendarBookingDrag } from "~/components/calendar/use-calendar-booking-drag"
 import { useCalendarBookingReveal } from "~/components/calendar/use-calendar-booking-reveal"
 import { Badge } from "~/components/ui/badge"
-import { Spinner } from "~/components/ui/spinner"
 import { UserAvatar } from "~/components/data-display/user-avatar"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { calendarDateToValue } from "~/lib/calendar/date"
@@ -169,7 +168,6 @@ export function CalendarMemberRows({ initialNow, focusedAppointmentId, days, mem
   }, [date, timeZone, startMinute, endMinute, scrollState, preview?.preserveScroll, focusedAppointmentId])
 
   return <section aria-busy={waitingForInitialPosition || undefined} aria-label={t("calendarGrid.day")} className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background", waitingForInitialPosition && "invisible", className)} data-layout="rows" data-presentation="desktop" data-slot="day-calendar">
-    {waitingForInitialPosition ? <div className="visible absolute inset-0 z-50 flex items-center justify-center bg-background"><Spinner aria-label={t("loading")} /></div> : null}
     <div className="flex min-h-0 flex-1 overflow-hidden">
       <ScrollArea className="min-h-0 min-w-0 flex-1" fill={true} overscrollContain={true} scrollbarClassName="hidden" viewportProps={{ ref: viewportRef, "aria-label": t("calendarGrid.times"), className: "[overflow-anchor:none]", onScroll: (event) => scrollTo({ left: event.currentTarget.scrollLeft, top: event.currentTarget.scrollTop }) }}>
         <div className="relative isolate flex h-full flex-col" ref={contentRef} style={{ minWidth: 176 + duration / 60 * 360 + calendarTimelinePadding * 2, minHeight: minimumContentHeight }}>

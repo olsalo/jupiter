@@ -67,7 +67,7 @@ export default function TeamV2() {
       {team.isError ? <Alert variant={team.data ? "warning" : "error"}>
         <AlertTitle>{t(team.data ? "refreshError" : "loadError")}</AlertTitle>
         <AlertDescription>{t(team.data ? "staleDescription" : "retryDescription")}</AlertDescription>
-        <AlertAction><Button disabled={team.isFetching} onClick={() => void team.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
+        <AlertAction><Button disabled={team.isFetching} loading={team.isFetching} onClick={() => void team.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
       </Alert> : null}
       <div className="@container/team relative isolate flex min-h-0 min-w-0 flex-1 sm:overflow-hidden sm:bg-background sm:rounded-md sm:p-px after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] sm:after:border sm:after:border-border" data-slot="team-master-detail">
         <aside aria-label={t("members")} className="flex min-h-0 w-full min-w-0 flex-col sm:w-64 sm:shrink-0 sm:border-r lg:w-80">

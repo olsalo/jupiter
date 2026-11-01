@@ -93,8 +93,11 @@ export const requireAuthMiddleware: MiddlewareFunction<Response> = async ({
   }
 }
 
-export const requireOrganizationMiddleware: MiddlewareFunction<Response> = async ({ context }) => {
-  if (!context.get(organizationContext)) throw redirect("/onboarding")
+export const requireOrganizationMiddleware: MiddlewareFunction<Response> = async ({ context, url }) => {
+  if (context.get(organizationContext)) return
+  const search = new URLSearchParams()
+  if (url.pathname !== "/") search.set("redirectTo", `${url.pathname}${url.search}`)
+  throw redirect(`/onboarding${search.size ? `?${search}` : ""}`)
 }
 
 export const requireOwnerMiddleware: MiddlewareFunction<Response> = async ({

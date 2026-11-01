@@ -6,7 +6,6 @@ import { AppForm } from "~/components/forms/app-form"
 import { Button } from "~/components/ui/button"
 import { Dialog, DialogPopup, DialogHeader, DialogTitle, DialogDescription, DialogPanel, DialogFooter } from "~/components/ui/dialog"
 import { TeamTimeOffFields } from "./team-time-off-fields"
-import { Spinner } from "~/components/ui/spinner"
 import { timeOffSchema, type TimeOffValues } from "~/lib/team/team-time-off"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
@@ -66,7 +65,7 @@ export function TeamTimeOffDialog({ staffMemberId, timezone, open, onOpenChange,
               </DialogPanel>
               <DialogFooter>
                 <Button disabled={pending} onClick={() => onOpenChange(false)} type="button" variant="ghost">{t("cancel")}</Button>
-                <Button disabled={pending} type="submit">{pending ? <Spinner /> : null}{t(pending ? "timeOff.adding" : "timeOff.addButton")}</Button>
+                <Button disabled={pending} loading={pending} type="submit">{t("timeOff.addButton")}</Button>
               </DialogFooter>
             </>
           }}

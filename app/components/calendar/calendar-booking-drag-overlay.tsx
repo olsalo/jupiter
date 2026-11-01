@@ -89,7 +89,7 @@ export function CalendarBookingDragOverlay({ store, startMinute, endMinute, form
     }}
   >
     <CalendarDragLift dragged={dragged}>
-      <CalendarAppointmentCard appointment={dragged.appointment} horizontal={horizontal} dragging={!dragged.returning} endMinute={endMinute} floating={true} formatPreference={formatPreference} startMinute={startMinute} />
+      <CalendarAppointmentCard appointment={dragged.appointment} canDrag={true} horizontal={horizontal} dragging={!dragged.returning} endMinute={endMinute} floating={true} formatPreference={formatPreference} startMinute={startMinute} />
     </CalendarDragLift>
   </div></div>
 }

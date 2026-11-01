@@ -8,7 +8,6 @@ import type { NoteModalContext } from "~/components/notes/note-modal-context"
 import { NoteModalSkeleton } from "~/components/notes/note-modal-skeleton"
 import { Alert, AlertDescription } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
-import { Spinner } from "~/components/ui/spinner"
 import { ResponsiveSheetDescription, ResponsiveSheetFooter, ResponsiveSheetHeader, ResponsiveSheetPanel, ResponsiveSheetTitle } from "~/components/overlays/responsive-sheet"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
@@ -75,9 +74,8 @@ export default function NoteEdit({ params }: Route.ComponentProps) {
         <Button disabled={updateMutation.isPending} onClick={() => void navigate("..", { replace: true })} type="button" variant="ghost">
           {t("form.cancel")}
         </Button>
-        <Button disabled={!note || updateMutation.isPending} form="edit-note-form" type="submit">
-          {updateMutation.isPending ? <Spinner aria-hidden={true} /> : null}
-          {updateMutation.isPending ? t("form.saving") : t("form.save")}
+        <Button disabled={!note || updateMutation.isPending} loading={updateMutation.isPending} form="edit-note-form" type="submit">
+          {t("form.save")}
         </Button>
       </ResponsiveSheetFooter>
     </>

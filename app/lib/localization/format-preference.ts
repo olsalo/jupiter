@@ -151,7 +151,7 @@ function formatDatePart(
 
     return includeYear
       ? `${day}.${month}.${valueFor("year")}`
-      : `${day}.${month}.`
+      : `${day}.${month}`
   }
 
   const dateParts = getDateTimeFormatter("en-US", {

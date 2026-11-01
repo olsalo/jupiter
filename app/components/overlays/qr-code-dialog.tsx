@@ -1,5 +1,5 @@
 import { QRCodeCanvas } from "qrcode.react"
-import { useRef, useState } from "react"
+import { useRef } from "react"
 import { useTranslation } from "react-i18next"
 import Icon from "~/components/icons"
 import { Button } from "~/components/ui/button"
@@ -18,7 +18,6 @@ type QrCodeDialogProps = {
 export function QrCodeDialog({ open, onOpenChange, value, title, description, filename = "qr-code" }: QrCodeDialogProps) {
   const { t } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [copying, setCopying] = useState(false)
 
   const getImage = () => new Promise<Blob>((resolve, reject) => {
     const canvas = canvasRef.current
@@ -42,14 +41,11 @@ export function QrCodeDialog({ open, onOpenChange, value, title, description, fi
   }
 
   const copy = async () => {
-    setCopying(true)
     try {
       await navigator.clipboard.write([new ClipboardItem({ "image/png": getImage() })])
       toast.success(t("qrCode.copied"))
     } catch {
       toast.error(t("qrCode.copyError"))
-    } finally {
-      setCopying(false)
     }
   }
 
@@ -65,7 +61,7 @@ export function QrCodeDialog({ open, onOpenChange, value, title, description, fi
         </div>
       </DialogPanel>
       <DialogFooter>
-        <Button disabled={!value || copying} loading={copying} onClick={() => void copy()} type="button" variant="outline">
+        <Button disabled={!value} onClick={() => void copy()} type="button" variant="outline">
           <Icon aria-hidden={true} name="copy" size={16} />{t("qrCode.copy")}
         </Button>
         <Button disabled={!value} onClick={() => void download()} type="button">

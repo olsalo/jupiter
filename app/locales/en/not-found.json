@@ -1,9 +1,9 @@
 {
   "meta": {
-    "title": "Page not found",
-    "description": "This page is unavailable or has moved"
+    "title": "Not found",
+    "description": "Check the address and try again"
   },
   "eyebrow": "404",
-  "title": "Page not found",
-  "description": "This page is unavailable or has moved"
+  "title": "Not found",
+  "description": "Check the address and try again"
 }

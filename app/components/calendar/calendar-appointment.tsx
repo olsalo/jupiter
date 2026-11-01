@@ -20,7 +20,7 @@ export const CalendarAppointmentCard = memo(function CalendarAppointmentCard({ a
   endMinute: number
   formatPreference: FormatPreference
 }) {
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
   const { search } = useLocation()
   const start = Math.max(startMinute, appointment.startMinute)
   const end = Math.min(endMinute, appointment.endMinute)
@@ -29,8 +29,7 @@ export const CalendarAppointmentCard = memo(function CalendarAppointmentCard({ a
   const language = i18n.resolvedLanguage === "fi" ? "fi" : "en"
   const formatTime = (minute: number) => formatDateTime(new Date(Date.UTC(2000, 0, 1, 0, minute)), { formatPreference, language, timeZone: "UTC", includeDate: false })
   const time = `${formatTime(appointment.startMinute)} – ${formatTime(appointment.endMinute)}`
-  const status = appointment.status && appointment.status !== "CONFIRMED" ? t(`calendarGrid.statuses.${appointment.status}`) : ""
-  const label = [appointment.customerName, appointment.service.name, time, status].filter(Boolean).join(" · ")
+  const label = [appointment.customerName, appointment.service.name, time].filter(Boolean).join(" · ")
 
   // Keep the hidden source hit-testable so another drag can interrupt its return animation
   return <>
@@ -49,6 +48,7 @@ export const CalendarAppointmentCard = memo(function CalendarAppointmentCard({ a
     tabIndex={hidden ? -1 : undefined}
     style={{
       "--appointment-color": appointment.service.color,
+      ...(canDrag ? { WebkitTouchCallout: "none" } : {}),
       top: `${(start - startMinute) / (endMinute - startMinute) * 100}%`,
       height: `calc(${duration / (endMinute - startMinute) * 100}% - 4px)`,
       left: `calc(${(appointment.column ?? 0) / (appointment.columns ?? 1) * 100}% + var(--calendar-card-inset, 4px))`,
@@ -67,12 +67,11 @@ export const CalendarAppointmentCard = memo(function CalendarAppointmentCard({ a
     <span className="flex min-w-0 items-center justify-between gap-1 text-[10px] leading-3 tabular-nums"><span className="truncate">{time}</span><CalendarBookingIssueMarker issues={appointment.availabilityIssues} /></span>
     {horizontal || duration >= 30 ? <span className="truncate text-xs leading-3.5 font-semibold">{appointment.customerName}</span> : null}
     {horizontal || duration >= 45 ? <span className="truncate text-[11px] leading-3 opacity-75">{appointment.service.name}</span> : null}
-    {!horizontal && duration >= 60 && status ? <span className="truncate text-[10px] leading-3 opacity-75">{status}</span> : null}
-    {canDrag && !floating && appointment.startMinute >= startMinute && appointment.endMinute <= endMinute && (appointment.durationMinutes ?? duration) === duration ? <span
+    {canDrag && appointment.startMinute >= startMinute && appointment.endMinute <= endMinute && (appointment.durationMinutes ?? duration) === duration ? <span
       aria-hidden={true}
-      className={horizontal ? "absolute inset-y-0 right-0 flex w-2 cursor-ew-resize items-center justify-center" : "absolute inset-x-0 bottom-0 flex h-2 cursor-ns-resize items-center justify-center"}
+      className={horizontal ? "absolute inset-y-0 right-0 w-2 touch-none cursor-ew-resize [@media(any-pointer:coarse)]:w-[min(1.5rem,40%)]" : "absolute inset-x-0 bottom-0 h-2 touch-none cursor-ns-resize [@media(any-pointer:coarse)]:h-[min(1.5rem,40%)]"}
       data-slot="calendar-booking-resize-handle"
-    ><span className={horizontal ? "h-5 w-0.5 rounded-full bg-foreground/30" : "h-0.5 w-5 rounded-full bg-foreground/30"} /></span> : null}
+    ><span className={cn("pointer-events-none absolute rounded-full bg-foreground/30", horizontal ? "top-1/2 right-[3px] h-5 w-0.5 -translate-y-1/2" : "bottom-[3px] left-1/2 h-0.5 w-5 -translate-x-1/2")} /></span> : null}
   </Card>
   </>
 }, (previous, next) => {

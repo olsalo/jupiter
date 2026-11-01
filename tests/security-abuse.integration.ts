@@ -115,13 +115,17 @@ try {
   console.info("PASS subscription API enforcement, public booking gate, membership checks and recovery access")
 
   const origin = process.env.BETTER_AUTH_URL!
-  const sendOtp = async (ip: string) => auth.handler(new Request(`${origin}/api/auth/email-otp/send-verification-otp`, {
+  const sendOtp = async (ip: string, client = auth) => client.handler(new Request(`${origin}/api/auth/email-otp/send-verification-otp`, {
     method: "POST", headers: { origin, "content-type": "application/json", "x-forwarded-for": ip, "x-real-ip": ip },
     body: JSON.stringify({ email: "audit@example.invalid", type: "sign-in" }),
   }))
   assert.equal((await sendOtp("192.0.2.1")).status, 200)
+  assert.equal((await sendOtp("192.0.2.2")).status, 200)
+  assert.equal((await sendOtp("192.0.2.3")).status, 200)
+  assert.equal((await sendOtp("192.0.2.4")).status, 200)
+  assert.equal((await sendOtp("192.0.2.5")).status, 200)
   const savedOtp = await auth.api.getVerificationOTP({ query: { email: "audit@example.invalid", type: "sign-in" } })
-  assert.equal((await sendOtp("192.0.2.2")).status, 429)
+  assert.equal((await sendOtp("192.0.2.6")).status, 429)
   assert.deepEqual(await auth.api.getVerificationOTP({ query: { email: "audit@example.invalid", type: "sign-in" } }), savedOtp, "Rejected sends preserve the already-issued OTP")
   const disguised = await auth.handler(new Request(`${origin}/api/auth/email-otp/send-verification-otp`, {
     method: "POST", headers: { origin, "content-type": "application/json", "x-real-ip": "192.0.2.3" },
@@ -133,7 +137,7 @@ try {
     body: JSON.stringify({ email: "audit@example.invalid" }),
   }))
   assert.equal(legacyReset.status, 429, "Legacy OTP delivery paths share recipient limits")
-  assert.equal(deliveries, 1, "Rotating IPs cannot bypass the recipient cooldown")
+  assert.equal(deliveries, 5, "Rotating IPs cannot bypass the five-per-minute recipient limit")
   assert.deepEqual(otpRequestBudgets(" AUDIT@example.invalid "), otpRequestBudgets("audit@example.invalid"))
   const now = new Date()
   const budget = [{ key: "concurrent-test", maximum: 1, windowMs: 1000 }]
@@ -144,15 +148,27 @@ try {
   await assert.rejects(consumeRequestBudgets(database, allOrNothing, new Date(+now + 1002)), { code: "TOO_MANY_REQUESTS" })
   await consumeRequestBudgets(database, [{ key: "must-roll-back", maximum: 1, windowMs: 1000 }], new Date(+now + 1002))
   counters.clear()
-  for (let i = 0; i < 5; i++) await consumeRequestBudgets(database, otpRequestBudgets("hourly@example.invalid"), new Date(+now + i * 61000))
-  await assert.rejects(consumeRequestBudgets(database, otpRequestBudgets("hourly@example.invalid"), new Date(+now + 5 * 61000)), { code: "TOO_MANY_REQUESTS" })
-  for (let i = 0; i < 5; i++) await consumeRequestBudgets(database, otpRequestBudgets("hourly@example.invalid"), new Date(+now + 3600001 + i * 61000))
+  for (let i = 0; i < 10; i++) await consumeRequestBudgets(database, otpRequestBudgets("hourly@example.invalid"), new Date(+now + i * 61000))
+  await assert.rejects(consumeRequestBudgets(database, otpRequestBudgets("hourly@example.invalid"), new Date(+now + 10 * 61000)), { code: "TOO_MANY_REQUESTS" })
+  await assert.rejects(consumeRequestBudgets(database, otpRequestBudgets("hourly@example.invalid"), new Date(+now + 3600001)), { code: "TOO_MANY_REQUESTS" })
   await assert.rejects(consumeRequestBudgets(database, otpRequestBudgets("hourly@example.invalid"), new Date(+now + 7200002)), { code: "TOO_MANY_REQUESTS" })
   counters.clear()
   for (let i = 0; i < 200; i++) await consumeRequestBudgets(database, otpRequestBudgets(`recipient-${i}@example.invalid`), now)
   await assert.rejects(consumeRequestBudgets(database, otpRequestBudgets("extra@example.invalid"), now), { code: "TOO_MANY_REQUESTS" })
   counters.clear()
   console.info("PASS OTP recipient throttling before token creation, counter expiry, concurrency and atomic budget rollback")
+
+  process.env.NODE_ENV = "development"
+  const authModule = vite.moduleGraph.getModuleById(`${appPath}/lib/auth/server.ts`)
+  assert.ok(authModule)
+  vite.moduleGraph.invalidateModule(authModule)
+  const { auth: developmentAuth } = await vite.ssrLoadModule("/app/lib/auth/server.ts") as typeof import("../app/lib/auth/server")
+  const deliveriesBeforeDevelopment = deliveries
+  for (let i = 0; i < 12; i++) assert.equal((await sendOtp("192.0.2.1", developmentAuth)).status, 200)
+  assert.equal(deliveries, deliveriesBeforeDevelopment + 12, "Development bypasses recipient, client and delivery budgets")
+  assert.equal(counters.size, 0, "Development sends do not consume production request budgets")
+  process.env.NODE_ENV = "production"
+  console.info("PASS development OTP sends bypass request budgets")
 
   assert.throws(() => bookingClientKey(new Headers()), { code: "PRECONDITION_FAILED" })
   assert.throws(() => bookingClientKey(new Headers({ "x-forwarded-for": "192.0.2.1" })), { code: "PRECONDITION_FAILED" })

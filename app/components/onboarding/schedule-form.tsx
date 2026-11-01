@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { useNavigate, useNavigation } from "react-router"
+import { useNavigate, useNavigation, useSearchParams } from "react-router"
 
 import { OnboardingActions } from "~/components/onboarding/onboarding-actions"
 import { AppForm } from "~/components/forms/app-form"
@@ -10,6 +10,7 @@ import { TeamWorkingHoursFields } from "~/components/team/team-working-hours-fie
 import { Button } from "~/components/ui/button"
 import { businessScheduleSchema, type BusinessScheduleValues } from "~/lib/schemas/business-schedule"
 import { toast } from "~/lib/toast"
+import { getAfterOnboardingRedirect } from "~/lib/auth/redirect"
 import { useTRPC } from "~/lib/trpc/client"
 import { z } from "~/lib/validation/zod"
 
@@ -29,6 +30,7 @@ export function OnboardingScheduleForm({ defaultValues, nextStep, step }: {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const navigation = useNavigation()
+  const [searchParams] = useSearchParams()
   const availability = useMutation(trpc.onboarding.saveAvailability.mutationOptions())
   const holidays = useMutation(trpc.onboarding.confirmHolidays.mutationOptions())
 
@@ -52,7 +54,11 @@ export function OnboardingScheduleForm({ defaultValues, nextStep, step }: {
           throw error
         }
         await queryClient.invalidateQueries({ queryKey: trpc.onboarding.pathKey(), refetchType: "none" })
-        await navigate(nextStep ? `/onboarding/${nextStep}` : "/?welcome=true", { replace: true })
+        const search = searchParams.toString()
+        const destination = nextStep
+          ? `/onboarding/${nextStep}${search ? `?${search}` : ""}`
+          : getAfterOnboardingRedirect(searchParams, true)
+        await navigate(destination, { replace: true })
       }}
     >{(form) => <>
       <div className="flex flex-col gap-5">

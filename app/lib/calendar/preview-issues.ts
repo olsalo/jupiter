@@ -1,4 +1,5 @@
 import { TZDate } from "react-day-picker"
+import { inheritAvailabilityWindows } from "../booking/availability-windows.ts"
 
 import { getBookingAvailabilityIssues } from "./booking-issues.ts"
 import { calendarDateToValue, getCalendarTimeRange } from "./date.ts"
@@ -18,7 +19,7 @@ export function getCalendarPreviewIssues(booking: BookingPosition, { rules, time
   const applies = (rule: CalendarScheduleRule) => (!rule.staffMemberId || rule.staffMemberId === booking.memberId) && (!rule.locationId || rule.locationId === booking.locationId)
   const working = rules.filter((rule) => !rule.isBreak && !rule.isExtra && !rule.isBlocked && applies(rule))
   const own = working.filter((rule) => rule.staffMemberId === booking.memberId)
-  const effective = own.length ? own : working.filter((rule) => rule.staffMemberId === null)
+  const business = working.filter((rule) => rule.staffMemberId === null)
   const defaults = []
   const day = new TZDate(+new Date(booking.startsAt), timeZone)
   day.setHours(0, 0, 0, 0)
@@ -31,7 +32,7 @@ export function getCalendarPreviewIssues(booking: BookingPosition, { rules, time
   }
   return getBookingAvailabilityIssues({
     startsAt: new Date(booking.startsAt), endsAt: new Date(booking.endsAt), status: booking.status, now,
-    workingWindows: [...(effective.length ? effective.flatMap((rule) => rule.windows) : defaults), ...rules.filter((rule) => rule.isExtra && applies(rule)).flatMap((rule) => rule.windows)],
+    workingWindows: [...inheritAvailabilityWindows(business.length ? business.flatMap((rule) => rule.windows) : defaults, own), ...rules.filter((rule) => rule.isExtra && applies(rule)).flatMap((rule) => rule.windows)],
     breakWindows: rules.filter((rule) => rule.isBreak && applies(rule)).flatMap((rule) => rule.windows),
   })
 }

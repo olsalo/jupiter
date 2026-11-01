@@ -30,12 +30,28 @@ export function DrawerDropdownScope({ popupProps, render, state }: {
   const parent = useContext(DrawerDropdownDismissContext)
   const parentDismiss = useSyncExternalStore(parent.subscribe, parent.getSnapshot, getServerSnapshot)
   const [store] = useState(createDismissStore)
+  const popupRef = useRef<HTMLDivElement>(null)
+  const { ref: forwardedRef, ...elementProps } = popupProps
+  const axis = state.swipeDirection === "left" || state.swipeDirection === "right" ? "x" : "y"
   useLayoutEffect(() => {
-    store.set(parentDismiss || state.swiping || !state.open)
-  }, [store, parentDismiss, state.swiping, state.open])
+    const popup = popupRef.current
+    // Base UI marks touch down as swiping and updates movement directly on the DOM
+    let moved = false
+    const update = () => {
+      const movement = Number.parseFloat(popup?.style.getPropertyValue(`--drawer-swipe-movement-${axis}`) || "0")
+      moved ||= state.swiping && Math.abs(movement) > 0
+      store.set(parentDismiss || moved || !state.open)
+    }
+    update()
+    if (!state.swiping || !popup) return
+    const observer = new MutationObserver(update)
+    observer.observe(popup, { attributes: true, attributeFilter: ["style"] })
+    return () => observer.disconnect()
+  }, [store, parentDismiss, state.swiping, state.open, axis])
   const element = useRender({
     defaultTagName: "div",
-    props: { ...popupProps },
+    ref: [forwardedRef ?? null, popupRef],
+    props: elementProps,
     render: typeof render === "function" ? (props) => render(props, state) : render,
   })
 

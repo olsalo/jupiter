@@ -1,4 +1,9 @@
 {
+  "deploymentUpdate": {
+    "title": "An update is available",
+    "description": "Save your changes before reloading",
+    "reload": "Update"
+  },
   "contactCopy": {
     "email": "Copy email",
     "phone": "Copy phone number",
@@ -76,6 +81,10 @@
     "pastStartDescription": "The start time for this booking is in the past. Do you want to save it anyway?",
     "pastStartCancel": "Go back",
     "pastStartConfirm": "Save booking",
+    "unassignedServiceTitle": "Member is not assigned to this service",
+    "unassignedServiceDescription": "This member is not assigned to the selected service. Do you want to save the booking anyway?",
+    "unassignedServiceCancel": "Choose another member",
+    "unassignedServiceConfirm": "Save booking",
     "breakOverlapTitle": "Booking overlaps a break",
     "breakOverlapDescription": "This time overlaps the member’s break. Do you want to save the booking anyway?",
     "breakOverlapCancel": "Choose another time",
@@ -238,19 +247,19 @@
     }
   },
   "welcome": {
-    "title": "Welcome to Jupiter",
-    "description": "You’re ready to start booking with your team",
-    "notes": {
-      "title": "Keep useful details handy",
-      "description": "Write down ideas and things to remember"
+    "title": "Your bookings, all in one place",
+    "description": "Keep appointments and your team’s schedules together in one place",
+    "calendar": {
+      "title": "Make room for your customers",
+      "description": "Add appointments and see your team’s day at a glance in the calendar"
     },
-    "overview": {
-      "title": "Find your way around",
-      "description": "Open the pages you use from the main menu"
+    "booking": {
+      "title": "Let customers book online",
+      "description": "Set up your services and share your booking page so customers can find a time"
     },
     "team": {
-      "title": "Bring your team together",
-      "description": "Add members who take appointments or need app access"
+      "title": "Get your team ready",
+      "description": "Add your team and set working hours so bookings fit everyone’s schedule"
     },
     "start": "Start"
   },
@@ -460,11 +469,11 @@
   },
   "offline": {
     "title": "You’re offline",
-    "description": "Check your connection. This closes when you’re back online"
+    "description": "Check your internet connection. You can continue when you’re back online"
   },
   "narrow": {
     "title": "Use a wider window",
-    "description": "Widen the window or use a larger screen"
+    "description": "Rotate your screen, widen the window or use a larger screen"
   },
   "error": {
     "notFoundTitle": "404",
@@ -589,6 +598,7 @@
     "saveError": "Couldn’t save availability"
   },
   "bookingIssues": {
+    "unassignedService": "This member is not assigned to the selected service",
     "title": "Booking needs attention",
     "outsideWorkingHours": "This booking is outside the member’s working hours",
     "overlapsBreak": "This booking overlaps the member’s break"
@@ -750,12 +760,13 @@
   "qrCode": {
     "imageLabel": "QR code",
     "copy": "Copy image",
-    "download": "Download PNG",
+    "download": "Download image",
     "copied": "QR code copied",
     "copyError": "Could not copy the image — try downloading it instead",
     "downloadError": "Could not download the QR code"
   },
   "adminBookingPage": {
+    "actions": "Actions",
     "showQrCode": "Show QR code",
     "qrCodeTitle": "Scan to book",
     "qrCodeDescription": "Share this code so customers can open your booking page",
@@ -826,7 +837,7 @@
       "blueberry": "Blueberry",
       "grape": "Grape",
       "raspberry": "Raspberry",
-      "custom": "Fruit mix"
+      "custom": "Custom color"
     },
     "accentColorDescription": "Choose a color for buttons and selected options",
     "image": "Welcome image"

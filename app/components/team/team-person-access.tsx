@@ -55,7 +55,7 @@ export function TeamPersonAccess({ person, disabled = false }: { person: TeamPer
               </div>
           </IconListItem>
         </ul>
-      </section> : <Empty className="min-h-0 w-full border-0 bg-transparent">
+      </section> : <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon"><Icon aria-hidden={true} name="lock" /></EmptyMedia>
           <EmptyTitle>{t("people.accessNone")}</EmptyTitle>

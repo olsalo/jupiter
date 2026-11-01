@@ -83,11 +83,11 @@ function ServicesPage() {
   return <ScrollPage header={<RouteHeader title={title} description={common("routeDescriptions.services")} refreshing={services.isRefetching} showDescriptionOnMobile={false} controls={<ServiceCategoryControls />} actions={canManage ? addButton : null} />}>
     <title>{title}</title>
     <div className={cn("@container flex min-w-0 flex-col gap-4", (services.isPending || (!services.isError && visibleItems.length === 0)) && "min-h-0 flex-1")}>
-    {categories.isError ? <Alert variant="error"><AlertTitle>{t("categoriesLoadError")}</AlertTitle><AlertDescription>{t("categoriesRetryDescription")}</AlertDescription><AlertAction><Button disabled={categories.isFetching} onClick={() => void categories.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
+    {categories.isError ? <Alert variant="error"><AlertTitle>{t("categoriesLoadError")}</AlertTitle><AlertDescription>{t("categoriesRetryDescription")}</AlertDescription><AlertAction><Button disabled={categories.isFetching} loading={categories.isFetching} onClick={() => void categories.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
     {services.isPending ? <div className="flex min-h-64 w-full flex-1 items-center justify-center"><Spinner aria-label={t("loading")} className="size-6" /></div> : services.isError ? (
-      <Alert variant="error"><AlertTitle>{t("loadError")}</AlertTitle><AlertDescription>{t("listRetryDescription")}</AlertDescription><AlertAction><Button disabled={services.isFetching} onClick={() => void services.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert>
+      <Alert variant="error"><AlertTitle>{t("loadError")}</AlertTitle><AlertDescription>{t("listRetryDescription")}</AlertDescription><AlertAction><Button disabled={services.isFetching} loading={services.isFetching} onClick={() => void services.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert>
     ) : visibleItems.length === 0 ? (
-      <Empty className="min-h-64 w-full flex-1 items-center justify-center border-0 bg-transparent">
+      <Empty>
         <EmptyHeader><EmptyMedia variant="icon"><Icon aria-hidden={true} name="forms" /></EmptyMedia><EmptyTitle>{t(categoryId ? "categoryEmpty" : "empty")}</EmptyTitle><EmptyDescription>{t(categoryId ? canManage ? "categoryEmptyDescription" : "categoryEmptyReadOnlyDescription" : "emptyDescription")}</EmptyDescription></EmptyHeader>
         {categoryId && canManage && selectedCategory ? <EmptyContent><Button disabled={removeCategory.isPending || removeService.isPending} onClick={editCategory} type="button" variant="outline"><Icon aria-hidden={true} name="edit" size={16} />{t("editCategory")}</Button></EmptyContent> : null}
       </Empty>

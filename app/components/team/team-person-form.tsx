@@ -98,7 +98,6 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
   const services = useQuery({ ...trpc.service.list.queryOptions(), enabled: !selfSettings && (!editing || editTab === "services") })
   const organization = useQuery(trpc.organizations.general.queryOptions())
   const serviceItems = (services.data ?? []).filter((service) => service.isActive || person?.staff?.staffServices.some((link) => link.serviceId === service.id))
-  const emptyServices = !selfSettings && services.isSuccess && serviceItems.length === 0
   const workingHours = useQuery({ ...trpc.availability.getRules.queryOptions({ staffMemberId: person?.staff?.id ?? "new" }), enabled: Boolean(person?.staff) })
   const businessHours = useBusinessWorkingHours()
   const personalHours = workingHours.data?.filter((rule) => rule.locationId === null)
@@ -121,8 +120,15 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
   }, [breaksQuery.data, businessHours.timezone])
   const hoursPending = (Boolean(person?.staff) && workingHours.isPending) || (!personalHours?.length && businessHours.isPending)
   const hoursError = (Boolean(person?.staff) && workingHours.isError) || (!personalHours?.length && businessHours.isError)
-  const defaultValues: PersonFormFields = { name: person?.name ?? "", email: person?.member?.user.email ?? person?.email ?? "", phone: person?.phone ?? "", bio: person?.staff?.bio ?? "", timezone: person?.staff?.timezone ?? "", takesAppointments: person ? person.staff?.acceptsAppointments ?? !selfSettings : true, isActive: person?.staff?.isActive ?? true, serviceIds: person?.staff?.staffServices.filter((link) => link.isActive).map((link) => link.serviceId) ?? [], locationIds: person?.staff?.staffLocations.filter((link) => link.isActive).map((link) => link.locationId) ?? [], giveAppAccess: false, role: "member", sendEmail: true, workingHours: loadedHours ?? [], breaks: loadedBreaks ?? [] }
+  const defaultValues: PersonFormFields = { name: person?.name ?? "", email: person?.member?.user.email ?? person?.email ?? "", phone: person?.phone ?? "", bio: person?.staff?.bio ?? "", timezone: person?.staff?.timezone ?? "", takesAppointments: person ? person.staff?.acceptsAppointments ?? !selfSettings : true, isActive: person?.staff?.isActive ?? true, serviceIds: person?.staff?.staffServices.filter((link) => link.isActive).map((link) => link.serviceId) ?? (!editing && !selfSettings ? serviceItems.map((service) => service.id) : []), locationIds: person?.staff?.staffLocations.filter((link) => link.isActive).map((link) => link.locationId) ?? [], giveAppAccess: false, role: "member", sendEmail: true, workingHours: loadedHours ?? [], breaks: loadedBreaks ?? [] }
   if (!savedFormValues.current) savedFormValues.current = defaultValues
+  const servicesInitialized = useRef(editing || selfSettings || services.isSuccess)
+  useEffect(() => {
+    const form = formApi.current
+    if (servicesInitialized.current || !services.isSuccess || !form) return
+    servicesInitialized.current = true
+    form.setValue("serviceIds", services.data.filter((service) => service.isActive).map((service) => service.id))
+  }, [services.data, services.isSuccess])
   useEffect(() => {
     if (!settingsResetRef) return
     settingsResetRef.current = () => {
@@ -280,7 +286,6 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
               if (!checked && !person) {
                 form.setValue("phone", "")
                 form.setValue("bio", "")
-                form.setValue("serviceIds", [])
                 form.setValue("locationIds", [])
               }
             }} onBlur={bookable.onBlur} ref={bookable.ref} name={bookable.name} />
@@ -295,7 +300,6 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
             {bookable.value || person?.staff ? <>
               <FormLabel className={editing ? "min-h-0 flex-1 items-stretch" : undefined} label={t("people.services")} labelGroupClassName={editing ? "sr-only" : undefined} description={editing ? undefined : t("people.servicesDescription")} error={form.error("serviceIds")} errorPlacement="below">
                 <ServiceSelection className={editing ? undefined : "h-80 flex-none"} label={t("people.services")} services={serviceItems} value={serviceIds.value} onChange={serviceIds.onChange} onBlur={serviceIds.onBlur} inputRef={serviceIds.ref} disabled={submitting || services.isError} invalid={Boolean(form.error("serviceIds"))} />
-                {emptyServices ? <Button className="w-fit" onClick={() => navigate("/services/new")} type="button" variant="outline"><Icon aria-hidden={true} name="add" size={16} />{t("people.addService")}</Button> : null}
               </FormLabel>
               {(services.isError) ? <Alert variant="error"><AlertTitle>{t("people.optionsError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription></Alert> : null}
               {!editing ? <FormLabel label={t("people.bio")} description={t("people.bioDescription")} error={form.error("bio")}><Textarea {...form.getInputProps("bio")} placeholder={t("people.bioPlaceholder")} aria-invalid={Boolean(form.error("bio"))} /></FormLabel> : null}
@@ -303,7 +307,7 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
             </PersonFormSection> : null}
             {editing ? <PersonFormSection settings={selfSettings} editing={true} selectedTab={editTab} tab="availability">
               {selfSettings ? <SettingsSectionHeader title={t("people.availability")} description={t("people.editHoursDescription")} /> : null}
-              {hoursPending ? <div className="relative min-h-0 flex-1"><TeamPanelLoading label={t("people.loadingAvailability")} /></div> : hoursError ? <Alert variant="error"><AlertTitle>{t("people.availabilityError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={workingHours.isFetching || businessHours.isFetching} onClick={() => void Promise.all([workingHours.refetch(), businessHours.refetch()])} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : bookable.value || person?.staff ? <TeamWorkingHoursFields showHeader={false} scope={form.scope()} defaultHours={defaultHours} resetPending={resetOwnHours.isPending} onResetToDefault={selfSettings ? async (hours) => {
+              {hoursPending ? <div className="relative min-h-0 flex-1"><TeamPanelLoading label={t("people.loadingAvailability")} /></div> : hoursError ? <Alert variant="error"><AlertTitle>{t("people.availabilityError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={workingHours.isFetching || businessHours.isFetching} loading={workingHours.isFetching || businessHours.isFetching} onClick={() => void Promise.all([workingHours.refetch(), businessHours.refetch()])} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : bookable.value || person?.staff ? <TeamWorkingHoursFields showHeader={false} scope={form.scope()} defaultHours={defaultHours} resetPending={resetOwnHours.isPending} onResetToDefault={selfSettings ? async (hours) => {
                 try {
                   await resetOwnHours.mutateAsync()
                   formApi.current?.setValue("workingHours", hours)
@@ -323,7 +327,7 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
             </PersonFormSection> : null}
             {editing ? <PersonFormSection settings={selfSettings} editing={true} selectedTab={editTab} tab="breaks">
               {selfSettings ? <SettingsSectionHeader title={t("people.breaks")} description={t("people.breaksDescription")} /> : null}
-              {hoursPending || (person?.staff && breaksQuery.isPending) ? <div className="relative min-h-0 flex-1"><TeamPanelLoading label={t("people.loadingBreaks")} /></div> : hoursError || (person?.staff && breaksQuery.isError) ? <Alert variant="error"><AlertTitle>{t("people.breaksError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={breaksQuery.isFetching || workingHours.isFetching || businessHours.isFetching} onClick={() => void Promise.all([breaksQuery.refetch(), workingHours.refetch(), businessHours.refetch()])} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : bookable.value || person?.staff ? <TeamBreaksFields showHeader={false} scope={form.scope()} timezone={businessHours.timezone} /> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
+              {hoursPending || (person?.staff && breaksQuery.isPending) ? <div className="relative min-h-0 flex-1"><TeamPanelLoading label={t("people.loadingBreaks")} /></div> : hoursError || (person?.staff && breaksQuery.isError) ? <Alert variant="error"><AlertTitle>{t("people.breaksError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={breaksQuery.isFetching || workingHours.isFetching || businessHours.isFetching} loading={breaksQuery.isFetching || workingHours.isFetching || businessHours.isFetching} onClick={() => void Promise.all([breaksQuery.refetch(), workingHours.refetch(), businessHours.refetch()])} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : bookable.value || person?.staff ? <TeamBreaksFields showHeader={false} scope={form.scope()} timezone={businessHours.timezone} /> : <Alert><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
             </PersonFormSection> : null}
             {!editing ? <>
               <Separator />
@@ -340,7 +344,7 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
           </div>
           {!selfSettings ? <Footer className="shrink-0">
             <Button disabled={submitting} onClick={selfSettings ? () => formApi.current?.resetForm() : person ? undefined : () => close()} render={person && !selfSettings ? <Link to={{ pathname: "..", search: `?profileTab=${editTab === "profile" || editTab === "access" ? "about" : editTab}` }} relative="path" replace={true} state={location.state} onClick={(event) => { if (submitting) event.preventDefault() }} /> : undefined} type="button" variant="ghost">{t("cancel")}</Button>
-            <Button disabled={submitting} loading={submitting} type="submit">{t(submitting ? "people.saving" : person ? "people.save" : "people.add")}</Button>
+            <Button disabled={submitting} loading={submitting} type="submit">{t(person ? "people.save" : "people.add")}</Button>
           </Footer> : null}
         </>
       }}

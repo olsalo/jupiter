@@ -5,7 +5,6 @@ import { useLocation, useNavigate } from "react-router"
 
 import { NoteForm } from "~/components/notes/note-form"
 import { Button } from "~/components/ui/button"
-import { Spinner } from "~/components/ui/spinner"
 import {
   ResponsiveSheet,
   ResponsiveSheetPopup,
@@ -133,10 +132,10 @@ export default function NewNoteModal() {
             <Button
               disabled={createMutation.isPending}
               form="create-note-form"
+              loading={createMutation.isPending}
               type="submit"
             >
-              {createMutation.isPending ? <Spinner aria-hidden={true} /> : null}
-              {createMutation.isPending ? t("form.creating") : t("form.create")}
+              {t("form.create")}
             </Button>
           </ResponsiveSheetFooter>
         </ResponsiveSheetPopup>

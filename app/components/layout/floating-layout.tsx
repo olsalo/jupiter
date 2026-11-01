@@ -25,6 +25,7 @@ const floatingPopupGap = 8
 
 export function FloatingLayout({
   animatePage,
+  disablePageAnimation = false,
   billingNotification,
   isDesktop,
   isElectron,
@@ -45,7 +46,7 @@ export function FloatingLayout({
     <PageBillingNotificationContext.Provider value={isDesktop ? billingNotification : null}>
       <main
         className={cn(
-          "floating-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] relative h-dvh w-full overflow-x-clip bg-background text-foreground",
+          "floating-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] md:pb-[var(--tappable-inset-bottom,0px)] relative h-[var(--workspace-viewport-height,100dvh)] w-full overflow-x-clip bg-background text-foreground",
         )}
         data-electron={isElectron}
         data-page-layout={pageLayout}
@@ -66,14 +67,14 @@ export function FloatingLayout({
             className={cn(
               "flex min-h-full flex-col",
               isViewportPage && "h-full min-h-0",
-              isElectron && "pt-7",
+              isElectron ? "pt-7" : "md:pt-[env(safe-area-inset-top,0px)]",
             )}
           >
             {!isDesktop ? <BillingNotificationBar notification={billingNotification} /> : null}
 
             <div
               className={cn(
-                "mx-auto flex w-[calc(100%-44px)] max-w-4xl flex-1 flex-col pb-[calc(70px+max(20px,env(safe-area-inset-bottom)))] md:w-[calc(100%-160px)] md:pb-4",
+                "mx-auto flex w-[calc(100%-44px)] max-w-4xl flex-1 flex-col pb-[calc(90px+env(safe-area-inset-bottom,0px))] max-md:in-data-[workspace-keyboard-open]:pb-0 md:w-[calc(100%-160px)] md:pb-[calc(1rem*(1-sign(var(--tappable-inset-bottom,0px))))]",
                 isViewportPage && "min-h-0",
               )}
             >
@@ -97,7 +98,7 @@ export function FloatingLayout({
                 className={cn(
                   "flex min-w-0 flex-1 flex-col",
                   isViewportPage && "min-h-0",
-                  animatePage && "route-enter",
+                  animatePage && !disablePageAnimation && "route-enter",
                 )}
                 key={`content-${routePathname}`}
               >
@@ -130,7 +131,7 @@ export function FloatingLayout({
           aria-label={t("nav.overviewHome")}
           className={cn(
             "electron-no-drag fixed top-3.5 left-[calc(0.875rem+env(safe-area-inset-left,0px))] z-20 hidden size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground md:flex",
-            isElectron && "top-[46px]",
+            isElectron ? "top-[46px]" : "top-[calc(0.875rem+env(safe-area-inset-top,0px))]",
           )}
           draggable={false}
           prefetch="none"
@@ -141,8 +142,9 @@ export function FloatingLayout({
 
         <TooltipProvider>
           <nav
+            data-slot="app-navigation"
             aria-label={t("appName")}
-            className="electron-no-drag fixed bottom-[max(20px,env(safe-area-inset-bottom))] left-[calc((100%+env(safe-area-inset-left,0px)-env(safe-area-inset-right,0px))/2)] z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border bg-background p-1 shadow-[0_0_4px_rgba(0,0,0,0.1)] md:top-1/2 md:bottom-auto md:left-[calc(0.875rem+env(safe-area-inset-left,0px))] md:-translate-x-0 md:-translate-y-1/2 md:flex-col max-md:max-w-[calc(100vw-2rem-env(safe-area-inset-left,0px)-env(safe-area-inset-right,0px))] max-md:overflow-x-auto md:max-h-[calc(100dvh-12rem)] md:overflow-y-auto"
+            className="electron-no-drag fixed bottom-[calc(20px+env(safe-area-inset-bottom,0px))] left-[calc((100%+env(safe-area-inset-left,0px)-env(safe-area-inset-right,0px))/2)] z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border bg-background p-1 shadow-[0_0_4px_rgba(0,0,0,0.1)] md:top-1/2 md:bottom-auto md:left-[calc(0.875rem+env(safe-area-inset-left,0px))] md:-translate-x-0 md:-translate-y-1/2 md:flex-col max-md:in-data-[workspace-keyboard-open]:hidden max-md:max-w-[calc(100vw-2rem-env(safe-area-inset-left,0px)-env(safe-area-inset-right,0px))] max-md:overflow-x-auto md:max-h-[calc(100dvh-12rem)] md:overflow-y-auto"
           >
             {menuItems.map((item) => (
               <Tooltip key={item.path}>
@@ -193,7 +195,7 @@ export function FloatingLayout({
           </nav>
         </TooltipProvider>
 
-        <div className="electron-no-drag fixed bottom-3.5 left-[calc(0.875rem+env(safe-area-inset-left,0px))] z-20 hidden flex-col items-center gap-1 rounded-full border border-border bg-background p-1 shadow-[0_0_4px_rgba(0,0,0,0.1)] md:flex">
+        <div className="electron-no-drag fixed bottom-[calc(0.875rem+var(--tappable-inset-bottom,0px))] left-[calc(0.875rem+env(safe-area-inset-left,0px))] z-20 hidden flex-col items-center gap-1 rounded-full border border-border bg-background p-1 shadow-[0_0_4px_rgba(0,0,0,0.1)] md:flex">
           <SettingsModal
             hashOwner={isDesktop}
             showTooltip={true}

@@ -1,6 +1,6 @@
 {
   "createTitle": "Uusi palvelu",
-  "createDescription": "Lisää palvelu ja valitse sen tekijät ja toimipaikat",
+  "createDescription": "Lisää palvelu ja valitse sen tekijät",
   "general": "Yleiset tiedot",
   "name": "Nimi",
   "namePlaceholder": "Esim. Hiustenleikkaus",
@@ -34,7 +34,8 @@
   "assignments": "Tekijät ja toimipaikat",
   "assignmentsDescription": "Valitse palvelun tekijät ja toimipaikat",
   "staff": "Tekijät",
-  "staffDescription": "Voit valita useamman tekijän",
+  "serviceTeam": "Palvelun tekijät",
+  "staffDescription": "Valitse palvelun tekijät",
   "chooseStaff": "Valitse tekijät",
   "locations": "Toimipaikat",
   "locationsDescription": "Voit valita useamman toimipaikan",

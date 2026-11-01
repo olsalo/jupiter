@@ -86,7 +86,7 @@ export async function createAppointment(db: PrismaClient, organizationId: string
     if (!service) notFound()
     const durationMinutes = !isPublic && "durationMinutes" in input ? input.durationMinutes : undefined
     const locationId = bookingPage?.locationId ?? input.locationId
-    const slots = await getAvailableSlots(tx, organizationId, { serviceId: input.serviceId, staffMemberId: input.staffMemberId, locationId, from: input.startsAt, to: new Date(+input.startsAt + 1) }, { allowPast: !isPublic, allowBreakOverlapStart: !isPublic && "allowBreakOverlap" in input && input.allowBreakOverlap ? +input.startsAt : undefined, allowedStaffIds: bookingPage?.allowedStaffIds, durationMinutes })
+    const slots = await getAvailableSlots(tx, organizationId, { serviceId: input.serviceId, staffMemberId: input.staffMemberId, locationId, from: input.startsAt, to: new Date(+input.startsAt + 1) }, { allowUnassignedStaff: !isPublic && "allowUnassignedStaff" in input && input.allowUnassignedStaff === true, allowPast: !isPublic, allowBreakOverlapStart: !isPublic && "allowBreakOverlap" in input && input.allowBreakOverlap ? +input.startsAt : undefined, allowedStaffIds: bookingPage?.allowedStaffIds, durationMinutes })
     const slot = slots.days.flatMap((day) => day.slots).find((slot) => slot.startsAt === input.startsAt.toISOString())
     if (!slot) slotUnavailable()
     let customer
@@ -135,7 +135,7 @@ export function assertTransition(current: AppointmentStatus, next: AppointmentSt
   if (!transitions[current]?.includes(next)) throw new TRPCError({ code: "BAD_REQUEST", message: "This appointment cannot be changed that way" })
 }
 
-export async function changeAppointment(db: PrismaClient, organizationId: string, input: { id: string; status?: AppointmentStatus; startsAt?: Date; durationMinutes?: number; allowBreakOverlap?: boolean; serviceId?: string; staffMemberId?: string; reason?: string; customerId?: string; customerNotes?: string | null; internalNotes?: string | null }, options: { actorUserId?: string; public?: boolean; staffMemberId?: string } = {}) {
+export async function changeAppointment(db: PrismaClient, organizationId: string, input: { id: string; status?: AppointmentStatus; startsAt?: Date; durationMinutes?: number; allowBreakOverlap?: boolean; allowUnassignedStaff?: boolean; serviceId?: string; staffMemberId?: string; reason?: string; customerId?: string; customerNotes?: string | null; internalNotes?: string | null }, options: { actorUserId?: string; public?: boolean; staffMemberId?: string } = {}) {
   return db.$transaction(async (tx) => {
     await schedulingLock(tx, organizationId)
     const appointment = await getAppointment(tx, organizationId, input.id, options.staffMemberId ? { staffMemberId: options.staffMemberId } : {})
@@ -165,7 +165,7 @@ export async function changeAppointment(db: PrismaClient, organizationId: string
       const replacement = replacingService ? await tx.service.findFirst({ where: { id: input.serviceId, organizationId, deletedAt: null, isActive: true } }) : null
       if (replacingService && !replacement) notFound()
       const durationMinutes = input.durationMinutes ?? replacement?.durationMinutes ?? (input.staffMemberId !== undefined ? snapshot.durationMinutes : undefined)
-      const available = await getAvailableSlots(tx, organizationId, { serviceId: replacement?.id ?? snapshot.serviceId, staffMemberId: targetMemberId, locationId: appointment.locationId ?? undefined, from: targetStart, to: new Date(+targetStart + 1) }, { allowPast: !options.public, allowBreakOverlapStart: !options.public && input.allowBreakOverlap ? +targetStart : undefined, excludeAppointmentId: appointment.id, snapshot: replacement ?? snapshot, replacingService, durationMinutes, useOrganizationDefaults: false, purpose: "reschedule", bookingPolicy: savedBookingPolicy(appointment, settings, service) })
+      const available = await getAvailableSlots(tx, organizationId, { serviceId: replacement?.id ?? snapshot.serviceId, staffMemberId: targetMemberId, locationId: appointment.locationId ?? undefined, from: targetStart, to: new Date(+targetStart + 1) }, { allowUnassignedStaff: !options.public && input.allowUnassignedStaff === true, allowPast: !options.public, allowBreakOverlapStart: !options.public && input.allowBreakOverlap ? +targetStart : undefined, excludeAppointmentId: appointment.id, snapshot: replacement ?? snapshot, replacingService, durationMinutes, useOrganizationDefaults: false, purpose: "reschedule", bookingPolicy: savedBookingPolicy(appointment, settings, service) })
       const slot = available.days.flatMap((day) => day.slots).find((slot) => slot.startsAt === targetStart.toISOString() && slot.locationId === appointment.locationId)
       if (!slot) slotUnavailable()
       data.startsAt = targetStart

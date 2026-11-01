@@ -26,7 +26,7 @@ export function CalendarHeaderActions() {
   return <>
     <Menu>
       <MenuTrigger aria-label={t("calendarControls.actions")} render={<Button className="max-md:size-9 max-md:p-0" size="lg" type="button" variant="outline" />}>
-        <Icon aria-hidden={true} className="md:hidden" name="dots" size={18} />
+        <Icon aria-hidden={true} className="md:hidden" name="dotsVertical" size={18} />
         <span className="hidden md:inline">{t("calendarControls.actions")}</span>
         <Icon aria-hidden={true} className="hidden md:block" name="chevronDown" size={16} />
       </MenuTrigger>

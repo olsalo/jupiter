@@ -13,7 +13,7 @@ import { CalendarView } from "~/components/calendar/calendar-view"
 
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
-import { Spinner } from "~/components/ui/spinner"
+import { CalendarLoading } from "~/components/calendar/calendar-loading"
 import { useTRPC } from "~/lib/trpc/client"
 import { recordCalendarBookingVersion } from "~/lib/calendar/booking-cache"
 import { calendarBookingsQueryOptions, calendarReferenceQueryOptions } from "~/lib/calendar/query-options"
@@ -113,7 +113,7 @@ export function CalendarSchedule() {
     <AlertAction><Button disabled={isFetching} onClick={retry} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
   </Alert>} />
 
-  if (organization.data === undefined || timelineData === null) return <CalendarView><div className="flex min-h-0 flex-1 items-center justify-center bg-background"><Spinner aria-label={t("loading")} /></div></CalendarView>
+  if (organization.data === undefined || timelineData === null) return <CalendarView><CalendarLoading /></CalendarView>
 
   const { calendarMembers, appointments, conflictAppointments, schedule } = timelineData
 
@@ -134,7 +134,7 @@ export function CalendarSchedule() {
     {showRefreshError ? <Alert variant="warning"><AlertTitle>{t("calendarGrid.refreshError")}</AlertTitle><AlertDescription>{t("calendarGrid.staleDescription")}</AlertDescription><AlertAction><Button disabled={isFetching} onClick={retry} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
     {calendarMembers.length === 0 ? <Alert variant="info"><AlertTitle>{t("calendarGrid.noMembers")}</AlertTitle><AlertDescription>{t("calendarGrid.noMembersDescription")}</AlertDescription></Alert> : null}
   </>}>
-    <Timeline getDraftService={getDraftService} serviceDurations={serviceDurations} intervalMinutes={calendarIntervalMinutes} minDurationMinutes={calendarMinDurationMinutes} getBookingIssues={getBookingIssues} fullWidthTimeLine={true} expandToContent={state.isMobile} initialNow={now} focusedAppointmentId={isEditOpen || location.pathname === "/calendar/new" ? preview ? preview.appointmentId ?? "calendar-booking-draft" : editMatch?.params.appointmentId : undefined} onMoveBooking={(canEdit && (location.pathname === "/calendar" || location.pathname === "/calendar/new" || isEditOpen)) || (canCreate && isCreateFlow) ? (appointment, dragSelection, phase) => {
+    <Timeline getDraftService={getDraftService} serviceDurations={serviceDurations} intervalMinutes={calendarIntervalMinutes} minDurationMinutes={calendarMinDurationMinutes} getBookingIssues={getBookingIssues} fullWidthTimeLine={true} expandToContent={state.isMobile} centerCurrentTimeOnMobile={state.centerCurrentTimeOnMobile} initialNow={now} focusedAppointmentId={isEditOpen || location.pathname === "/calendar/new" ? preview ? preview.appointmentId ?? "calendar-booking-draft" : editMatch?.params.appointmentId : undefined} onMoveBooking={(canEdit && (location.pathname === "/calendar" || location.pathname === "/calendar/new" || isEditOpen)) || (canCreate && isCreateFlow) ? (appointment, dragSelection, phase) => {
       if (phase !== "drop" && !appointment.creationDraft && !isEditOpen && location.pathname !== "/calendar/new") return
       const member = dragSelection.member
       const range = getCalendarTimeRange(dragSelection.day, dragSelection.startMinute, dragSelection.endMinute - dragSelection.startMinute, timeZone)
@@ -152,9 +152,8 @@ export function CalendarSchedule() {
     } : undefined} allowSimultaneousBookings={organization.data.settings?.allowSimultaneousBookings === true} onSelectRangeStart={canCreate ? () => {
       const draft = appointments.find((appointment) => appointment.creationDraft)
       const previousDrag = dragUpdate ?? (draft && bookingPreview ? { selection: { day: draft.day, member: bookingPreview.member, startMinute: draft.startMinute, endMinute: draft.endMinute } } : null)
-      previousCreation.current = location.pathname === "/calendar/new" ? { preview: bookingPreview, dragUpdate: previousDrag } : null
-      // Keep the captured lane mounted until drop, including when replacing an editor
-      if (location.pathname !== "/calendar/new") setPreview(null)
+      previousCreation.current = { preview: bookingPreview, dragUpdate: previousDrag }
+      // Keep the current preview and its date/lane stable until the replacement drops
     } : undefined} onSelectRangeUpdate={canCreate && location.pathname === "/calendar/new" ? updateCreationRange : undefined} onSelectRangeCancel={() => {
       const previous = previousCreation.current
       previousCreation.current = null

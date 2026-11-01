@@ -229,6 +229,7 @@ export function BookingDetailsForm({
                         }[field]
                       }
                       disabled={pending}
+                      autoCapitalize={field === "email" ? "none" : undefined}
                       type={field === "email" ? "email" : "text"}
                     />
                   )}
@@ -348,6 +349,7 @@ export function BookingDetailsForm({
                     aria-invalid={Boolean(form.error(path))}
                     disabled={pending}
                     placeholder={question.placeholder ?? undefined}
+                    autoCapitalize={question.type === "EMAIL" ? "none" : undefined}
                     type={
                       question.type === "NUMBER"
                         ? "number"

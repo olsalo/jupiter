@@ -168,14 +168,15 @@ export function BookingPageCoverUpload({ value, imageUrl, label, description, er
         className="h-full w-full rounded-xl border-0 bg-transparent p-0 hover:bg-muted/30 active:bg-muted/30 data-pressed:bg-muted/30 [:active,[data-pressed]]:bg-muted/30 sm:h-full"
         disabled={disabled || uploading || !enabled}
         aria-busy={pending === "upload"}
+        loading={pending === "upload"}
         onClick={() => fileRef.current?.click()}
         type="button"
         variant="secondary"
       >
         <span className="mx-4 flex flex-col items-center gap-1.5 px-3 py-2 text-muted-foreground">
           <span aria-live="polite" className="inline-flex items-center gap-2 text-sm">
-            {pending === "upload" ? <Spinner className="size-4" /> : <Icon aria-hidden={true} name="photo" size={18} />}
-            {t(pending === "upload" ? "imageUpload.uploading" : "imageUpload.addCover")}
+            <Icon aria-hidden={true} name="photo" size={18} />
+            {t("imageUpload.addCover")}
           </span>
           {description ? <span className="text-center text-xs leading-5 font-normal whitespace-normal">{description}</span> : null}
           <span className="hidden text-xs font-normal sm:inline">{t("imageUpload.dragHint")}</span>

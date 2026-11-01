@@ -22,9 +22,9 @@ export function TeamUpcomingTimeOff({ staffMemberId, timezone, action }: { staff
     <div className="flex items-center justify-between gap-4"><h3 className="text-sm font-medium" id={titleId}>{t("timeOff.tab")}</h3>{action ? <span className="shrink-0">{action}</span> : null}</div>
     {timeOff.isPending ? <div className="flex flex-1 items-center justify-center py-6"><Spinner aria-label={t("timeOff.loading")} /></div> : timeOff.isError ? <Alert variant="error">
       <AlertTitle>{t("timeOff.loadError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription>
-      <AlertAction><Button disabled={timeOff.isFetching} onClick={() => void timeOff.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
-    </Alert> : entries.length === 0 ? <Empty className="min-h-0 w-full flex-1 border-0 bg-transparent px-4 py-3 md:px-4 md:py-3">
-      <EmptyHeader className="mx-auto"><EmptyMedia className="mb-3" variant="icon"><Icon aria-hidden={true} name="calendarEvent" /></EmptyMedia><EmptyTitle>{t("timeOff.emptyUpcoming")}</EmptyTitle><EmptyDescription>{t("timeOff.emptyDescription")}</EmptyDescription></EmptyHeader>
+      <AlertAction><Button disabled={timeOff.isFetching} loading={timeOff.isFetching} onClick={() => void timeOff.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
+    </Alert> : entries.length === 0 ? <Empty>
+      <EmptyHeader><EmptyMedia variant="icon"><Icon aria-hidden={true} name="calendarEvent" /></EmptyMedia><EmptyTitle>{t("timeOff.emptyUpcoming")}</EmptyTitle><EmptyDescription>{t("timeOff.emptyDescription")}</EmptyDescription></EmptyHeader>
     </Empty> : <TeamTimeOffList canManage={true} entries={entries} staffMemberId={staffMemberId} timezone={timezone} />}
   </section>
 }

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { SettingsSwitch } from "~/components/settings/settings-switch"
 import { useTRPC } from "~/lib/trpc/client"
+import { notifyBookingPageSaved } from "~/lib/booking/booking-page-sync"
 
 export function BookingPageSwitch({ name, checked, disabled }: {
   name: "isActive" | "allowStaffSelection"
@@ -30,9 +31,13 @@ export function BookingPageSwitch({ name, checked, disabled }: {
     save={(value) => mutation.mutateAsync({ [name]: value })}
     getChecked={(saved) => saved[name]}
     updateCache={(value, saved) => updateCache(value, saved?.slug)}
-    onSaved={() => Promise.all([
-      queryClient.invalidateQueries(trpc.booking.getPage.queryFilter()),
-      queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
-    ])}
+    onSaved={() => {
+      const data = queryClient.getQueryData(queryKey)
+      if (data) notifyBookingPageSaved(data.organization.slug)
+      return Promise.all([
+        queryClient.invalidateQueries(trpc.booking.getPage.queryFilter()),
+        queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
+      ])
+    }}
   />
 }

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import Icon from "~/components/icons"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "~/components/ui/empty"
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 import { Spinner } from "~/components/ui/spinner"
 import { cn } from "~/lib/utils"
 
@@ -25,10 +25,10 @@ export function PublicBookingUnavailable({ notFound, title, onRetry, retrying }:
   const { t } = useTranslation("booking")
 
   if (notFound) return (
-    <Empty className="w-full max-w-lg">
+    <Empty>
       <EmptyHeader>
         <EmptyMedia variant="icon"><Icon aria-hidden={true} name="search" /></EmptyMedia>
-        <h1 className="font-heading text-xl font-semibold" data-slot="empty-title">{title}</h1>
+        <EmptyTitle aria-level={1} role="heading">{title}</EmptyTitle>
         <EmptyDescription>{t("unavailableHint")}</EmptyDescription>
       </EmptyHeader>
     </Empty>

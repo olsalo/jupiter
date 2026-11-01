@@ -37,10 +37,10 @@ export function ThemeSwitch() {
       }}
       value={theme.value}
     >
-      <TabsList aria-label={t("settings.theme")} className="grid grid-cols-2">
+      <TabsList aria-label={t("settings.theme")} className="grid grid-cols-2" showIndicator={false}>
         <TabsTab
           aria-label={t("settings.themeLight")}
-          className="size-7 p-0 sm:h-7"
+          className="size-7 p-0 data-active:bg-background data-active:shadow-sm/5 sm:h-7 dark:data-active:bg-input"
           disabled={false}
           title={t("settings.themeLight")}
           value="light"
@@ -49,7 +49,7 @@ export function ThemeSwitch() {
         </TabsTab>
         <TabsTab
           aria-label={t("settings.themeDark")}
-          className="size-7 p-0 sm:h-7"
+          className="size-7 p-0 data-active:bg-background data-active:shadow-sm/5 sm:h-7 dark:data-active:bg-input"
           disabled={false}
           title={t("settings.themeDark")}
           value="dark"

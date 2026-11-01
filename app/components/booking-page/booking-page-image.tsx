@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { toast } from "~/lib/toast"
+import { notifyBookingPageSaved } from "~/lib/booking/booking-page-sync"
 import { useTRPC } from "~/lib/trpc/client"
 import { BookingPageIdentity } from "./booking-page-identity"
 import { BookingPageCoverUpload } from "./booking-page-cover-upload"
@@ -30,6 +31,7 @@ export function BookingPageImage({ imageKey, imageUrl, enabled, disabled, organi
     disabled={disabled}
     onChange={async (imageKey) => {
       const saved = await update.mutateAsync({ imageKey })
+      notifyBookingPageSaved(organization.slug)
       queryClient.setQueryData(trpc.bookingPage.get.queryKey(), (current) => {
         if (!current) return current
         const basePath = `/book/${encodeURIComponent(current.organization.slug)}`

@@ -10,7 +10,7 @@ Verify the ingress by sending requests with forged incoming header values and ch
 
 ## Email and request budgets
 
-OTP sends are limited before OTP creation: one per recipient per minute, five per hour and ten per day, shared across request types and application instances. The application also permits ten sends per trusted client per minute, 200 sends per hour globally and 1,000 per day globally. Recipient addresses are trimmed and lowercased; counter keys are hashed before storage. Rotating IPs cannot bypass recipient or delivery budgets. Rejected sends do not replace an existing OTP.
+OTP sends are limited before OTP creation: five per recipient per minute, ten per hour and ten per day, shared across request types and application instances. The application also permits ten sends per trusted client per minute, 200 sends per hour globally and 1,000 per day globally. Recipient addresses are trimmed and lowercased; counter keys are hashed before storage. Rotating IPs cannot bypass recipient or delivery budgets. Rejected sends do not replace an existing OTP. These application OTP send limits are bypassed when `NODE_ENV=development`.
 
 Booking lookup limits are shared across instances and allow 120 requests per client per minute. The existing per-organization read and mutation budgets remain in place. Expiring counters use the existing verification table and PostgreSQL transaction locks, without a schema change. The appointment job removes expired budget records and old booking request audit rows.
 

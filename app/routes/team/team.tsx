@@ -162,7 +162,7 @@ export default function Team() {
           <AlertAction>
             <Button
               disabled={team.isFetching}
-              onClick={() => void team.refetch()}
+              loading={team.isFetching} onClick={() => void team.refetch()}
               size="sm"
               type="button"
               variant="outline"
@@ -179,7 +179,7 @@ export default function Team() {
           <AlertAction>
             <Button
               disabled={team.isFetching}
-              onClick={() => void team.refetch()}
+              loading={team.isFetching} onClick={() => void team.refetch()}
               size="sm"
               type="button"
               variant="outline"
@@ -218,7 +218,7 @@ export default function Team() {
               columns={peopleColumns}
               data={people}
               emptyContent={
-                <Empty className="min-h-0 w-full border-0 bg-transparent">
+                <Empty>
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
                       <Icon aria-hidden="true" name="users" size={18} />
@@ -245,7 +245,7 @@ export default function Team() {
               columns={inviteColumns}
               data={team.data?.invitations ?? []}
               emptyContent={
-                <Empty className="min-h-0 w-full border-0 bg-transparent">
+                <Empty>
                   <EmptyHeader>
                     <EmptyMedia variant="icon">
                       <Icon aria-hidden="true" name="mail" size={18} />
@@ -272,20 +272,19 @@ export default function Team() {
 }
 
 export function ErrorBoundary() {
-  const { t } = useTranslation("team")
   const revalidator = useRevalidator()
 
   return (
     <ViewportPage header={
       <RouteHeader
-        description={t("description")}
-        title={t("title")}
+        description={"Choose who takes appointments and who can use the app"}
+        title={"Team"}
       />
     }>
-      <title>{t("title")}</title>
+      <title>{"Team"}</title>
       <Alert variant="error">
-        <AlertTitle>{t("loadError")}</AlertTitle>
-        <AlertDescription>{t("retryDescription")}</AlertDescription>
+        <AlertTitle>{"We couldn't load your team"}</AlertTitle>
+        <AlertDescription>{"Try again in a moment"}</AlertDescription>
         <AlertAction>
           <Button
             disabled={revalidator.state !== "idle"}
@@ -294,7 +293,7 @@ export function ErrorBoundary() {
             type="button"
             variant="outline"
           >
-            {t("retry")}
+            {"Retry"}
           </Button>
         </AlertAction>
       </Alert>

@@ -81,7 +81,7 @@ export async function seedBarberShop(db: PrismaClient, input: z.input<typeof bar
     await tx.bookingPage.create({ data: {
       id: bookingPageId, organizationId, slug: "book", name: "Book a barber", title: "Look sharp, feel good",
       description: "Your usual trim or a whole new look. Pull up a chair, we'll take care of the rest",
-      defaultLocationId: locationId, allowLocationSelection: false, accentColor: "#3b82f6",
+      defaultLocationId: locationId, allowLocationSelection: false, accentColor: "#2563eb",
       successMessage: "Thanks for booking with Northside Barbers. We'll see you in the chair soon!",
     } })
     await tx.organizationSettings.create({ data: {

@@ -1,4 +1,4 @@
-export type BookingAvailabilityIssue = "outsideWorkingHours" | "overlapsBreak"
+export type BookingAvailabilityIssue = "outsideWorkingHours" | "overlapsBreak" | "unassignedService"
 export type BookingWindow = { start: number; end: number }
 
 export function getBookingAvailabilityIssues({ startsAt, endsAt, status, workingWindows, breakWindows, now }: {

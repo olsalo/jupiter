@@ -38,7 +38,7 @@ export default function PersonSheet({ params }: Route.ComponentProps) {
   const loading = useModalQueryLoading(query, params.personId)
   return (
     <TeamPersonSheet basePath="/team-original" pending={pending} profile={loading || (Boolean(query.data) && (!editing || canManage))} title={query.data?.name ?? t(editing ? "people.edit" : "people.details")} description={t(editing ? "people.editDescription" : "people.detailsDescription")}>
-      {(close) => loading ? <OverlayLoading data-slot="person-loading" label={t("people.loading")} /> : query.isError && !query.data ? <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("people.loadFailed")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button onClick={() => void query.refetch()} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert></ResponsiveSheetPanel> : <Outlet context={{ person: query.data ?? null, canManage, close, onPendingChange: setPending } satisfies TeamPersonContext} />}
+      {(close) => loading ? <OverlayLoading data-slot="person-loading" label={t("people.loading")} /> : query.isError && !query.data ? <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("people.loadFailed")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button loading={query.isFetching} onClick={() => void query.refetch()} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert></ResponsiveSheetPanel> : <Outlet context={{ person: query.data ?? null, canManage, close, onPendingChange: setPending } satisfies TeamPersonContext} />}
     </TeamPersonSheet>
   )
 }

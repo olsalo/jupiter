@@ -83,6 +83,8 @@ export const availabilityRouter = {
       locationId: rule.locationId,
       staffMemberId: rule.staffMemberId,
       isBreak: rule.isBreak,
+      validFrom: rule.validFrom ? +rule.validFrom : null,
+      validUntil: rule.validUntil ? +rule.validUntil : null,
       windows: rule.isActive ? localWindows(input.from, input.to, rule.timezone, rule.dayOfWeek, rule.startMinute, rule.endMinute)
         .map((window) => ({ start: Math.max(window.start, +input.from, rule.validFrom ? +rule.validFrom : -Infinity), end: Math.min(window.end, +input.to, rule.validUntil ? +rule.validUntil : Infinity) }))
         .filter((window) => window.end > window.start) : [],
@@ -170,8 +172,8 @@ export const availabilityRouter = {
     if (!result.count) notFound()
     return { id: input.id }
   })),
-  getBookingTimes: organizationProcedure.input(calendarBookingTimesInput).query(({ ctx, input }) => getAvailableSlots(ctx.prisma, ctx.organizationId, input, { allowPast: true, allowBreakOverlapStart: input.selectedStart ? +input.selectedStart : undefined, durationMinutes: input.durationMinutes, listStarts: true })),
-  getSlots: organizationProcedure.input(calendarSlotInput).query(({ ctx, input }) => getAvailableSlots(ctx.prisma, ctx.organizationId, input, { allowPast: true, durationMinutes: input.durationMinutes, listStarts: input.durationMinutes !== undefined })),
+  getBookingTimes: organizationProcedure.input(calendarBookingTimesInput).query(({ ctx, input }) => getAvailableSlots(ctx.prisma, ctx.organizationId, input, { allowUnassignedStaff: true, allowPast: true, allowBreakOverlapStart: input.selectedStart ? +input.selectedStart : undefined, durationMinutes: input.durationMinutes, listStarts: true })),
+  getSlots: organizationProcedure.input(calendarSlotInput).query(({ ctx, input }) => getAvailableSlots(ctx.prisma, ctx.organizationId, input, { allowUnassignedStaff: true, allowPast: true, durationMinutes: input.durationMinutes, listStarts: input.durationMinutes !== undefined })),
 } satisfies TRPCRouterRecord
 
 function assertAvailabilityAccess(

@@ -37,7 +37,7 @@ export function BookingSettings({ onFormStateChange, resetRef }: {
   if (query.isError) return <Alert variant="error">
     <AlertDescription>{t("settings.loadError")}</AlertDescription>
     <AlertAction>
-      <Button disabled={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("bookingSettings.retry")}</Button>
+      <Button disabled={query.isFetching} loading={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("bookingSettings.retry")}</Button>
     </AlertAction>
   </Alert>
   if (!query.data) return <SettingsLoading />

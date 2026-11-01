@@ -25,4 +25,25 @@ const business: CalendarScheduleRule = { staffMemberId: null, windows: [{ start:
 const overlap = getCalendarSchedule({ ...options, rules: [business, rule, { staffMemberId: "alice", isBreak: true, windows: [{ start: +beforeDst.startsAt, end: +beforeDst.startsAt + 1800000 }] }] })
 assert.equal(overlap.breaks.length, 1, "Overlapping extra and regular hours do not duplicate breaks")
 assert.deepEqual(overlap.unavailableTimes, [{ day: values.date, memberId: "bob", startMinute: 660, endMinute: 840 }])
+const closure: CalendarScheduleRule = { staffMemberId: null, isBlocked: true, title: "Holiday", windows: [{ start: +calendarDateFromValue(values.date, options.timeZone), end: +calendarDateFromValue("2030-10-27", options.timeZone) }] }
+const holiday = getCalendarSchedule({ ...options, rules: [closure, rule] })
+assert.deepEqual(holiday.unavailableTimes.filter((period) => period.memberId === "alice").map(({ startMinute, endMinute, title }) => ({ startMinute, endMinute, title })), [
+  { startMinute: 0, endMinute: 600, title: "Holiday" },
+  { startMinute: 840, endMinute: 1440, title: "Holiday" },
+], "Extra hours reopen only their window within a business closure")
+assert.deepEqual(holiday.unavailableTimes.filter((period) => period.memberId === "bob").map(({ startMinute, endMinute }) => ({ startMinute, endMinute })), [{ startMinute: 0, endMinute: 1440 }], "Other members remain closed")
+const personalBlock: CalendarScheduleRule = { ...rule, isExtra: false, isBlocked: true, title: "Time off" }
+assert.ok(getCalendarSchedule({ ...options, rules: [closure, rule, personalBlock] }).unavailableTimes.some((period) => period.memberId === "alice" && period.title === "Time off" && period.startMinute === 600 && period.endMinute === 840), "Extra hours do not override personal time off")
+assert.equal(getCalendarSchedule({ ...options, rules: [closure, { ...rule, staffMemberId: null }] }).unavailableTimes.filter((period) => period.startMinute === 0 && period.endMinute === 1440).length, 0, "Business-wide extra hours reopen all members")
 console.log("Extra hours date validation, timezone and calendar checks passed")
+
+const monday = "2026-10-12"
+const midnight = +calendarDateFromValue(monday, "UTC")
+const hour = 3600000
+const mondayOptions = { days: [calendarDateFromValue(monday, "UTC")], members: [{ id: "alice" }], timeZone: "UTC", defaultStartMinute: 540, defaultEndMinute: 720 }
+const businessHours: CalendarScheduleRule = { staffMemberId: null, windows: [{ start: midnight + 9 * hour, end: midnight + 12 * hour }] }
+const futureHours: CalendarScheduleRule = { staffMemberId: "alice", validFrom: midnight + 24 * hour, windows: [] }
+assert.deepEqual(getCalendarSchedule({ ...mondayOptions, rules: [businessHours, futureHours] }).unavailableTimes, [], "Future personal schedules preserve inherited calendar hours")
+assert.deepEqual(getCalendarSchedule({ ...mondayOptions, rules: [futureHours] }).unavailableTimes, [], "Future personal schedules preserve default calendar hours when business rules are missing")
+assert.deepEqual(getCalendarSchedule({ ...mondayOptions, rules: [businessHours, { ...futureHours, validFrom: null, validUntil: midnight }] }).unavailableTimes, [], "Expired personal schedules preserve inherited calendar hours")
+assert.deepEqual(getCalendarSchedule({ ...mondayOptions, rules: [businessHours, { ...futureHours, validFrom: null, validUntil: midnight + 10 * hour }] }).unavailableTimes, [{ day: monday, memberId: "alice", startMinute: 540, endMinute: 600 }], "Disabled personal schedules block inherited hours only until their end date")

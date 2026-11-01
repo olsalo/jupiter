@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 
-import { getCalendarTimeScrollLeft, getCalendarBookingScrollPosition, getCalendarBookingRevealScrollLeft, getCalendarBookingRevealScrollPosition, getCalendarTodayScrollLeft } from "../app/lib/calendar/scroll.ts"
+import { getCalendarTimeScrollLeft, getCalendarTimeScrollTop, getCalendarBookingScrollPosition, getCalendarBookingRevealScrollLeft, getCalendarBookingRevealScrollPosition, getCalendarTodayScrollLeft } from "../app/lib/calendar/scroll.ts"
 
 const bounds = (left: number, top: number, width: number, height: number) => ({ left, top, width, height })
 const viewport = {
@@ -64,3 +64,18 @@ assert.equal(getCalendarTimeScrollLeft({ ...horizontalDay, minute: 420 }), 0, "T
 assert.equal(getCalendarTimeScrollLeft({ ...horizontalDay, minute: 1200 }), 2816, "Times after closing stop at the final scroll position")
 assert.equal(getCalendarTimeScrollLeft({ ...horizontalDay, viewportWidth: 4000 }), 0, "A day that fits the viewport needs no scroll")
 console.info("PASS row time centering, edge padding and scroll bounds")
+
+assert.equal(getCalendarTimeScrollTop(viewport, 720), 480, "Desktop centers the time within the calendar viewport")
+assert.equal(getCalendarTimeScrollTop({ ...viewport, scrollTop: 300 }, 720), 480, "An existing desktop scroll offset does not shift the target")
+assert.equal(getCalendarTimeScrollTop(viewport, 8), 0, "Early times stop at the top")
+assert.equal(getCalendarTimeScrollTop(viewport, 1560), 1088, "Late times stop at the bottom")
+assert.equal(getCalendarTimeScrollTop({ ...viewport, clientHeight: 1800 }, 720), 0, "A calendar that fits needs no vertical scroll")
+
+const page = { ...viewport, scrollTop: 200, scrollHeight: 2000, clientHeight: 700, getBoundingClientRect: () => bounds(0, 24, 390, 700) }
+assert.equal(getCalendarTimeScrollTop(page, 720, 164), 710, "Mobile includes the calendar's page offset and excludes space outside the page viewport")
+assert.equal(getCalendarTimeScrollTop({ ...page, scrollTop: 710 }, 720, -346), 710, "Measuring after mobile centering keeps the same position")
+assert.equal(getCalendarTimeScrollTop(page, 8, 164), 0, "Mobile clamps early times to the page start")
+assert.equal(getCalendarTimeScrollTop(page, 1800, 164), 1300, "Mobile clamps late times to the page end")
+assert.equal(getCalendarTimeScrollTop(page, 720, 164, { top: 180, bottom: 0 }), 620, "Classic mobile centers below the sticky header, with navigation outside the page")
+assert.equal(getCalendarTimeScrollTop(page, 720, 164, { top: 180, bottom: 80 }), 660, "Floating mobile excludes the sticky header and overlaid bottom navigation")
+console.info("PASS desktop and mobile time centering, page offsets, existing scroll and vertical bounds")

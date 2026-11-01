@@ -7,15 +7,16 @@ import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmat
 import Icon from "~/components/icons"
 import { bookingPageColorStyle } from "~/lib/booking/booking-page-colors"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
-import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { formatDateTime } from "~/lib/localization/format-preference"
 import { toast } from "~/lib/toast"
+import { cn } from "~/lib/utils"
 import { useTRPC } from "~/lib/trpc/client"
 import { useFormatPreference } from "~/lib/hooks/use-format-preference"
 import { BookingAppointmentCard } from "./booking-appointment-card"
 import { PublicBookingHeader } from "./public-booking-header"
+import { PublicBookingFavicon } from "./public-booking-favicon"
 import { PublicBookingLoading, PublicBookingUnavailable } from "./public-booking-state"
 
 export function BookingManagementPage({ bookingCode }: { bookingCode: string }) {
@@ -38,10 +39,6 @@ export function BookingManagementPage({ bookingCode }: { bookingCode: string }) 
   const upcoming = Boolean(booking && +new Date(booking.startsAt) > Date.now() && !data?.expired && ["PENDING", "CONFIRMED", "CHECKED_IN"].includes(booking.status))
   const canReschedule = Boolean(upcoming && data?.canReschedule && +new Date(data.deadline) > Date.now())
   const canCancel = Boolean(upcoming && data?.canCancel && +new Date(data.cancellationDeadline) > Date.now())
-  const status = data?.expired ? "EXPIRED" : booking?.status
-  const statusVariant = status === "COMPLETED"
-    ? "success" as const
-    : status === "PENDING" ? "warning" as const : "secondary" as const
 
   async function cancelBooking() {
     if (!canCancel || cancel.isPending) return
@@ -71,6 +68,7 @@ export function BookingManagementPage({ bookingCode }: { bookingCode: string }) 
   return (
     <div className="flex h-dvh pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] flex-col overflow-hidden bg-background pb-[env(safe-area-inset-bottom,0px)] text-foreground" style={bookingPageColorStyle(data?.accentColor)}>
       <title>{data ? `${t("bookingDetailsTitle")} · ${data.organization.name}` : t("bookingDetailsTitle")}</title>
+      <PublicBookingFavicon accentColor={data?.accentColor} organization={data?.organization} />
       <PublicBookingHeader
         formatPreference={preference.value}
         onFormatPreferenceChange={preference.set}
@@ -81,7 +79,10 @@ export function BookingManagementPage({ bookingCode }: { bookingCode: string }) 
         scrollbarClassName="max-lg:hidden"
         scrollFade={true}
       >
-        <main className="mx-auto my-auto flex w-full max-w-xl flex-col gap-6 px-4 py-6 sm:gap-7 sm:px-6 sm:py-8">
+        <main className={cn(
+          "mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-6 sm:gap-7 sm:px-6 sm:py-8",
+          ((data && booking) || page.isPending || page.error?.data?.code === "NOT_FOUND") && "my-auto",
+        )}>
           {!data || !booking ? page.isPending ? (
             <PublicBookingLoading label={t("bookingLoading")} />
           ) : (
@@ -93,7 +94,6 @@ export function BookingManagementPage({ bookingCode }: { bookingCode: string }) 
             />
           ) : <>
             <div className="flex flex-col items-center gap-3 text-center">
-              {status !== "CONFIRMED" ? <Badge variant={statusVariant}>{t(`bookingStatus.${status}`)}</Badge> : null}
               <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-medium tracking-tight">{t("bookingDetailsTitle")}</h1>
                 <p className="text-sm leading-6 text-muted-foreground" role="status">

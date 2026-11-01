@@ -1,4 +1,4 @@
-export type CalendarBookingSlot = { startsAt: string; endsAt: string; staffMemberId: string; locationId: string | null; overlapsBreak?: boolean }
+export type CalendarBookingSlot = { startsAt: string; endsAt: string; staffMemberId: string; locationId: string | null; overlapsBreak?: boolean; unassignedService?: boolean }
 type SlotDay = { date: string; slots: CalendarBookingSlot[] }
 
 export function getClosestBookingSlot(slots: CalendarBookingSlot[], startsAt: Date, preferredMemberId?: string) {

@@ -5,7 +5,6 @@ import { AppForm } from "~/components/forms/app-form"
 import { BusinessHolidayFormFields } from "~/components/settings/business/business-holiday-form-fields"
 import { Button } from "~/components/ui/button"
 import { Dialog, DialogPopup, DialogHeader, DialogTitle, DialogDescription, DialogPanel, DialogFooter } from "~/components/ui/dialog"
-import { Spinner } from "~/components/ui/spinner"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 import { generateId } from "~/lib/database/id"
@@ -57,7 +56,7 @@ export function BusinessHolidayDialog({ open, onOpenChange, holiday, holidays, t
         <DialogPanel><BusinessHolidayFormFields custom={true} form={form} timezone={timezone} /></DialogPanel>
         <DialogFooter>
           <Button disabled={form.formState.isSubmitting} onClick={() => onOpenChange(false)} type="button" variant="ghost">{t("settings.cancel")}</Button>
-          <Button disabled={form.formState.isSubmitting} type="submit">{form.formState.isSubmitting ? <Spinner className="size-4" /> : null}{t(holiday ? "settings.save" : "businessSchedule.addHoliday")}</Button>
+          <Button disabled={form.formState.isSubmitting} loading={form.formState.isSubmitting} type="submit">{t(holiday ? "settings.save" : "businessSchedule.addHoliday")}</Button>
         </DialogFooter>
       </>}</AppForm>
     </DialogPopup>

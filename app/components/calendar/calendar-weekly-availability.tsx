@@ -95,7 +95,7 @@ export function CalendarWeeklyAvailability({ staffMemberId, kind, onPendingChang
   }
 
   return loading ? <div className="relative min-h-0 flex-1"><TeamPanelLoading label={t(kind === "breaks" ? "team:people.loadingBreaks" : "team:people.loadingAvailability")} /></div> : failed ? <ResponsiveSheetPanel>
-      <Alert variant="error"><AlertTitle>{t("team:people.availabilityError")}</AlertTitle><AlertDescription>{t("team:retryDescription")}</AlertDescription><AlertAction><Button disabled={rules.isFetching || breaks.isFetching || business.isFetching} onClick={() => void Promise.all([rules.refetch(), breaks.refetch(), business.refetch()])} type="button" variant="outline">{t("team:retry")}</Button></AlertAction></Alert>
+      <Alert variant="error"><AlertTitle>{t("team:people.availabilityError")}</AlertTitle><AlertDescription>{t("team:retryDescription")}</AlertDescription><AlertAction><Button disabled={rules.isFetching || breaks.isFetching || business.isFetching} loading={rules.isFetching || breaks.isFetching || business.isFetching} onClick={() => void Promise.all([rules.refetch(), breaks.refetch(), business.refetch()])} type="button" variant="outline">{t("team:retry")}</Button></AlertAction></Alert>
     </ResponsiveSheetPanel> : <>
       <AppForm key={editorVersion} className="contents" id={formId} defaultValues={initialValues} schema={schema} onFormStateChange={(state) => setFormPending(state.isSubmitting)} submitFn={async (values) => {
         try {
@@ -136,7 +136,7 @@ export function CalendarWeeklyAvailability({ staffMemberId, kind, onPendingChang
           </ResponsiveSheetPanel>
           <ResponsiveSheetFooter>
             <Button disabled={pending} onClick={close} type="button" variant="ghost">{t("team:cancel")}</Button>
-            <Button disabled={pending} form={formId} loading={formPending} type="submit">{t(formPending ? "team:people.saving" : "team:people.save")}</Button>
+            <Button disabled={pending} form={formId} loading={formPending} type="submit">{t("team:people.save")}</Button>
           </ResponsiveSheetFooter>
         </>}}
       </AppForm>

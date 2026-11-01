@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next"
 import Icon from "~/components/icons"
 import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
 import { Button } from "~/components/ui/button"
-import { Spinner } from "~/components/ui/spinner"
 import { Tooltip, TooltipPopup, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip"
 import type { PersonFormFields } from "~/lib/schemas/team"
 import { TeamScheduleTimeFields } from "./team-schedule-time-fields"
@@ -51,7 +50,7 @@ export function TeamWorkingHoursFields({ scope, timezone, defaultHours, showHead
         <div className="flex justify-end">
           <Tooltip>
             <TooltipTrigger render={<span className="inline-flex" />}>
-              <Button aria-busy={resetPending} aria-label={resetDescription ?? t("people.resetHours")} disabled={form.formState.isSubmitting || resetPending} onClick={() => void resetToDefault()} size="sm" type="button" variant="outline"><span className="inline-flex size-4 shrink-0 items-center justify-center">{resetPending ? <Spinner aria-hidden={true} className="size-4" /> : <Icon aria-hidden={true} name="refresh" size={16} />}</span>{t("people.restoreToDefault")}</Button>
+              <Button aria-busy={resetPending} aria-label={resetDescription ?? t("people.resetHours")} disabled={form.formState.isSubmitting || resetPending} loading={resetPending} onClick={() => void resetToDefault()} size="sm" type="button" variant="outline"><span className="inline-flex size-4 shrink-0 items-center justify-center"><Icon aria-hidden={true} name="refresh" size={16} /></span>{t("people.restoreToDefault")}</Button>
             </TooltipTrigger>
             <TooltipPopup>{resetDescription ?? t("people.resetHours")}</TooltipPopup>
           </Tooltip>

@@ -35,7 +35,8 @@
     "test:settings": "node --experimental-strip-types tests/settings-navigation.integration.ts",
     "test:team": "node --experimental-strip-types tests/team.integration.ts",
     "test:team-people": "node --experimental-strip-types tests/team-people.integration.ts && node --experimental-strip-types tests/team-people-ssr.integration.ts",
-    "typecheck": "react-router typegen && tsc"
+    "typecheck": "react-router typegen && tsc",
+    "test:auth": "node --experimental-strip-types tests/auth-production.test.ts && node --experimental-strip-types tests/auth-routing.integration.ts && node --experimental-strip-types tests/auth-onboarding.integration.ts && node --experimental-strip-types tests/onboarding-data.integration.ts && node --experimental-strip-types tests/onboarding-data.integration.ts --demo && node --experimental-strip-types tests/onboarding-data.integration.ts --demo --production && node --experimental-strip-types tests/onboarding-routing.integration.ts && node --experimental-strip-types tests/onboarding-routing.integration.ts --demo && node --experimental-strip-types tests/onboarding-ssr.integration.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "latest",

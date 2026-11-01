@@ -17,6 +17,7 @@ export default function handleRequest(
   routerContext: RouterContextProvider,
 ) {
   const i18n = getInstance(routerContext)
+  responseHeaders.set("Cache-Control", "private, no-store")
 
   return new Promise<Response>((resolve, reject) => {
     const userAgent = request.headers.get("user-agent")

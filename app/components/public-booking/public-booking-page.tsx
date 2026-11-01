@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useCallback, useLayoutEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useNavigate, useNavigation } from "react-router"
 import { useTranslation } from "react-i18next"
 
@@ -17,10 +17,12 @@ import { useTRPC } from "~/lib/trpc/client"
 import { toast } from "~/lib/toast"
 import { cn } from "~/lib/utils"
 import { bookingPageColorStyle } from "~/lib/booking/booking-page-colors"
+import { subscribeToBookingPageSaves } from "~/lib/booking/booking-page-sync"
 import type { FormatPreference } from "~/lib/localization/format-preference"
 import { BookingDetailsForm, type BookingDraft } from "./booking-details-form"
 import { useBookingNavigation } from "./use-booking-navigation"
 import { PublicBookingProfile } from "./public-booking-profile"
+import { PublicBookingFavicon } from "./public-booking-favicon"
 import { BookingReview } from "./booking-review"
 import { BookingServiceSelection } from "./booking-service-selection"
 import { BookingSummary } from "./booking-summary"
@@ -36,6 +38,10 @@ import type {
 export function PublicBookingPage(scope: BookingScope) {
   const { t } = useTranslation("booking")
   const trpc = useTRPC()
+  const queryClient = useQueryClient()
+  useEffect(() => subscribeToBookingPageSaves(scope.organizationSlug, () => {
+    void queryClient.invalidateQueries(trpc.booking.pathFilter())
+  }), [scope.organizationSlug, queryClient, trpc])
   const formatPreference = useFormatPreference()
   const page = useQuery(
     trpc.booking.getPage.queryOptions(scope, { retry: false, retryOnMount: false }),
@@ -49,6 +55,7 @@ export function PublicBookingPage(scope: BookingScope) {
           ? `${t("title")} · ${data.organization.name}`
           : t("title")}
       </title>
+      <PublicBookingFavicon accentColor={data?.page?.accentColor} organization={data?.organization} />
       <header className="shrink-0 pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:h-14 sm:px-6 lg:h-20 lg:w-[calc(100%_-_3rem)] lg:px-8">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -116,7 +123,10 @@ export function PublicBookingPage(scope: BookingScope) {
           )}
         </>
       ) : (
-        <main className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 items-center justify-center p-4 sm:p-6">
+        <main className={cn(
+          "mx-auto flex min-h-0 w-full max-w-5xl flex-1 justify-center p-4 sm:p-6",
+          page.isPending || page.error?.data?.code === "NOT_FOUND" ? "items-center" : "items-start",
+        )}>
           {page.isPending ? (
             <PublicBookingLoading label={t("bookingLoading")} />
           ) : (

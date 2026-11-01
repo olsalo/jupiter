@@ -1,5 +1,6 @@
 import type { CalendarAppointment, CalendarDragSelection, CalendarMember, CalendarUnavailableDay, CalendarUnavailableTime } from "~/lib/calendar/types"
 import { useEffect, useLayoutEffect, useRef, useState, useMemo } from "react"
+import { flushSync } from "react-dom"
 import { TZDate } from "react-day-picker"
 import { useTranslation } from "react-i18next"
 
@@ -7,11 +8,11 @@ import { CalendarBookingDragOverlay } from "~/components/calendar/calendar-booki
 import { CalendarBookingReturnAnimation } from "~/components/calendar/calendar-booking-return-animation"
 import { useCalendarBookingReveal } from "~/components/calendar/use-calendar-booking-reveal"
 import { useCalendarBookingDrag } from "~/components/calendar/use-calendar-booking-drag"
+import { CalendarLoading } from "~/components/calendar/calendar-loading"
 import { CalendarTimelineLane } from "~/components/calendar/calendar-timeline-lane"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { UserAvatar } from "~/components/data-display/user-avatar"
 import { ScrollArea } from "~/components/ui/scroll-area"
-import { Spinner } from "~/components/ui/spinner"
 import { calendarDateFromValue, calendarDateToValue } from "~/lib/calendar/date"
 import { calendarTimelineHourHeight, calendarTimelinePadding, getCalendarTimelineLayout } from "~/lib/calendar/timeline-layout"
 import type { CalendarBookingDragPhase } from "~/lib/calendar/booking-drag"
@@ -19,7 +20,7 @@ import { attachCalendarWheelScroll } from "~/lib/calendar/wheel-scroll"
 import { calendarIntervalMinutes, calendarMinDurationMinutes } from "~/lib/calendar/time-step"
 import { sortCalendarMembers } from "~/lib/calendar/schedule"
 import { isCalendarCurrentTimeVisible, subscribeCalendarClock } from "~/lib/calendar/clock"
-import { getCalendarBookingRevealScrollPosition, getCalendarBookingScrollPosition, getCalendarTodayScrollLeft } from "~/lib/calendar/scroll"
+import { getCalendarBookingRevealScrollPosition, getCalendarBookingScrollPosition, getCalendarTimeScrollTop, getCalendarTodayScrollLeft } from "~/lib/calendar/scroll"
 import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
 import { cn } from "~/lib/utils"
 
@@ -32,6 +33,7 @@ export type CalendarTimelineProps = {
   minDurationMinutes?: number
   getBookingIssues?: (appointment: CalendarAppointment) => CalendarAppointment["availabilityIssues"]
   expandToContent?: boolean
+  centerCurrentTimeOnMobile?: boolean
   initialNow: number
   focusedAppointmentId?: string
   allowSimultaneousBookings?: boolean
@@ -62,12 +64,12 @@ const emptyAppointments: CalendarAppointment[] = []
 const emptyUnavailableDays: CalendarUnavailableDay[] = []
 const emptyUnavailableTimes: CalendarUnavailableTime[] = []
 
-export function CalendarTimeline({ expandToContent = false, initialNow, focusedAppointmentId, allowSimultaneousBookings = false, onMoveBooking, onSelectRange, onSelectRangeStart, onSelectRangeUpdate, onSelectRangeCancel, days, members, bookingMembers, startMinute, endMinute, timeZone, formatPreference, appointments = emptyAppointments, conflictAppointments = appointments, unavailableDays = emptyUnavailableDays, unavailableTimes = emptyUnavailableTimes, breaks = emptyUnavailableTimes, className, viewMode = "week", fullWidthTimeLine = false, trimTimeEdges = false, getBookingIssues, getDraftService, serviceDurations, intervalMinutes = calendarIntervalMinutes, minDurationMinutes = calendarMinDurationMinutes }: CalendarTimelineProps) {
+export function CalendarTimeline({ expandToContent = false, centerCurrentTimeOnMobile = true, initialNow, focusedAppointmentId, allowSimultaneousBookings = false, onMoveBooking, onSelectRange, onSelectRangeStart, onSelectRangeUpdate, onSelectRangeCancel, days, members, bookingMembers, startMinute, endMinute, timeZone, formatPreference, appointments = emptyAppointments, conflictAppointments = appointments, unavailableDays = emptyUnavailableDays, unavailableTimes = emptyUnavailableTimes, breaks = emptyUnavailableTimes, className, viewMode = "week", fullWidthTimeLine = false, trimTimeEdges = false, getBookingIssues, getDraftService, serviceDurations, intervalMinutes = calendarIntervalMinutes, minDurationMinutes = calendarMinDurationMinutes }: CalendarTimelineProps) {
   const { t, i18n } = useTranslation()
-  const { preview, scrollState, returnMotion, setDragging, liveDragPreview } = useCalendarBookingPreview()
+  const { preview, scrollState, returnMotion, dragging, setDragging, liveDragPreview } = useCalendarBookingPreview()
   const isWeekView = viewMode === "week"
   const isMobileView = expandToContent && !isWeekView
-  const timeGutterWidth = isMobileView ? (formatPreference === "us" ? 64 : 48) : 80
+  const timeGutterWidth = formatPreference === "us" ? (isMobileView ? 64 : 80) : (isMobileView ? 48 : 56)
   const orderedMembers = useMemo(() => sortCalendarMembers(members), [members])
   const excludeDraftConflicts = Boolean(onSelectRangeStart)
   const timelineLayout = useMemo(() => getCalendarTimelineLayout({ days, members: orderedMembers, appointments, conflictAppointments, unavailableDays, unavailableTimes, breaks, startMinute, endMinute, allowSimultaneousBookings, excludeDraftConflicts }), [days, orderedMembers, appointments, conflictAppointments, unavailableDays, unavailableTimes, breaks, startMinute, endMinute, allowSimultaneousBookings, excludeDraftConflicts])
@@ -102,7 +104,7 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
   const visibleDates = days.map(calendarDateToValue).join("/")
   const initialPositionKey = `${expandToContent ? "page" : "grid"}/${viewMode}/${visibleDates}`
 
-  const waitingForInitialPosition = !expandToContent && positionedRange !== initialPositionKey && !preview
+  const waitingForInitialPosition = positionedRange !== initialPositionKey && !preview
   const gridWidth = { width: "100%", minWidth: minimumWidth }
   const dayColumns = { ...gridWidth, gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }
   const laneColumns = { gridTemplateColumns: `repeat(${Math.max(1, members.length)}, minmax(0, 1fr))` }
@@ -219,33 +221,57 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
       if (scrollState?.restore()) {
         initializedRange.current = initialPositionKey
       } else if (initializedRange.current !== initialPositionKey) {
+        // A remount or delayed layout can outlive the route's clock snapshot
+        const currentTime = new TZDate(Date.now(), timeZone)
+        const currentDay = calendarDateToValue(currentTime)
+        const minute = currentTime.getHours() * 60 + currentTime.getMinutes()
+        const timeTop = calendarTimelinePadding + (minute - startMinute) / 60 * calendarTimelineHourHeight
+        const canCenterTime = visibleDates.split("/").includes(currentDay) && isCalendarCurrentTimeVisible(minute, startMinute, endMinute)
         if (isWeekView) {
-          const left = getCalendarTodayScrollLeft(visibleDates.split("/"), today, width, viewport.clientWidth)
+          const left = getCalendarTodayScrollLeft(visibleDates.split("/"), currentDay, width, viewport.clientWidth)
           syncHorizontal(left ?? 0)
         }
-        if (showCurrentTime && !expandToContent) syncVertical(Math.max(0, Math.min(contentHeight - viewport.clientHeight, currentTimeTop - viewport.clientHeight / 2)))
-        if (showCurrentTime && pageViewport) {
-          pageViewport.scrollTop = Math.max(0, Math.min(
-            pageViewport.scrollHeight - pageViewport.clientHeight,
-            pageViewport.scrollTop + viewport.getBoundingClientRect().top - pageViewport.getBoundingClientRect().top + currentTimeTop - pageViewport.clientHeight / 2,
-          ))
+        if (canCenterTime && !expandToContent) syncVertical(getCalendarTimeScrollTop(viewport, timeTop))
+        if (canCenterTime && pageViewport && (centerCurrentTimeOnMobile || initializedRange.current !== null)) {
+          const header = pageViewport.querySelector<HTMLElement>(".route-header")
+          const navigation = pageViewport.closest("main")?.querySelector<HTMLElement>('[data-slot="app-navigation"]')
+          const pageBounds = pageViewport.getBoundingClientRect()
+          const navigationBounds = navigation?.getBoundingClientRect()
+          const bottom = navigationBounds && navigationBounds.width > 0
+            ? Math.max(0, Math.min(pageViewport.clientHeight, pageBounds.top + pageViewport.clientHeight - navigationBounds.top)) : 0
+          let contentTop = viewport.getBoundingClientRect().top
+          // Center against the final layout while the route is sliding in
+          for (let element: HTMLElement | null = viewport; element && element !== pageViewport; element = element.parentElement) {
+            const transform = getComputedStyle(element).transform
+            if (transform !== "none") contentTop -= new DOMMatrixReadOnly(transform).m42
+          }
+          pageViewport.scrollTop = getCalendarTimeScrollTop(pageViewport, timeTop, contentTop, {
+            top: header?.getBoundingClientRect().height ?? 0,
+            bottom,
+          })
         }
         initializedRange.current = initialPositionKey
       }
-      setPositionedRange(initialPositionKey)
+      flushSync(() => setPositionedRange(initialPositionKey))
     }
-    const observer = new ResizeObserver(restore)
+    let cancelled = false
+    const position = () => {
+      if (!cancelled) restore()
+    }
+    const observer = new ResizeObserver(position)
     observer.observe(viewport)
     if (pageViewport) observer.observe(pageViewport)
-    restore()
+    // Finish parent scroll restoration, then position and reveal before paint
+    queueMicrotask(position)
     return () => {
+      cancelled = true
       observer.disconnect()
     }
-  }, [preview, scrollState, width, contentHeight, initialPositionKey, visibleDates, isWeekView, today, showCurrentTime, currentTimeTop, expandToContent, viewportWidth])
+  }, [preview, scrollState, width, contentHeight, initialPositionKey, visibleDates, isWeekView, today, showCurrentTime, currentTimeTop, expandToContent, viewportWidth, timeZone, startMinute, endMinute, centerCurrentTimeOnMobile])
 
   const draft = appointments.find((appointment) => appointment.draft)
   useLayoutEffect(() => {
-    if (!preview || preview.preserveScroll) return
+    if (dragging || !preview || preview.preserveScroll) return
     const viewport = contentRef.current
     const card = viewport?.querySelector<HTMLElement>('[data-draft="true"]')
     if (!viewport || !card) return
@@ -303,17 +329,18 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
       viewport.removeEventListener("pointerdown", stopScrolling)
       viewport.removeEventListener("keydown", stopScrolling)
     }
-  }, [Boolean(preview), preview?.preserveScroll, draft?.day, draft?.memberId, draft?.startMinute, draft?.endMinute, width, contentHeight])
+  }, [dragging, Boolean(preview), preview?.preserveScroll, draft?.day, draft?.memberId, draft?.startMinute, draft?.endMinute, width, contentHeight])
 
-  return <section aria-busy={waitingForInitialPosition || undefined} aria-label={t(isWeekView ? "calendarGrid.week" : "calendarGrid.day")} className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background", waitingForInitialPosition && "invisible", expandToContent && "flex-none", isMobileView && "rounded-none border-0", !isMobileView && "[--calendar-divider:color-mix(in_srgb,var(--background)_86%,var(--foreground))]", className)} data-slot={isWeekView ? "week-calendar" : "day-calendar"} data-presentation={isMobileView ? "mobile" : "desktop"}>
-    {waitingForInitialPosition ? <div className="visible absolute inset-0 z-20 flex items-center justify-center bg-background"><Spinner aria-label={t("loading")} /></div> : null}
+  return <>
+    {waitingForInitialPosition ? <div className="absolute inset-0 flex" data-slot="calendar-position-loading"><CalendarLoading /></div> : null}
+    <section aria-busy={waitingForInitialPosition || undefined} aria-label={t(isWeekView ? "calendarGrid.week" : "calendarGrid.day")} className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background", waitingForInitialPosition && "invisible", expandToContent && "flex-none", isMobileView && "rounded-none border-0", !isMobileView && "[--calendar-divider:color-mix(in_srgb,var(--background)_86%,var(--foreground))]", className)} data-slot={isWeekView ? "week-calendar" : "day-calendar"} data-presentation={isMobileView ? "mobile" : "desktop"}>
     {!isMobileView && !isWeekView && days[0] ? <div className="flex shrink-0">
-      <div aria-hidden={true} className="w-20 shrink-0 border-r" />
+      <div aria-hidden={true} className="shrink-0 border-r" style={{ width: timeGutterWidth }} />
       <div className="min-w-0 flex-1 border-b"><CalendarDateHeading day={days[0]} formatPreference={formatPreference} relative={true} timeZone={timeZone} today={today} /></div>
       <div aria-hidden={true} className="w-[19px] shrink-0 border-l" />
     </div> : null}
     {!isMobileView ? <div className="flex shrink-0" data-slot="calendar-header">
-      <div aria-hidden={true} className="w-20 shrink-0 border-r border-b" />
+      <div aria-hidden={true} className="shrink-0 border-r border-b" style={{ width: timeGutterWidth }} />
       <div className="min-w-0 flex-1 overflow-hidden border-b mask-l-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-start,0px)))] mask-r-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-end,0px)))] [--fade-size:1.5rem]" ref={headerRef}>
         <div className="grid" style={dayColumns}>
           {days.map((day) => {
@@ -333,7 +360,7 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
       <div aria-hidden={true} className="w-[19px] shrink-0 border-b border-l" />
     </div> : null}
     <div className="relative flex min-h-0 flex-1 overflow-hidden" data-slot="calendar-body" style={expandToContent ? { height: contentHeight, flex: "none" } : undefined}>
-      <div className={cn("relative z-20 shrink-0", !isMobileView && "w-20 bg-[color-mix(in_srgb,var(--muted)_20%,var(--background))] before:pointer-events-none before:absolute before:inset-y-0 before:right-0 before:border-r before:border-border")} data-slot="calendar-time-gutter" style={isMobileView ? { width: timeGutterWidth } : undefined}>
+      <div className={cn("relative z-20 shrink-0", !isMobileView && "bg-[color-mix(in_srgb,var(--muted)_20%,var(--background))] before:pointer-events-none before:absolute before:inset-y-0 before:right-0 before:border-r before:border-border")} data-slot="calendar-time-gutter" style={{ width: timeGutterWidth }}>
         <div className="absolute inset-0 overflow-hidden mask-t-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-start,0px)))] mask-b-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-end,0px)))] [--fade-size:1.5rem]" ref={timeGutterRef}>
           <div className="relative will-change-transform" ref={timesRef} style={{ height: contentHeight }}>
             {visibleHours.map((minute) => <div className={cn("absolute inset-x-0 -translate-y-1/2 text-right text-xs whitespace-nowrap text-muted-foreground tabular-nums", isMobileView ? "pr-2" : "pr-3")} key={minute} style={{ top: calendarTimelinePadding + (minute - startMinute) / 60 * calendarTimelineHourHeight }}>{formatTime(minute)}</div>)}
@@ -419,7 +446,7 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
       </div> : null}
     </div>
     {!isMobileView ? <div className={cn("h-[19px] shrink-0 border-t", showHorizontalScroll ? "flex" : "hidden")} data-slot="calendar-horizontal-scroll">
-      <div aria-hidden={true} className="w-20 shrink-0 border-r" />
+      <div aria-hidden={true} className="shrink-0 border-r" style={{ width: timeGutterWidth }} />
       <ScrollArea
         className="min-w-0 flex-1"
         overscrollContain={true}
@@ -432,10 +459,10 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
     </div> : null}
     {!isMobileView && isWeekView && days.length > 1 ? <div
       aria-hidden={true}
-      className="pointer-events-none absolute top-0 right-[19px] left-20 z-20 overflow-hidden mask-l-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-start,0px)))] mask-r-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-end,0px)))] [--fade-size:1.5rem]"
+      className="pointer-events-none absolute top-0 right-[19px] z-20 overflow-hidden mask-l-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-start,0px)))] mask-r-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-end,0px)))] [--fade-size:1.5rem]"
       data-slot="calendar-date-dividers"
       ref={dateDividerViewportRef}
-      style={{ bottom: showHorizontalScroll ? 19 : 0 }}
+      style={{ bottom: showHorizontalScroll ? 19 : 0, left: timeGutterWidth }}
     >
       <div className="grid h-full will-change-transform" ref={dateDividersRef} style={dayColumns}>
         {days.map((day, index) => <div className="border-r border-(--calendar-divider) last:border-r-0" data-slot={index < days.length - 1 ? "calendar-date-divider" : undefined} key={calendarDateToValue(day)} />)}
@@ -453,6 +480,7 @@ export function CalendarTimeline({ expandToContent = false, initialNow, focusedA
     />)}
     <CalendarBookingDragOverlay endMinute={endMinute} formatPreference={formatPreference} startMinute={startMinute} store={bookingDrag.dragPreview} />
   </section>
+  </>
 }
 
 function CalendarDateHeading({ day, formatPreference, relative, timeZone, today }: {

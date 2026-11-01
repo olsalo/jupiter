@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { createServer } from "vite"
 
 const appPath = new URL("../app", import.meta.url).pathname
-const vite = await createServer({ configFile: false, appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, ws: false, hmr: false, watch: null } })
+const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/responsive-sheet-presentation", appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, ws: false, hmr: false, watch: null } })
 try {
   const { DrawerBackdrop, DrawerViewport } = await vite.ssrLoadModule("/app/components/ui/drawer.tsx") as typeof import("../app/components/ui/drawer")
   const { ResponsiveModal, ResponsiveModalPopup, ResponsiveModalHeader, ResponsiveModalTitle, ResponsiveModalDescription, ResponsiveModalPanel } = await vite.ssrLoadModule("/app/components/overlays/responsive-modal.tsx") as typeof import("../app/components/overlays/responsive-modal")

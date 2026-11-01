@@ -287,12 +287,12 @@ export function DrawerFooter({
 }): React.ReactElement {
   const defaultProps = {
     className: cn(
-      "keyboard-focusable flex shrink-0 flex-col-reverse gap-2 bg-muted/72 px-6 pb-(--safe-area-inset-bottom,0px) sm:flex-row sm:justify-end",
+      "keyboard-focusable flex shrink-0 flex-col-reverse gap-2 bg-muted/72 px-6 sm:flex-row sm:justify-end",
       !allowSelection && "cursor-default",
       variant === "default" &&
-        "border-t pt-4 pb-[calc(env(safe-area-inset-bottom,0px)+--spacing(4))]",
+        "border-t pt-4 pb-[calc(env(safe-area-inset-bottom,0px)+--spacing(4))] md:pb-4",
       variant === "bare" &&
-        "in-[[data-slot=drawer-popup]:has([data-slot=drawer-panel])]:pt-3 pt-4 pb-[calc(env(safe-area-inset-bottom,0px)+--spacing(6))]",
+        "in-[[data-slot=drawer-popup]:has([data-slot=drawer-panel])]:pt-3 pt-4 pb-[calc(env(safe-area-inset-bottom,0px)+--spacing(6))] md:pb-6",
       className,
     ),
     "data-slot": "drawer-footer",

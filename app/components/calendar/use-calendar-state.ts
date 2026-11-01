@@ -47,7 +47,7 @@ export function useCalendarState({ preview: showPreview = true, mobile }: { prev
   const mode = isMobile && dateState.mode === "week" ? "day" : dateState.mode
 
   return {
-    ...dateState, mode, now, isMobile, dayLayout: !isMobile && searchParams.get("layout") === "rows" ? "rows" as const : "columns" as const, organization, staff, bookableMembers, selectedMember, timeZone, searchParams, setSearchParams,
+    ...dateState, mode, now, isMobile, centerCurrentTimeOnMobile: calendar?.centerCurrentTimeOnMobile ?? false, dayLayout: !isMobile && searchParams.get("layout") === "rows" ? "rows" as const : "columns" as const, organization, staff, bookableMembers, selectedMember, timeZone, searchParams, setSearchParams,
     formatPreference: root?.formatPreference ?? "eu",
     startMinute: (settings?.defaultStartHour ?? 8) * 60,
     endMinute: (settings?.defaultEndHour ?? 18) * 60,

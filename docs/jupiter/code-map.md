@@ -18,9 +18,9 @@ This inventory describes the current scheduling product. Follow the shared [code
 | `layout/` | App shells, page layouts, route headers, and page headings |
 | `navigation/` | App logo, navigation icons, and profile menu |
 | `notes/` | Note form and modal support |
-| `onboarding/` | Setup forms, progress, and step state |
+| `onboarding/` | Setup forms, progress, step state, and welcome dialog |
 | `overlays/` | Responsive dialogs and sheets, popup wrappers, loading, and confirmation |
-| `overview/` | Dashboard cards, table, and welcome dialog |
+| `overview/` | Dashboard cards and table |
 | `placeholders/` | Route and booking loading placeholders |
 | `public-booking/` | Customer-facing booking, confirmation, management, and rescheduling |
 | `services/` | Service forms, lists, categories, sorting, and selection |

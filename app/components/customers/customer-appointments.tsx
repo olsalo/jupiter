@@ -5,7 +5,6 @@ import { Link } from "react-router"
 
 import { useAppContext } from "~/lib/hooks/use-app-context"
 import { Alert, AlertAction, AlertTitle } from "~/components/ui/alert"
-import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
 import { formatDateTime } from "~/lib/localization/format-preference"
 import { useTRPC } from "~/lib/trpc/client"
@@ -25,11 +24,11 @@ export function CustomerAppointments({ customerId, scope, page, preview = false 
   const options = { formatPreference: root?.formatPreference ?? "eu", language: root?.locale === "fi" ? "fi" as const : "en" as const, timeZone: root?.organizationTimezone ?? "Europe/Helsinki" }
 
   return <div className="grid gap-3">
-    {query.isError ? <Alert variant="error"><AlertTitle>{t("customerPage.appointmentsError")}</AlertTitle><AlertAction><Button disabled={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction></Alert> : null}
+    {query.isError ? <Alert variant="error"><AlertTitle>{t("customerPage.appointmentsError")}</AlertTitle><AlertAction><Button disabled={query.isFetching} loading={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction></Alert> : null}
     {!appointments.length && !query.isError ? <Alert><AlertTitle>{t(scope === "upcoming" ? "customerPage.noUpcoming" : "customerPage.noHistory")}</AlertTitle></Alert> : null}
     {appointments.length ? <ul className="grid gap-3">{appointments.map((appointment) => <li key={appointment.id}>
       <Link className="grid gap-2 rounded-lg border p-4 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" to={`/calendar/${encodeURIComponent(appointment.id)}`}>
-        <div className="flex flex-wrap items-center justify-between gap-2"><span className="min-w-0 break-words text-sm font-medium">{appointment.services.map((service) => service.name).join(", ") || t("customerPage.appointment")}</span>{appointment.status !== "CONFIRMED" && appointment.status !== "COMPLETED" ? <Badge variant={appointment.status === "CANCELLED" || appointment.status === "NO_SHOW" ? "secondary" : "outline"}>{t(`calendarGrid.statuses.${appointment.status}`)}</Badge> : null}</div>
+        <span className="min-w-0 break-words text-sm font-medium">{appointment.services.map((service) => service.name).join(", ") || t("customerPage.appointment")}</span>
         <span className="text-sm text-muted-foreground">{formatDateTime(appointment.startsAt, options)} – {formatDateTime(appointment.endsAt, { ...options, includeDate: false })}</span>
       </Link>
     </li>)}</ul> : null}

@@ -8,12 +8,14 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
   useMatches,
   useRouteLoaderData,
 } from "react-router"
 
 import type { Route } from "./+types/root"
 import { AppStatusDialog } from "~/components/feedback/app-status-dialog"
+import { DeploymentUpdate } from "~/components/feedback/deployment-update"
 import { NativeReady } from "~/components/layout/native-ready"
 import { ToastProvider } from "~/components/ui/toast"
 import { TooltipProvider } from "~/components/ui/tooltip"
@@ -37,8 +39,8 @@ import "./app.css"
 export const middleware = [i18nextMiddleware, authMiddleware]
 
 export const links: Route.LinksFunction = () => [
+  { rel: "preload", href: "/fonts/inter.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
   { rel: "manifest", href: "/manifest.webmanifest" },
-  { rel: "icon", href: "/favicon.ico", type: "image/x-icon", sizes: "48x48" },
   { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
 ]
 
@@ -80,9 +82,14 @@ export const shouldRevalidate = shouldRevalidateRootRoute
 
 export function Layout({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation()
+  const location = useLocation()
+  const matches = useMatches()
+  const isAuth = matches.some((match) => match.id === "routes/auth")
+  const showMockup = isAuth || new URLSearchParams(location.search).get("welcome") === "true"
   const rootData = useRouteLoaderData<typeof loader>("root")
   const themeSetting = useBackgroundSetting(`${rootData?.user?.id}:theme`, rootData?.theme ?? defaultTheme)
   const forceLightTheme = useMatches().some(({ handle }) => (handle as { theme?: string } | undefined)?.theme === "light")
+  const publicBooking = useMatches().some(({ handle }) => (handle as { publicBooking?: boolean } | undefined)?.publicBooking === true)
   const theme = !forceLightTheme && themeSetting.value === "dark" ? "dark" : undefined
   const language = i18n.resolvedLanguage || i18n.language
 
@@ -100,8 +107,28 @@ export function Layout({ children }: { children: ReactNode }) {
           name="theme-color"
           content={theme === "dark" ? "#161616" : "#ffffff"}
         />
+        <style>{`
+          @font-face {
+            font-family: "Inter";
+            src: url("/fonts/inter.woff2") format("woff2");
+            font-style: normal;
+            font-weight: 100 900;
+            font-display: swap;
+          }
+        `}</style>
         <Meta />
         <Links />
+        {showMockup ? ["light", "dark"].map((mockupTheme) => (
+          <link
+            key={mockupTheme}
+            rel="preload"
+            as="image"
+            href={`/mockup-${mockupTheme}.avif`}
+            fetchPriority={mockupTheme === (theme ?? "light") ? "high" : "low"}
+            media="(min-width: 768px)"
+          />
+        )) : null}
+        {!publicBooking ? <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="48x48" /> : null}
       </head>
       <body
         className={import.meta.env.DEV ? undefined : "select-none"}
@@ -136,6 +163,7 @@ export default function App({ loaderData }: Route.ComponentProps) {
     <ToastProvider>
       <TooltipProvider>
         <TRPCReactProvider>
+          <DeploymentUpdate />
           <NativeReady />
           <AppStatusDialog />
           <Outlet />
@@ -146,19 +174,18 @@ export default function App({ loaderData }: Route.ComponentProps) {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  const { t } = useTranslation()
-  let message = t("error.fallbackTitle")
-  let details = t("error.genericDetails")
+  let message = "Something went wrong"
+  let details = "Refresh the page and try again"
   let stack: string | undefined
 
   if (isRouteErrorResponse(error)) {
     message =
       error.status === 404
-        ? t("error.notFoundTitle")
-        : t("error.genericTitle")
+        ? "404"
+        : "Something went wrong"
     details =
       error.status === 404
-        ? t("error.notFoundDetails")
+        ? "This page is unavailable or has moved"
         : error.statusText || details
   } else if (import.meta.env.DEV && error instanceof Error) {
     details = error.message

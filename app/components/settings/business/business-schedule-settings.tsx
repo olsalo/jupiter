@@ -38,7 +38,7 @@ export function BusinessScheduleSettings({ activeTab, onFormStateChange, onTabCh
   if (business.isError || organization.isError) return <Alert variant="error">
     <AlertDescription>{t("settings.loadError")}</AlertDescription>
     <AlertAction>
-      <Button onClick={() => void Promise.all([business.refetch(), organization.refetch()])} size="sm" type="button" variant="outline">{t("businessSchedule.retry")}</Button>
+      <Button loading={business.isFetching || organization.isFetching} onClick={() => void Promise.all([business.refetch(), organization.refetch()])} size="sm" type="button" variant="outline">{t("businessSchedule.retry")}</Button>
     </AlertAction>
   </Alert>
   if (business.isPending || !organization.data) return <SettingsLoading />

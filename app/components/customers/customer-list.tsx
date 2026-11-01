@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router"
 import Icon from "~/components/icons"
 import { UserAvatar } from "~/components/data-display/user-avatar"
 import { Badge } from "~/components/ui/badge"
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "~/components/ui/empty"
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { Spinner } from "~/components/ui/spinner"
@@ -45,7 +45,7 @@ export function CustomerList({ customers, hasMore, fetchingMore, onLoadMore, sel
   )
   const content = (
     <>
-    {loading ? <div className="flex min-h-40 flex-1 items-center justify-center p-6"><Spinner aria-label={t("customerPage.loading")} /></div> : failed ? null : !customers.length ? <Empty className="px-4 py-12 md:p-6"><EmptyHeader><EmptyTitle className="text-base">{t(searchTerm ? "customerPage.noMatches" : "customerPage.empty")}</EmptyTitle>{!searchTerm ? <EmptyDescription>{t("customerPage.emptyDescription")}</EmptyDescription> : null}</EmptyHeader></Empty> : <nav aria-label={t("customerPage.title")} className="grid gap-3 sm:gap-1 sm:p-2">
+    {loading ? <div className="flex min-h-40 flex-1 items-center justify-center p-6"><Spinner aria-label={t("customerPage.loading")} /></div> : failed ? null : !customers.length ? <Empty><EmptyHeader><EmptyMedia variant="icon"><Icon aria-hidden={true} name="user" /></EmptyMedia><EmptyTitle>{t(searchTerm ? "customerPage.noMatches" : "customerPage.empty")}</EmptyTitle>{!searchTerm ? <EmptyDescription>{t("customerPage.emptyDescription")}</EmptyDescription> : null}</EmptyHeader></Empty> : <nav aria-label={t("customerPage.title")} className="grid gap-3 sm:gap-1 sm:p-2">
       {customers.map((customer) => {
         const selected = customer.id === selectedId
         return <Link

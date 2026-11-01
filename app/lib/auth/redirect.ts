@@ -27,10 +27,33 @@ export function getSafeRedirectTo(searchParams: URLSearchParams) {
     pathname = pathname.slice(0, -".data".length)
   }
 
+  try {
+    if (decodeURIComponent(pathname).replace(/\/+$/, "").toLowerCase() === "/auth") return "/"
+  } catch {
+    return "/"
+  }
+
   const redirectSearchParams = new URLSearchParams(redirectUrl.search)
   redirectSearchParams.delete("_routes")
   redirectSearchParams.delete("index")
   const search = redirectSearchParams.toString()
 
   return `${pathname}${search ? `?${search}` : ""}${redirectUrl.hash}`
+}
+
+export function getAfterOnboardingRedirect(searchParams: URLSearchParams, welcome = false) {
+  const destination = new URL(getSafeRedirectTo(searchParams), redirectParsingOrigin)
+  let pathname: string
+  try {
+    pathname = decodeURIComponent(destination.pathname).replace(/\/+$/, "").toLowerCase()
+  } catch {
+    pathname = "/onboarding"
+  }
+  if (pathname === "/onboarding" || pathname.startsWith("/onboarding/")) {
+    destination.pathname = "/"
+    destination.search = ""
+    destination.hash = ""
+  }
+  if (welcome) destination.searchParams.set("welcome", "true")
+  return `${destination.pathname}${destination.search}${destination.hash}`
 }

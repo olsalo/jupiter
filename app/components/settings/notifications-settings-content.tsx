@@ -7,7 +7,7 @@ export function NotificationsSettingsContent() {
   const { t } = useTranslation("common")
 
   return (
-    <Empty className="min-h-64 flex-1 border-0 bg-transparent">
+    <Empty>
       <EmptyHeader>
         <EmptyMedia variant="icon"><Icon aria-hidden={true} name="bell" /></EmptyMedia>
         <EmptyTitle>{t("settings.previewTitle")}</EmptyTitle>

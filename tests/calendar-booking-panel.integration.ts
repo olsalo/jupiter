@@ -53,6 +53,16 @@ try {
   assert.match(markup, /type="submit"/, "The save button remains available")
   assert.match(markup, /Booking notes/, "The loaded booking form renders")
   assert.doesNotMatch(markup, /role="dialog"/, "The desktop panel does not need a modal wrapper")
+  const heading = markup.match(/<h2\b[^>]*>[\s\S]*?<\/h2>/)?.[0] ?? ""
+  assert.match(heading, /data-slot="calendar-booking-issue-marker"/, "Booking warnings appear beside the panel title")
+  assert.doesNotMatch(markup, /Booking needs attention/, "The warning body has no repeated title")
+  const warning = markup.match(/data-slot="calendar-booking-issues"[\s\S]*?<\/div><\/div>/)?.[0] ?? ""
+  assert.ok(warning.includes(i18n.t("bookingIssues.unassignedService")))
+  assert.doesNotMatch(warning, /<ul|<li/, "A single booking warning is plain text")
+  const { CalendarBookingIssues } = await vite.ssrLoadModule("/app/components/calendar/calendar-booking-issues.tsx") as typeof import("../app/components/calendar/calendar-booking-issues")
+  const multipleWarnings = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(CalendarBookingIssues, { issues: ["outsideWorkingHours", "overlapsBreak"] })))
+  assert.equal((multipleWarnings.match(/<li\b/g) ?? []).length, 2, "Multiple booking warnings use a bullet list")
+
 
   const appointmentKey = options.appointment.get.queryKey({ id: "booking" })
   const appointment = queryClient.getQueryData(appointmentKey)

@@ -10,7 +10,7 @@ import {
 import type { Route } from "./+types/layout"
 import { ClassicLayout } from "~/components/layout/classic-layout"
 import { FloatingLayout } from "~/components/layout/floating-layout"
-import { WelcomeDialog } from "~/components/overview/welcome-dialog"
+import { WelcomeDialog } from "~/components/onboarding/welcome-dialog"
 import { appNavigationItems } from "~/lib/routing/app-navigation"
 import { getRoutePermissions, hasOrganizationPermission } from "~/lib/auth/permissions"
 import { stripeBillingEnabled } from "~/lib/auth/server"
@@ -22,6 +22,7 @@ import { shouldRevalidateWorkspaceRoute } from "~/lib/routing/should-revalidate"
 import { getQueryClient } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { useCurrentOrganizationRole } from "~/lib/hooks/use-organization-access"
+import { useWorkspaceViewport } from "~/lib/hooks/use-workspace-viewport"
 import {
   requireAuthMiddleware,
   requireOrganizationMiddleware,
@@ -35,6 +36,7 @@ type LayoutRouteHandle = {
   workspace?: boolean
   pageLayout?: PageLayoutPreference
   overlay?: boolean
+  disablePageAnimation?: boolean
 }
 
 export const middleware: Route.MiddlewareFunction[] = [
@@ -48,7 +50,10 @@ export async function loader(args: Route.LoaderArgs) {
   const trpc = await createTRPC(args)
   const status = await getQueryClient().query(trpc.onboarding.status.queryOptions())
   if (!status.setupComplete || (status.billingEnabled && !status.subscriptionComplete && !status.demoOnboardingPaymentBypassEnabled)) {
-    throw redirect("/onboarding")
+    const destination = new URL(args.url)
+    const search = new URLSearchParams()
+    if (destination.pathname !== "/") search.set("redirectTo", `${destination.pathname}${destination.search}`)
+    throw redirect(`/onboarding${search.size ? `?${search}` : ""}`)
   }
   const appContext = await getQueryClient().query(trpc.profile.getAppContext.queryOptions())
   return {
@@ -63,6 +68,7 @@ export async function loader(args: Route.LoaderArgs) {
 export const shouldRevalidate = shouldRevalidateWorkspaceRoute
 
 export default function Layout() {
+  useWorkspaceViewport()
   const rootData = useAppContext()
   const location = useLocation()
   const matches = useMatches()
@@ -105,6 +111,7 @@ export default function Layout() {
 
   const layoutProps = {
     animatePage: !isOverlayRoute && animatedPathname === pagePathname,
+    disablePageAnimation: workspaceHandle?.disablePageAnimation ?? false,
     billingNotification: rootData?.billingNotification,
     isDesktop,
     isElectron: Boolean(rootData?.isElectron),

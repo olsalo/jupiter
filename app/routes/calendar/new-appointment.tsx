@@ -5,6 +5,7 @@ import { useLocation } from "react-router"
 
 import { CalendarSidePanel } from "~/components/calendar/calendar-side-panel"
 
+import { CalendarBookingLiveIssues } from "~/components/calendar/calendar-booking-live-issues"
 import { CalendarBookingForm } from "~/components/calendar/calendar-booking-form"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { useCalendarState } from "~/components/calendar/use-calendar-state"
@@ -14,7 +15,7 @@ import { formatDateTime } from "~/lib/localization/format-preference"
 
 export default function NewAppointmentRoute() {
   const { t, i18n } = useTranslation()
-  const { dragUpdate } = useCalendarBookingPreview()
+  const { dragUpdate, preview } = useCalendarBookingPreview()
 
   const location = useLocation()
   const initialSelection = (location.state as { dragSelection?: CalendarDragSelection } | null)?.dragSelection
@@ -30,7 +31,10 @@ export default function NewAppointmentRoute() {
     formatPreference, timeZone, language: i18n.resolvedLanguage === "fi" ? "fi" : "en", includeTime: false, includeWeekday: true,
   }) : t("bookingForm.noDaySelected"))
 
-  return <CalendarSidePanel returnTo={returnTo} subtitle={subtitle} title={title}>
+  const position = preview && !preview.appointmentId ? { startsAt: preview.startsAt, endsAt: preview.endsAt, memberId: preview.member.id, locationId: preview.locationId, status: "CONFIRMED" } : null
+  const titleAdornment = position ? <CalendarBookingLiveIssues appointmentId="calendar-booking-draft" marker={true} savedPosition={position} serviceId={preview?.service.id} /> : null
+
+  return <CalendarSidePanel returnTo={returnTo} subtitle={subtitle} title={title} titleAdornment={titleAdornment}>
     <title>{title}</title>
     <CalendarBookingForm dragSelection={dragSelection} onSelectedDayChange={setSelectedDay} onSelectedTimeChange={setSelectedTime} returnTo={returnTo} selectedDay={selectedDay} />
   </CalendarSidePanel>

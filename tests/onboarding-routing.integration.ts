@@ -26,7 +26,7 @@ const vite = await createServer({
 try {
   const { loader } = await vite.ssrLoadModule("/app/routes/onboarding/onboarding.tsx") as typeof import("../app/routes/onboarding/onboarding")
   const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
-  const { sessionContext } = await vite.ssrLoadModule("/app/middleware/auth.ts") as typeof import("../app/middleware/auth")
+  const { sessionContext, organizationContext } = await vite.ssrLoadModule("/app/middleware/auth.ts") as typeof import("../app/middleware/auth")
   const { queryCacheOptions } = await vite.ssrLoadModule("/app/lib/query/query-cache.ts") as typeof import("../app/lib/query/query-cache")
   const originalGcTime = queryCacheOptions.gcTime
   queryCacheOptions.gcTime = Infinity
@@ -37,8 +37,10 @@ try {
     session: { activeOrganizationId: null },
   } as AuthSession)
 
+  type AuthOrganization = typeof organizationContext extends RouterContext<infer Value> ? Value : never
+  context.set(organizationContext, { id: "onboarding-routing-org" } as AuthOrganization)
   const originalFindMember = prisma.member.findFirst
-  const originalFindSubscription = prisma.subscription.findFirst
+  const originalFindSubscription = prisma.subscription.findMany
   let businessComplete = true
   let subscriptionComplete = false
   let onboardingStep: string | null = null
@@ -46,7 +48,7 @@ try {
     organizationId: "onboarding-routing-org",
     organization: { settings: businessComplete ? { countryCode: "FI", timezone: "Europe/Helsinki", onboardingStep } : null },
   })) as unknown as typeof prisma.member.findFirst
-  prisma.subscription.findFirst = (async () => subscriptionComplete ? { id: "onboarding-subscription" } : null) as typeof prisma.subscription.findFirst
+  prisma.subscription.findMany = (async () => subscriptionComplete ? [{ id: "onboarding-subscription", status: "active" }] : []) as unknown as typeof prisma.subscription.findMany
 
   try {
     for (const search of ["", "?billing=year"]) {
@@ -112,6 +114,18 @@ try {
       }
       onboardingStep = null
       subscriptionComplete = true
+      for (const pending of ["availability", "holidays"]) {
+        onboardingStep = pending
+        await assert.rejects(() => loadStep("subscription"), (error: unknown) => (
+          error instanceof Response && error.headers.get("Location") === `/onboarding/${pending}?billing=year`
+        ))
+      }
+      onboardingStep = null
+      await assert.rejects(() => loader({
+        request: new Request("http://localhost/onboarding?redirectTo=%2Fcustomers%2Fcustomer-one"),
+        url: new URL("http://localhost/onboarding?redirectTo=%2Fcustomers%2Fcustomer-one"),
+        params: {}, context, pattern: "/onboarding",
+      }), (error: unknown) => error instanceof Response && error.headers.get("Location") === "/customers/customer-one")
       await assert.rejects(() => loadStep("business"), (error: unknown) => (
         error instanceof Response && error.headers.get("Location") === "/"
       ))
@@ -121,7 +135,7 @@ try {
   } finally {
     queryCacheOptions.gcTime = originalGcTime
     prisma.member.findFirst = originalFindMember
-    prisma.subscription.findFirst = originalFindSubscription
+    prisma.subscription.findMany = originalFindSubscription
   }
 } finally {
   await vite.close()

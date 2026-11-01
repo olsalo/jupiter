@@ -39,7 +39,7 @@ export function TeamPersonAvailability({ staff }: { staff: NonNullable<TeamPerso
         <Alert variant="error">
           <AlertTitle>{t("people.availabilityError")}</AlertTitle>
           <AlertDescription>{t("retryDescription")}</AlertDescription>
-          <AlertAction><Button disabled={rules.isFetching || businessHours.isFetching} onClick={() => void Promise.all([rules.refetch(), businessHours.refetch()])} type="button" variant="outline" size="sm">{t("retry")}</Button></AlertAction>
+          <AlertAction><Button disabled={rules.isFetching || businessHours.isFetching} loading={rules.isFetching || businessHours.isFetching} onClick={() => void Promise.all([rules.refetch(), businessHours.refetch()])} type="button" variant="outline" size="sm">{t("retry")}</Button></AlertAction>
         </Alert>
       ) : (
         <TeamWorkingHoursWeek<(typeof displayedRules)[number]> rules={displayedRules} renderTimes={(rule) => (

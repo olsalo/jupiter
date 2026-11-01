@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRef } from "react"
 import { useTranslation } from "react-i18next"
-import { useNavigate, useNavigation } from "react-router"
+import { useNavigate, useNavigation, useSearchParams } from "react-router"
 import type { FormApi } from "@rvf/react"
 
 import { OnboardingActions } from "~/components/onboarding/onboarding-actions"
@@ -18,12 +18,12 @@ import {
   SelectValue,
 } from "~/components/ui/select"
 import { Separator } from "~/components/ui/separator"
-import { Spinner } from "~/components/ui/spinner"
 import { onboardingCountries } from "~/lib/localization/countries"
 import { currencyItems } from "~/lib/localization/currencies"
 import { onboardingFormSchema } from "~/lib/schemas/onboarding"
 import { toast } from "~/lib/toast"
 import { timezoneItems } from "~/lib/localization/timezones"
+import { getAfterOnboardingRedirect } from "~/lib/auth/redirect"
 import { useTRPC } from "~/lib/trpc/client"
 
 type OnboardingFormValues = {
@@ -42,6 +42,7 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
   const formApi = useRef<FormApi<OnboardingFormValues>>(null)
   const navigate = useNavigate()
   const navigation = useNavigation()
+  const [searchParams] = useSearchParams()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const completeMutation = useMutation(
@@ -51,9 +52,11 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
           queryKey: trpc.onboarding.pathKey(),
           refetchType: "none",
         })
-        await navigate(nextStep ? `/onboarding/${nextStep}` : "/?welcome=true", {
-          replace: true,
-        })
+        const search = searchParams.toString()
+        const destination = nextStep
+          ? `/onboarding/${nextStep}${search ? `?${search}` : ""}`
+          : getAfterOnboardingRedirect(searchParams, true)
+        await navigate(destination, { replace: true })
       },
     }),
   )
@@ -249,18 +252,9 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
 
               </div>
               <OnboardingActions>
-                <Button className="keyboard-focusable" disabled={isSubmitting} type="submit">
-                  {isSubmitting ? (
-                    <>
-                      <Spinner className="size-4" />
-                      {t("actions.creating")}
-                    </>
-                  ) : (
-                    <>
-                      {t(isFinalStep ? "actions.finishSetup" : "actions.create")}
-                      <Icon aria-hidden={true} name="chevronRight" size={16} />
-                    </>
-                  )}
+                <Button className="keyboard-focusable" disabled={isSubmitting} loading={isSubmitting} type="submit">
+                  {t(isFinalStep ? "actions.finishSetup" : "actions.create")}
+                  <Icon aria-hidden={true} name="chevronRight" size={16} />
                 </Button>
               </OnboardingActions>
             </>

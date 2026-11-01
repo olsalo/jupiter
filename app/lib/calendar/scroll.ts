@@ -34,6 +34,14 @@ export function getCalendarTodayScrollLeft(days: string[], today: string, gridWi
   return Math.max(0, Math.min(gridWidth - viewportWidth, (index + 0.5) * gridWidth / days.length - viewportWidth / 2))
 }
 
+export function getCalendarTimeScrollTop(viewport: CalendarScrollViewport, timeTop: number, contentTop = viewport.getBoundingClientRect().top - viewport.scrollTop, insets = { top: 0, bottom: 0 }) {
+  const visibleHeight = Math.max(0, viewport.clientHeight - insets.top - insets.bottom)
+  return Math.max(0, Math.min(
+    viewport.scrollHeight - viewport.clientHeight,
+    viewport.scrollTop + contentTop - viewport.getBoundingClientRect().top + timeTop - insets.top - visibleHeight / 2,
+  ))
+}
+
 export function getCalendarBookingScrollPosition(viewport: CalendarScrollViewport, lane: ScrollBounds, booking: ScrollBounds) {
   const bounds = viewport.getBoundingClientRect()
   return {

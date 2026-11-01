@@ -55,7 +55,7 @@ function CategoryNameSession({ open, onOpenChange, onSaved }: Props) {
               <Input {...form.getInputProps("name")} aria-invalid={Boolean(form.error("name"))} autoComplete="off" disabled={pending} placeholder={t("categoryNamePlaceholder")} type="text" />
             </FormLabel>
           </ResponsiveModalPanel>
-          <ResponsiveModalFooter><Button disabled={pending} onClick={() => onOpenChange(false)} type="button" variant="ghost">{t("cancel")}</Button><Button disabled={pending} loading={pending} type="submit">{t(pending ? "categorySaving" : "saveNewCategory")}</Button></ResponsiveModalFooter>
+          <ResponsiveModalFooter><Button disabled={pending} onClick={() => onOpenChange(false)} type="button" variant="ghost">{t("cancel")}</Button><Button disabled={pending} loading={pending} type="submit">{t("saveNewCategory")}</Button></ResponsiveModalFooter>
         </>}
       </AppForm>
     </ResponsiveModalPopup>

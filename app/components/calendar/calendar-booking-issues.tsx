@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import Icon from "~/components/icons"
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
+import { Alert, AlertDescription } from "~/components/ui/alert"
 import type { BookingAvailabilityIssue } from "~/lib/calendar/booking-issues"
 
 export function CalendarBookingIssueMarker({ issues }: { issues?: BookingAvailabilityIssue[] }) {
@@ -15,8 +15,7 @@ export function CalendarBookingIssueMarker({ issues }: { issues?: BookingAvailab
 export function CalendarBookingIssues({ issues }: { issues?: BookingAvailabilityIssue[] }) {
   const { t } = useTranslation()
   if (!issues?.length) return null
-  return <Alert data-slot="calendar-booking-issues" variant="warning">
-    <AlertTitle>{t("bookingIssues.title")}</AlertTitle>
-    <AlertDescription><ul className="list-disc space-y-1 pl-4">{issues.map((issue) => <li key={issue}>{t(`bookingIssues.${issue}`)}</li>)}</ul></AlertDescription>
+  return <Alert data-slot="calendar-booking-issues" showIcon={false} variant="warning">
+    <AlertDescription>{issues.length === 1 ? t(`bookingIssues.${issues[0]}`) : <ul className="flex list-disc flex-col gap-1 pl-4">{issues.map((issue) => <li key={issue}>{t(`bookingIssues.${issue}`)}</li>)}</ul>}</AlertDescription>
   </Alert>
 }

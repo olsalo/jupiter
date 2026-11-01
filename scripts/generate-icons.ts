@@ -87,7 +87,7 @@ function makeIconSvg({
   background,
   dotColor,
   logoColor,
-  path,
+  paths,
   roundCorners = false,
   size,
   viewBox,
@@ -95,7 +95,7 @@ function makeIconSvg({
   background: string
   dotColor?: string
   logoColor: string
-  path: string
+  paths: string[]
   roundCorners?: boolean
   size: number
   viewBox: string
@@ -103,7 +103,7 @@ function makeIconSvg({
   const markSize = size * (roundCorners ? faviconMarkScale : standardMarkScale)
   const inset = (size - markSize) / 2
   const radius = roundCorners ? size * 0.2 : 0
-  const borderOpacity = getBorderColor(background) === "#ffffff" ? 0.28 : 0.14
+  const borderOpacity = getBorderColor(background) === "#ffffff" ? 0.44 : 0.3
   const border = roundCorners
     ? `x="0.5" y="0.5" width="${size - 1}" height="${size - 1}" stroke="${getBorderColor(background)}" stroke-opacity="${borderOpacity}"`
     : `width="${size}" height="${size}"`
@@ -111,7 +111,9 @@ function makeIconSvg({
     ? `<circle cx="${size / 2}" cy="${size / 2}" r="${size * 0.055}" fill="${dotColor}"/>`
     : ""
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><rect ${border} rx="${radius}" fill="${background}"/><svg x="${inset}" y="${inset}" width="${markSize}" height="${markSize}" viewBox="${viewBox}"><path fill="${logoColor}" d="${path}"/></svg>${testDot}</svg>`
+  const mark = paths.map((path) => `<path fill="${logoColor}" d="${path}"/>`).join("")
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}"><rect ${border} rx="${radius}" fill="${background}"/><svg x="${inset}" y="${inset}" width="${markSize}" height="${markSize}" viewBox="${viewBox}">${mark}</svg>${testDot}</svg>`
 }
 
 async function renderPng(svg: string, size: number) {
@@ -141,17 +143,17 @@ async function main() {
   const options = getOptions(process.argv.slice(2))
   const logoSvg = await readFile(logoUrl, "utf8")
   const viewBox = logoSvg.match(/<svg\b[^>]*\bviewBox="([^"]+)"/i)?.[1]
-  const path = logoSvg.match(/<path\b[^>]*\bd="([^"]+)"[^>]*\/?\s*>/i)?.[1]
+  const paths = Array.from(logoSvg.matchAll(/<path\b[^>]*\bd="([^"]+)"[^>]*\/?\s*>/gi), (match) => match[1])
 
-  if (!viewBox || !path) {
-    throw new Error("Could not read the viewBox and path from public/logo.svg")
+  if (!viewBox || !paths.length) {
+    throw new Error("Could not read the viewBox and paths from public/logo.svg")
   }
 
   const iconSvg = (size: number, dotColor: string) => makeIconSvg({
     background: options.background,
     dotColor: options.testDots ? dotColor : undefined,
     logoColor: options.logoColor,
-    path,
+    paths,
     size,
     viewBox,
   })
@@ -173,7 +175,7 @@ async function main() {
     background: options.background,
     dotColor: options.testDots ? "#8e5bd9" : undefined,
     logoColor: options.logoColor,
-    path,
+    paths,
     roundCorners: true,
     size: 48,
     viewBox,

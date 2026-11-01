@@ -11,7 +11,6 @@ import { Alert, AlertDescription } from "~/components/ui/alert"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from "~/components/ui/dialog"
-import { Spinner } from "~/components/ui/spinner"
 import { readBusinessExceptions, type BusinessHoliday } from "~/lib/business/business-holidays"
 import { calendarDateFromValue } from "~/lib/calendar/date"
 import { formatDateTime } from "~/lib/localization/format-preference"
@@ -63,7 +62,7 @@ export function BusinessOpeningExceptions({ timezone, disabled }: { timezone: st
       </div>
       <Badge className="shrink-0" size="sm" variant="secondary">{entry.closed ? t("businessSchedule.closed") : `${formatTime(entry.startMinute)} – ${formatTime(entry.endMinute)}`}</Badge>
       <Button aria-label={t("businessExceptions.editNamed", { name: entry.name })} disabled={pending} onClick={() => edit(entry)} size="icon-sm" type="button" variant="ghost"><Icon aria-hidden={true} className="size-4" name="edit" /></Button>
-      <Button aria-label={t("businessExceptions.removeNamed", { name: entry.name })} disabled={pending} onClick={() => remove.mutate({ id: entry.id })} size="icon-sm" type="button" variant="ghost"><Icon aria-hidden={true} className="size-4" name="trash" /></Button>
+      <Button aria-label={t("businessExceptions.removeNamed", { name: entry.name })} disabled={pending} loading={remove.isPending && remove.variables?.id === entry.id} onClick={() => remove.mutate({ id: entry.id })} size="icon-sm" type="button" variant="ghost"><Icon aria-hidden={true} className="size-4" name="trash" /></Button>
     </li>)}</ul>}
     <Dialog open={dialog.open} onOpenChange={(open) => { if (!pending) setDialog((state) => ({ ...state, open })) }}>
       <DialogPopup className="sm:max-w-md" forceBackdrop={true} onSubmit={(event) => event.stopPropagation()}>
@@ -83,7 +82,7 @@ export function BusinessOpeningExceptions({ timezone, disabled }: { timezone: st
           <DialogPanel><BusinessHolidayFormFields custom={true} form={form} nameLabel={t("businessExceptions.name")} repeatsYearly={false} timezone={timezone} /></DialogPanel>
           <DialogFooter>
             <Button disabled={form.formState.isSubmitting} onClick={() => setDialog((state) => ({ ...state, open: false }))} type="button" variant="ghost">{t("settings.cancel")}</Button>
-            <Button disabled={form.formState.isSubmitting} type="submit">{form.formState.isSubmitting ? <Spinner className="size-4" /> : null}{t("settings.save")}</Button>
+            <Button disabled={form.formState.isSubmitting} loading={form.formState.isSubmitting} type="submit">{t("settings.save")}</Button>
           </DialogFooter>
         </>}</AppForm>
       </DialogPopup>

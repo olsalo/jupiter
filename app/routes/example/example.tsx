@@ -260,7 +260,7 @@ export default function Notes() {
           <AlertAction>
             <Button
               disabled={notesQuery.isFetching}
-              onClick={() => void notesQuery.refetch()}
+              loading={notesQuery.isFetching} onClick={() => void notesQuery.refetch()}
               size="sm"
               type="button"
               variant="outline"
@@ -278,7 +278,7 @@ export default function Notes() {
           <AlertAction>
             <Button
               disabled={notesQuery.isFetching}
-              onClick={() => void notesQuery.refetch()}
+              loading={notesQuery.isFetching} onClick={() => void notesQuery.refetch()}
               size="sm"
               type="button"
               variant="outline"
@@ -295,7 +295,7 @@ export default function Notes() {
           data={notes}
           enablePagination={false}
           emptyContent={
-            <Empty className="min-h-0 w-full border-0 bg-transparent">
+            <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <Icon aria-hidden="true" name="notes" size={18} />
@@ -362,20 +362,19 @@ export default function Notes() {
 }
 
 export function ErrorBoundary() {
-  const { t } = useTranslation("notes")
   const revalidator = useRevalidator()
 
   return (
     <ViewportPage header={
       <RouteHeader
-        description={t("description")}
-        title={t("title")}
+        description={"Keep track of things you want to remember"}
+        title={"Notes"}
       />
     }>
-      <title>{t("title")}</title>
+      <title>{"Notes"}</title>
       <Alert variant="error">
-        <AlertTitle>{t("errors.load")}</AlertTitle>
-        <AlertDescription>{t("errors.retryDescription")}</AlertDescription>
+        <AlertTitle>{"Couldn’t load notes"}</AlertTitle>
+        <AlertDescription>{"Try again in a moment"}</AlertDescription>
         <AlertAction>
           <Button
             disabled={revalidator.state !== "idle"}
@@ -384,7 +383,7 @@ export function ErrorBoundary() {
             type="button"
             variant="outline"
           >
-            {t("actions.retry")}
+            {"Retry"}
           </Button>
         </AlertAction>
       </Alert>

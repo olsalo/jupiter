@@ -21,6 +21,7 @@ type ClassicLayoutProps = WorkspaceLayoutProps & {
 
 export function ClassicLayout({
   animatePage,
+  disablePageAnimation = false,
   billingNotification,
   isDesktop,
   isElectron,
@@ -41,8 +42,8 @@ export function ClassicLayout({
   return (
     <main
       className={cn(
-        "classic-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] relative flex h-dvh flex-col overflow-hidden bg-background text-sidebar-foreground md:bg-sidebar",
-        isElectron && "pt-8",
+        "classic-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] md:pb-[var(--tappable-inset-bottom,0px)] relative flex h-[var(--workspace-viewport-height,100dvh)] flex-col overflow-hidden bg-background text-sidebar-foreground md:bg-sidebar",
+        isElectron ? "pt-8" : "md:pt-[env(safe-area-inset-top,0px)]",
       )}
       data-electron={isElectron}
       data-page-layout={pageLayout}
@@ -53,7 +54,7 @@ export function ClassicLayout({
           className="electron-drag absolute inset-x-0 top-0 z-20 h-8"
         />
       ) : null}
-      <div className="flex min-h-0 w-full flex-1 overflow-hidden md:p-2 md:pl-0">
+      <div className="flex min-h-0 w-full flex-1 overflow-hidden md:p-2 md:pt-[calc(0.5rem*(1-sign(env(safe-area-inset-top,0px))))] md:pb-[calc(0.5rem*(1-sign(var(--tappable-inset-bottom,0px))))] md:pl-0">
         <aside className="hidden w-15 shrink-0 flex-col items-center justify-between px-3 py-1 md:flex">
           <Link
             aria-label={t("nav.overviewHome")}
@@ -130,7 +131,7 @@ export function ClassicLayout({
             }}
           >
             <div className={cn("flex min-h-full min-w-0 flex-col", isViewportPage && "h-full min-h-0")}>
-              <div className={cn("flex min-w-0 flex-1 flex-col gap-0 p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] md:min-h-0 md:pt-[env(safe-area-inset-top,0px)] md:px-6", isViewportPage && "min-h-0")}>
+              <div className={cn("flex min-w-0 flex-1 flex-col gap-0 p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] md:min-h-0 md:pt-0 md:px-6", isViewportPage && "min-h-0")}>
                 <header className="mb-[calc(1.5rem*(1-sign(env(safe-area-inset-top,0px))))] flex shrink-0 items-start justify-between md:hidden">
                   <Link
                     aria-label={t("nav.overviewHome")}
@@ -152,7 +153,7 @@ export function ClassicLayout({
                   className={cn(
                     "flex min-w-0 flex-1 flex-col md:min-h-0",
                     isViewportPage && "min-h-0",
-                    animatePage && "route-enter",
+                    animatePage && !disablePageAnimation && "route-enter",
                   )}
                   key={`content-${pagePathname}`}
                 >
@@ -165,7 +166,7 @@ export function ClassicLayout({
         </section>
       </div>
 
-      <nav className="grid h-[calc(4rem+env(safe-area-inset-bottom))] shrink-0 auto-cols-fr grid-flow-col place-items-center overflow-hidden border-t border-border bg-background px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 md:hidden">
+      <nav data-slot="app-navigation" className="grid h-[calc(4rem+env(safe-area-inset-bottom))] shrink-0 auto-cols-fr grid-flow-col place-items-center overflow-hidden border-t border-border bg-background px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 max-md:in-data-[workspace-keyboard-open]:hidden md:hidden">
         {menuItems.map((item) => (
           <NavLink
             {...mobileMenuNavigation}

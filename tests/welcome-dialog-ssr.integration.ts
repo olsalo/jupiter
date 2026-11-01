@@ -7,6 +7,7 @@ import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
 
 const vite = await createServer({
+  cacheDir: "node_modules/.vite-tests/welcome-dialog-ssr.integration",
   configFile: false,
   appType: "custom",
   resolve: { alias: {
@@ -19,7 +20,7 @@ const vite = await createServer({
 })
 
 try {
-  const { WelcomeDialog } = await vite.ssrLoadModule("/app/components/overview/welcome-dialog.tsx") as typeof import("../app/components/overview/welcome-dialog")
+  const { WelcomeDialog } = await vite.ssrLoadModule("/app/components/onboarding/welcome-dialog.tsx") as typeof import("../app/components/onboarding/welcome-dialog")
   const { resources } = await vite.ssrLoadModule("/app/locales/index.ts") as typeof import("../app/locales")
   const i18n = createInstance()
   await i18n.init({ lng: "en", resources, defaultNS: "common", interpolation: { escapeValue: false } })
@@ -45,7 +46,7 @@ try {
 
       assert.equal(html.match(/role="dialog"/g)?.length, 1)
       assert.ok(html.includes('aria-modal="true"'))
-      for (const key of ["title", "description", "start", "notes.title", "overview.title", "team.title"]) {
+      for (const key of ["title", "description", "start", "calendar.title", "booking.title", "team.title"]) {
         assert.ok(html.includes(i18n.t(`welcome.${key}`)))
       }
       for (const attribute of ["aria-labelledby", "aria-describedby"]) {

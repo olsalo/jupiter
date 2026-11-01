@@ -71,6 +71,9 @@ export const auth = betterAuth({
     protocol: "auto",
   },
   secret: process.env.BETTER_AUTH_SECRET,
+  rateLimit: {
+    enabled: process.env.NODE_ENV === "production",
+  },
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -96,6 +99,7 @@ export const auth = betterAuth({
       // Run before OTP creation so rejected sends do not invalidate a code that
       // is already in the customer's inbox. These limits do not depend on IP.
       if (!["/email-otp/send-verification-otp", "/email-otp/request-password-reset", "/forget-password/email-otp", "/email-otp/request-email-change"].includes(ctx.path)) return
+      if (process.env.NODE_ENV === "development") return
       const email = ctx.path === "/email-otp/request-email-change" ? ctx.body?.newEmail : ctx.body?.email
       if (typeof email !== "string" || email.length > 254) throw new APIError("BAD_REQUEST", { message: "Add a valid email address" })
       const ip = trustedClientIp(ctx.headers ?? new Headers())

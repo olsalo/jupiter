@@ -6,6 +6,8 @@
 
 Both accept `header`, `children`, `className` and `contentClassName`. The header and content share a column with no gap. The content has its own column with spacing between sections. Use `RouteHeader` for main route headers and `PageHeading` for standalone headings outside a route layout.
 
+The workspace shell follows the visual viewport and keeps document scrolling locked when the onscreen keyboard opens. Scrolling stays inside the route's page or content area, according to its layout preference.
+
 ```tsx
 <ScrollPage header={<RouteHeader title="Services" actions={<AddService />} />}>
   <ServiceList />

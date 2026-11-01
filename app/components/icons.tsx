@@ -68,6 +68,7 @@ export const iconMap = {
   notes: TablerIcons.IconNotes,
   notesFilled: TablerIcons.IconNotes,
   forms: TablerIcons.IconForms,
+  tag: TablerIcons.IconTag,
   chartBar: TablerIcons.IconChartBar,
   bolt: TablerIcons.IconBolt,
   dashboard: TablerIcons.IconDashboard,

@@ -5,7 +5,6 @@ import {
   data,
   Outlet,
   redirect,
-  useNavigate,
   useRouteLoaderData,
 } from "react-router"
 
@@ -21,6 +20,7 @@ import {
 } from "~/components/onboarding/onboarding-progress"
 import { Button } from "~/components/ui/button"
 import { ScrollArea } from "~/components/ui/scroll-area"
+import { getAfterOnboardingRedirect } from "~/lib/auth/redirect"
 import { authClient } from "~/lib/auth/client"
 import { toast } from "~/lib/toast"
 import { getQueryClient } from "~/lib/trpc/client"
@@ -80,17 +80,13 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
     ? steps.findIndex((item) => url.pathname === `/onboarding/${item.id}`)
     : -1
 
-  if (status.setupComplete && status.subscriptionComplete && requestedStepIndex === -1) {
-    throw redirect("/")
-  }
-
   const currentStepIndex =
     requestedStepIndex !== -1
       ? requestedStepIndex
       : steps.findIndex((item) => !item.complete)
 
   if (currentStepIndex === -1) {
-    throw redirect("/")
+    throw redirect(getAfterOnboardingRedirect(url.searchParams))
   }
 
   const currentStep = steps[currentStepIndex]!
@@ -145,7 +141,6 @@ function OnboardingShell({ children, header }: {
 }) {
   const { t } = useTranslation("onboarding")
   const { t: tCommon } = useTranslation("common")
-  const navigate = useNavigate()
   const rootData = useRouteLoaderData<typeof rootLoader>("root")
   const isElectron = Boolean(rootData?.isElectron)
   const scrollViewportRef = useRef<HTMLDivElement>(null)
@@ -158,7 +153,7 @@ function OnboardingShell({ children, header }: {
       if (result.error) throw new Error(tCommon("account.logOutError"))
     },
     onSuccess: async () => {
-      await navigate("/auth", { replace: true })
+      window.location.replace("/auth")
     },
     onError: () => toast.error(tCommon("account.logOutError")),
   })
@@ -178,7 +173,7 @@ function OnboardingShell({ children, header }: {
         }}
       >
         <div className={cn("flex min-h-full flex-col", isElectron && "pt-7")}>
-          <div className="mx-auto flex w-[calc(100%-44px)] max-w-md flex-1 flex-col pb-[calc(1.5rem*sign(env(safe-area-inset-bottom,0px)))] md:w-[calc(100%-160px)] md:pt-24">
+          <div className="mx-auto flex w-[calc(100%-44px)] max-w-md flex-1 flex-col pb-[calc(1.5rem*sign(env(safe-area-inset-bottom,0px)))] md:w-[calc(100%-160px)] md:pb-0 md:pt-24">
             <div className="mb-[calc(1.5rem*(1-sign(env(safe-area-inset-top,0px))))] flex shrink-0 items-center justify-between pt-[calc(1.25rem+env(safe-area-inset-top,0px))] md:contents">
               <div
                 className={cn(

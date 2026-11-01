@@ -38,7 +38,7 @@ export function CommunicationsSettings({ onFormStateChange, resetRef }: { onForm
   if (query.isError) return <Alert variant="error">
     <AlertDescription>{t("settings.loadError")}</AlertDescription>
     <AlertAction>
-      <Button disabled={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("communicationsSettings.retry")}</Button>
+      <Button disabled={query.isFetching} loading={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("communicationsSettings.retry")}</Button>
     </AlertAction>
   </Alert>
   if (!query.data) return <SettingsLoading />
@@ -100,7 +100,7 @@ export function CommunicationsSettings({ onFormStateChange, resetRef }: { onForm
       <section className="flex flex-col gap-5">
         <SettingsSectionHeader title={t("communicationsSettings.senderTitle")} description={t("communicationsSettings.senderDescription")} />
         {(["senderName", "replyToAddress"] as const).map((name) => <FormLabel key={name} label={t(`communicationsSettings.${name}`)} description={t(`communicationsSettings.${name}Description`)} error={form.error(name)}>
-          <Input {...form.getInputProps(name)} aria-invalid={Boolean(form.error(name))} autoComplete={name === "senderName" ? "organization" : "email"} disabled={busy} placeholder={t(`communicationsSettings.${name}Placeholder`)} type={name === "replyToAddress" ? "email" : "text"} />
+          <Input {...form.getInputProps(name)} aria-invalid={Boolean(form.error(name))} autoCapitalize={name === "replyToAddress" ? "none" : undefined} autoComplete={name === "senderName" ? "organization" : "email"} disabled={busy} placeholder={t(`communicationsSettings.${name}Placeholder`)} type={name === "replyToAddress" ? "email" : "text"} />
         </FormLabel>)}
       </section>
     </>

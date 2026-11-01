@@ -2,6 +2,7 @@ import type { CalendarUnavailableTime } from "./types.ts"
 import { TZDate } from "react-day-picker"
 
 import { calendarDateFromValue, calendarDateToValue } from "./date.ts"
+import { inheritAvailabilityWindows, subtractAvailabilityWindows } from "../booking/availability-windows.ts"
 
 export type CalendarScheduleRule = {
   staffMemberId: string | null
@@ -10,6 +11,8 @@ export type CalendarScheduleRule = {
   title?: string
   isExtra?: boolean
   isBreak?: boolean
+  validFrom?: number | null
+  validUntil?: number | null
   windows: { start: number; end: number }[]
 }
 
@@ -46,10 +49,20 @@ export function getCalendarSchedule({ days, members, rules, timeZone, defaultSta
       return [{ startMinute: localStart.getHours() * 60 + localStart.getMinutes(), endMinute: end === +nextMidnight ? 1440 : localEnd.getHours() * 60 + localEnd.getMinutes() }]
     })).filter((interval) => interval.endMinute > interval.startMinute)
     const business = businessRules.length ? intervalsFor(businessRules) : day.getDay() >= 1 && day.getDay() <= 5 ? [{ startMinute: defaultStartMinute, endMinute: defaultEndMinute }] : []
+    const hasFullDayBusinessClosure = intervalsFor(rules.filter((rule) => rule.isBlocked && rule.staffMemberId === null && !rule.locationId))
+      .some((period) => period.startMinute === 0 && period.endMinute === 1440)
+    const businessWindows = businessRules.length ? businessRules.flatMap((rule) => rule.windows) : business.map((period) => {
+      const start = calendarDateFromValue(value, timeZone)
+      const end = calendarDateFromValue(value, timeZone)
+      start.setHours(Math.floor(period.startMinute / 60), period.startMinute % 60, 0, 0)
+      end.setHours(Math.floor(period.endMinute / 60), period.endMinute % 60, 0, 0)
+      return { start: +start, end: +end }
+    })
     const memberHours = members.map((member) => {
       const ownRules = workingRules.filter((rule) => rule.staffMemberId === member.id)
       const extra = intervalsFor(rules.filter((rule) => rule.isExtra && !rule.locationId && (rule.staffMemberId === null || rule.staffMemberId === member.id)))
-      const intervals = [...(ownRules.length ? intervalsFor(ownRules) : business), ...extra].sort((a, b) => a.startMinute - b.startMinute).reduce<Interval[]>((merged, interval) => {
+      const inherited = intervalsFor([{ staffMemberId: member.id, windows: inheritAvailabilityWindows(businessWindows, ownRules) }])
+      const intervals = [...inherited, ...extra].sort((a, b) => a.startMinute - b.startMinute).reduce<Interval[]>((merged, interval) => {
         const previous = merged.at(-1)
         if (previous && interval.startMinute <= previous.endMinute) previous.endMinute = Math.max(previous.endMinute, interval.endMinute)
         else merged.push({ ...interval })
@@ -58,17 +71,21 @@ export function getCalendarSchedule({ days, members, rules, timeZone, defaultSta
       const breaks = intervalsFor(breakRules.filter((rule) => rule.staffMemberId === null || rule.staffMemberId === member.id))
         .flatMap((period) => intervals.map((hours) => ({ startMinute: Math.max(hours.startMinute, period.startMinute), endMinute: Math.min(hours.endMinute, period.endMinute) })))
         .filter((period) => period.endMinute > period.startMinute)
-      const blocked = rules.filter((rule) => rule.isBlocked && !rule.locationId && (rule.staffMemberId === null || rule.staffMemberId === member.id)).flatMap((rule) => intervalsFor([rule]).map((period) => ({ ...period, isBlocked: true, title: rule.title })))
+      const blocked = rules.filter((rule) => rule.isBlocked && !rule.locationId && (rule.staffMemberId === null || rule.staffMemberId === member.id)).flatMap((rule) => {
+        const periods = intervalsFor([rule]).map((period) => ({ start: period.startMinute, end: period.endMinute }))
+        const remaining = rule.staffMemberId === null ? subtractAvailabilityWindows(periods, extra.map((period) => ({ start: period.startMinute, end: period.endMinute }))) : periods
+        return remaining.map((period) => ({ startMinute: period.start, endMinute: period.end, isBlocked: true, title: rule.title }))
+      })
       return { memberId: member.id, intervals, breaks, blocked }
     })
-    return { day, value, memberHours, intervals: [...(includeBusinessHours ? business : []), ...memberHours.flatMap((member) => member.intervals), ...appointments.filter((appointment) => appointment.day === value)] }
+    return { day, value, memberHours, hasFullDayBusinessClosure, intervals: [...(includeBusinessHours ? business : []), ...memberHours.flatMap((member) => member.intervals), ...appointments.filter((appointment) => appointment.day === value)] }
   })
   const workingSchedules = allSchedules.filter((schedule) => schedule.intervals.length > 0)
   const schedules = workingSchedules.length ? workingSchedules : allSchedules
   const intervals = schedules.flatMap((schedule) => schedule.intervals)
   const startMinute = intervals.length ? Math.max(0, Math.floor(Math.min(...intervals.map((interval) => interval.startMinute)) / 60) * 60) : defaultStartMinute
   const endMinute = intervals.length ? Math.min(1440, Math.ceil(Math.max(...intervals.map((interval) => interval.endMinute)) / 60) * 60) : defaultEndMinute
-  const unavailableTimes = schedules.flatMap((schedule) => schedule.memberHours.flatMap((member) => {
+  const unavailableTimes: CalendarUnavailableTime[] = schedules.flatMap((schedule) => schedule.memberHours.flatMap((member) => {
     const gaps: Interval[] = []
     let cursor = startMinute
     for (const interval of [...member.intervals].sort((a, b) => a.startMinute - b.startMinute)) {
@@ -76,7 +93,8 @@ export function getCalendarSchedule({ days, members, rules, timeZone, defaultSta
       cursor = Math.max(cursor, interval.endMinute)
     }
     if (cursor < endMinute) gaps.push({ startMinute: cursor, endMinute })
-    return [...gaps.map((gap) => ({ day: schedule.value, memberId: member.memberId, ...gap })), ...member.blocked.map((period) => ({ day: schedule.value, memberId: member.memberId, ...period }))]
+    const visibleGaps = schedule.hasFullDayBusinessClosure ? [] : gaps
+    return [...visibleGaps.map((gap) => ({ day: schedule.value, memberId: member.memberId, ...gap })), ...member.blocked.map((period) => ({ day: schedule.value, memberId: member.memberId, ...period }))]
   }))
   const breaks: CalendarUnavailableTime[] = schedules.flatMap((schedule) => schedule.memberHours.flatMap((member) => member.breaks.map((period) => ({ day: schedule.value, memberId: member.memberId, ...period }))))
   return { days: schedules.map((schedule) => schedule.day), startMinute, endMinute, unavailableTimes, breaks }

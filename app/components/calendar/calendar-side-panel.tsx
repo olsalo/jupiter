@@ -19,11 +19,12 @@ export function CalendarPanelClose({ returnTo, ...props }: ComponentProps<typeof
 type CalendarSidePanelProps = {
   title: string
   subtitle?: string
+  titleAdornment?: ReactNode
   returnTo: string
   children: ReactNode
 }
 
-export function CalendarSidePanel({ title, subtitle, returnTo, children }: CalendarSidePanelProps) {
+export function CalendarSidePanel({ title, subtitle, titleAdornment, returnTo, children }: CalendarSidePanelProps) {
   const { t } = useTranslation()
   const titleId = useId()
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -38,7 +39,7 @@ export function CalendarSidePanel({ title, subtitle, returnTo, children }: Calen
     }
   }, [isOverlay])
 
-  if (isOverlay) return <CalendarBookingOverlay returnTo={returnTo} subtitle={subtitle} title={title}>{children}</CalendarBookingOverlay>
+  if (isOverlay) return <CalendarBookingOverlay returnTo={returnTo} subtitle={subtitle} title={title} titleAdornment={titleAdornment}>{children}</CalendarBookingOverlay>
 
   return <aside
     aria-labelledby={titleId}
@@ -46,7 +47,7 @@ export function CalendarSidePanel({ title, subtitle, returnTo, children }: Calen
     data-slot="calendar-side-panel"
   >
     <DialogHeader className="shrink-0 pr-14 pb-3">
-      <h2 className="font-heading text-xl leading-none font-semibold outline-none" id={titleId} ref={headingRef} tabIndex={-1}>{title}</h2>
+      <h2 className="flex items-center gap-2 font-heading text-xl leading-none font-semibold outline-none" id={titleId} ref={headingRef} tabIndex={-1}>{title}{titleAdornment}</h2>
       {subtitle ? <p className="min-w-0 truncate text-sm text-muted-foreground" data-slot="calendar-panel-subtitle">{subtitle}</p> : null}
       <Button aria-label={t("routePlaceholders.close")} className="absolute end-2 top-2" render={<Link draggable={false} preventScrollReset={true} replace={true} to={returnTo} />} size="icon" type="button" variant="ghost">
         <Icon aria-hidden={true} name="x" size={18} />
@@ -56,23 +57,23 @@ export function CalendarSidePanel({ title, subtitle, returnTo, children }: Calen
   </aside>
 }
 
-function CalendarBookingOverlay({ title, subtitle, returnTo, children }: CalendarSidePanelProps) {
+function CalendarBookingOverlay({ title, subtitle, titleAdornment, returnTo, children }: CalendarSidePanelProps) {
   const isMobile = useMediaQuery("max-768px")
   const navigate = useNavigate()
   const { open, close, finishClosing } = useRouteSheet({
     onCloseComplete: () => { void navigate(returnTo, { replace: true, preventScrollReset: true }) },
   })
 
-  return <Drawer onOpenChange={(nextOpen, details) => {
+  return <Drawer disablePointerDismissal={!isMobile} modal={isMobile} onOpenChange={(nextOpen, details) => {
     if (!isMobile && details.reason === "swipe") {
       details.cancel()
       return
     }
     if (!nextOpen) close()
   }} onOpenChangeComplete={(nextOpen) => { if (!nextOpen) finishClosing() }} open={open} position={isMobile ? "bottom" : "right"}>
-    <DrawerPopup className={isMobile ? "h-(--app-drawer-height)" : "w-[28rem]"} forceBackdrop={true} position={isMobile ? "bottom" : "right"} presentation={isMobile ? "drawer" : "sheet"} showBar={isMobile} showCloseButton={true} variant={isMobile ? "default" : "inset"}>
+    <DrawerPopup backdropClassName={isMobile ? undefined : "pointer-events-none bg-transparent backdrop-blur-none"} className={isMobile ? "h-(--app-drawer-height)" : "w-[28rem]"} forceBackdrop={true} position={isMobile ? "bottom" : "right"} presentation={isMobile ? "drawer" : "sheet"} showBar={isMobile} showCloseButton={true} variant={isMobile ? "default" : "inset"}>
       <DrawerHeader className="shrink-0 pr-14 pb-3">
-        <DrawerTitle>{title}</DrawerTitle>
+        <DrawerTitle className="flex items-center gap-2">{title}{titleAdornment}</DrawerTitle>
         {subtitle ? <DrawerDescription className="min-w-0 truncate" data-slot="calendar-panel-subtitle">{subtitle}</DrawerDescription> : null}
       </DrawerHeader>
       <DrawerContent className="flex min-h-0 flex-1 flex-col"><CalendarPanelCloseContext.Provider value={close}>{children}</CalendarPanelCloseContext.Provider></DrawerContent>

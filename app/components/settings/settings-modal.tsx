@@ -464,7 +464,7 @@ export function SettingsModal({
             >
               <div className={cn("relative flex min-h-[18rem] flex-1 flex-col gap-4 px-5 pb-5 max-sm:min-h-[14rem] max-sm:px-4 max-sm:pb-4", (activeItemId === "profile" || activeItemId === "business") && "pt-5 max-sm:pt-4")}>
                 {activeItemId === "profile" ? (
-                  profilePerson.isPending ? null : profilePerson.isError ? <Alert variant="error"><AlertTitle>{tTeam("people.loadFailed")}</AlertTitle><AlertDescription>{tTeam("retryDescription")}</AlertDescription><AlertAction><Button disabled={profilePerson.isFetching} onClick={() => void profilePerson.refetch()} size="sm" type="button" variant="outline">{tTeam("retry")}</Button></AlertAction></Alert> : profileForm
+                  profilePerson.isPending ? null : profilePerson.isError ? <Alert variant="error"><AlertTitle>{tTeam("people.loadFailed")}</AlertTitle><AlertDescription>{tTeam("retryDescription")}</AlertDescription><AlertAction><Button disabled={profilePerson.isFetching} loading={profilePerson.isFetching} onClick={() => void profilePerson.refetch()} size="sm" type="button" variant="outline">{tTeam("retry")}</Button></AlertAction></Alert> : profileForm
                 ) : settingsContent}
                 {viewLoading ? (
                   <SettingsLoading className="absolute inset-0 z-10 bg-background" />
@@ -490,16 +490,10 @@ export function SettingsModal({
               <Button
                 disabled={businessFormState.isSubmitting}
                 form={activeBusinessFormId}
+                loading={businessFormState.isSubmitting}
                 type="submit"
               >
-                {businessFormState.isSubmitting ? (
-                  <>
-                    <Spinner className="size-4" />
-                    {t("settings.saving")}
-                  </>
-                ) : (
-                  t("settings.save")
-                )}
+                {t("settings.save")}
               </Button>
             </Footer>
           ) : activeItemId === "communications" ? (

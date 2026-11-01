@@ -1,10 +1,14 @@
 import { reactRouter } from "@react-router/dev/vite"
 import tailwindcss from "@tailwindcss/vite"
+import { randomUUID } from "node:crypto"
 import { fileURLToPath, URL } from "node:url"
 import { defineConfig } from "vite"
 import { offlinePlugin } from "./build-plugins/offline.ts"
 
+const buildId = process.env.APP_BUILD_ID || randomUUID()
+
 export default defineConfig({
+  define: { "import.meta.env.APP_BUILD_ID": JSON.stringify(buildId) },
   cacheDir: process.env.VITE_TEST_CACHE_DIR ?? "node_modules/.vite",
   envPrefix: ["VITE_", "APP_LAYOUT_STYLE"],
   plugins: [tailwindcss(), reactRouter(), offlinePlugin()],

@@ -45,7 +45,7 @@ export function TeamMemberList({ people, selectedId, loading, failed, search, on
   )
   const content = (
     <>
-    {loading ? <div className="flex min-h-40 flex-1 items-center justify-center p-6"><Spinner aria-label={t("loading")} /></div> : failed ? null : !filteredPeople.length ? <Empty className="px-4 py-12 md:p-6"><EmptyHeader><EmptyTitle className="text-base">{t(searchTerm ? "people.noMatches" : "noMembers")}</EmptyTitle>{!searchTerm ? <EmptyDescription>{t("noMembersDescription")}</EmptyDescription> : null}</EmptyHeader></Empty> : <nav aria-label={t("members")} className="grid gap-3 sm:gap-1 sm:p-2">
+    {loading ? <div className="flex min-h-40 flex-1 items-center justify-center p-6"><Spinner aria-label={t("loading")} /></div> : failed ? null : !filteredPeople.length ? <Empty><EmptyHeader><EmptyTitle>{t(searchTerm ? "people.noMatches" : "noMembers")}</EmptyTitle>{!searchTerm ? <EmptyDescription>{t("noMembersDescription")}</EmptyDescription> : null}</EmptyHeader></Empty> : <nav aria-label={t("members")} className="grid gap-3 sm:gap-1 sm:p-2">
       {filteredPeople.map((person) => {
         const selected = person.id === selectedId
         return <Link

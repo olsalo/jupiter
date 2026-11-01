@@ -63,7 +63,7 @@ export function TeamPersonProfile({ person, canManage, sideNavigation = false }:
             {services.length ? <ul className="flex flex-col gap-3">{services.map((link) => <IconListItem className="max-sm:gap-3 max-sm:p-3" iconClassName={cn("h-auto w-1 self-stretch", link.service.color ? "bg-current" : undefined)} iconStyle={link.service.color ? { color: link.service.color } : undefined} key={link.id}>
               <span className="min-w-0 wrap-anywhere text-balance text-sm font-medium max-sm:text-base">{link.service.name}</span>
               <ServiceListDetails service={{ ...link.service, durationMinutes: link.durationMinutes ?? link.service.durationMinutes, price: link.price ?? link.service.price }} />
-            </IconListItem>)}</ul> : person.staff ? <Empty className="min-h-0 w-full">
+            </IconListItem>)}</ul> : person.staff ? <Empty>
               <EmptyHeader>
                 <EmptyMedia variant="icon"><Icon aria-hidden={true} name="forms" /></EmptyMedia>
                 <EmptyTitle>{t("people.noServices")}</EmptyTitle>

@@ -1,9 +1,9 @@
 {
   "meta": {
-    "title": "Sivua ei löytynyt",
-    "description": "Sivua ei ole tai se on siirretty"
+    "title": "Ei löytynyt",
+    "description": "Tarkista osoite ja yritä uudelleen"
   },
   "eyebrow": "404",
-  "title": "Sivua ei löytynyt",
-  "description": "Sivua ei ole tai se on siirretty"
+  "title": "Ei löytynyt",
+  "description": "Tarkista osoite ja yritä uudelleen"
 }

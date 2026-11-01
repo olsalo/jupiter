@@ -21,10 +21,12 @@ Object.defineProperty(globalThis, "requestAnimationFrame", { configurable: true,
 Object.defineProperty(globalThis, "cancelAnimationFrame", { configurable: true, value: (id: number) => frames.delete(id) })
 let reducedMotion = true
 Object.defineProperty(globalThis, "window", { configurable: true, value: { matchMedia: () => ({ matches: reducedMotion }) } })
+let frameTime = 0
 const frame = () => {
+  frameTime += 16
   const callbacks = [...frames.values()]
   frames.clear()
-  for (const callback of callbacks) callback(16)
+  for (const callback of callbacks) callback(frameTime)
 }
 
 try {
@@ -34,13 +36,16 @@ try {
   const { createCalendarBookingDragPreview } = await vite.ssrLoadModule("/app/lib/calendar/booking-drag-preview.ts") as typeof import("../app/lib/calendar/booking-drag-preview")
   function harness(resize = false, creationDraft = false, horizontal = false, liveIssues = false, bufferedNeighbour = false, serviceDurations?: readonly number[], appointmentStart = 600, status = "CONFIRMED", viewportInsets?: { left: number; top: number }) {
     const bounds = (left: number, top: number, width: number, height: number) => ({ left, top, width, height, right: left + width, bottom: top + height })
-    const measurements = { lanes: 0, queries: 0 }
+    const measurements = { lanes: 0, queries: 0, scrolls: 0 }
     const sharedPreview = createCalendarBookingDragPreview()
     const members = [{ id: "alice", name: "Alice" }, { id: "bob", name: "Bob" }]
     const lanes = members.map((member, index) => ({ dataset: { day: creationDraft && index === 1 ? "2099-10-29" : "2099-10-28", memberId: creationDraft ? members[0].id : member.id }, getBoundingClientRect: () => { measurements.lanes += 1; return horizontal ? bounds(100 - viewport.scrollLeft, index * 100 - viewport.scrollTop, 600, 100) : bounds(100 + index * 200 - viewport.scrollLeft, -viewport.scrollTop, 200, 600) } }))
-    const card = { dataset: { appointmentId: "booking" }, getBoundingClientRect: () => horizontal ? bounds(100 + appointmentStart - 540 + 2, 4, 56, 92) : bounds(104, appointmentStart - 540, 192, 56), closest: () => lanes[0] }
-    const target = { closest: (selector: string) => selector.includes("resize-handle") ? resize ? {} : null : card }
-    const grid = { style: { cursor: "" }, querySelectorAll: () => { measurements.queries += 1; return lanes }, setPointerCapture: () => {} }
+    const card = { isConnected: true, dataset: { appointmentId: "booking" }, getBoundingClientRect: () => horizontal ? bounds(100 + appointmentStart - 540 + 2, 4, 56, 92) : bounds(104, appointmentStart - 540, 192, 56), closest: () => lanes[0] }
+    let resizeMode = resize
+    const target = { closest: (selector: string) => selector.includes("resize-handle") ? resizeMode ? {} : null : card }
+    const touchListeners = new Map<string, EventListener>()
+    const ownerDocument = { defaultView: null, addEventListener: (type: string, listener: EventListener) => touchListeners.set(type, listener), removeEventListener: (type: string) => touchListeners.delete(type) }
+    const grid = { ownerDocument, isConnected: true, addEventListener: (type: string, listener: EventListener) => touchListeners.set(type, listener), removeEventListener: (type: string) => touchListeners.delete(type), style: { cursor: "" }, querySelectorAll: () => { measurements.queries += 1; return lanes }, setPointerCapture: () => {} }
     const viewport = { getBoundingClientRect: () => bounds(100, 0, viewport.clientWidth, viewport.clientHeight), scrollLeft: 0, scrollTop: 0, scrollWidth: horizontal ? 600 : 400, clientWidth: horizontal ? 600 : 400, scrollHeight: horizontal ? 400 : 600, clientHeight: horizontal ? 400 : 600 }
     const updates: { phase: CalendarBookingDragPhase; selection: CalendarDragSelection }[] = []
     let drag!: ReturnType<typeof useCalendarBookingDrag>
@@ -58,7 +63,7 @@ try {
           ], timeZone: "UTC", defaultStartMinute: 540, defaultEndMinute: 1140, now: Date.now(),
         }) : undefined,
         horizontal, members, unavailableTimes: [], startMinute: 540, endMinute: 1140, timeZone: "UTC", allowSimultaneousBookings: false,
-        viewportRef: { current: viewport as unknown as HTMLDivElement }, scrollTo: () => {},
+        viewportRef: { current: viewport as unknown as HTMLDivElement }, scrollTo: () => { measurements.scrolls += 1 },
         onMove: (_, selection, phase) => { updates.push({ phase, selection }) },
       })
       return null
@@ -66,8 +71,117 @@ try {
     // The handlers and external preview store can be exercised without mounting a browser DOM
     renderToStaticMarkup(createElement(Capture))
     const event = (x: number, y: number) => ({ currentTarget: grid, target, pointerId: 1, pointerType: "mouse", button: 0, clientX: x, clientY: y, preventDefault: () => {} }) as unknown as PointerEvent<HTMLDivElement>
-    return { drag, sharedPreview, updates, event, viewport, measurements, lanes, grid }
+    const nativeTouch = (type: string, x: number, y: number, cancelable = true) => {
+      const touch = { identifier: 7, clientX: x, clientY: y }
+      let prevented = false
+      touchListeners.get(type)?.({ touches: type === "touchend" ? [] : [touch], changedTouches: [touch], cancelable, preventDefault: () => { prevented = true } } as unknown as Event)
+      return prevented
+    }
+    return { drag, sharedPreview, updates, event, viewport, measurements, lanes, grid, touchListeners, nativeTouch, setResize: (value: boolean) => { resizeMode = value },
+      touchDown: (x: number, y: number) => { drag.gridProps.onPointerDown({ ...event(x, y), pointerType: "touch" } as PointerEvent<HTMLDivElement>); nativeTouch("touchstart", x, y) },
+      touchMove: (x: number, y: number) => nativeTouch("touchmove", x, y),
+      touchUp: (x: number, y: number) => nativeTouch("touchend", x, y),
+      touchCancel: () => nativeTouch("touchcancel", 0, 0),
+    }
   }
+
+  for (const horizontal of [false, true]) {
+    const touch = harness(false, false, horizontal)
+    const [x, y] = horizontal ? [180, 30] : [150, 80]
+    touch.touchDown(x, y)
+    mock.timers.tick(449)
+    assert.equal(touch.updates.length, 0, "Touch waits for a long press")
+    mock.timers.tick(1)
+    assert.equal(touch.updates[0]?.phase, "start")
+    touch.drag.gridProps.onPointerCancel()
+    touch.drag.gridProps.onLostPointerCapture()
+    assert.equal(touch.updates.at(-1)?.phase, "start", "Browser pointer cancellation does not end the native touch gesture")
+    assert.equal(touch.touchMove(horizontal ? 210 : 350, horizontal ? 140 : 110), true, "Touch movement blocks native scrolling")
+    assert.equal(touch.touchUp(horizontal ? 210 : 350, horizontal ? 140 : 110), true, "A touch drop suppresses its synthetic click")
+    assert.equal(touch.updates.at(-1)?.phase, "drop")
+    assert.equal(touch.updates.at(-1)?.selection.member.id, "bob")
+    assert.equal(touch.updates.at(-1)?.selection.startMinute, 630)
+    assert.equal(touch.touchListeners.size, 0, "Dropping removes all document touch listeners")
+
+    const edges = harness(false, false, horizontal)
+    edges.viewport.clientWidth = 200
+    edges.viewport.clientHeight = 180
+    edges.touchDown(200, 90)
+    mock.timers.tick(450)
+    frame()
+    assert.equal(edges.measurements.scrolls, 0, "Dragging in the interior does not scroll")
+    edges.touchMove(295, 175)
+    frame()
+    assert.ok(edges.measurements.scrolls > 0, "Touch edge scrolling stays enabled")
+    const scrolls = edges.measurements.scrolls
+    edges.touchMove(200, 90)
+    frame()
+    assert.equal(edges.measurements.scrolls, scrolls, "Returning to the interior stops edge scrolling")
+    edges.touchCancel()
+    assert.equal(edges.updates.at(-1)?.phase, "cancel")
+    assert.equal(edges.touchListeners.size, 0)
+  }
+  for (const gesture of ["tap", "scroll", "cancel", "multitouch"] as const) {
+    const touch = harness()
+    touch.touchDown(150, 80)
+    if (gesture === "tap") assert.equal(touch.touchUp(150, 80), false, "Taps retain normal booking clicks")
+    if (gesture === "scroll") assert.equal(touch.touchMove(150, 90), false, "Swipes retain native scrolling")
+    if (gesture === "cancel") touch.touchCancel()
+    if (gesture === "multitouch") touch.touchListeners.get("touchstart")?.({ touches: [{}, {}] } as unknown as Event)
+    mock.timers.tick(500)
+    assert.equal(touch.updates.length, 0, `${gesture} does not activate a booking drag`)
+    assert.equal(touch.touchListeners.size, 0)
+  }
+  for (const horizontal of [false, true]) {
+    for (const resize of [false, true]) {
+      const draft = harness(resize, true, horizontal)
+      const x = horizontal ? resize ? 214 : 180 : 150
+      const y = horizontal ? 30 : resize ? 114 : 80
+      draft.touchDown(x, y)
+      mock.timers.tick(450)
+      assert.equal(draft.sharedPreview.getSnapshot()?.appointment.creationDraft, true, "Activating a touch draft drag immediately shows its floating preview")
+      draft.drag.gridProps.onPointerCancel()
+      draft.drag.gridProps.onLostPointerCapture()
+      assert.equal(draft.sharedPreview.getSnapshot()?.returning, false, "Pointer lifecycle changes cannot hide the active draft")
+      draft.touchMove(horizontal ? x + 30 : x, horizontal ? y : y + 30)
+      draft.touchUp(horizontal ? x + 30 : x, horizontal ? y : y + 30)
+      assert.equal(draft.updates.at(-1)?.phase, "drop", "Touch draft moves and resizes complete in both layouts")
+      assert.equal(draft.touchListeners.size, 0)
+      draft.touchDown(x, y)
+      mock.timers.tick(450)
+      assert.equal(draft.sharedPreview.getSnapshot()?.appointment.creationDraft, true, "The same draft can be picked up again")
+      draft.touchCancel()
+      assert.equal(draft.updates.at(-1)?.phase, "cancel")
+      assert.equal(draft.sharedPreview.getSnapshot()?.appointment.startMinute, 600, "Cancelling a draft drag preserves its original start")
+      assert.equal(draft.sharedPreview.getSnapshot()?.appointment.endMinute, 660, "Cancelling a draft resize preserves its original length")
+      assert.equal(draft.touchListeners.size, 0)
+    }
+  }
+  for (const horizontal of [false, true]) {
+    for (const creationDraft of [false, true]) {
+      for (const change of [-30, 30]) {
+        const resize = harness(true, creationDraft, horizontal)
+        const x = horizontal ? 214 : 150
+        const y = horizontal ? 30 : 114
+        resize.touchDown(x, y)
+        assert.equal(resize.updates[0]?.phase, "start", "Touching the resize handle activates immediately without a long press")
+        assert.equal(resize.sharedPreview.getSnapshot()?.resizing, true)
+        assert.equal(resize.touchMove(horizontal ? x + change : x, horizontal ? y : y + change), true, "Resizing prevents native scrolling from the first movement")
+        resize.touchUp(horizontal ? x + change : x, horizontal ? y : y + change)
+        assert.equal(resize.updates.at(-1)?.phase, "drop")
+        assert.equal(resize.updates.at(-1)?.selection.startMinute, 600, "Touch resizing keeps the start time fixed")
+        assert.equal(resize.updates.at(-1)?.selection.endMinute, 660 + change, "Touch can shorten and extend saved and draft bookings in both layouts")
+        assert.equal(resize.updates.at(-1)?.selection.member.id, "alice")
+        assert.equal(resize.touchListeners.size, 0)
+      }
+    }
+  }
+  const nativeScroll = harness()
+  nativeScroll.touchDown(150, 80)
+  mock.timers.tick(450)
+  nativeScroll.nativeTouch("touchmove", 150, 120, false)
+  assert.equal(nativeScroll.updates.at(-1)?.phase, "cancel", "If native scrolling wins, the booking stops dragging immediately")
+  assert.equal(nativeScroll.touchListeners.size, 0)
 
   for (const horizontal of [false, true]) {
     const live = harness(false, false, horizontal, true)
@@ -396,6 +510,40 @@ try {
     assert.equal(preview?.top, horizontal ? 104 : 105)
     mock.timers.tick(500)
     assert.equal(settled.sharedPreview.getSnapshot(), null, "Settling removes the overlay and reveals the grid card")
+  }
+  for (const horizontal of [false, true]) {
+    const sequence = harness(true, true, horizontal)
+    const x = horizontal ? 214 : 150
+    const y = horizontal ? 30 : 114
+    sequence.touchDown(x, y)
+    sequence.touchMove(horizontal ? x + 30 : x, horizontal ? y : y + 30)
+    sequence.touchUp(horizontal ? x + 30 : x, horizontal ? y : y + 30)
+    assert.equal(sequence.sharedPreview.getSnapshot()?.returning, true)
+    assert.ok(frames.size > 0)
+    sequence.setResize(false)
+    sequence.touchDown(horizontal ? 180 : 150, horizontal ? 30 : 80)
+    assert.equal(frames.size, 0, "Starting a move cancels the preceding resize's return-animation frame")
+    mock.timers.tick(450)
+    assert.equal(sequence.sharedPreview.getSnapshot()?.resizing, false, "The next touch gesture starts as a move")
+    sequence.touchMove(horizontal ? 210 : 150, horizontal ? 30 : 110)
+    frame()
+    assert.equal(sequence.sharedPreview.getSnapshot()?.returning, false, "The previous resize cannot settle or hide the new move")
+    sequence.touchUp(horizontal ? 210 : 150, horizontal ? 30 : 110)
+    assert.equal(sequence.updates.at(-1)?.phase, "drop")
+    mock.timers.tick(500)
+    assert.equal(frames.size, 0)
+  }
+  for (const horizontal of [false, true]) {
+    const resized = harness(false, false, horizontal)
+    resized.drag.gridProps.onPointerDown(resized.event(horizontal ? 190 : 150, horizontal ? 40 : 80))
+    resized.drag.gridProps.onPointerMove(resized.event(horizontal ? 220 : 350, horizontal ? 140 : 120))
+    resized.drag.gridProps.onPointerUp(resized.event(horizontal ? 220 : 350, horizontal ? 140 : 120))
+    assert.equal(resized.sharedPreview.getSnapshot()?.returning, true)
+    resized.viewport.clientWidth -= 100
+    frame()
+    assert.equal(resized.sharedPreview.getSnapshot(), null, "Opening the side panel immediately reveals the grid card at its new column width")
+    assert.equal(frames.size, 0, "A layout change stops the settling animation")
+    assert.equal(resized.updates.at(-1)?.phase, "drop", "Resizing preserves the dropped selection")
   }
   reducedMotion = true
   console.info("PASS live drag and resize updates, quiet live forms during rapid movement, cached lane measurements, scrolling, stationary catch-up, exact drop and cancellation")

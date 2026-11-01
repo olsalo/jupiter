@@ -23,7 +23,7 @@ export function PlanUsage() {
         {usage.isError ? (
           <Alert variant="error">
             <AlertTitle>{t("settings.planUsageError")}</AlertTitle>
-            <AlertAction><Button disabled={usage.isFetching} onClick={() => void usage.refetch()} size="sm" type="button" variant="outline">{t("settings.planUsageRetry")}</Button></AlertAction>
+            <AlertAction><Button disabled={usage.isFetching} loading={usage.isFetching} onClick={() => void usage.refetch()} size="sm" type="button" variant="outline">{t("settings.planUsageRetry")}</Button></AlertAction>
           </Alert>
         ) : team ? (
           <Meter min={0} max={team.limit} value={Math.min(team.used, team.limit)}>

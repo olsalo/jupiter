@@ -3,9 +3,9 @@ import assert from "node:assert/strict"
 import { createServer } from "vite"
 
 // Exercise query callers with a fake database and billing disabled.
-process.env.NODE_ENV = "test"
-const demoBypassEnabled = process.argv.includes("--demo")
-process.env.DEMO_BYPASS_ONBOARDING_PAYMENT = String(demoBypassEnabled)
+process.env.NODE_ENV = process.argv.includes("--production") ? "production" : "test"
+const demoBypassEnabled = process.argv.includes("--demo") && process.env.NODE_ENV !== "production"
+process.env.DEMO_BYPASS_ONBOARDING_PAYMENT = String(process.argv.includes("--demo"))
 process.env.STRIPE_SECRET_KEY = ""
 process.env.LOCATION_API_KEY = "onboarding-test-key"
 const originalFetch = globalThis.fetch
@@ -30,7 +30,7 @@ try {
       settings: { currency: string, countryCode: string, timezone: string } | null
     }
   } | null = null
-  let activeSubscription: { id: string } | null = null
+  let activeSubscription: { id: string; status: string; canceledAt?: Date | null; endedAt?: Date | null; cancelAt?: Date | null; cancelAtPeriodEnd?: boolean; periodEnd?: Date } | null = null
   let savedCurrency: string | undefined
   let savedBusinessName: string | undefined
   let existingSettings: { countryCode: string, timezone: string } | null = null
@@ -38,7 +38,7 @@ try {
     headers: new Headers(),
     user: { id: "onboarding-user", name: "Matti Meikäläinen" },
     session: null,
-    organizationId: null,
+    organizationId: null as string | null,
     locale: "fi",
     prisma: {
       organizationSettings: { findUnique: async () => existingSettings },
@@ -74,18 +74,19 @@ try {
         },
       }),
       member: {
-        findFirst: async ({ where }: { where: { userId: string } }) => {
+        findFirst: async ({ where }: { where: { userId: string; organizationId?: string } }) => {
           assert.equal(where.userId, "onboarding-user")
+          assert.equal(where.organizationId, context.organizationId ?? undefined)
           return membership
         },
       },
       subscription: {
-        findFirst: async ({ where }: {
+        findMany: async ({ where }: {
           where: { referenceId: string, status: { in: string[] } }
         }) => {
           assert.equal(where.referenceId, membership?.organizationId)
           assert.deepEqual(where.status.in, ["active", "past_due", "trialing"])
-          return activeSubscription
+          return activeSubscription ? [activeSubscription] : []
         },
       },
     },
@@ -149,9 +150,22 @@ try {
 
   assert.equal((await caller.status()).businessComplete, true)
   assert.equal((await caller.status()).subscriptionComplete, false)
-  activeSubscription = { id: "subscription-active" }
+  activeSubscription = { id: "subscription-active", status: "active" }
   assert.equal((await caller.status()).subscriptionComplete, true)
+  for (const cancellation of [{ endedAt: new Date(0) }, { cancelAt: new Date(0) }, { periodEnd: new Date(0) }]) {
+    activeSubscription = { id: "canceled-subscription", status: "active", ...cancellation }
+    assert.equal((await caller.status()).subscriptionComplete, false)
+  }
+  activeSubscription = { id: "paid-until-period-end", status: "active", canceledAt: new Date(), cancelAtPeriodEnd: true, periodEnd: new Date(Date.now() + 86_400_000) }
+  assert.equal((await caller.status()).subscriptionComplete, true, "Scheduled cancellation retains access through the paid period")
   activeSubscription = null
+  context.organizationId = "onboarding-org"
+  await caller.status()
+  await caller.business()
+  await caller.subscription()
+  membership.role = "member"
+  await assert.rejects(caller.complete({ businessName: "Yritys Oy", currency: "EUR", location: "fi", name: "Matti Meikäläinen", timezone: "Europe/Helsinki" }), { code: "FORBIDDEN" })
+  membership.role = "owner"
 
   await caller.complete({
     businessName: "Yritys Oy",
@@ -181,7 +195,7 @@ try {
       error instanceof Error && "code" in error && error.code === "CONFLICT"
     ))
     assert.equal(savedCurrency, "SEK")
-    assert.equal(savedBusinessName, undefined)
+    assert.equal(savedBusinessName, "Yritys Oy")
   }
   await assert.rejects(() => caller.complete({
     ...defaults,

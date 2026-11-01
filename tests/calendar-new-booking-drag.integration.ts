@@ -47,9 +47,22 @@ try {
       return null
     }
     renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(Capture)))
-    const element = { style: { cursor: "" }, getBoundingClientRect: () => ({ left: 100, width: 960, top: 0, height: 480 }), setPointerCapture: () => {} }
+    const touchListeners = new Map<string, EventListener>()
+    const ownerDocument = { defaultView: null, addEventListener: (type: string, listener: EventListener) => touchListeners.set(type, listener), removeEventListener: (type: string) => touchListeners.delete(type) }
+    const element = { ownerDocument, isConnected: true, addEventListener: (type: string, listener: EventListener) => touchListeners.set(type, listener), removeEventListener: (type: string) => touchListeners.delete(type), style: { cursor: "" }, getBoundingClientRect: () => ({ left: 100, width: 960, top: 0, height: 480 }), setPointerCapture: () => {} }
     const event = (minute: number) => ({ currentTarget: element, target: { closest: () => null }, pointerId: 1, pointerType, button: 0, clientX: 100 + (minute - 540) * 2, clientY: minute - 540, preventDefault: () => {} }) as unknown as Parameters<NonNullable<typeof lane.props.onPointerDown>>[0]
-    return { selections, previews, dragging, get starts() { return starts }, get cursor() { return element.style.cursor }, enter: (minute: number) => lane.props.onPointerEnter?.(event(minute)), leave: () => lane.props.onPointerLeave?.(event(600)), down: (minute: number) => lane.props.onPointerDown?.(event(minute)), move: (minute: number) => lane.props.onPointerMove?.(event(minute)), release: (minute: number) => lane.props.onPointerUp?.(event(minute)), lostCapture: () => lane.props.onLostPointerCapture?.(event(600)), up: (minute: number) => { lane.props.onPointerUp?.(event(minute)); mock.timers.tick(0) } }
+    const nativeTouch = (type: string, minute: number) => {
+      const pointer = event(minute)
+      const touch = { identifier: 9, clientX: pointer.clientX, clientY: pointer.clientY }
+      touchListeners.get(type)?.({ touches: type === "touchend" ? [] : [touch], changedTouches: [touch], cancelable: true, preventDefault: () => {} } as unknown as Event)
+    }
+    const down = (minute: number) => { lane.props.onPointerDown?.(event(minute)); if (pointerType === "touch") nativeTouch("touchstart", minute) }
+    const move = (minute: number) => { if (pointerType === "touch") nativeTouch("touchmove", minute); else lane.props.onPointerMove?.(event(minute)) }
+    const release = (minute: number) => { if (pointerType === "touch") nativeTouch("touchend", minute); else lane.props.onPointerUp?.(event(minute)) }
+    return { touchListeners, selections, previews, dragging, get starts() { return starts }, get cursor() { return element.style.cursor }, enter: (minute: number) => lane.props.onPointerEnter?.(event(minute)), leave: () => lane.props.onPointerLeave?.(event(600)), down, move, release,
+      lostCapture: () => { if (pointerType === "touch") nativeTouch("touchcancel", 600); else lane.props.onLostPointerCapture?.(event(600)) },
+      up: (minute: number) => { release(minute); mock.timers.tick(0) },
+    }
   }
 
   for (const horizontal of [false, true]) {
@@ -75,6 +88,55 @@ try {
   coarse.enter(600)
   assert.equal(coarse.cursor, "default", "Devices without a fine hovering pointer use the default cursor")
   finePointer = true
+
+  for (const horizontal of [false, true]) {
+    for (const backwards of [false, true]) {
+      const touch = harness("2026-10-19", horizontal, undefined, undefined, undefined, [], { mobile: true, pointerType: "touch" })
+      touch.down(600)
+      mock.timers.tick(449)
+      assert.equal(touch.starts, 0, "Empty calendar touch waits for a long press")
+      let prevented = false
+      touch.touchListeners.get("touchmove")?.({ touches: [{ identifier: 9, clientX: 220, clientY: 60 }], cancelable: true, preventDefault: () => { prevented = true } } as unknown as Event)
+      assert.equal(prevented, false, "Scrolling is available before the hold activates")
+      mock.timers.tick(1)
+      assert.equal(touch.starts, 1)
+      assert.equal(touch.previews.at(-1)?.startMinute, 600, "The hold immediately previews the new booking")
+      touch.touchListeners.get("touchmove")?.({ touches: [{ identifier: 9, clientX: 220, clientY: 60 }], cancelable: true, preventDefault: () => { prevented = true } } as unknown as Event)
+      assert.equal(prevented, true, "Dragging a new booking blocks native scrolling")
+      touch.move(backwards ? 570 : 645)
+      touch.up(backwards ? 570 : 645)
+      assert.equal(touch.selections.at(-1)?.startMinute, backwards ? 570 : 600)
+      assert.equal(touch.selections.at(-1)?.endMinute, backwards ? 615 : 645)
+      assert.equal(touch.starts, 1, "Touch starts the create flow once")
+      assert.deepEqual(touch.dragging, [true, false])
+      assert.equal(touch.touchListeners.size, 0)
+    }
+  }
+  for (const gesture of ["tap", "scroll", "cancel", "multitouch"] as const) {
+    const touch = harness("2026-10-19", false, undefined, undefined, undefined, [], { pointerType: "touch" })
+    touch.down(600)
+    if (gesture === "tap") touch.up(600)
+    if (gesture === "scroll") touch.move(620)
+    if (gesture === "cancel") touch.lostCapture()
+    if (gesture === "multitouch") touch.touchListeners.get("touchstart")?.({ touches: [{}, {}] } as unknown as Event)
+    mock.timers.tick(500)
+    assert.equal(touch.starts, 0, `${gesture} does not start a new booking`)
+    assert.equal(touch.selections.length, 0)
+    assert.equal(touch.touchListeners.size, 0)
+    assert.deepEqual(touch.dragging, [], "A pending touch gesture does not lock calendar scrolling")
+  }
+  const cancelledTouch = harness("2026-10-19", false, undefined, undefined, undefined, [], { pointerType: "touch" })
+  cancelledTouch.down(600)
+  mock.timers.tick(450)
+  cancelledTouch.move(630)
+  cancelledTouch.lostCapture()
+  cancelledTouch.up(630)
+  assert.equal(cancelledTouch.selections.length, 0, "Interrupted touch selections do not create bookings")
+  assert.deepEqual(cancelledTouch.dragging, [true, false])
+  const blockedTouch = harness("2026-10-19", false, undefined, undefined, undefined, [{ startMinute: 590, endMinute: 620 }], { pointerType: "touch" })
+  blockedTouch.down(600)
+  mock.timers.tick(450)
+  assert.equal(blockedTouch.starts, 0, "Long press cannot create a booking in blocked time")
 
   const rows = harness("2026-10-19", true)
   rows.down(600)

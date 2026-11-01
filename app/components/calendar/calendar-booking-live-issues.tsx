@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useSyncExternalStore } from "react"
 import { TZDate } from "react-day-picker"
 
-import { CalendarBookingIssues } from "~/components/calendar/calendar-booking-issues"
+import { CalendarBookingIssueMarker, CalendarBookingIssues } from "~/components/calendar/calendar-booking-issues"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { useCalendarState } from "~/components/calendar/use-calendar-state"
 import { calendarDateToValue, getCalendarBookingRange, getCalendarDateState } from "~/lib/calendar/date"
@@ -15,8 +15,10 @@ type BookingPosition = Parameters<typeof getCalendarPreviewIssues>[0]
 const subscribeToNothing = () => () => {}
 const noDrag = () => null
 
-// Only this warning subscribes to pointer frames, keeping the booking form stable
-export function CalendarBookingLiveIssues({ appointmentId, savedPosition, position = savedPosition, savedIssues }: {
+// Warnings and the title marker subscribe independently, keeping the booking form stable
+export function CalendarBookingLiveIssues({ appointmentId, savedPosition, position = savedPosition, savedIssues, serviceId, marker = false }: {
+  serviceId?: string
+  marker?: boolean
   appointmentId: string
   savedPosition: BookingPosition
   position?: BookingPosition
@@ -34,9 +36,13 @@ export function CalendarBookingLiveIssues({ appointmentId, savedPosition, positi
   const bookingRange = getCalendarBookingRange(state, calendar.timeZone)
   const range = { from: bookingRange.from, to: new Date(Math.max(+bookingRange.to, +new Date(current.endsAt))) }
   const schedule = useQuery({ ...trpc.availability.calendarSchedule.queryOptions(range), ...calendarReferenceQueryOptions })
+  const currentServiceId = dragged?.id === appointmentId ? dragged.service.id : serviceId
+  const service = useQuery({ ...trpc.service.get.queryOptions({ id: currentServiceId ?? "" }), ...calendarReferenceQueryOptions, enabled: Boolean(currentServiceId) })
   const isSavedPosition = +new Date(current.startsAt) === +new Date(savedPosition.startsAt) && +new Date(current.endsAt) === +new Date(savedPosition.endsAt) && current.memberId === savedPosition.memberId && (current.locationId ?? null) === (savedPosition.locationId ?? null)
   const issues = schedule.data ? getCalendarPreviewIssues(current, {
     rules: schedule.data, timeZone: calendar.timeZone, defaultStartMinute: calendar.startMinute, defaultEndMinute: calendar.endMinute, now: calendar.now,
   }) : isSavedPosition ? savedIssues : undefined
-  return <CalendarBookingIssues issues={issues} />
+  const unassignedService = service.data && current.memberId && !service.data.staffServices.some((assignment) => assignment.staffMemberId === current.memberId && assignment.isActive)
+  const currentIssues: BookingAvailabilityIssue[] | undefined = unassignedService ? [...new Set<BookingAvailabilityIssue>([...(issues ?? []), "unassignedService"])] : issues
+  return marker ? <CalendarBookingIssueMarker issues={currentIssues} /> : <CalendarBookingIssues issues={currentIssues} />
 }

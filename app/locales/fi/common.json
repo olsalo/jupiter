@@ -1,4 +1,9 @@
 {
+  "deploymentUpdate": {
+    "title": "Päivitys on saatavilla",
+    "description": "Tallenna muutokset ennen uudelleen lataamista",
+    "reload": "Päivitä"
+  },
   "contactCopy": {
     "email": "Kopioi sähköposti",
     "phone": "Kopioi puhelinnumero",
@@ -76,6 +81,10 @@
     "pastStartDescription": "Varauksen alkamisaika on menneisyydessä. Haluatko silti tallentaa varauksen?",
     "pastStartCancel": "Palaa takaisin",
     "pastStartConfirm": "Tallenna varaus",
+    "unassignedServiceTitle": "Jäsentä ei ole valittu tähän palveluun",
+    "unassignedServiceDescription": "Tätä jäsentä ei ole valittu palvelun tekijäksi. Haluatko silti tallentaa varauksen?",
+    "unassignedServiceCancel": "Valitse toinen jäsen",
+    "unassignedServiceConfirm": "Tallenna varaus",
     "breakOverlapTitle": "Varaus osuu tauolle",
     "breakOverlapDescription": "Tämä aika osuu jäsenen tauolle. Haluatko silti tallentaa varauksen?",
     "breakOverlapCancel": "Valitse toinen aika",
@@ -238,19 +247,19 @@
     }
   },
   "welcome": {
-    "title": "Tervetuloa Jupiteriin",
-    "description": "Voit nyt aloittaa ajanvaraukset tiimisi kanssa",
-    "notes": {
-      "title": "Pidä tärkeät tiedot tallessa",
-      "description": "Kirjaa ideat ja muistettavat asiat"
+    "title": "Ajanvarauksesi yhdessä paikassa",
+    "description": "Pidä ajanvaraukset ja tiimisi aikataulut yhdessä paikassa",
+    "calendar": {
+      "title": "Löydä asiakkaille sopiva aika",
+      "description": "Lisää ajanvarauksia ja näe tiimisi päivän aikataulu yhdellä silmäyksellä"
     },
-    "overview": {
-      "title": "Tutustu sovellukseen",
-      "description": "Avaa tarvitsemasi sivut päävalikosta"
+    "booking": {
+      "title": "Anna asiakkaiden varata verkossa",
+      "description": "Lisää palvelusi ja auta asiakkaita löytämään sopiva aika jakamalla varaussivusi"
     },
     "team": {
-      "title": "Kokoa tiimisi",
-      "description": "Lisää jäsenet ajanvarauksia tai sovelluksen käyttöä varten"
+      "title": "Valmistele tiimisi ajanvarauksiin",
+      "description": "Lisää tiimisi ja sovita varaukset jokaisen aikatauluun määrittämällä työajat"
     },
     "start": "Aloita"
   },
@@ -460,11 +469,11 @@
   },
   "offline": {
     "title": "Yhteys katkesi",
-    "description": "Tarkista internetyhteytesi. Ikkuna sulkeutuu yhteyden palauduttua"
+    "description": "Tarkista internetyhteytesi. Voit jatkaa, kun yhteys palautuu."
   },
   "narrow": {
     "title": "Levennä ikkunaa",
-    "description": "Levennä ikkunaa tai käytä suurempaa näyttöä"
+    "description": "Käännä näyttöä, levennä ikkunaa tai käytä suurempaa näyttöä"
   },
   "error": {
     "notFoundTitle": "404",
@@ -589,6 +598,7 @@
     "saveError": "Saatavuuden tallentaminen epäonnistui"
   },
   "bookingIssues": {
+    "unassignedService": "Tätä jäsentä ei ole valittu palvelun tekijäksi",
     "title": "Varaus vaatii huomiota",
     "outsideWorkingHours": "Varaus on jäsenen työajan ulkopuolella",
     "overlapsBreak": "Varaus on päällekkäin jäsenen tauon kanssa"
@@ -750,12 +760,13 @@
   "qrCode": {
     "imageLabel": "QR-koodi",
     "copy": "Kopioi kuva",
-    "download": "Lataa PNG",
+    "download": "Lataa kuva",
     "copied": "QR-koodi kopioitu",
     "copyError": "Kuvan kopiointi epäonnistui — kokeile lataamista",
     "downloadError": "QR-koodin lataaminen epäonnistui"
   },
   "adminBookingPage": {
+    "actions": "Toiminnot",
     "showQrCode": "Näytä QR-koodi",
     "qrCodeTitle": "Skannaa ja varaa",
     "qrCodeDescription": "Jaa koodi asiakkaillesi, niin he pääsevät suoraan varaussivullesi",
@@ -826,7 +837,7 @@
       "blueberry": "Mustikka",
       "grape": "Rypäle",
       "raspberry": "Vadelma",
-      "custom": "Hedelmäsekoitus"
+      "custom": "Oma väri"
     },
     "accentColorDescription": "Valitse painikkeiden ja valintojen väri",
     "image": "Tervetulokuva"

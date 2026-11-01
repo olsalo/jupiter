@@ -1,3 +1,4 @@
+import { Empty, EmptyDescription, EmptyHeader } from "~/components/ui/empty"
 import { useState, type Ref } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -36,7 +37,7 @@ export function ServiceSelection({ services, value, onChange, onBlur, inputRef, 
       {filtered.length ? filtered.map((service) => <FieldItem className="w-full" key={service.id}><Label className="flex h-11 w-full cursor-pointer gap-3 rounded-md px-2 py-2 font-normal hover:bg-muted/60 has-data-checked:bg-muted/60">
         <Checkbox aria-invalid={invalid} disabled={disabled} onBlur={onBlur} value={service.id} />
         <span className="min-w-0 flex-1 truncate text-sm" title={service.name}>{service.name}</span><span className="shrink-0 text-xs text-muted-foreground">{service.durationMinutes} {t("minutes")}</span>
-      </Label></FieldItem>) : <p className="px-3 py-10 text-center text-sm text-muted-foreground">{t(term ? "noServiceMatches" : "empty")}</p>}
+      </Label></FieldItem>) : <Empty><EmptyHeader><EmptyDescription>{t(term ? "noServiceMatches" : "empty")}</EmptyDescription></EmptyHeader></Empty>}
     </CheckboxGroup>
     </ScrollArea>
     {services.length > 0 ? <div className="flex shrink-0 items-center justify-between gap-3 border-t px-4 py-3">

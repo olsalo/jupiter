@@ -155,7 +155,7 @@
     "noServicesDescription": "Choose the services they provide under Edit",
     "noLocations": "No locations yet",
     "noLocationsDescription": "Choose where they work under Edit",
-    "noStaffDescription": "Enable appointments to add services and working hours",
+    "noStaffDescription": "Enable appointments to add services",
     "availability": "Working hours",
     "availabilityTab": "Availability",
     "editProfile": "Edit",

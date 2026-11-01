@@ -8,13 +8,14 @@ import { TZDate } from "react-day-picker"
 import { useTranslation } from "react-i18next"
 import { useLocation, useNavigate, useParams } from "react-router"
 
+import { CalendarBookingIssueMarker } from "~/components/calendar/calendar-booking-issues"
 import { CalendarBookingLiveIssues } from "~/components/calendar/calendar-booking-live-issues"
 import { usePastBookingConfirmation } from "~/components/calendar/use-past-booking-confirmation"
+import { useUnassignedServiceConfirmation } from "~/components/calendar/use-unassigned-service-confirmation"
 import { useBreakOverlapConfirmation } from "~/components/calendar/use-break-overlap-confirmation"
-import { BookingDurationField } from "~/components/calendar/booking-duration-field"
+import { CalendarBookingDurationField } from "~/components/calendar/calendar-booking-duration-field"
 import { BookingCustomerDetails } from "~/components/calendar/booking-customer-details"
 import { BookingMemberFilter } from "~/components/calendar/booking-member-filter"
-import { useCalendarBookingDurationLimit } from "~/components/calendar/use-calendar-booking-duration-limit"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { AppForm } from "~/components/forms/app-form"
 import { BookingSlotList, bookingSlotKey } from "~/components/calendar/booking-slot-list"
@@ -75,11 +76,24 @@ export function CalendarBookingEdit() {
     : appointment.data?.startsAt ?? cachedBooking?.startsAt
   const subtitle = subtitleStart ? formatDateTime(subtitleStart, { formatPreference, timeZone, language: i18n.resolvedLanguage === "fi" ? "fi" : "en", includeWeekday: true }) : undefined
 
-  return <CalendarSidePanel returnTo={returnTo} subtitle={subtitle} title={title}>
+  const booking = appointment.data
+  const currentPreview = activePreview?.appointmentId === appointmentId ? activePreview : null
+  const draggedRange = dragSelection ? getCalendarTimeRange(dragSelection.day, dragSelection.startMinute, dragSelection.endMinute - dragSelection.startMinute, timeZone) : null
+  const titleAdornment = booking ? <CalendarBookingLiveIssues
+    appointmentId={appointmentId}
+    marker={true}
+    position={currentPreview ? { startsAt: currentPreview.startsAt, endsAt: currentPreview.endsAt, memberId: currentPreview.member.id, locationId: currentPreview.locationId, status: booking.status }
+      : draggedRange && dragSelection ? { ...draggedRange, memberId: dragSelection.member.id, locationId: booking.locationId, status: booking.status } : undefined}
+    savedIssues={booking.availabilityIssues}
+    savedPosition={{ startsAt: booking.startsAt, endsAt: booking.endsAt, memberId: booking.staffMemberId ?? "", locationId: booking.locationId, status: booking.status }}
+    serviceId={currentPreview?.service.id ?? booking.services[0]?.serviceId}
+  /> : <CalendarBookingIssueMarker issues={cachedBooking?.availabilityIssues} />
+
+  return <CalendarSidePanel returnTo={returnTo} subtitle={subtitle} title={title} titleAdornment={titleAdornment}>
     <title>{title}</title>
     {appointment.isPending ? <div className="flex min-h-32 flex-1 items-center justify-center"><Spinner aria-label={t("loading")} /></div> : appointment.data === undefined ? <div className="px-6 pb-6"><Alert variant="error">
       <AlertTitle>{t("bookingForm.bookingLoadError")}</AlertTitle>
-      <AlertAction><Button disabled={appointment.isFetching} onClick={() => void appointment.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
+      <AlertAction><Button disabled={appointment.isFetching} loading={appointment.isFetching} onClick={() => void appointment.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
     </Alert></div> : <BookingEditForm dragSelection={dragSelection} appointment={appointment.data} key={appointment.data.id} returnTo={returnTo} />}
   </CalendarSidePanel>
 }
@@ -129,6 +143,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
   const formRef = useRef<FormApi<{ customerId: string; notes: string }>>(null)
   const { confirmPastBooking, pastBookingConfirmation } = usePastBookingConfirmation()
   const { confirmBreakOverlap, breakOverlapConfirmation } = useBreakOverlapConfirmation()
+  const { confirmUnassignedService, unassignedServiceConfirmation } = useUnassignedServiceConfirmation()
   const timeErrorId = useId()
   const [appliedDrag, setAppliedDrag] = useState(dragSelection)
   useLayoutEffect(() => {
@@ -150,18 +165,20 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
   const service = useMemo(() => serviceChanged && selectedService ? { serviceId: selectedService.id, name: selectedService.name, service: { color: selectedService.color } } : bookedService, [serviceChanged, selectedService, bookedService])
   const serviceDetails = useQuery({ ...trpc.service.get.queryOptions({ id: serviceId }), ...calendarReferenceQueryOptions, enabled: changingTime && Boolean(serviceId) })
   const preferredMember = changingTime && dragSelection ? dragSelection.member : appointment.staffMember
-  const filterMembers: { id: string; name: string }[] = calendar.bookableMembers.filter((member) => appointment.services.length === 1
-    ? !serviceDetails.data || serviceDetails.data.staffServices.some((assignment) => assignment.staffMemberId === member.id && assignment.isActive)
-    : member.id === appointment.staffMemberId)
+  const filterMembers: { id: string; name: string }[] = calendar.bookableMembers.filter((member) => appointment.services.length === 1 || member.id === appointment.staffMemberId)
   if (preferredMember && !filterMembers.some((member) => member.id === preferredMember.id)) filterMembers.push(preferredMember)
   const canReschedule = canEdit && Boolean(service && appointment.staffMemberId && canRescheduleAppointment(appointment.status))
   const range = getCalendarBookingRange({ ...calendar, mode: "day", selected: selectedDay ? calendarDateFromValue(selectedDay, timeZone) : calendar.selected }, timeZone)
   const [startHour, startMinute] = startTime.split(":").map(Number)
   const customRange = changingTime && selectedDay && validLength ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, length, timeZone) : null
+  // Preserve the original or dragged start without refetching when a loaded slot is chosen.
+  const availabilityStart = dragSelection
+    ? getCalendarTimeRange(dragSelection.day, dragSelection.startMinute, calendarMinDurationMinutes, timeZone).startsAt
+    : appointment.startsAt
   const slots = useQuery({
     ...(appointment.services.length === 1
-      ? trpc.appointment.getBookingTimes.queryOptions({ id: appointment.id, ...range, serviceId: serviceChanged ? serviceId : undefined, staffMemberId: memberFilter ?? null, durationMinutes: debouncedLength !== null && Number.isInteger(debouncedLength) && debouncedLength >= calendarMinDurationMinutes && debouncedLength <= 1440 ? debouncedLength : calendarMinDurationMinutes, selectedStart: customRange?.startsAt })
-      : trpc.appointment.getSlots.queryOptions({ id: appointment.id, ...range, durationMinutes: appointment.services.length === 1 && validLength && debouncedLength !== null ? debouncedLength : undefined, selectedStart: customRange?.startsAt })),
+      ? trpc.appointment.getBookingTimes.queryOptions({ id: appointment.id, ...range, serviceId: serviceChanged ? serviceId : undefined, staffMemberId: memberFilter ?? null, durationMinutes: debouncedLength !== null && Number.isInteger(debouncedLength) && debouncedLength >= calendarMinDurationMinutes && debouncedLength <= 1440 ? debouncedLength : calendarMinDurationMinutes, selectedStart: availabilityStart })
+      : trpc.appointment.getSlots.queryOptions({ id: appointment.id, ...range, durationMinutes: appointment.services.length === 1 && validLength && debouncedLength !== null ? debouncedLength : undefined, selectedStart: availabilityStart })),
     enabled: !saved && !durationPending && appliedDrag === dragSelection && changingTime && Boolean(selectedDay) && canReschedule && validLength, ...calendarAvailabilityQueryOptions,
   })
   const originalDay = calendarDateToValue(new TZDate(appointment.startsAt, timeZone))
@@ -180,7 +197,6 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
     : getCalendarBookingEditSlot(availableSlots, customRange.startsAt, memberFilter ?? selectedSlotMemberId ?? preferredMember?.id, selection)
   const targetMemberId = chosenSlot?.staffMemberId ?? memberFilter ?? selectedSlotMemberId ?? preferredMember?.id
   const targetMember = calendar.staff.data?.find((member) => member.id === targetMemberId) ?? (preferredMember?.id === targetMemberId ? preferredMember : undefined)
-  const durationLimit = useCalendarBookingDurationLimit({ startsAt: selectedDay ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, calendarMinDurationMinutes, timeZone).startsAt : undefined, memberId: targetMemberId, appointmentId: appointment.id, length, beforeMinutes: serviceChanged ? selectedService?.bufferBeforeMinutes : bookedService?.bufferBeforeMinutes, afterMinutes: serviceChanged ? selectedService?.bufferAfterMinutes : bookedService?.bufferAfterMinutes })
   useLayoutEffect(() => {
     if (dragging || saved || durationPending || appliedDrag !== dragSelection || slots.isFetching || slots.isError || !chosenSlot) return
     const local = new TZDate(chosenSlot.startsAt, timeZone)
@@ -233,9 +249,10 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
       if (!await confirmPastBooking(appointment.startsAt, changingTime && chosenSlot ? chosenSlot.startsAt : appointment.startsAt)) return
       try {
         const timeChanged = changingTime && chosenSlot && (serviceChanged || +new Date(chosenSlot.startsAt) !== +appointment.startsAt || length !== Math.round((+appointment.endsAt - +appointment.startsAt) / 60000) || targetMemberId !== appointment.staffMemberId)
+        if (timeChanged && chosenSlot.unassignedService && !await confirmUnassignedService()) return
         if (timeChanged && chosenSlot.overlapsBreak && !await confirmBreakOverlap()) return
         await queryClient.cancelQueries(trpc.appointment.list.queryFilter())
-        const result = await update.mutateAsync({ id: appointment.id, customerId, customerNotes: null, internalNotes: notes, serviceId: serviceChanged ? serviceId : undefined, staffMemberId: timeChanged && targetMemberId !== appointment.staffMemberId ? targetMemberId ?? undefined : undefined, startsAt: timeChanged && chosenSlot ? new Date(chosenSlot.startsAt) : undefined, durationMinutes: timeChanged && appointment.services.length === 1 && validLength ? length : undefined, allowBreakOverlap: Boolean(timeChanged && dragSelection && customRange && chosenSlot?.startsAt === customRange.startsAt.toISOString()) })
+        const result = await update.mutateAsync({ allowUnassignedStaff: Boolean(timeChanged && chosenSlot.unassignedService), id: appointment.id, customerId, customerNotes: null, internalNotes: notes, serviceId: serviceChanged ? serviceId : undefined, staffMemberId: timeChanged && targetMemberId !== appointment.staffMemberId ? targetMemberId ?? undefined : undefined, startsAt: timeChanged && chosenSlot ? new Date(chosenSlot.startsAt) : undefined, durationMinutes: timeChanged && appointment.services.length === 1 && validLength ? length : undefined, allowBreakOverlap: Boolean(timeChanged && dragSelection && customRange && chosenSlot?.startsAt === customRange.startsAt.toISOString()) })
         cacheCalendarBooking(queryClient, trpc.appointment.list.queryKey(), result)
         queryClient.setQueryData(trpc.appointment.get.queryKey({ id: appointment.id }), result)
         setSaved(true)
@@ -269,6 +286,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
       <ScrollArea className="min-h-0 flex-1" scrollFade={true}>
         <div className="flex flex-col gap-5 px-6 pt-1 pb-6">
           <CalendarBookingLiveIssues
+            serviceId={serviceId}
             appointmentId={appointment.id}
             position={preview ? { ...preview, memberId: preview.member.id, locationId: appointment.locationId, status: appointment.status } : undefined}
             savedIssues={appointment.availabilityIssues}
@@ -293,8 +311,8 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
               setTimeError("")
             }} services={availableServices} value={serviceId} /> : appointment.services.map((item) => <ServicePicker disabled={true} key={item.id} onChange={() => {}} services={[{ id: item.serviceId, name: item.name, durationMinutes: item.durationMinutes, color: item.service?.color }]} value={item.serviceId} />)}
           </FormLabel>
-          {services.isError ? <Alert variant="error"><AlertTitle>{t("bookingForm.servicesError")}</AlertTitle><AlertAction><Button disabled={services.isFetching} onClick={() => void services.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
-          <BookingDurationField serviceDurations={serviceDurations} minLength={calendarMinDurationMinutes} disabled={disabled || !canReschedule || appointment.services.length !== 1} language={i18n.resolvedLanguage === "fi" ? "fi" : "en"} length={length} maxLength={durationLimit} lengthError={!validLength ? t("bookingForm.lengthError") : undefined} onLengthChange={(value) => { setLength(value); setChangingTime(true); setPreserveScroll(false); setTimeError("") }} />
+          {services.isError ? <Alert variant="error"><AlertTitle>{t("bookingForm.servicesError")}</AlertTitle><AlertAction><Button disabled={services.isFetching} loading={services.isFetching} onClick={() => void services.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
+          <CalendarBookingDurationField availability={{ startsAt: selectedDay ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, calendarMinDurationMinutes, timeZone).startsAt : undefined, memberId: targetMemberId, appointmentId: appointment.id, length, beforeMinutes: serviceChanged ? selectedService?.bufferBeforeMinutes : bookedService?.bufferBeforeMinutes, afterMinutes: serviceChanged ? selectedService?.bufferAfterMinutes : bookedService?.bufferAfterMinutes }} serviceDurations={serviceDurations} minLength={calendarMinDurationMinutes} disabled={disabled || !canReschedule || appointment.services.length !== 1} language={i18n.resolvedLanguage === "fi" ? "fi" : "en"} length={length} lengthError={!validLength ? t("bookingForm.lengthError") : undefined} onLengthChange={(value) => { setLength(value); setChangingTime(true); setPreserveScroll(false); setTimeError("") }} />
           {canReschedule ? <Button disabled={disabled} onClick={() => {
             setPreserveScroll(false)
             setChangingTime(serviceChanged || !changingTime)
@@ -321,7 +339,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
                 setTimeError("")
               }} value={memberFilter} />
               <div aria-describedby={selectedTimeError ? timeErrorId : undefined} aria-invalid={Boolean(selectedTimeError)} aria-label={t("bookingForm.times")} className="w-full" role="group">
-                {(slots.isPending || slots.isFetching || durationPending || appliedDrag !== dragSelection) && selectedDay ? <div className="flex min-h-32 items-center justify-center"><Spinner aria-label={t("loading")} /></div> : slots.isError ? <Alert variant="error"><AlertTitle>{t("bookingForm.loadError")}</AlertTitle><AlertAction><Button disabled={slots.isFetching} onClick={() => void slots.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : availableSlots.length ? <BookingSlotList currentSlotKey={currentSlot ? bookingSlotKey(currentSlot) : undefined} disabled={disabled || durationPending || !slots.isSuccess || slots.isFetching} days={slotDays} format={format} formatPreference={formatPreference} invalid={Boolean(selectedTimeError)} members={slotMembers} onSelect={selectSlot} selection={chosenSlot ? bookingSlotKey(chosenSlot) : ""} showDateHeadings={false} timeZone={timeZone} /> : <CalendarBookingEmpty description={t(selectedDay ? "bookingForm.tryDate" : "bookingForm.chooseDayForTimes")} icon="calendarOff" title={t("bookingForm.noTimes")} />}
+                {(slots.isPending || slots.isFetching || durationPending || appliedDrag !== dragSelection) && selectedDay ? <div className="flex min-h-32 items-center justify-center"><Spinner aria-label={t("loading")} /></div> : slots.isError ? <Alert variant="error"><AlertTitle>{t("bookingForm.loadError")}</AlertTitle><AlertAction><Button disabled={slots.isFetching} loading={slots.isFetching} onClick={() => void slots.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : availableSlots.length ? <BookingSlotList currentSlotKey={currentSlot ? bookingSlotKey(currentSlot) : undefined} disabled={disabled || durationPending || !slots.isSuccess || slots.isFetching} days={slotDays} format={format} formatPreference={formatPreference} invalid={Boolean(selectedTimeError)} members={slotMembers} onSelect={selectSlot} selection={chosenSlot ? bookingSlotKey(chosenSlot) : ""} showDateHeadings={false} timeZone={timeZone} /> : <CalendarBookingEmpty description={t(selectedDay ? "bookingForm.tryDate" : "bookingForm.chooseDayForTimes")} icon="calendarOff" title={t("bookingForm.noTimes")} />}
               </div>
             </FormLabel>
           </> : null}
@@ -370,6 +388,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
     />
     {pastBookingConfirmation}
     {breakOverlapConfirmation}
+    {unassignedServiceConfirmation}
     <CreateCustomerDialog flow={customerFlow} onCreated={(id) => { formRef.current?.setValue("customerId", id); formRef.current?.clearError("customerId") }} onOpenChange={setCustomerModalOpen} open={customerModalOpen} />
   </>
 }

@@ -1,13 +1,30 @@
 import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
 import { runInNewContext } from "node:vm"
-import { transformWithOxc } from "vite"
+import { createServer, transformWithOxc } from "vite"
 
 const workerPath = new URL("../app/service-worker.ts", import.meta.url)
 const { code } = await transformWithOxc(await readFile(workerPath, "utf8"), workerPath.pathname, { lang: "ts" })
-const { createOfflineDocument } = await import(new URL("../app/lib/browser/offline-document.ts", import.meta.url).href) as typeof import("../app/lib/browser/offline-document")
-const document = createOfflineDocument("en")
-const finnishDocument = createOfflineDocument("fi")
+const vite = await createServer({
+  cacheDir: "node_modules/.vite-tests/offline-service-worker.integration",
+  configFile: false,
+  appType: "custom",
+  server: { middlewareMode: true, hmr: false, ws: false, watch: null },
+})
+let document: string
+let finnishDocument: string
+try {
+  const { createOfflineDocument } = await vite.ssrLoadModule("/app/lib/browser/offline-document.ts") as typeof import("../app/lib/browser/offline-document")
+  document = createOfflineDocument("en")
+  finnishDocument = createOfflineDocument("fi")
+} finally {
+  await vite.close()
+}
+for (const html of [document, finnishDocument]) {
+  assert.match(html, /<div class="offline-icon"><svg[^>]*aria-hidden="true"/)
+  assert.match(html, /(?:tabler-icon|icon-tabler)-wifi-off/)
+  assert.doesNotMatch(html, /<script|<img/)
+}
 assert.match(finnishDocument, /<html lang="fi">/)
 assert.notEqual(finnishDocument, document)
 assert.match(document, /<meta http-equiv="refresh" content="5"\s*\/>/)

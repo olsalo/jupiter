@@ -11,9 +11,11 @@ import { ScrollArea } from "~/components/ui/scroll-area"
 import { Spinner } from "~/components/ui/spinner"
 import { formatDateTime } from "~/lib/localization/format-preference"
 import { toast } from "~/lib/toast"
+import { cn } from "~/lib/utils"
 import { useTRPC } from "~/lib/trpc/client"
 import { useFormatPreference } from "~/lib/hooks/use-format-preference"
 import { PublicBookingHeader } from "./public-booking-header"
+import { PublicBookingFavicon } from "./public-booking-favicon"
 import { BookingTimePicker } from "./booking-time-picker"
 import type { BookingSlot } from "./booking-types"
 
@@ -76,6 +78,7 @@ export function RescheduleBookingPage({ bookingCode }: { bookingCode: string }) 
   return (
     <div className="flex h-dvh pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] flex-col overflow-hidden bg-background pb-[env(safe-area-inset-bottom,0px)] text-foreground" style={bookingPageColorStyle(data?.accentColor)}>
       <title>{data ? `${t("rescheduleTitle")} · ${data.organization.name}` : t("rescheduleTitle")}</title>
+      <PublicBookingFavicon accentColor={data?.accentColor} organization={data?.organization} />
       <PublicBookingHeader
         formatPreference={preference.value}
         onFormatPreferenceChange={preference.set}
@@ -88,7 +91,7 @@ export function RescheduleBookingPage({ bookingCode }: { bookingCode: string }) 
         viewportProps={{ ref: scroll }}
       >
         {!data || !booking ? (
-          <main className="mx-auto my-auto w-full max-w-xl px-4 py-8 sm:px-6">
+          <main className={cn("mx-auto w-full max-w-xl px-4 py-8 sm:px-6", page.isPending && "my-auto")}>
             {page.isPending ? (
               <div className="flex justify-center"><Spinner aria-label={t("loading")} className="size-6" /></div>
             ) : (
@@ -98,7 +101,7 @@ export function RescheduleBookingPage({ bookingCode }: { bookingCode: string }) 
                   {t("unavailableHint")}
                 </AlertDescription>
                 <AlertAction>
-                  <Button onClick={() => void page.refetch()} type="button" variant="ghost">
+                  <Button loading={page.isFetching} onClick={() => void page.refetch()} type="button" variant="ghost">
                     {t("retry")}
                   </Button>
                 </AlertAction>

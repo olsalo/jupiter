@@ -51,7 +51,15 @@ export function getCalendarTimelineLayout({ days, members, appointments, conflic
   for (const period of breaks) {
     const lane = lanes.get(laneKey(period.day, period.memberId))
     if (!lane) continue
-    if (period.endMinute > startMinute && period.startMinute < endMinute) lane.breaks.push(period)
+    if (period.endMinute <= startMinute || period.startMinute >= endMinute) continue
+    const visiblePeriods = lane.unavailableTimes.reduce<MinuteRange[]>((periods, unavailable) => periods.flatMap((part) => {
+      if (unavailable.endMinute <= part.startMinute || unavailable.startMinute >= part.endMinute) return [part]
+      return [
+        { ...part, endMinute: Math.min(part.endMinute, unavailable.startMinute) },
+        { ...part, startMinute: Math.max(part.startMinute, unavailable.endMinute) },
+      ].filter((part) => part.endMinute > part.startMinute)
+    }), [period])
+    lane.breaks.push(...visiblePeriods)
   }
   for (const appointment of getCalendarBookingConflicts(conflictAppointments, allowSimultaneousBookings)) {
     if (excludeDraftConflicts && appointment.draft) continue

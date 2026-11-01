@@ -40,12 +40,12 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
     ])
   }
   await staffPromise
-  return { now, queryClient: dehydrate(queryClient) }
+  return { now, centerCurrentTimeOnMobile: false, queryClient: dehydrate(queryClient) }
 }
 
 export function clientLoader() {
   // Client queries own fetching and freshness after the initial server render
-  return { now: Date.now() }
+  return { now: Date.now(), centerCurrentTimeOnMobile: true }
 }
 
 export const shouldRevalidate = shouldRevalidateAppRoute

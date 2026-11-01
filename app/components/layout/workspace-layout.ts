@@ -7,6 +7,7 @@ import type { PageLayoutPreference } from "~/lib/routing/page-layout"
 
 export type WorkspaceLayoutProps = {
   animatePage: boolean
+  disablePageAnimation?: boolean
   billingNotification: ComponentProps<typeof BillingNotificationBar>["notification"]
   isDesktop: boolean
   isElectron: boolean

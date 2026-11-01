@@ -477,6 +477,7 @@ export function TanStackTable<Row extends RowData>({
           <Button
             disabled={action.disabled || action.loading}
             key={action.id}
+            loading={action.loading}
             onClick={() => action.onClick(selectionContext)}
             size="sm"
             type="button"
@@ -484,16 +485,10 @@ export function TanStackTable<Row extends RowData>({
             className={cn(
               "max-w-full",
               (!action.variant || action.variant === "ghost") &&
-                "border-transparent bg-transparent text-white hover:bg-white/16",
+                "border-transparent bg-transparent text-white hover:bg-white/16 *:data-[slot=button-loading-indicator]:text-white",
             )}
           >
-            {action.loading ? (
-              <Icon
-                aria-hidden="true"
-                className="animate-spin"
-                name="loader"
-              />
-            ) : action.icon ? (
+            {action.icon ? (
               <Icon aria-hidden="true" name={action.icon} />
             ) : null}
             <span className="min-w-0 truncate">{action.label}</span>

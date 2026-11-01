@@ -4,7 +4,7 @@ import { loadPublicBookingQuery } from "~/lib/booking/public-booking-loader.serv
 import { getQueryClient } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 
-export const handle = { theme: "light" }
+export const handle = { theme: "light", publicBooking: true }
 
 export async function loader(args: Route.LoaderArgs) {
   const queryClient = getQueryClient()

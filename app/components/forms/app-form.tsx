@@ -17,6 +17,7 @@ import {
   type Ref,
 } from "react"
 import { cn } from "~/lib/utils"
+import { reloadAfterSubmissionError } from "~/lib/browser/submission-recovery"
 import { useHydrated } from "~/lib/use-hydrated"
 
 type MutationError = {
@@ -114,6 +115,8 @@ export function AppForm<
 
         if (errors) {
           setSubmitValidationErrors(errors)
+        } else {
+          reloadAfterSubmissionError(error)
         }
 
         throw error
@@ -170,7 +173,14 @@ export function AppForm<
 
   return (
     <FormProvider scope={form.scope()}>
-      <form {...form.getFormProps()} className={cn("flex flex-col gap-5", className)} method="post" noValidate>
+      <form
+        {...form.getFormProps()}
+        className={cn("flex flex-col gap-5", className)}
+        data-app-dirty={form.formState.isDirty ? "true" : "false"}
+        data-app-submitting={form.formState.isSubmitting ? "true" : "false"}
+        method="post"
+        noValidate={true}
+      >
         {typeof children === "function" ? children(form) : children}
       </form>
     </FormProvider>

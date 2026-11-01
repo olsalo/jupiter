@@ -44,7 +44,7 @@ export default function CustomerLayout({ params }: Route.ComponentProps) {
 
   function content(close: (destination?: string) => void) {
     if (loading) return <OverlayLoading data-slot="customer-loading" label={t("customerPage.loading")} />
-    if (!query.data) return <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("customerPage.loadError")}</AlertTitle><AlertDescription>{t("customerPage.retryDescription")}</AlertDescription><AlertAction><Button disabled={query.isFetching} onClick={() => void query.refetch()} type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction></Alert></ResponsiveSheetPanel>
+    if (!query.data) return <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("customerPage.loadError")}</AlertTitle><AlertDescription>{t("customerPage.retryDescription")}</AlertDescription><AlertAction><Button disabled={query.isFetching} loading={query.isFetching} onClick={() => void query.refetch()} type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction></Alert></ResponsiveSheetPanel>
     return <Outlet context={{ customer: query.data, close, onPendingChange: setPending } satisfies CustomerContext} />
   }
 

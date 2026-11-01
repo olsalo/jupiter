@@ -10,7 +10,7 @@ export type AppNavigationItem = {
 export const appNavigationItems: AppNavigationItem[] = [
   { icon: "calendar", labelKey: "nav.calendar", path: "/calendar" },
   { icon: "user", labelKey: "nav.customers", path: "/customers" },
-  { icon: "forms", labelKey: "nav.services", path: "/services" },
+  { icon: "tag", labelKey: "nav.services", path: "/services" },
   { icon: "share", labelKey: "nav.bookingPage", path: "/booking-page" },
   { icon: "users", labelKey: "nav.team", path: "/team" },
 ]

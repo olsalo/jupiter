@@ -50,7 +50,7 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
   const update = useMutation(trpc.service.update.mutationOptions())
   const create = useMutation(trpc.service.create.mutationOptions())
   const schema = useMemo(() => serviceFormSchema((key) => t(key)), [t])
-  if (!initialValues.current && (!sourceId || service.data)) {
+  if (!initialValues.current && (sourceId ? service.data : staff.isSuccess)) {
     const data = service.data
     initialValues.current = data && sourceId ? {
       name: duplicateId ? t("duplicateName", { name: data.name }).slice(0, 120) : data.name, categoryId: data.categoryId ?? "", description: data.description ?? "",
@@ -58,7 +58,7 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
       price: data.price === null ? "" : String(data.price), deliveryType: data.deliveryType, color: data.color ?? "#8f49b5", isActive: data.isActive,
       staffIds: data.staffServices.filter((assignment) => assignment.isActive).map((assignment) => assignment.staffMemberId),
       locationIds: data.serviceLocations.filter((assignment) => assignment.isActive).map((assignment) => assignment.locationId),
-    } : { ...defaultValues, categoryId: initialCategoryId }
+    } : { ...defaultValues, categoryId: initialCategoryId, staffIds: (staff.data ?? []).filter((person) => person.isActive && person.acceptsAppointments).map((person) => person.id) }
   }
   const staffItems = (staff.data ?? []).filter((person) => (person.isActive && person.acceptsAppointments) || initialValues.current?.staffIds.includes(person.id)).map((person) => ({ value: person.id, label: person.name }))
   const locationItems = (locations.data ?? []).filter((location) => location.isActive || initialValues.current?.locationIds.includes(location.id)).map((location) => ({ value: location.id, label: location.name }))
@@ -82,6 +82,7 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
   }
   const pending = submitting || create.isPending || update.isPending || saved
   const optionsError = staff.isError || locations.isError || organization.isError
+  const initialQuery = sourceId ? service : staff
 
   const categoryOptions = [...(categories.data ?? [])]
   if (service.data?.category && !categoryOptions.some((category) => category.id === service.data?.categoryId)) categoryOptions.push(service.data.category)
@@ -99,6 +100,7 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
               const source = duplicateId ? service.data : undefined
               const result = serviceId ? await update.mutateAsync({ ...values, id: serviceId }) : await create.mutateAsync({
                 ...values,
+                locationIds: (locations.data ?? []).filter((location) => location.isActive).slice(0, 1).map((location) => location.id),
                 ...(source ? {
                   currency: source.currency,
                   minBookingNoticeMinutes: source.minBookingNoticeMinutes,
@@ -148,7 +150,7 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
                       <ColorPicker value={color.value} onChange={color.onChange} onBlur={color.onBlur} name={color.name} ref={color.ref} label={t("color")} colors={colorPickerPalette.map((item) => ({ value: item.value, label: t(`colors.${item.name}`) }))} disabled={pending} invalid={Boolean(form.error("color"))} />
                     </FormLabel>
                   </div>
-                  {categories.isError ? <Alert variant="error"><AlertTitle>{t("categoriesLoadError")}</AlertTitle><AlertDescription>{t("categoriesRetryDescription")}</AlertDescription><AlertAction><Button disabled={categories.isFetching} onClick={() => void categories.refetch()} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
+                  {categories.isError ? <Alert variant="error"><AlertTitle>{t("categoriesLoadError")}</AlertTitle><AlertDescription>{t("categoriesRetryDescription")}</AlertDescription><AlertAction><Button disabled={categories.isFetching} loading={categories.isFetching} onClick={() => void categories.refetch()} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
                   <FormLabel label={t("category")} error={form.error("categoryId") === "invalidAssignment" ? t("invalidAssignment") : form.error("categoryId")}>
                     <ServiceCategoryPicker categories={categoryOptions} value={category.value ?? ""} onChange={category.onChange} onBlur={category.onBlur} inputRef={category.ref} disabled={pending || categories.isPending || categories.isError} invalid={Boolean(form.error("categoryId"))} onCreate={() => {
                       setCategoryFlow((flow) => flow + 1)
@@ -179,31 +181,31 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
                   </FormLabel>
                   <FormSwitch label={t("showOnBookingPage")} description={t("showOnBookingPageDescription")} checked={active.value} onCheckedChange={active.onChange} onBlur={active.onBlur} ref={active.ref} name={active.name} error={form.error("isActive")} disabled={pending} />
                   <Separator />
-                  <SettingsSectionHeader title={t("assignments")} description={t("assignmentsDescription")} />
-                  {optionsError ? <Alert variant="error"><AlertTitle>{t("optionsError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={staff.isFetching || locations.isFetching || organization.isFetching} onClick={() => void Promise.all([staff.refetch(), locations.refetch(), organization.refetch()])} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
-                  <FormLabel label={t("staff")} error={form.error("staffIds") === "invalidAssignment" ? t("invalidAssignment") : form.error("staffIds")} description={staff.isSuccess && staffItems.length === 0 ? t("noStaff") : t("staffDescription")}>
+                  <SettingsSectionHeader title={t(editing ? "assignments" : "serviceTeam")} description={t(editing ? "assignmentsDescription" : staff.isSuccess && staffItems.length === 0 ? "noStaff" : "staffDescription")} />
+                  {optionsError ? <Alert variant="error"><AlertTitle>{t("optionsError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={staff.isFetching || locations.isFetching || organization.isFetching} loading={staff.isFetching || locations.isFetching || organization.isFetching} onClick={() => void Promise.all([staff.refetch(), locations.refetch(), organization.refetch()])} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
+                  <FormLabel label={t("staff")} labelGroupClassName={editing ? undefined : "sr-only"} errorPlacement={editing ? "inline" : "below"} error={form.error("staffIds") === "invalidAssignment" ? t("invalidAssignment") : form.error("staffIds")} description={editing ? t(staff.isSuccess && staffItems.length === 0 ? "noStaff" : "staffDescription") : undefined}>
                     <Select multiple={true} items={staffItems} value={staffIds.value} onValueChange={staffIds.onChange} name={staffIds.name} disabled={pending || staff.isPending || staff.isError || staffItems.length === 0}>
                       <SelectTrigger ref={staffIds.ref} onBlur={staffIds.onBlur} aria-invalid={Boolean(form.error("staffIds"))}><SelectValue placeholder={t(staff.isPending ? "loading" : "chooseStaff")} /></SelectTrigger>
                       <SelectPopup>{staffItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
                     </Select>
                   </FormLabel>
-                  <FormLabel label={t("locations")} error={form.error("locationIds") === "invalidAssignment" ? t("invalidAssignment") : form.error("locationIds")} description={locations.isSuccess && locationItems.length === 0 ? t("noLocations") : t("locationsDescription")}>
+                  {editing ? <FormLabel label={t("locations")} error={form.error("locationIds") === "invalidAssignment" ? t("invalidAssignment") : form.error("locationIds")} description={locations.isSuccess && locationItems.length === 0 ? t("noLocations") : t("locationsDescription")}>
                     <Select multiple={true} items={locationItems} value={locationIds.value} onValueChange={locationIds.onChange} name={locationIds.name} disabled={pending || locations.isPending || locations.isError || locationItems.length === 0}>
                       <SelectTrigger ref={locationIds.ref} onBlur={locationIds.onBlur} aria-invalid={Boolean(form.error("locationIds"))}><SelectValue placeholder={t(locations.isPending ? "loading" : "chooseLocations")} /></SelectTrigger>
                       <SelectPopup>{locationItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
                     </Select>
-                  </FormLabel>
+                  </FormLabel> : null}
                 </fieldset>
               </ResponsiveSheetPanel>
               <ResponsiveSheetFooter className="shrink-0">
                 <Button disabled={pending} onClick={close} type="button" variant="ghost">{t("cancel")}</Button>
-                <Button disabled={pending} loading={pending} type="submit">{t(editing ? pending ? "saving" : "saveService" : pending ? "creating" : "create")}</Button>
+                <Button disabled={pending || (!editing && !locations.isSuccess)} loading={pending} type="submit">{t(editing ? "saveService" : "create")}</Button>
               </ResponsiveSheetFooter>
             </>
           }}
         </AppForm> : <>
-          {service.isError ? <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t("serviceLoadError")}</AlertTitle><AlertDescription>{t("listRetryDescription")}</AlertDescription><AlertAction><Button disabled={service.isFetching} onClick={() => void service.refetch()} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert></ResponsiveSheetPanel> : <OverlayLoading label={t("loading")} />}
-          {service.isError ? <ResponsiveSheetFooter><Button onClick={close} type="button" variant="ghost">{t("cancel")}</Button></ResponsiveSheetFooter> : null}
+          {initialQuery.isError ? <ResponsiveSheetPanel><Alert variant="error"><AlertTitle>{t(sourceId ? "serviceLoadError" : "optionsError")}</AlertTitle><AlertDescription>{t("listRetryDescription")}</AlertDescription><AlertAction><Button disabled={initialQuery.isFetching} loading={initialQuery.isFetching} onClick={() => void initialQuery.refetch()} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert></ResponsiveSheetPanel> : <OverlayLoading label={t("loading")} />}
+          {initialQuery.isError ? <ResponsiveSheetFooter><Button onClick={close} type="button" variant="ghost">{t("cancel")}</Button></ResponsiveSheetFooter> : null}
         </>}
         <ServiceCategoryNameDialog open={categoryOpen} flow={categoryFlow} onOpenChange={setCategoryOpen} onSaved={(id) => formApi.current?.setValue("categoryId", id)} />
     </>}</RouteFormSheet>

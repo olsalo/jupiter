@@ -35,9 +35,9 @@ export function TeamPersonTimeOff({ staff, canManage, self = false }: { self?: b
   </div>
   const content = <>
     {timeOff.isPending ? <TeamPanelLoading label={t("timeOff.loading")} /> : timeOff.isError ? (
-      <Alert variant="error"><AlertTitle>{t("timeOff.loadError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={timeOff.isFetching} onClick={() => void timeOff.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert>
+      <Alert variant="error"><AlertTitle>{t("timeOff.loadError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={timeOff.isFetching} loading={timeOff.isFetching} onClick={() => void timeOff.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert>
     ) : timeOff.data.length === 0 ? (
-      <Empty className="min-h-0 w-full border-0 bg-transparent">
+      <Empty>
         <EmptyHeader><EmptyMedia variant="icon"><Icon aria-hidden={true} name="calendarEvent" /></EmptyMedia><EmptyTitle>{t("timeOff.empty")}</EmptyTitle><EmptyDescription>{t(canManage ? "timeOff.emptyDescription" : "people.readOnly")}</EmptyDescription></EmptyHeader>
       </Empty>
     ) : (

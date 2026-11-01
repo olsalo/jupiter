@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Trans, useTranslation } from "react-i18next"
 import {
   redirect,
@@ -11,6 +11,7 @@ import type { FormApi } from "@rvf/react"
 
 import type { Route } from "./+types/auth"
 import type { loader as rootLoader } from "~/root"
+import { AuthPreview } from "~/components/auth/auth-preview"
 import { AppLogo } from "~/components/navigation/app-logo"
 import { AppForm } from "~/components/forms/app-form"
 import FormLabel from "~/components/forms/form-label"
@@ -27,7 +28,6 @@ import {
   OTPField,
   OTPFieldInput,
 } from "~/components/ui/otp-field"
-import { Spinner } from "~/components/ui/spinner"
 import { authClient } from "~/lib/auth/client"
 import { getSafeRedirectTo } from "~/lib/auth/redirect"
 import { auth } from "~/lib/auth/server"
@@ -44,6 +44,8 @@ type AuthFormValues = {
 type AuthErrorContext = {
   error: {
     message: string
+    status?: number
+    code?: string
   }
 }
 
@@ -75,14 +77,43 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
   const isElectron = Boolean(rootData?.isElectron)
   const [step, setStep] = useState<"email" | "otp">("email")
   const [isSigningIn, setIsSigningIn] = useState(false)
+  const [isResending, setIsResending] = useState(false)
+  const requestPending = useRef(false)
   const [searchParams] = useSearchParams()
   const formApi = useRef<FormApi<AuthFormValues>>(null)
+  const firstOtpInput = useRef<HTMLInputElement>(null)
+  const otpFocusFrame = useRef<number | null>(null)
   const navigate = useNavigate()
   const navigation = useNavigation()
   const { sendOtp: sendOtpSchema, signIn: signInSchema } = useMemo(
     () => createAuthFormSchemas(t),
     [t],
   )
+
+  const cancelOtpFocus = () => {
+    if (otpFocusFrame.current !== null) cancelAnimationFrame(otpFocusFrame.current)
+    otpFocusFrame.current = null
+  }
+
+  useEffect(() => () => {
+    if (otpFocusFrame.current !== null) cancelAnimationFrame(otpFocusFrame.current)
+  }, [])
+
+  const resetOtp = () => {
+    formApi.current?.resetField("otp")
+    cancelOtpFocus()
+    if (window.matchMedia("(width < 768px), (pointer: coarse)").matches) return
+    const focusWhenEnabled = () => {
+      const input = firstOtpInput.current
+      if (!input || input.disabled || requestPending.current) {
+        otpFocusFrame.current = requestAnimationFrame(focusWhenEnabled)
+        return
+      }
+      otpFocusFrame.current = null
+      input.focus()
+    }
+    otpFocusFrame.current = requestAnimationFrame(focusWhenEnabled)
+  }
 
   const sendVerificationOtp = async (
     data: AuthFormValues,
@@ -91,51 +122,74 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
       showSuccessToast?: boolean
     },
   ) => {
-    await authClient.emailOtp.sendVerificationOtp({
-      email: data.email,
-      type: "sign-in",
-      fetchOptions: {
-        onSuccess: () => {
-          setStep("otp")
-          if (options?.showSuccessToast) {
-            toast.success(t("toasts.resendSuccess"))
-          }
+    if (requestPending.current) return
+    requestPending.current = true
+    try {
+      await authClient.emailOtp.sendVerificationOtp({
+        email: data.email,
+        type: "sign-in",
+        fetchOptions: {
+          onSuccess: () => {
+            resetOtp()
+            formApi.current?.unstable_setCustomError("otp", null)
+            setStep("otp")
+            if (options?.showSuccessToast) toast.success(t("toasts.resendSuccess"))
+          },
+          onError: (ctx: AuthErrorContext) => {
+            if (options?.showErrorToast) {
+              resetOtp()
+              const limited = ctx.error.status === 429 || ctx.error.code === "TOO_MANY_REQUESTS"
+              toast.error(t(limited ? "toasts.resendLimited" : "toasts.resendError"))
+              return
+            }
+            if (ctx.error.status && ctx.error.status >= 500) {
+              toast.error(t("toasts.sendError"))
+            } else {
+              formApi.current?.unstable_setCustomError("email", ctx.error.message)
+            }
+          },
         },
-        onError: (ctx: AuthErrorContext) => {
-          setStep("email")
-          formApi.current?.unstable_setCustomError(
-            "email",
-            ctx.error.message,
-          )
-          if (options?.showErrorToast) {
-            toast.error(t("toasts.resendError"))
-          }
-        },
-      },
-    })
+      })
+    } catch {
+      toast.error(t(options?.showErrorToast ? "toasts.resendError" : "toasts.sendError"))
+    } finally {
+      requestPending.current = false
+    }
   }
 
   const signIn = async (data: AuthFormValues) => {
-    await authClient.signIn.emailOtp({
-      email: data.email,
-      otp: data.otp,
-      fetchOptions: {
-        onSuccess: () => {
-          setIsSigningIn(true)
-          navigate(getAuthRedirect(searchParams), { replace: true })
+    if (requestPending.current) return
+    requestPending.current = true
+    try {
+      await authClient.signIn.emailOtp({
+        email: data.email,
+        otp: data.otp,
+        fetchOptions: {
+          onSuccess: () => {
+            setIsSigningIn(true)
+            void Promise.resolve(navigate(getAuthRedirect(searchParams), { replace: true })).catch(() => {
+              setIsSigningIn(false)
+              toast.error(t("toasts.signInError"))
+            })
+          },
+          onError: () => {
+            setIsSigningIn(false)
+            resetOtp()
+            toast.error(t("toasts.otpError"))
+          },
         },
-        onError: (ctx: AuthErrorContext) => {
-          setIsSigningIn(false)
-          formApi.current?.unstable_setCustomError("otp", ctx.error.message)
-          toast.error(t("toasts.otpError"))
-        },
-      },
-    })
+      })
+    } catch {
+      setIsSigningIn(false)
+      toast.error(t("toasts.signInError"))
+    } finally {
+      requestPending.current = false
+    }
   }
 
   return (
     <main
-      className="auth-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] relative flex min-h-dvh bg-background text-foreground"
+      className="auth-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] relative grid min-h-dvh grid-cols-1 bg-background text-foreground md:grid-cols-2"
       data-electron={isElectron}
     >
       <title>{t("title")}</title>
@@ -146,7 +200,7 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
         />
       ) : null}
       <section
-        className={`grid flex-1 grid-cols-1 grid-rows-[1fr_auto_1fr] gap-4 p-5 md:flex md:flex-col md:p-4 ${isElectron ? "pt-[calc(52px+env(safe-area-inset-top,0px))] md:pt-[calc(3rem+env(safe-area-inset-top,0px))]" : "pt-[calc(1.25rem+env(safe-area-inset-top,0px))] md:pt-[calc(1rem+env(safe-area-inset-top,0px))]"}`}
+        className={`grid flex-1 grid-cols-1 grid-rows-[1fr_auto_1fr] gap-4 p-5 md:flex md:flex-col md:p-4 md:pb-[calc(1rem+var(--tappable-inset-bottom,0px))] ${isElectron ? "pt-[calc(52px+env(safe-area-inset-top,0px))] md:pt-[calc(3rem+env(safe-area-inset-top,0px))]" : "pt-[calc(1.25rem+env(safe-area-inset-top,0px))] md:pt-[calc(1rem+env(safe-area-inset-top,0px))]"}`}
       >
         <header className="col-start-1 row-start-1 flex items-center justify-between self-start">
           <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground md:size-9">
@@ -215,8 +269,14 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
                     <InputGroup className="has-disabled:opacity-100!">
                       <InputGroupInput
                         {...form.getInputProps("email", {
-                          autoComplete: "on",
-                          disabled: step === "otp",
+                          autoComplete: "email",
+                          autoCapitalize: "none",
+                          autoCorrect: "off",
+                          spellCheck: false,
+                          inputMode: "email",
+                          type: "text",
+                          disabled: step === "otp" || isSubmitting || isResending,
+                          "aria-invalid": Boolean(form.error("email")),
                           onChange: () => {
                             form.unstable_setCustomError("email", null)
                           },
@@ -227,7 +287,10 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
                         <InputGroupAddon align="inline-end">
                           <Button
                             aria-label={t("email.change")}
+                            disabled={isSubmitting || isResending}
+                            type="button"
                             onClick={() => {
+                              cancelOtpFocus()
                               form.resetField("email")
                               form.resetField("otp")
                               form.unstable_setCustomError("email", null)
@@ -255,7 +318,7 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
                         aria-invalid={Boolean(form.error("otp")) || undefined}
                         aria-label={t("otp.ariaLabel")}
                         autoComplete="one-time-code"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isResending}
                         inputMode="numeric"
                         length={6}
                         name="otp"
@@ -268,14 +331,14 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
                           form.setValue("otp", value)
                           form.unstable_setCustomError("otp", null)
 
-                          if (value.length === 6 && value !== previousValue && !isSubmitting) {
+                          if (value.length === 6 && value !== previousValue && !isSubmitting && !isResending && !requestPending.current) {
                             form.submit()
                           }
                         }}
                         validationType="none"
                         value={form.value("otp")}
                       >
-                        <OTPFieldInput className="selection:bg-transparent" />
+                        <OTPFieldInput className="selection:bg-transparent" ref={firstOtpInput} />
                         <OTPFieldInput
                           aria-label={t("otp.characterLabel", {
                             position: 2,
@@ -313,36 +376,31 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
                   <div className="mt-1 flex flex-col gap-3">
                     <Button
                       className="keyboard-focusable"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || isResending}
+                      loading={isSubmitting}
                       tabIndex={0}
                       type="submit"
                     >
-                      {isSubmitting ? (
-                        <>
-                          <Spinner className="size-4" />
-                          {t(
-                            step === "email"
-                              ? "actions.sending"
-                              : "actions.signingIn",
-                          )}
-                        </>
-                      ) : (
-                        t(
-                          step === "email"
-                            ? "actions.sendCode"
-                            : "actions.signIn",
-                        )
+                      {t(
+                        step === "email"
+                          ? "actions.sendCode"
+                          : "actions.signIn",
                       )}
                     </Button>
                     {step === "otp" ? (
                       <Button
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || isResending}
+                        loading={isResending}
                         onClick={async () => {
-                          await sendVerificationOtp(form.value(), {
-                            showErrorToast: true,
-                            showSuccessToast: true,
-                          })
-                          form.resetField("otp")
+                          setIsResending(true)
+                          try {
+                            await sendVerificationOtp(form.value(), {
+                              showErrorToast: true,
+                              showSuccessToast: true,
+                            })
+                          } finally {
+                            setIsResending(false)
+                          }
                         }}
                         type="button"
                         variant="outline"
@@ -357,17 +415,13 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
             </AppForm>
           </div>
         </div>
-        <footer className="col-start-1 row-start-1 flex shrink-0 items-center gap-2 justify-self-end max-md:self-start max-md:[&_[data-slot=tabs-tab]]:size-8 max-md:[&_[data-slot=tabs-tab]]:p-0 max-md:[&_[data-slot=tabs-tab]]:text-sm max-md:[&_svg]:size-5 md:relative md:bottom-[env(safe-area-inset-bottom,0px)] md:h-8">
+        <footer className="col-start-1 row-start-1 flex shrink-0 items-center gap-2 justify-self-end max-md:self-start max-md:[&_[data-slot=tabs-tab]]:size-8 max-md:[&_[data-slot=tabs-tab]]:p-0 max-md:[&_[data-slot=tabs-tab]]:text-sm max-md:[&_svg]:size-5 md:h-8">
           <ThemeSwitch />
           <LanguageSwitch />
         </footer>
       </section>
 
-      <section className="hidden flex-1 md:flex">
-        <div
-          className="min-w-0 flex-1 bg-neutral-100 bg-[url('/mockup-light.avif')] bg-size-[90%_auto] bg-bottom-right bg-no-repeat dark:bg-neutral-900 dark:bg-[url('/mockup-dark.avif')]"
-        />
-      </section>
+      <AuthPreview />
     </main>
   )
 }

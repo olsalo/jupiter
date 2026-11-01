@@ -15,7 +15,7 @@ export function OnboardingStepError({ isFetching, onRetry }: {
       <AlertTitle>{t("errors.load")}</AlertTitle>
       <AlertDescription>{t("errors.retryDescription")}</AlertDescription>
       <AlertAction>
-        <Button disabled={isFetching} onClick={onRetry} size="sm" type="button" variant="outline">
+        <Button disabled={isFetching} loading={isFetching} onClick={onRetry} size="sm" type="button" variant="outline">
           {t("actions.retry")}
         </Button>
       </AlertAction>

@@ -24,3 +24,10 @@ const appointment = { id: "booking", day: "2099-10-28", memberId: "bob", locatio
 assert.equal(getCalendarAppointmentPosition(appointment, "Europe/Helsinki").startsAt.toISOString(), "2099-10-28T08:00:00.000Z")
 assert.equal(getCalendarAppointmentPosition(appointment, "Europe/Helsinki").endsAt.toISOString(), "2099-10-28T09:00:00.000Z", "Drag checks the full booking duration")
 console.log("Calendar preview issue checks passed")
+
+for (const personal of [
+  { staffMemberId: "bob", validFrom: Date.parse("2099-11-01T00:00:00Z"), windows: [] },
+  { staffMemberId: "bob", validUntil: Date.parse("2099-10-28T00:00:00Z"), windows: [] },
+]) {
+  assert.deepEqual(getCalendarPreviewIssues({ ...position, memberId: "bob" }, { ...options, rules: [...rules, personal] }), [], "Drag warnings inherit business hours outside a personal schedule's effective dates")
+}

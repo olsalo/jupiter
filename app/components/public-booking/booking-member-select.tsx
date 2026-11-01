@@ -37,9 +37,9 @@ function BookingMemberLabel({
       ) : (
         <span
           aria-hidden={true}
-          className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
+          className="flex size-6 shrink-0 items-center justify-center rounded-full border border-black/8 bg-muted text-muted-foreground dark:border-white/10"
         >
-          <Icon aria-hidden={true} className="size-4" name="users" />
+          <Icon aria-hidden={true} className="size-3.5" name="users" />
         </span>
       )}
       <span className="min-w-0 truncate leading-5">{label}</span>

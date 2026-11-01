@@ -1,12 +1,12 @@
 "use client";
 
 import { Toast } from "@base-ui/react/toast";
-import { useLayoutEffect, useRef } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
 import Icon from "../icons";
 import { cn } from "@coss/ui/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import type {AppIconName } from "../icons";
-import { anchoredToastManager, toast, toastManager } from "~/lib/toast"
+import { anchoredToastManager, toastManager } from "~/lib/toast"
 import { useIsMobile } from "~/lib/hooks"
 import { useOpenOverlayCount } from "~/lib/use-overlay-open"
 import { useSheetOpen } from "~/lib/use-sheet-open"
@@ -44,37 +44,39 @@ function ToastProvider({
   const isMobile = useIsMobile()
   const isSheetOpen = useSheetOpen()
   const openOverlayCount = useOpenOverlayCount()
-  const previousOpenOverlayCount = useRef(0)
-  const previousIsFormEditor = useRef(false)
   const { pathname } = useLocation()
   const isFormEditor = /^\/forms\/[^/]+\/edit\/?$/.test(pathname)
-  const dismissImmediately = !isMobile && (openOverlayCount > 0 || isFormEditor)
   const resolvedPosition = position ?? (isMobile || isSheetOpen || isFormEditor ? "bottom-left" : "bottom-right")
   const toastPosition = isMobile ? resolvedPosition.replace("bottom", "top") as ToastPosition : resolvedPosition
+
+  return (
+    <Toast.Provider timeout={timeout} toastManager={toastManager} {...props}>
+      {children}
+      <Toasts isFormEditor={isFormEditor} isMobile={isMobile} openOverlayCount={openOverlayCount} position={toastPosition} />
+    </Toast.Provider>
+  );
+}
+
+function Toasts({ isFormEditor, isMobile, openOverlayCount, position = "bottom-left" }: { isFormEditor: boolean; isMobile: boolean; openOverlayCount: number; position: ToastPosition }) {
+  const { toasts, close } = Toast.useToastManager();
+  const previousOpenOverlayCount = useRef(0)
+  const previousIsFormEditor = useRef(false)
+  const [immediatelyDismissedIds, setImmediatelyDismissedIds] = useState<Set<string>>(() => new Set())
+  const isTop = position.startsWith("top");
 
   useLayoutEffect(() => {
     const openedOverlay = openOverlayCount > previousOpenOverlayCount.current
     const openedFormEditor = isFormEditor && !previousIsFormEditor.current
 
     if (!isMobile && (openedOverlay || openedFormEditor)) {
-      toast.close()
+      // Only skip transitions for toasts already visible when the overlay opens
+      setImmediatelyDismissedIds(new Set(toasts.map((toast) => toast.id)))
+      close()
     }
 
     previousOpenOverlayCount.current = openOverlayCount
     previousIsFormEditor.current = isFormEditor
-  }, [isFormEditor, isMobile, openOverlayCount])
-
-  return (
-    <Toast.Provider timeout={timeout} toastManager={toastManager} {...props}>
-      {children}
-      <Toasts dismissImmediately={dismissImmediately} position={toastPosition} />
-    </Toast.Provider>
-  );
-}
-
-function Toasts({ dismissImmediately, position = "bottom-left" }: { dismissImmediately: boolean; position: ToastPosition }) {
-  const { toasts } = Toast.useToastManager();
-  const isTop = position.startsWith("top");
+  }, [close, isFormEditor, isMobile, openOverlayCount, toasts])
 
   return (
     <Toast.Portal data-slot="toast-portal">
@@ -126,7 +128,7 @@ function Toasts({ dismissImmediately, position = "bottom-left" }: { dismissImmed
                 "data-expanded:data-ending-style:data-[swipe-direction=right]:transform-[translateX(calc(var(--toast-swipe-movement-x)+100%+var(--toast-inset)))_translateY(var(--toast-calc-offset-y))]",
                 "data-expanded:data-ending-style:data-[swipe-direction=up]:transform-[translateY(calc(var(--toast-swipe-movement-y)-100%-var(--toast-inset)))]",
                 "data-expanded:data-ending-style:data-[swipe-direction=down]:transform-[translateY(calc(var(--toast-swipe-movement-y)+100%+var(--toast-inset)))]",
-                dismissImmediately && "data-ending-style:transition-none",
+                immediatelyDismissedIds.has(toast.id) && "data-ending-style:transition-none",
               )}
               data-position={position}
               key={toast.id}

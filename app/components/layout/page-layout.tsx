@@ -36,7 +36,8 @@ function PageFrame({ children, header, className, contentClassName, contained }:
       {header}
       <div
         className={cn(
-          "relative isolate z-0 flex min-w-0 flex-1 flex-col gap-4",
+          // Inline SSR sheets must sit above the header until hydration moves them into a portal
+          "relative isolate z-0 flex min-w-0 flex-1 flex-col gap-4 has-[[data-slot=sheet-viewport][data-open]]:z-50",
           contained && "h-0 min-h-0 overflow-hidden",
           contentClassName,
         )}
