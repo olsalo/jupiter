@@ -8,6 +8,7 @@ import {
   useRevalidator,
 } from "react-router"
 
+import { localizationDefaults } from "~/lib/localization/defaults"
 import type { AppRouter } from "~/.server/main"
 import type { Route } from "./+types/example"
 import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmation-dialog"
@@ -29,7 +30,6 @@ import {
 } from "~/components/ui/empty"
 import {
   createDateTimeFormatter,
-  defaultTimeZone,
 } from "~/lib/localization/format-preference"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
@@ -96,7 +96,7 @@ export default function Notes() {
       createDateTimeFormatter({
         formatPreference: rootData?.formatPreference ?? "eu",
         language: i18n.resolvedLanguage === "fi" ? "fi" : "en",
-        timeZone: rootData?.organizationTimezone ?? defaultTimeZone,
+        timeZone: rootData?.organizationTimezone ?? localizationDefaults.timezone,
       }),
     [
       i18n.resolvedLanguage,

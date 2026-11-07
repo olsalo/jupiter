@@ -5,6 +5,7 @@ import Icon from "~/components/icons"
 import { Button } from "~/components/ui/button"
 import { Menu, MenuLinkItem, MenuPopup, MenuTrigger } from "~/components/ui/menu"
 import { useMediaQuery } from "~/lib/hooks"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 
 const availabilityActions = [
   { tab: "workingHours", label: "team:people.availability", icon: "clock" },
@@ -17,6 +18,7 @@ export function CalendarHeaderActions() {
   const { t } = useTranslation()
   const location = useLocation()
   const matches = useMatches()
+  const readOnly = Boolean(useAppContext().subscriptionReadOnly)
   const isOverlay = useMediaQuery("max-1024px")
   const isSidePanelOpen = !isOverlay && matches.some((match) =>
     match.id === "routes/calendar/new-appointment" || match.id === "routes/calendar/appointment-layout"
@@ -25,7 +27,7 @@ export function CalendarHeaderActions() {
 
   return <>
     <Menu>
-      <MenuTrigger aria-label={t("calendarControls.actions")} render={<Button className="max-md:size-9 max-md:p-0" size="lg" type="button" variant="outline" />}>
+      <MenuTrigger aria-label={t("calendarControls.actions")} disabled={readOnly} render={<Button className="max-md:size-9 max-md:p-0" size="lg" type="button" variant="outline" />}>
         <Icon aria-hidden={true} className="md:hidden" name="dotsVertical" size={18} />
         <span className="hidden md:inline">{t("calendarControls.actions")}</span>
         <Icon aria-hidden={true} className="hidden md:block" name="chevronDown" size={16} />
@@ -38,6 +40,6 @@ export function CalendarHeaderActions() {
         })}
       </MenuPopup>
     </Menu>
-    <Button aria-label={t("routeActions.newAppointment")} className="max-md:size-9 max-md:p-0" disabled={isSidePanelOpen} render={isSidePanelOpen ? undefined : <Link draggable={false} to={`/calendar/new${location.search}`} state={returnState} />} size="lg" type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("routeActions.newAppointment")}</span></Button>
+    <Button aria-label={t("routeActions.newAppointment")} className="max-md:size-9 max-md:p-0" disabled={isSidePanelOpen || readOnly} render={isSidePanelOpen || readOnly ? undefined : <Link draggable={false} to={`/calendar/new${location.search}`} state={returnState} />} size="lg" type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("routeActions.newAppointment")}</span></Button>
   </>
 }

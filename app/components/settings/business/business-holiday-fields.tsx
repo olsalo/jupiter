@@ -1,4 +1,3 @@
-import { Temporal } from "@js-temporal/polyfill"
 import { useFormScope, type FormApi, type FormScope } from "@rvf/react"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -11,20 +10,20 @@ import { SettingsSectionHeader } from "~/components/settings/settings-section-he
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
 import { Switch } from "~/components/ui/switch"
-import { upcomingBusinessHolidays, type BusinessHoliday } from "~/lib/business/business-holidays"
+import type { BusinessHoliday } from "~/lib/business/business-holidays"
 import { calendarDateFromValue } from "~/lib/calendar/date"
 import { formatDateTime } from "~/lib/localization/format-preference"
 import type { BusinessHolidayValues, BusinessScheduleValues } from "~/lib/schemas/business-schedule"
 import type { loader as rootLoader } from "~/root"
 
 export function BusinessHolidayFields({ form, timezone, persistCustomHolidays = true }: { form: FormApi<BusinessScheduleValues>; timezone: string; persistCustomHolidays?: boolean }) {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const root = useRouteLoaderData<typeof rootLoader>("root")
   const [expanded, setExpanded] = useState<string | null>(null)
   const [dialog, setDialog] = useState<{ open: boolean; holiday?: BusinessHoliday; flow: number }>({ open: false, flow: 0 })
   const holidays = form.getControlProps("holidays")
   const pending = form.formState.isSubmitting
-  const language = root?.locale === "fi" ? "fi" : "en"
+  const language = i18n.resolvedLanguage === "fi" ? "fi" : "en"
   const formatPreference = root?.formatPreference ?? "eu"
   const displayTime = (minute: number) => formatDateTime(`2000-01-01T${String(Math.floor(minute / 60) % 24).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}:00Z`, { formatPreference, language, timeZone: "UTC", includeDate: false })
   const edit = (holiday?: BusinessHoliday) => setDialog((state) => ({ open: true, holiday, flow: state.flow + 1 }))
@@ -36,7 +35,7 @@ export function BusinessHolidayFields({ form, timezone, persistCustomHolidays = 
     <div className="mt-4 divide-y">
       {holidays.value.map((holiday, index) => ({ holiday, index })).sort((a, b) => a.holiday.date.localeCompare(b.holiday.date)).map(({ holiday, index }) => {
         const custom = holiday.id.startsWith("custom-")
-        const label = custom ? holiday.name : t(`businessSchedule.defaults.${holiday.id}`)
+        const label = custom ? holiday.name : t(`businessSchedule.defaults.${holiday.id}`, { defaultValue: holiday.labels?.[language] ?? holiday.name })
         const hasError = Boolean(form.error(`holidays[${index}].endMinute`) || form.error(`holidays[${index}].startMinute`))
         const open = holiday.enabled && (expanded === holiday.id || hasError)
         return <div className="py-3" id={holiday.id} key={holiday.id}>
@@ -47,7 +46,7 @@ export function BusinessHolidayFields({ form, timezone, persistCustomHolidays = 
                 <span className="truncate text-sm font-medium">{label}</span>
                 {holiday.enabled ? <Badge className="shrink-0 max-sm:hidden" size="sm" variant="secondary">{holiday.closed ? t("businessSchedule.closed") : `${displayTime(holiday.startMinute)} – ${displayTime(holiday.endMinute)}`}</Badge> : null}
               </div>
-              <span className="text-xs text-muted-foreground">{formatDateTime(calendarDateFromValue(holiday.date, timezone), { formatPreference, language, timeZone: timezone, includeTime: false, includeWeekday: true })}</span>
+              <span className="text-xs text-muted-foreground">{formatDateTime(calendarDateFromValue(holiday.date, timezone), { formatPreference, language, timeZone: timezone, includeTime: false, includeWeekday: true })}{holiday.endDate && holiday.endDate !== holiday.date ? ` - ${formatDateTime(calendarDateFromValue(holiday.endDate, timezone), { formatPreference, language, timeZone: timezone, includeTime: false, includeWeekday: true })}` : null}</span>
             </div>
             {custom ? <Button aria-label={t("businessSchedule.removeHoliday", { name: label })} disabled={pending} onClick={() => holidays.onChange(holidays.value.filter((_, position) => position !== index))} size="icon-sm" type="button" variant="ghost"><Icon aria-hidden={true} name="trash" size={16} /></Button> : null}
             <Button aria-expanded={custom ? undefined : open} aria-label={t("businessSchedule.editNamedHoliday", { name: label })} disabled={pending || !holiday.enabled} onClick={() => custom ? edit(holiday) : setExpanded(open ? null : holiday.id)} size="icon-sm" type="button" variant="ghost"><Icon aria-hidden={true} name="edit" size={16} /></Button>
@@ -63,8 +62,7 @@ export function BusinessHolidayFields({ form, timezone, persistCustomHolidays = 
         return
       }
       const baseline = form.transient.defaultValue()
-      const today = Temporal.Now.plainDateISO(timezone).toString()
-      const update = (entries: BusinessHoliday[]) => upcomingBusinessHolidays({ holidays: [...entries.filter((entry) => entry.id !== holiday.id), holiday] }, today)
+      const update = (entries: BusinessHoliday[]) => [...entries.filter((entry) => entry.id !== holiday.id), holiday].sort((first, second) => first.date.localeCompare(second.date))
       const next = { ...current, holidays: update(current.holidays) }
       const saved = { ...baseline, holidays: update(baseline.holidays) }
       form.resetForm(saved)

@@ -18,10 +18,24 @@ Email is optional locally: leave `EMAIL_PROVIDER` blank to print sign-in codes i
 
 The remaining settings are optional:
 
-- **Billing:** set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_PRO_PRICE_ID` together. Add `STRIPE_PRO_ANNUAL_PRICE_ID` for annual billing. Leave the Stripe settings blank to disable billing.
-- **IP location:** set `LOCATION_API_KEY` to enable lookups. `LOCATION_API_URL` already has a built-in default.
+- **Billing:** set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_SOLO_PRICE_ID`, `STRIPE_TEAM_PRICE_ID` and `STRIPE_EXTRA_STAFF_PRICE_ID`. Annual billing requires all three matching annual price IDs. See [Stripe setup](docs/jupiter/billing.md) for prices, taxes, webhooks and plan behavior. Leave the Stripe settings blank to disable billing.
+- **IP location:** set both `LOCATION_API_KEY` and `LOCATION_API_URL` to enable lookups. The URL has no built-in default.
 - **Appearance:** `APP_LAYOUT_STYLE` accepts `floating` or `classic` and defaults to `classic`. Rebuild the production app after changing it.
 - **Other options:** additional auth hosts, test email recipients, demo checkout bypass, mockup generation, and a trusted booking IP header are described beside their settings in `.env.example`.
+
+## App and marketing domains
+
+`/` always opens the app, with the existing sign-in and onboarding checks.
+The public landing page is available at `/marketing`.
+
+For separate domains, set `BETTER_AUTH_URL=https://app.example.com`. Configure
+your reverse proxy to serve `/marketing` for visits to `example.com/` and pass
+the app domain through normally. Add the public domain to
+`BETTER_AUTH_ALLOWED_HOSTS` if the proxy forwards its original host, so public
+language and theme preferences can use the API. Marketing sign-in links and
+email signup forms use `BETTER_AUTH_URL`, preserving the entered email address.
+No hostname-based page selection happens inside the app. Public booking routes
+stay unchanged. DNS and proxy settings are configured separately.
 
 ## Barber shop demo data
 
@@ -37,7 +51,7 @@ This creates **Oak & Steel Barbers** with the specified non-bookable owner and f
 
 The calendar contains appointments from four weeks ago through two weeks ahead, including completed visits with manual payments, cancellations, no-shows and upcoming bookings. Every appointment, including its cleanup buffer, fits both shop hours and the barber's shift, avoids breaks, and respects the Finnish holiday closures configured through the app's holiday calendar. Dates follow `Europe/Helsinki`, including daylight saving changes and holidays across year boundaries. Bookings leave gaps for trying new appointments, and customers return no sooner than three weeks after their previous visit.
 
-Sign in using the owner's email through the normal email code flow and select **Oak & Steel Barbers**. An existing user with that email is reused without changing their profile or login details. New accounts use English. If Stripe billing is configured, set `DEMO_BYPASS_ONBOARDING_PAYMENT=true` locally to open the demo without checkout. The seed does not create Stripe customers or subscriptions, send invitations, or queue emails. Booking emails and reminders are disabled for this business, and fictional contact addresses use `example.invalid`.
+Sign in using the owner's email through the normal email code flow and select **Oak & Steel Barbers**. An existing user with that email is reused without changing their profile or login details. New accounts use English. Set `DEMO_BYPASS_ONBOARDING_PAYMENT=true` locally to activate the selected plan without Stripe checkout in onboarding or billing settings. The seed does not create Stripe customers or subscriptions, send invitations, or queue emails. Booking emails and reminders are disabled for this business, and fictional contact addresses use `example.invalid`.
 
 Each owner email gets a separate demo business. Running the command again for the same email leaves its data unchanged, including any edits you have made. The seed runs in one transaction and does not clear existing data. Use `npm run db:seed:barber -- --help` for usage.
 
@@ -65,3 +79,14 @@ Use React Router loaders for route state and tRPC with TanStack Query for fetchi
 - `npm run typecheck`: generate route types and check TypeScript
 - `npm run build`: create the production build
 - `npm run start`: serve the production build, loading `.env` if present (existing environment variables take precedence)
+
+## Try the production build locally
+
+```bash
+npm run build
+npm run start:local
+```
+
+Open `http://127.0.0.1:3000` after the server starts. Use `PORT=3001 npm run start:local` to choose another port. This command loads `.env`, sets the local auth URL, and runs the production server behind a loopback-only proxy that supplies the client IP for sign-in rate limits. Production rate limits stay enabled. Sign-in codes are printed in the terminal instead of being emailed, so no email provider is needed for this local preview. Keep the database connection in `.env`. Stop the preview with Ctrl+C.
+
+Use `npm run start` for deployment behind your production proxy.

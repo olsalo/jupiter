@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef } from "react"
+import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { TZDate } from "react-day-picker"
 import { useTranslation } from "react-i18next"
@@ -28,7 +28,7 @@ export function CalendarAgenda() {
   const { t } = useTranslation()
   const trpc = useTRPC()
   const state = useCalendarState()
-  const { organization, staff, selectedMember, days, timeZone, formatPreference, now } = state
+  const { organization, locations, staff, selectedMember, days, timeZone, formatPreference, now } = state
   const { preview } = useCalendarBookingPreview()
   const { pathname } = useLocation()
   const range = getCalendarBookingRange(state, timeZone)
@@ -38,7 +38,7 @@ export function CalendarAgenda() {
     const visible = selectedMember ? bookings.data?.filter((booking) => booking.staffMember?.id === selectedMember.id) : bookings.data
     return getCalendarAppointments(visible ?? [], days, timeZone)
   }, [bookings.data, selectedMember?.id, days, timeZone])
-  const queries = [organization, staff, bookings]
+  const queries = [organization, locations, staff, bookings]
   const loadError = queries.some((query) => query.isError && query.data === undefined)
   const refreshError = queries.some((query) => query.isError && query.data !== undefined)
   const isFetching = queries.some((query) => query.isFetching)
@@ -50,7 +50,7 @@ export function CalendarAgenda() {
     <AlertAction><Button disabled={isFetching} onClick={retry} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
   </Alert>} />
 
-  if (organization.data === undefined || staff.data === undefined || bookings.data === undefined) return <CalendarView list={true}><CalendarLoading /></CalendarView>
+  if (locations.data === undefined || organization.data === undefined || staff.data === undefined || bookings.data === undefined) return <CalendarView list={true}><CalendarLoading /></CalendarView>
 
   return <CalendarView list={true} alerts={refreshError ? <Alert variant="warning">
     <AlertTitle>{t("calendarGrid.refreshError")}</AlertTitle>
@@ -98,13 +98,16 @@ export function CalendarAgendaContent({ appointments, days, members, now, timeZo
   const viewportRef = useRef<HTMLDivElement>(null)
   const todayRef = useRef<HTMLElement>(null)
   const positioned = useRef<{ key: string; viewport: HTMLElement } | null>(null)
+  const [positionedKey, setPositionedKey] = useState<string | null>(null)
   const rangeKey = groups.map((group) => group.day).join("/")
   const hasAppointments = appointments.length > 0
+  const positionKey = `${rangeKey}/${today}/${isMobile}`
+  const waitingForInitialPosition = hasAppointments && groups.some((group) => group.day === today) && positionedKey !== positionKey
   useLayoutEffect(() => {
     const agenda = agendaRef.current
     const section = todayRef.current
     const viewport = isMobile ? agenda?.closest<HTMLElement>(".app-page-scroll") : viewportRef.current
-    const key = `${rangeKey}/${today}`
+    const key = positionKey
     if (!agenda || !section || !viewport || (positioned.current?.key === key && positioned.current.viewport === viewport)) return
     let cancelled = false
     const position = () => {
@@ -117,6 +120,7 @@ export function CalendarAgendaContent({ appointments, days, members, now, timeZo
       }
       viewport.scrollTop = Math.max(0, Math.min(viewport.scrollHeight - viewport.clientHeight, viewport.scrollTop + top - viewport.getBoundingClientRect().top - viewport.clientTop))
       positioned.current = { key, viewport }
+      setPositionedKey(key)
       observer.disconnect()
     }
     const observer = new ResizeObserver(position)
@@ -128,7 +132,38 @@ export function CalendarAgendaContent({ appointments, days, members, now, timeZo
       cancelled = true
       observer.disconnect()
     }
-  }, [isMobile, rangeKey, today, hasAppointments])
+  }, [isMobile, positionKey, hasAppointments])
+
+  useLayoutEffect(() => {
+    const agenda = agendaRef.current
+    if (!agenda || !hasAppointments) return
+    let frame = 0
+    const measure = () => {
+      const headers = Array.from(agenda.querySelectorAll<HTMLElement>("[data-slot=calendar-agenda-header]"))
+      headers.forEach((header, index) => {
+        const previous = headers[index - 1]
+        const previousRect = previous?.getBoundingClientRect()
+        const rect = header.getBoundingClientRect()
+        header.parentElement?.toggleAttribute("data-touching", Boolean(previousRect && rect.top >= previousRect.top && rect.top <= previousRect.bottom + 2))
+      })
+    }
+    const update = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(measure)
+    }
+    const observer = new ResizeObserver(update)
+    observer.observe(agenda)
+    measure()
+    update()
+    window.addEventListener("scroll", update, true)
+    window.addEventListener("resize", update)
+    return () => {
+      observer.disconnect()
+      cancelAnimationFrame(frame)
+      window.removeEventListener("scroll", update, true)
+      window.removeEventListener("resize", update)
+    }
+  }, [hasAppointments, groups])
 
   if (appointments.length === 0) return <Empty data-slot="calendar-agenda-empty">
     <EmptyHeader>
@@ -139,8 +174,8 @@ export function CalendarAgendaContent({ appointments, days, members, now, timeZo
   </Empty>
 
   const content = <>
-    {groups.map(({ date, day, bookings }) => <section aria-labelledby={`agenda-${day}`} className="md:border-t md:border-(--calendar-divider) md:first:border-t-0" key={day} ref={day === today ? todayRef : undefined}>
-      <h2 className="sticky top-0 z-10 flex min-h-12 items-center justify-between gap-3 rounded-xl bg-(--calendar-chrome) px-4 py-3 text-sm font-medium @min-2xl/agenda:min-h-11 @min-2xl/agenda:py-2 md:rounded-none md:border-b md:px-5" id={`agenda-${day}`}>
+    {groups.map(({ date, day, bookings }) => <section aria-labelledby={`agenda-${day}`} className="md:border-t md:border-(--calendar-divider) md:first:border-t-0 md:data-[touching]:border-t-0" key={day} ref={day === today ? todayRef : undefined}>
+      <h2 className="sticky top-0 z-10 flex min-h-12 items-center justify-between gap-3 rounded-xl bg-(--calendar-chrome) px-4 py-3 text-sm font-medium @min-2xl/agenda:min-h-11 @min-2xl/agenda:py-2 md:rounded-none md:border-b md:px-5" data-slot="calendar-agenda-header" id={`agenda-${day}`}>
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           {day === today ? <span className="text-primary">{t("calendarGrid.today")}<span aria-hidden={true} className="ml-2 text-muted-foreground">·</span></span> : null}
           <time className="first-letter:uppercase" dateTime={day}>{formatDateTime(date, { formatPreference, language, timeZone, includeTime: false, includeYear: false, includeWeekday: true })}</time>
@@ -185,7 +220,9 @@ export function CalendarAgendaContent({ appointments, days, members, now, timeZo
     </section>)}
   </>
 
-  return <div aria-label={t("calendarAgenda.label")} className="@container/agenda flex min-h-0 min-w-0 flex-1 flex-col [--calendar-chrome:color-mix(in_srgb,var(--background)_97%,var(--foreground))] [--calendar-divider:color-mix(in_srgb,var(--foreground)_16%,transparent)]" data-slot="calendar-agenda" ref={agendaRef} role="region">
+  return <div aria-busy={waitingForInitialPosition || undefined} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+    {waitingForInitialPosition ? <div className="absolute inset-0 flex" data-slot="calendar-position-loading"><CalendarLoading /></div> : null}
+    <div aria-label={t("calendarAgenda.label")} className={cn("@container/agenda flex min-h-0 min-w-0 flex-1 flex-col [--calendar-chrome:color-mix(in_srgb,var(--background)_97%,var(--foreground))] [--calendar-divider:color-mix(in_srgb,var(--foreground)_16%,transparent)]", waitingForInitialPosition && "invisible")} data-slot="calendar-agenda" ref={agendaRef} role="region">
     {isMobile ? content : <ScrollArea
       className="relative min-h-0 flex-1 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-[19px] after:border-l after:bg-(--calendar-chrome) max-md:h-auto max-md:[&>[data-slot=scroll-area-viewport]]:h-auto max-md:[&>[data-slot=scroll-area-viewport]]:overflow-visible! max-md:after:hidden"
       overscrollContain={true}
@@ -196,5 +233,6 @@ export function CalendarAgendaContent({ appointments, days, members, now, timeZo
         className: "md:mr-[19px] md:mask-b-from-[calc(100%-min(1.5rem,var(--scroll-area-overflow-y-end,0px)))] [overflow-anchor:none]",
       }}
     >{content}</ScrollArea>}
+    </div>
   </div>
 }

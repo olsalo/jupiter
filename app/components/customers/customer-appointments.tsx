@@ -11,7 +11,7 @@ import { useTRPC } from "~/lib/trpc/client"
 import type { Customer } from "./customer-types"
 
 export function CustomerAppointments({ customerId, scope, page, preview = false }: { customerId: string; scope: "upcoming" | "history"; page: Customer["appointments"]["upcoming"]; preview?: boolean }) {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const root = useAppContext()
@@ -21,7 +21,7 @@ export function CustomerAppointments({ customerId, scope, page, preview = false 
     queryClient.setQueryData(queryOptions.queryKey, { pages: [page], pageParams: [null] })
   }, [customerId, scope, preview, page, queryClient])
   const appointments = query.data?.pages.flatMap((page) => page.items) ?? []
-  const options = { formatPreference: root?.formatPreference ?? "eu", language: root?.locale === "fi" ? "fi" as const : "en" as const, timeZone: root?.organizationTimezone ?? "Europe/Helsinki" }
+  const options = { formatPreference: root?.formatPreference ?? "eu", language: i18n.resolvedLanguage === "fi" ? "fi" as const : "en" as const, timeZone: root?.organizationTimezone ?? "Europe/Helsinki" }
 
   return <div className="grid gap-3">
     {query.isError ? <Alert variant="error"><AlertTitle>{t("customerPage.appointmentsError")}</AlertTitle><AlertAction><Button disabled={query.isFetching} loading={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction></Alert> : null}

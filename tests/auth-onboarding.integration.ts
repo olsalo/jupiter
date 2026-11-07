@@ -40,7 +40,8 @@ try {
   assert.equal(session?.session.activeOrganizationId, first.organizationId)
   assert.equal((await (await caller()).onboarding.status()).businessComplete, true)
   assert.equal((await (await caller()).onboarding.business()).businessName, details.businessName)
-  await assert.rejects((await caller()).onboarding.complete(details), { code: "CONFLICT" })
+  assert.equal((await (await caller()).onboarding.complete(details)).organizationId, first.organizationId)
+  assert.equal(await prisma.staffMember.count({ where: { organizationId: first.organizationId } }), 1, "Business retries reuse the owner profile")
 
   const second = await prisma.organization.create({ data: {
     name: `Second ${suffix}`, slug: `auth-second-${suffix}`, createdAt: new Date(),
@@ -61,7 +62,7 @@ try {
   await auth.api.signOut({ headers })
   assert.equal(await auth.api.getSession({ headers }), null)
   await assert.rejects((await caller()).onboarding.status(), { code: "UNAUTHORIZED" })
-  console.info("PASS OTP sign-in, new business setup, active organization selection, setup permissions, business isolation, repeat setup rejection, and sign-out")
+  console.info("PASS OTP sign-in, new business setup, active organization selection, setup permissions, business isolation, repeat setup retries, and sign-out")
 } finally {
   try {
     if (userId) {

@@ -6,7 +6,6 @@ import { Outlet } from "react-router"
 import { QrCodeDialog } from "~/components/overlays/qr-code-dialog"
 import { AppForm, type AppFormState } from "~/components/forms/app-form"
 import FormLabel from "~/components/forms/form-label"
-import { AccentColorSelect } from "~/components/settings/preferences/accent-color-select"
 import Icon from "~/components/icons"
 import { Badge } from "~/components/ui/badge"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
@@ -23,14 +22,17 @@ import { toast } from "~/lib/toast"
 import { notifyBookingPageSaved } from "~/lib/booking/booking-page-sync"
 import { useTRPC } from "~/lib/trpc/client"
 import { BookingPageImage } from "./booking-page-image"
+import { BookingPageAccentColor } from "./booking-page-accent-color"
 import { BookingPageSwitch } from "./booking-page-switch"
 import { BookingPageFormState } from "./booking-page-form-state"
 import { BookingPageServices } from "./booking-page-services"
 import { BookingPageChoices } from "./booking-page-choices"
 import { BookingPageSection } from "./booking-page-section"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 
 export function AdminBookingPage() {
   const { t } = useTranslation()
+  const readOnly = Boolean(useAppContext().subscriptionReadOnly)
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const query = useQuery(trpc.bookingPage.get.queryOptions())
@@ -45,7 +47,7 @@ export function AdminBookingPage() {
   const path = data?.publicPath ?? ""
   const initial = useRef<AdminBookingPageFormValues | null>(null)
   if (!initial.current && data) initial.current = adminBookingPageFormSchema.parse(data.values)
-  const live = Boolean(data?.published)
+  const live = Boolean(data?.published && !readOnly)
   const showQrCode = () => {
     setQrCodeUrl(new URL(path, window.location.origin).href)
     setQrCodeOpen(true)
@@ -78,7 +80,7 @@ export function AdminBookingPage() {
       <Button aria-label={t("adminBookingPage.copyLink")} className="hidden md:inline-flex" disabled={!data} onClick={() => void copy()} size="lg" type="button" variant="outline"><Icon aria-hidden={true} name="copy" size={16} /><span className="hidden lg:inline">{t("adminBookingPage.copyLink")}</span></Button>
       <Button aria-label={t("adminBookingPage.showQrCode")} className="hidden md:inline-flex" disabled={!data} onClick={showQrCode} size="lg" type="button" variant="outline"><Icon aria-hidden={true} name="qrCode" size={16} /><span className="hidden lg:inline">{t("adminBookingPage.showQrCode")}</span></Button>
       <Button aria-label={t("adminBookingPage.openPage")} className="hidden md:inline-flex" disabled={!live} render={<a href={path} target="jupiter-booking-page" />} size="lg" type="button" variant="outline"><Icon aria-hidden={true} name="share" size={16} /><span className="hidden lg:inline">{t("adminBookingPage.openPage")}</span></Button>
-      <Button aria-label={t("adminBookingPage.save")} className="max-md:size-9 max-md:p-0" disabled={!data || !formState.isDirty || submitting} form="admin-booking-page" loading={submitting} size="lg" type="submit"><Icon aria-hidden={true} name="save" size={18} /><span className="hidden md:inline">{t("adminBookingPage.save")}</span></Button>
+      <Button aria-label={t("adminBookingPage.save")} className="max-md:size-9 max-md:p-0" disabled={readOnly || !data || !formState.isDirty || submitting} form="admin-booking-page" loading={submitting} size="lg" type="submit"><Icon aria-hidden={true} name="save" size={18} /><span className="hidden md:inline">{t("adminBookingPage.save")}</span></Button>
     </>}
   />}>
     <title>{title}</title>
@@ -118,26 +120,15 @@ export function AdminBookingPage() {
           <Textarea {...props} rows={4} />
         </FormLabel>
       }
-      return <fieldset className="flex min-w-0 flex-col gap-7 md:gap-0">
+      return <fieldset className="flex min-w-0 flex-col gap-7 md:gap-0" disabled={readOnly}>
         <BookingPageFormState form={form} saved={adminBookingPageFormSchema.parse(data.values)} onChange={setFormState} />
         <div className="min-w-0 md:order-1 [&>section:first-child]:pt-0">
           <BookingPageSection title={t("adminBookingPage.general")} description={t("adminBookingPage.generalDescription")}>
-            <BookingPageImage accentColor={form.value("accentColor")} organization={data.organization} imageKey={data.values.imageKey} imageUrl={data.imageUrl} enabled={data.imageUploadEnabled} disabled={false} />
-            {!data.bookingEnabled ? <Alert variant="info"><AlertDescription>{t("adminBookingPage.bookingDisabled")}</AlertDescription></Alert> : null}
-            <BookingPageSwitch name="isActive" checked={data.values.isActive} disabled={false} />
+            <BookingPageImage accentColor={data.values.accentColor} organization={data.organization} imageKey={data.values.imageKey} imageUrl={data.imageUrl} enabled={data.imageUploadEnabled} disabled={readOnly} />
+            <BookingPageSwitch name="isActive" checked={data.values.isActive && !readOnly} disabled={readOnly} />
+            <BookingPageSwitch name="showRecentBookings" checked={data.values.showRecentBookings} disabled={readOnly} />
             {text("description")}
-            <FormLabel label={t("adminBookingPage.accentColor")} description={t("adminBookingPage.accentColorDescription")} error={form.error("accentColor")}>
-              <AccentColorSelect
-                disabled={false}
-                inputRef={form.getControlProps("accentColor").ref}
-                invalid={Boolean(form.error("accentColor"))}
-                label={t("adminBookingPage.accentColor")}
-                name={form.getControlProps("accentColor").name}
-                onBlur={form.getControlProps("accentColor").onBlur}
-                onChange={form.getControlProps("accentColor").onChange}
-                value={form.value("accentColor")}
-              />
-            </FormLabel>
+            <BookingPageAccentColor disabled={readOnly} value={data.values.accentColor} />
             <FormLabel label={t("adminBookingPage.url")} description={t("adminBookingPage.urlDescription")} error={form.error("slug")}>
               <InputGroup>
                 <InputGroupInput name={form.getControlProps("slug").name} value={form.value("slug")} onChange={(event) => form.getControlProps("slug").onChange(event.target.value)} onBlur={form.getControlProps("slug").onBlur} ref={form.getControlProps("slug").ref} aria-invalid={Boolean(form.error("slug"))} autoCapitalize="none" autoComplete="off" spellCheck={false} type="text" />
@@ -147,13 +138,13 @@ export function AdminBookingPage() {
           </BookingPageSection>
           <Separator />
           <BookingPageSection title={t("adminBookingPage.services")} description={t("adminBookingPage.servicesDescription")}>
-            <BookingPageServices {...form.getControlProps("serviceIds")} hiddenServiceIds={form.value("hiddenServiceIds")} onHiddenServiceIdsChange={form.getControlProps("hiddenServiceIds").onChange} inputRef={form.getControlProps("serviceIds").ref} label={t("adminBookingPage.visibleServices")} description={t("adminBookingPage.serviceSelectionHint")} items={data.services} error={form.error("serviceIds") || form.error("hiddenServiceIds")} disabled={false} />
+            <BookingPageServices {...form.getControlProps("serviceIds")} hiddenServiceIds={form.value("hiddenServiceIds")} onHiddenServiceIdsChange={form.getControlProps("hiddenServiceIds").onChange} inputRef={form.getControlProps("serviceIds").ref} label={t("adminBookingPage.visibleServices")} description={t("adminBookingPage.serviceSelectionHint")} items={data.services} error={form.error("serviceIds") || form.error("hiddenServiceIds")} disabled={readOnly} />
             {data.services.length === 0 ? <Alert variant="info"><AlertDescription>{t("adminBookingPage.noServices")}</AlertDescription></Alert> : null}
           </BookingPageSection>
           <Separator />
           <BookingPageSection title={t("adminBookingPage.staff")} description={t("adminBookingPage.staffDescription")}>
-            <BookingPageChoices {...form.getControlProps("staffIds")} inputRef={form.getControlProps("staffIds").ref} label={t("adminBookingPage.visibleStaff")} description={t("adminBookingPage.staffSelectionHint")} items={data.staff} error={form.error("staffIds")} disabled={false} />
-            <BookingPageSwitch name="allowStaffSelection" checked={data.values.allowStaffSelection} disabled={false} />
+            <BookingPageChoices {...form.getControlProps("staffIds")} inputRef={form.getControlProps("staffIds").ref} label={t("adminBookingPage.visibleStaff")} description={t("adminBookingPage.staffSelectionHint")} items={data.staff} error={form.error("staffIds")} disabled={readOnly} />
+            <BookingPageSwitch name="allowStaffSelection" checked={data.values.allowStaffSelection} disabled={readOnly} />
           </BookingPageSection>
           <Separator />
           <BookingPageSection title={t("adminBookingPage.confirmation")} description={t("adminBookingPage.confirmationDescription")}>

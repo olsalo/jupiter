@@ -11,7 +11,7 @@ import { Button } from "~/components/ui/button"
 import { useIsMobile } from "~/lib/hooks"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
-import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
+import { useOrganizationPermission, useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
 
 function useCategoryState() {
   const { t } = useTranslation("services")
@@ -35,6 +35,7 @@ function useCategoryState() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const canManage = useOrganizationPermission({ services: ["configure"] })
+  const showManage = useOrganizationRolePermission({ services: ["configure"] })
   const serviceDeletePending = useIsMutating({ mutationKey: trpc.service.delete.mutationOptions().mutationKey }) > 0
   const removeCategory = useMutation(trpc.service.deleteCategory.mutationOptions({
     onSuccess: async (_result, { id }) => {
@@ -57,7 +58,7 @@ function useCategoryState() {
     setCategoryOpen(true)
   }
 
-  return { services, categories, categoryId, setCategoryId, categoryOptions, selectedCategory, canManage, serviceDeletePending, removeCategory, editCategory: () => openCategory("edit"), createCategory: () => openCategory("create"), categoryOpen, setCategoryOpen, categoryFlow, categoryMode, deleteTarget, setDeleteTarget, deleteOpen, setDeleteOpen }
+  return { services, categories, categoryId, setCategoryId, categoryOptions, selectedCategory, canManage, showManage, serviceDeletePending, removeCategory, editCategory: () => openCategory("edit"), createCategory: () => openCategory("create"), categoryOpen, setCategoryOpen, categoryFlow, categoryMode, deleteTarget, setDeleteTarget, deleteOpen, setDeleteOpen }
 }
 
 const ServiceCategoryContext = createContext<ReturnType<typeof useCategoryState> | null>(null)
@@ -82,13 +83,13 @@ export function ServiceCategoryControls() {
   const { t } = useTranslation("services")
   const controlsRef = useRef<HTMLDivElement>(null)
   const isMobile = useIsMobile()
-  const { services, categories, categoryId, setCategoryId, categoryOptions, selectedCategory, canManage, serviceDeletePending, removeCategory, editCategory, createCategory, setDeleteTarget, setDeleteOpen } = useServiceCategoryControls()
+  const { services, categories, categoryId, setCategoryId, categoryOptions, selectedCategory, canManage, showManage, serviceDeletePending, removeCategory, editCategory, createCategory, setDeleteTarget, setDeleteOpen } = useServiceCategoryControls()
   const pending = removeCategory.isPending || serviceDeletePending
   return <div className="flex w-full min-w-0 max-w-full items-center gap-2 md:w-auto md:flex-row-reverse" data-slot="service-category-controls" ref={controlsRef}>
-    <ServiceCategoryMenu categories={categoryOptions} totalCount={services.data?.length ?? 0} value={categoryId} onValueChange={setCategoryId} onCreate={createCategory} canManage={canManage} disabled={categories.isPending || pending} popupAnchor={isMobile ? controlsRef : undefined} />
-    {canManage && selectedCategory ? <div className="flex shrink-0 items-center gap-2">
-      <Button aria-label={t("editCategoryButton")} className="max-sm:size-9 max-sm:p-0" disabled={!services.isSuccess || pending} onClick={editCategory} size="lg" type="button" variant="outline"><Icon aria-hidden={true} name="edit" size={16} /><span className="hidden sm:inline">{t("editCategoryButton")}</span></Button>
-      <Button aria-label={t("deleteCategoryButton")} className="max-sm:size-9 max-sm:p-0" disabled={pending} onClick={() => { setDeleteTarget({ id: selectedCategory.id, name: selectedCategory.name }); setDeleteOpen(true) }} size="lg" type="button" variant="destructive-outline"><Icon aria-hidden={true} name="trash" size={16} /><span className="hidden sm:inline">{t("deleteCategoryButton")}</span></Button>
+    <ServiceCategoryMenu categories={categoryOptions} totalCount={services.data?.length ?? 0} value={categoryId} onValueChange={setCategoryId} onCreate={createCategory} canManage={showManage} createDisabled={!canManage} disabled={categories.isPending || pending} popupAnchor={isMobile ? controlsRef : undefined} />
+    {showManage && selectedCategory ? <div className="flex shrink-0 items-center gap-2">
+      <Button aria-label={t("editCategoryButton")} className="max-sm:size-9 max-sm:p-0" disabled={!canManage || !services.isSuccess || pending} onClick={editCategory} size="lg" type="button" variant="outline"><Icon aria-hidden={true} name="edit" size={16} /><span className="hidden sm:inline">{t("editCategoryButton")}</span></Button>
+      <Button aria-label={t("deleteCategoryButton")} className="max-sm:size-9 max-sm:p-0" disabled={!canManage || pending} onClick={() => { setDeleteTarget({ id: selectedCategory.id, name: selectedCategory.name }); setDeleteOpen(true) }} size="lg" type="button" variant="destructive-outline"><Icon aria-hidden={true} name="trash" size={16} /><span className="hidden sm:inline">{t("deleteCategoryButton")}</span></Button>
     </div> : null}
   </div>
 }

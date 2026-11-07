@@ -2,9 +2,10 @@ import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouteLoaderData } from "react-router"
 
+import { localizationDefaults } from "~/lib/localization/defaults"
 import { useAppContext } from "~/lib/hooks/use-app-context"
 import type { loader as overviewLoader } from "~/routes/overview"
-import { defaultTimeZone } from "~/lib/localization/format-preference"
+
 import { getGreetingPeriod } from "~/lib/overview/overview-time"
 
 export function useOverviewGreeting() {
@@ -22,7 +23,7 @@ export function useOverviewGreeting() {
 
   const date = now ?? overview?.greetingDate
   const period = date
-    ? getGreetingPeriod(new Date(date), root?.organizationTimezone ?? defaultTimeZone)
+    ? getGreetingPeriod(new Date(date), root?.organizationTimezone ?? localizationDefaults.timezone)
     : "morning"
   const name = root?.user?.name?.trim().split(/\s+/)[0]
 

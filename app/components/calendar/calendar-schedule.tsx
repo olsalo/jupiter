@@ -37,7 +37,7 @@ export function CalendarSchedule() {
   const { preview: bookingPreview, setPreview, dragUpdate, setDragUpdate, dragging } = useCalendarBookingPreview()
   const previousCreation = useRef<{ preview: typeof bookingPreview; dragUpdate: typeof dragUpdate } | null>(null)
   const state = useCalendarState()
-  const { organization, staff, bookableMembers, selectedMember, mode, selected, startMinute, endMinute, timeZone, formatPreference, now } = state
+  const { organization, locations, staff, bookableMembers, selectedMember, mode, selected, startMinute, endMinute, timeZone, formatPreference, now } = state
   const preview = bookingPreview && (!selectedMember || bookingPreview.member.id === selectedMember.id) ? bookingPreview : null
   const isCreateFlow = location.pathname === "/calendar/new" || (location.pathname === "/calendar" && Boolean(bookingPreview && !bookingPreview.appointmentId))
   const days = useMemo(() => mode === "day" ? [selected] : state.days, [mode, selected, state.days])
@@ -71,14 +71,14 @@ export function CalendarSchedule() {
       ...(!interacting ? [queryClient.invalidateQueries({ ...trpc.appointment.get.queryFilter(), refetchType: "none" })] : []),
     ])
   }, [bookingVersion, rangeKey, interacting, queryClient, trpc])
-  const queries = [organization, staff, scheduleQuery, bookings]
+  const queries = [organization, locations, staff, scheduleQuery, bookings]
   const showLoadError = queries.some((query) => query.isError && query.data === undefined)
   const showRefreshError = queries.some((query) => query.isError && query.data !== undefined)
   const isFetching = queries.some((query) => query.isFetching)
   const retry = () => void Promise.all(queries.map((query) => query.refetch()))
 
   const timelineData = useMemo(() => {
-    if (bookings.data === undefined || staff.data === undefined || scheduleQuery.data === undefined) return null
+    if (locations.data === undefined || bookings.data === undefined || staff.data === undefined || scheduleQuery.data === undefined) return null
     const members = selectedMember ? [selectedMember] : bookableMembers
     const visibleBookings = selectedMember ? bookings.data.filter((booking) => booking.staffMember?.id === selectedMember.id) : bookings.data
     const appointments = savedAppointments.filter((appointment) => appointment.id !== preview?.appointmentId).map((appointment) => ({ ...appointment, movable: appointment.movable && canEdit }))
@@ -105,7 +105,7 @@ export function CalendarSchedule() {
     }
     const schedule = getCalendarSchedule({ days, members: calendarMembers, rules: scheduleQuery.data, timeZone, defaultStartMinute: startMinute, defaultEndMinute: endMinute, appointments: [...savedAppointments, ...appointments.filter((appointment) => appointment.draft)], includeBusinessHours: selectedMember === undefined })
     return { calendarMembers, appointments, conflictAppointments, schedule }
-  }, [bookings.data, staff.data, scheduleQuery.data, selectedMember, bookableMembers, savedAppointments, savedCalendarAppointments, preview, days, timeZone, startMinute, endMinute, canEdit, canCreate, isCreateFlow, getBookingIssues, t])
+  }, [locations.data, bookings.data, staff.data, scheduleQuery.data, selectedMember, bookableMembers, savedAppointments, savedCalendarAppointments, preview, days, timeZone, startMinute, endMinute, canEdit, canCreate, isCreateFlow, getBookingIssues, t])
 
   if (showLoadError) return <CalendarView alerts={<Alert variant="error">
     <AlertTitle>{t("calendarGrid.loadError")}</AlertTitle>

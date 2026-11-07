@@ -1,4 +1,5 @@
-import { businessHolidayWindows } from "~/lib/business/business-holidays"
+import { localizationDefaults } from "~/lib/localization/defaults"
+import { businessHolidayWindows } from "~/lib/business/business-holidays.server"
 import { inheritAvailabilityWindows, subtractAvailabilityWindows } from "~/lib/booking/availability-windows"
 import { blockingAppointmentStatuses } from "~/lib/booking/appointment-status"
 import { calendarIntervalMinutes } from "~/lib/calendar/time-step"
@@ -87,7 +88,7 @@ export async function getAvailableSlots(db: Database, organizationId: string, in
       startsAt: { lt: conflictTo }, endsAt: { gt: conflictFrom },
       OR: [{ status: { not: "PENDING" } }, { expiresAt: null }, { expiresAt: { gt: now } }],
     }, include: { services: true } })
-  const holidays = businessHolidayWindows(settings?.businessHolidays, conflictFrom, conflictTo, settings?.timezone ?? "Europe/Helsinki")
+  const holidays = businessHolidayWindows(settings?.businessHolidays, conflictFrom, conflictTo, settings?.timezone ?? localizationDefaults.timezone, settings?.countryCode ?? undefined)
   const slots: Slot[] = []
   const preferredStarts = new Set<string>()
   const slotKey = (slot: Slot) => `${slot.startsAt}/${slot.staffMemberId}/${slot.locationId ?? ""}`
@@ -104,7 +105,7 @@ export async function getAvailableSlots(db: Database, organizationId: string, in
       const windowsFor = (rule: typeof rules[number]) => rule.isActive ? localWindows(input.from, input.to, rule.timezone, rule.dayOfWeek, rule.startMinute, rule.endMinute)
         .map((window) => ({ start: Math.max(window.start, rule.validFrom ? +rule.validFrom : -Infinity), end: Math.min(window.end, rule.validUntil ? +rule.validUntil : Infinity) }))
         .filter((window) => window.end > window.start) : []
-      const businessWindows = businessRules.length ? businessRules.flatMap(windowsFor) : [1, 2, 3, 4, 5].flatMap((day) => localWindows(input.from, input.to, settings?.timezone ?? "Europe/Helsinki", day, (settings?.defaultStartHour ?? 8) * 60, (settings?.defaultEndHour ?? 18) * 60))
+      const businessWindows = businessRules.length ? businessRules.flatMap(windowsFor) : [1, 2, 3, 4, 5].flatMap((day) => localWindows(input.from, input.to, settings?.timezone ?? localizationDefaults.timezone, day, (settings?.defaultStartHour ?? 8) * 60, (settings?.defaultEndHour ?? 18) * 60))
       const windows = inheritAvailabilityWindows(businessWindows, ownRules.map((rule) => ({ windows: windowsFor(rule), validFrom: rule.validFrom ? +rule.validFrom : null, validUntil: rule.validUntil ? +rule.validUntil : null })))
       const relevantOverrides = overrides.filter(applies)
       const extraWindows = relevantOverrides.filter((override) => override.isAvailable).map((override) => ({ start: +override.startsAt, end: +override.endsAt }))
@@ -136,7 +137,7 @@ export async function getAvailableSlots(db: Database, organizationId: string, in
   }
   const days = new Map<string, Slot[]>()
   for (const slot of slots.sort((a, b) => a.startsAt.localeCompare(b.startsAt) || a.staffMemberId.localeCompare(b.staffMemberId))) {
-    const date = localDate(new Date(slot.startsAt), settings?.bookingTimezone ?? settings?.timezone ?? "Europe/Helsinki")
+    const date = localDate(new Date(slot.startsAt), settings?.bookingTimezone ?? settings?.timezone ?? localizationDefaults.timezone)
     days.set(date, [...(days.get(date) ?? []), slot])
   }
   return { days: [...days].map(([date, slots]) => ({ date, slots: options.preferAdjacentStarts

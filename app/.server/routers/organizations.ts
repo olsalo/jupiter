@@ -1,3 +1,4 @@
+import { localizationDefaults } from "~/lib/localization/defaults"
 import { communicationsSettingsSchema, readCommunicationsSettings } from "~/lib/schemas/communications"
 import { appointmentSettingsInput as settingsInput } from "~/lib/schemas/organization"
 import { refreshReminders } from "../services/notifications"
@@ -6,18 +7,24 @@ import { schedulingLock } from "../services/scheduling"
 import type { TRPCRouterRecord } from "@trpc/server"
 import { TRPCError } from "@trpc/server"
 
-import { permissionProcedure, organizationProcedure, protectedProcedure } from "../trpc"
+import { settingsPermissionProcedure as permissionProcedure, organizationProcedure, protectedProcedure } from "../trpc"
 import { throwIfForcedServerError } from "../forced-error"
 import { generateId } from "~/lib/database/id"
 import { organizationSettingsFormSchema } from "~/lib/schemas/organization"
 import { bookingSettingsSchema, defaultBookingSettings } from "~/lib/schemas/booking-settings"
 import { z } from "~/lib/validation/zod"
+import { assertOrganizationSubscription, hasActiveOrganizationSubscription, isBillingEnforced } from "~/lib/billing/billing.server"
 
 import { Temporal } from "@js-temporal/polyfill"
-import { readBusinessExceptions, readHolidaySettings, upcomingBusinessHolidays } from "~/lib/business/business-holidays"
-import { businessExceptionSchema, businessHolidaySchema, businessScheduleSchema } from "~/lib/schemas/business-schedule"
+import { readBusinessExceptions, readHolidaySettings } from "~/lib/business/business-holidays"
+import { upcomingBusinessHolidays } from "~/lib/business/business-holidays.server"
+import { businessExceptionSchema, businessHolidaySchema, businessScheduleSchema, createBusinessScheduleSchema } from "~/lib/schemas/business-schedule"
 
 export const organizationsRouter = {
+  businessHolidays: permissionProcedure({ business: ["configure"], availability: ["manage"] }).query(async ({ ctx }) => {
+    const settings = await ctx.prisma.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } })
+    return upcomingBusinessHolidays(settings?.businessHolidays, Temporal.Now.plainDateISO(settings?.timezone ?? localizationDefaults.timezone).toString(), settings?.countryCode ?? undefined)
+  }),
   communicationsSettings: permissionProcedure({ communications: ["configure"] }).query(async ({ ctx }) => {
     throwIfForcedServerError()
     return readCommunicationsSettings(await ctx.prisma.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } }))
@@ -33,24 +40,29 @@ export const organizationsRouter = {
   bookingSettings: permissionProcedure({ bookingSettings: ["configure"] }).query(async ({ ctx }) => {
     throwIfForcedServerError()
     const settings = await ctx.prisma.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } })
-    return bookingSettingsSchema.parse(settings ?? defaultBookingSettings)
+    const page = (settings?.defaultBookingPageId ? await ctx.prisma.bookingPage.findFirst({ where: { id: settings.defaultBookingPageId, organizationId: ctx.organizationId } }) : null)
+      ?? await ctx.prisma.bookingPage.findFirst({ where: { organizationId: ctx.organizationId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] })
+    const values = bookingSettingsSchema.parse(settings ?? defaultBookingSettings)
+    const subscriptionActive = !isBillingEnforced() || await hasActiveOrganizationSubscription({ organizationId: ctx.organizationId, db: ctx.prisma })
+    return { ...values, bookingEnabled: subscriptionActive && values.bookingEnabled && (page?.isActive ?? true) }
   }),
   updateBookingSettings: permissionProcedure({ bookingSettings: ["configure"] }).input(bookingSettingsSchema.partial()).mutation(({ ctx, input }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)
+    if (input.bookingEnabled === true) await assertOrganizationSubscription(ctx.organizationId, tx)
     const settings = await tx.organizationSettings.upsert({
       where: { organizationId: ctx.organizationId },
       create: { organizationId: ctx.organizationId, ...input },
       update: input,
     })
+    if (input.bookingEnabled !== undefined) {
+      await tx.bookingPage.updateMany({ where: { organizationId: ctx.organizationId }, data: { isActive: input.bookingEnabled } })
+    }
     return bookingSettingsSchema.parse(settings)
   })),
   saveBusinessException: permissionProcedure({ business: ["configure"], availability: ["manage"] }).input(businessExceptionSchema).mutation(({ ctx, input }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)
     const current = await tx.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } })
     const saved = readBusinessExceptions(current?.businessHolidays)
-    if (saved.some((entry) => entry.id !== input.id && entry.date === input.date)) {
-      throw new TRPCError({ code: "BAD_REQUEST", cause: new z.ZodError([{ code: "custom", path: ["date"], message: ctx.locale === "fi" ? "Tälle päivälle on jo poikkeus" : "There is already an exception on this date" }]) })
-    }
     if (saved.length >= 100 && !saved.some((entry) => entry.id === input.id)) throw new TRPCError({ code: "BAD_REQUEST", cause: new z.ZodError([{ code: "custom", path: ["date"], message: ctx.locale === "fi" ? "Poista ensin vanha poikkeus" : "Remove an old exception first" }]) })
     const exceptions = [...saved.filter((entry) => entry.id !== input.id), input].sort((a, b) => a.date.localeCompare(b.date))
     const businessHolidays = { version: 2, holidays: readHolidaySettings(current?.businessHolidays), exceptions }
@@ -73,11 +85,11 @@ export const organizationsRouter = {
       const holidays = saved.some((holiday) => holiday.id === input.id)
         ? saved.map((holiday) => holiday.id === input.id ? input : holiday)
         : [...saved, input]
-      const today = Temporal.Now.plainDateISO(current?.timezone ?? "Europe/Helsinki").toString()
-      const upcoming = upcomingBusinessHolidays({ holidays }, today)
+      const today = Temporal.Now.plainDateISO(current?.timezone ?? localizationDefaults.timezone).toString()
+      const upcoming = upcomingBusinessHolidays({ holidays }, today, current?.countryCode ?? undefined)
       const validation = businessScheduleSchema.safeParse({ workingHours: [], breaks: [], holidays: upcoming })
       if (!validation.success) {
-        throw new TRPCError({ code: "BAD_REQUEST", cause: new z.ZodError(validation.error.issues.map((issue) => ({ ...issue, path: [issue.path.at(-1) === "date" ? "date" : "name"] }))) })
+        throw new TRPCError({ code: "BAD_REQUEST", cause: new z.ZodError(validation.error.issues.map((issue) => ({ ...issue, path: [["date", "endDate", "startMinute", "endMinute"].includes(String(issue.path.at(-1))) ? String(issue.path.at(-1)) : "name"] }))) })
       }
       const businessHolidays = { version: 2, holidays, exceptions: readBusinessExceptions(current?.businessHolidays) }
       await tx.organizationSettings.upsert({ where: { organizationId: ctx.organizationId }, create: { organizationId: ctx.organizationId, businessHolidays }, update: { businessHolidays } })
@@ -86,10 +98,13 @@ export const organizationsRouter = {
   updateBusinessSchedule: permissionProcedure({ business: ["configure"], availability: ["manage"] }).input(businessScheduleSchema).mutation(({ ctx, input }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)
     const current = await tx.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } })
+    const suggested = upcomingBusinessHolidays(current?.businessHolidays, Temporal.Now.plainDateISO(current?.timezone ?? localizationDefaults.timezone).toString(), current?.countryCode ?? undefined)
+    const validation = createBusinessScheduleSchema(suggested).safeParse(input)
+    if (!validation.success) throw new TRPCError({ code: "BAD_REQUEST", cause: validation.error })
     const businessHolidays = { version: 2, holidays: input.holidays, exceptions: readBusinessExceptions(current?.businessHolidays) }
     const scope = { organizationId: ctx.organizationId, staffMemberId: null, locationId: null, isBreak: false }
     await tx.availabilityRule.deleteMany({ where: scope })
-    if (input.workingHours.length) await tx.availabilityRule.createMany({ data: input.workingHours.map((rule) => ({ ...scope, ...rule, timezone: current?.timezone ?? "Europe/Helsinki" })) })
+    if (input.workingHours.length) await tx.availabilityRule.createMany({ data: input.workingHours.map((rule) => ({ ...scope, ...rule, timezone: current?.timezone ?? localizationDefaults.timezone })) })
     await tx.organizationSettings.upsert({ where: { organizationId: ctx.organizationId }, create: { organizationId: ctx.organizationId, businessHolidays }, update: { businessHolidays } })
     return input
   })),
@@ -99,6 +114,7 @@ export const organizationsRouter = {
   })),
   updateSettings: permissionProcedure({ business: ["configure"], bookingSettings: ["configure"], communications: ["configure"] }).input(settingsInput).mutation(({ ctx, input }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)
+    if (input.bookingEnabled === true) await assertOrganizationSubscription(ctx.organizationId, tx)
     const current = await tx.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } })
     const startHour = input.defaultStartHour ?? current?.defaultStartHour ?? 8
     const endHour = input.defaultEndHour ?? current?.defaultEndHour ?? 18
@@ -166,7 +182,7 @@ export const organizationsRouter = {
       country: (organization.settings?.countryCode ?? "FI").toUpperCase(),
       currency: organization.settings?.currency ?? "EUR",
       location: (organization.settings?.countryCode ?? "fi").toLowerCase(),
-      timezone: organization.settings?.timezone ?? "Europe/Helsinki",
+      timezone: organization.settings?.timezone ?? localizationDefaults.timezone,
       canManage: isManager(member),
     }
   }),

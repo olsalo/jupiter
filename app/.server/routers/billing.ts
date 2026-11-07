@@ -4,7 +4,6 @@ import { z } from "zod"
 
 import { protectedProcedure } from "../trpc"
 import {
-  changeOrganizationBillingInterval,
   createOrganizationCancellationPortal,
   createOrganizationPaymentMethodPortal,
   getOrganizationNextCharge,
@@ -14,8 +13,36 @@ import {
   setOrganizationDefaultPaymentMethod,
 } from "~/lib/auth/server"
 import { hasOrganizationPermission } from "~/lib/auth/permissions"
+import { billingPlanSchema } from "~/lib/schemas/billing"
+import { createReadOnlyBillingPortal, getBillingPlanState, saveBillingPlan } from "~/lib/billing/subscriptions.server"
+import { isDemoMode } from "~/lib/billing/billing.server"
+
+const billingProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const organizationId = requireOrganizationId(ctx.organizationId)
+  const member = await ctx.prisma.member.findFirst({ where: { organizationId, userId: ctx.user.id }, select: { role: true } })
+  if (!hasOrganizationPermission(member?.role, { billing: ["manage"] })) throw new TRPCError({ code: "FORBIDDEN" })
+  return next({ ctx: { ...ctx, organizationId } })
+})
+
+function safeReturnUrl(value: string) {
+  const url = new URL(value)
+  if (url.origin !== new URL(process.env.BETTER_AUTH_URL ?? "http://localhost:5175").origin) throw new TRPCError({ code: "BAD_REQUEST" })
+  return url.href
+}
 
 export const billingRouter = {
+  plan: billingProcedure.query(({ ctx }) => getBillingPlanState(ctx.organizationId)),
+  bookableMembers: billingProcedure.query(({ ctx }) => ctx.prisma.staffMember.findMany({
+    where: { organizationId: ctx.organizationId, isActive: true, acceptsAppointments: true },
+    select: { id: true, name: true },
+    orderBy: [{ name: "asc" }, { id: "asc" }],
+  })),
+  savePlan: billingProcedure.input(billingPlanSchema.and(z.object({ returnUrl: z.string().url(), cancelUrl: z.string().url(), locale: z.enum(["en", "fi"]) }))).mutation(({ ctx, input }) => {
+    const demoMode = isDemoMode()
+    return saveBillingPlan({ organizationId: ctx.organizationId, email: ctx.user.email, input, returnUrl: demoMode ? "" : safeReturnUrl(input.returnUrl), cancelUrl: demoMode ? "" : safeReturnUrl(input.cancelUrl), locale: input.locale })
+  }),
+  portal: billingProcedure.input(z.object({ returnUrl: z.string().url(), locale: z.enum(["en", "fi"]) })).mutation(({ ctx, input }) =>
+    createReadOnlyBillingPortal(ctx.organizationId, safeReturnUrl(input.returnUrl), input.locale)),
   subscriptions: protectedProcedure.query(async ({ ctx }) => {
     const organizationId = requireOrganizationId(ctx.organizationId)
     const member = await ctx.prisma.member.findFirst({
@@ -49,49 +76,6 @@ export const billingRouter = {
 
     return getOrganizationNextCharge({ organizationId })
   }),
-
-  changeInterval: protectedProcedure
-    .input(z.object({ interval: z.enum(["month", "year"]) }))
-    .mutation(async ({ ctx, input }) => {
-      const organizationId = requireOrganizationId(ctx.organizationId)
-      const member = await ctx.prisma.member.findFirst({
-        select: { role: true },
-        where: {
-          organizationId,
-          userId: ctx.user.id,
-        },
-      })
-
-      if (!hasOrganizationPermission(member?.role, { billing: ["manage"] })) {
-        throw new TRPCError({ code: "FORBIDDEN" })
-      }
-
-      try {
-        const result = await changeOrganizationBillingInterval({
-          interval: input.interval,
-          organizationId,
-        })
-
-        if (!result) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "The subscription or requested Stripe price was not found",
-          })
-        }
-
-        return result
-      } catch (error) {
-        if (error instanceof TRPCError) {
-          throw error
-        }
-
-        throw new TRPCError({
-          cause: error,
-          code: "BAD_REQUEST",
-          message: "Unable to change the billing interval",
-        })
-      }
-    }),
 
   paymentMethods: protectedProcedure.query(async ({ ctx }) => {
     const organizationId = requireOrganizationId(ctx.organizationId)

@@ -21,7 +21,7 @@ export function BusinessSettingsHeader({ name, disabled = false }: { name?: stri
       </div>
       <div className="min-w-0 overflow-x-auto overflow-y-hidden pb-px [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <TabsList aria-label={t("settings.business")} className="flex w-max min-w-full justify-start gap-0 bg-transparent p-0" variant="underline">
-          {(["general", "location", "opening-hours", "holidays"] as const).map((tab) => <TabsTab className="h-10 min-w-0 grow-0 shrink-0 basis-auto rounded-none px-3 text-xs leading-4 whitespace-nowrap sm:text-sm" disabled={disabled} key={tab} value={tab}>{t(`businessSchedule.tabs.${tab}`)}</TabsTab>)}
+          {(["general", "location", "opening-hours", "exceptions", "holidays"] as const).map((tab) => <TabsTab className="h-10 min-w-0 grow-0 shrink-0 basis-auto rounded-none px-3 text-xs leading-4 whitespace-nowrap sm:text-sm" disabled={disabled} key={tab} value={tab}>{t(`businessSchedule.tabs.${tab}`)}</TabsTab>)}
         </TabsList>
       </div>
     </header>

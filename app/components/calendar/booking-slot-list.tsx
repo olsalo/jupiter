@@ -2,12 +2,13 @@ import { useTranslation } from "react-i18next"
 import { memo, useMemo } from "react"
 import { TZDate } from "react-day-picker"
 
+import { localizationDefaults } from "~/lib/localization/defaults"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
 import { Separator } from "~/components/ui/separator"
 import { Tooltip, TooltipPopup, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip"
 import { UserAvatar } from "~/components/data-display/user-avatar"
-import { defaultTimeZone, type FormatPreference } from "~/lib/localization/format-preference"
+import { type FormatPreference } from "~/lib/localization/format-preference"
 import { cn } from "~/lib/utils"
 
 type BookingSlot = { startsAt: string; endsAt: string; staffMemberId: string; locationId: string | null }
@@ -23,7 +24,7 @@ const dayPeriods = [
 
 export const bookingSlotKey = (slot: Pick<BookingSlot, "startsAt" | "staffMemberId" | "locationId">) => `${slot.startsAt}/${slot.staffMemberId}/${slot.locationId ?? ""}`
 
-export function BookingSlotList({ days, members, selection, currentSlotKey, invalid, disabled = false, format, onSelect, showDateHeadings = true, timeZone = defaultTimeZone, formatPreference = "eu" }: {
+export function BookingSlotList({ days, members, selection, currentSlotKey, invalid, disabled = false, format, onSelect, showDateHeadings = true, timeZone = localizationDefaults.timezone, formatPreference = "eu" }: {
   days: { date: string; slots: BookingSlot[] }[]
   members: BookingMember[]
   selection: string

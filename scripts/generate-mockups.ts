@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url"
 const scriptDirectory = fileURLToPath(new URL(".", import.meta.url))
 const projectDirectory = resolve(scriptDirectory, "..")
 const publicDirectory = resolve(projectDirectory, "public")
-const apiUrl = process.env.MOCKUP_API_URL ?? "http://localhost:3000/api/mockup"
+const apiUrl = process.env.MOCKUP_API_URL ?? "http://localhost:3000/api/mockup/1"
 const token = process.env.MOCKUP_API_TOKEN ?? "123"
 
 const variants = [

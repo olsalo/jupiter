@@ -18,13 +18,22 @@ export const membershipContext = createContext<AuthMembership>(null)
 export const authMiddleware: MiddlewareFunction<Response> = async ({
   context,
   request,
-}) => {
-  const session = await auth.api.getSession({
+}, next) => {
+  const { response: session, headers } = await auth.api.getSession({
     headers: request.headers,
+    returnHeaders: true,
   })
 
   context.set(sessionContext, session)
   context.set(userContext, session?.user ?? null)
+
+  const response = await next()
+  const responseCookieNames = new Set(response.headers.getSetCookie().map((cookie) => cookie.split("=", 1)[0]))
+  for (const cookie of headers.getSetCookie()) {
+    // Keep downstream cookie changes, including sign-out, authoritative.
+    if (!responseCookieNames.has(cookie.split("=", 1)[0])) response.headers.append("Set-Cookie", cookie)
+  }
+  return response
 }
 
 export const organizationMiddleware: MiddlewareFunction<Response> = async ({ context }) => {

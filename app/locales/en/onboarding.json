@@ -3,24 +3,37 @@
     "title": "Set up your business",
     "description": "Add your name and business details to get started"
   },
-  "loading": "Loading setup…",
   "title": "Set up your business",
   "description": "You can change these details later",
+  "pageTitles": {
+    "business": "Business details",
+    "location": "Location details",
+    "availability": "Opening hours",
+    "holidays": "Holiday hours",
+    "subscription": "Choose your plan"
+  },
   "progress": {
     "label": "Setup steps",
     "step": "Step {{current}} of {{total}}"
   },
   "name": {
     "label": "Your name",
-    "placeholder": "Jane Doe"
+    "placeholder": "Emma Wilson"
   },
   "businessName": {
     "label": "Business name",
-    "placeholder": "Acme Studio"
+    "placeholder": "Studio Helmi",
+    "description": "Customers see this name on your booking page and in booking emails"
   },
   "location": {
     "label": "Country",
     "placeholder": "Choose a country"
+  },
+  "locationStep": {
+    "title": "Location details",
+    "description": "Customers see this address and contact information",
+    "phone": "Phone (optional)",
+    "email": "Email (optional)"
   },
   "timezone": {
     "label": "Time zone",
@@ -41,7 +54,7 @@
   },
   "subscription": {
     "title": "Choose your plan",
-    "description": "Try free for 14 days, then pay monthly or yearly. Cancel anytime",
+    "description": "Try free for 14 days and cancel anytime",
     "billingLabel": "Billing cycle",
     "monthly": "Monthly",
     "yearly": "Yearly",
@@ -62,7 +75,7 @@
     "description": "These hours apply to your team unless someone has their own schedule"
   },
   "holidays": {
-    "title": "Confirm your holidays",
-    "description": "Review the suggested holidays and adjust when your business is open"
+    "title": "Review your holiday hours",
+    "description": "Review the suggested closures and adjust any days with special opening hours"
   }
 }

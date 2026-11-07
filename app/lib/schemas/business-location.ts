@@ -1,4 +1,5 @@
-import countries from "~/lib/localization/data/countries.json"
+import { isOnboardingCountryCode } from "~/lib/localization/countries"
+import { phone } from "~/lib/schemas/appointments"
 import { z } from "~/lib/validation/zod"
 
 export const businessLocationSchema = z.object({
@@ -8,8 +9,8 @@ export const businessLocationSchema = z.object({
   addressLine2: z.string().trim().max(200),
   postalCode: z.string().trim().max(30),
   city: z.string().trim().max(100),
-  country: z.string().length(2).refine((value) => countries.some((country) => country.code.toUpperCase() === value)),
-  phone: z.string().trim().max(40),
+  country: z.string().trim().toUpperCase().length(2).refine(isOnboardingCountryCode),
+  phone: z.union([z.literal(""), phone]),
   email: z.string().trim().toLowerCase().pipe(z.union([z.literal(""), z.email()])),
 })
 

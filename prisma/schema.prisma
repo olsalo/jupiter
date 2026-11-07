@@ -331,6 +331,7 @@ model Invitation {
 }
 
 enum OnboardingStep {
+  location
   availability
   holidays
 }

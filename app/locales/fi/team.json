@@ -122,6 +122,7 @@
     "bookingSettingsDescription": "Salli tai estä ajanvaraukset tälle jäsenelle",
     "appEmail": "Kirjautumisen sähköposti",
     "takesAppointments": "Vastaanottaa varauksia",
+    "subscriptionRequired": "Asetuksen muuttamiseen tarvitaan aktiivinen tilaus",
     "bookableDescription": "Lisää palvelut ja työajat ennen kuin asiakkaat voivat varata ajan",
     "active": "Aktiivinen",
     "activeDescription": "Poistaminen käytöstä säilyttää varaushistorian",

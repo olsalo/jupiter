@@ -3,6 +3,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { useAppContext } from "~/lib/hooks/use-app-context"
+import { useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
 import Icon from "~/components/icons"
 import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
@@ -18,6 +19,8 @@ import type { TeamPerson } from "./team-types"
 export function TeamPersonTimeOff({ staff, canManage, self = false }: { self?: boolean; staff: NonNullable<TeamPerson["staff"]>; canManage: boolean }) {
   const { t } = useTranslation("team")
   const root = useAppContext()
+  const roleCanManage = useOrganizationRolePermission({ team: ["manage"] })
+  const showManage = canManage || (Boolean(root?.subscriptionReadOnly) && (self || roleCanManage))
   const trpc = useTRPC()
   const timeOff = useQuery(trpc.availability.getTimeOff.queryOptions({ staffMemberId: staff.id }))
   const [open, setOpen] = useState(false)
@@ -27,11 +30,12 @@ export function TeamPersonTimeOff({ staff, canManage, self = false }: { self?: b
     setFlow((value) => value + 1)
     setOpen(true)
   }
-  const addButton = <Button onClick={add} size="sm" type="button" variant="outline"><Icon aria-hidden={true} name="plus" size={16} />{t("timeOff.add")}</Button>
+  const disabled = !canManage || (Boolean(root?.subscriptionReadOnly) && !self)
+  const addButton = <Button disabled={disabled} onClick={add} size="sm" type="button" variant="outline"><Icon aria-hidden={true} name="plus" size={16} />{t("timeOff.add")}</Button>
 
   const header = <div className="flex items-start justify-between gap-4">
     <SettingsSectionHeader title={t("timeOff.tab")} description={t("timeOff.description")} />
-    {canManage ? addButton : null}
+    {showManage ? addButton : null}
   </div>
   const content = <>
     {timeOff.isPending ? <TeamPanelLoading label={t("timeOff.loading")} /> : timeOff.isError ? (
@@ -41,7 +45,7 @@ export function TeamPersonTimeOff({ staff, canManage, self = false }: { self?: b
         <EmptyHeader><EmptyMedia variant="icon"><Icon aria-hidden={true} name="calendarEvent" /></EmptyMedia><EmptyTitle>{t("timeOff.empty")}</EmptyTitle><EmptyDescription>{t(canManage ? "timeOff.emptyDescription" : "people.readOnly")}</EmptyDescription></EmptyHeader>
       </Empty>
     ) : (
-      <TeamTimeOffList canManage={canManage} entries={timeOff.data} staffMemberId={staff.id} timezone={timezone} />
+      <TeamTimeOffList canManage={showManage} disabled={disabled} self={self} entries={timeOff.data} staffMemberId={staff.id} timezone={timezone} />
     )}
     {canManage ? <TeamTimeOffDialog self={self} flow={flow} onOpenChange={setOpen} open={open} staffMemberId={staff.id} timezone={timezone} /> : null}
   </>

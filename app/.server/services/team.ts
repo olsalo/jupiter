@@ -1,4 +1,5 @@
 import { createResourceLimits } from "../resource-limits/service"
+import { assertOrganizationSubscription } from "~/lib/billing/billing.server"
 import { queuedEmailContent } from "./email-queue"
 import { hasOrganizationPermission } from "~/lib/auth/permissions"
 import { TRPCError } from "@trpc/server"
@@ -65,7 +66,7 @@ export async function createPerson(db: PrismaClient, organizationId: string, act
     if (existingMember && (!input.takesAppointments || existingMember.staffProfile)) emailConflict("alreadyMember")
     if (input.email && await tx.staffMember.findFirst({ where: { organizationId, email: { equals: input.email, mode: "insensitive" } } })) emailConflict("alreadyStaff")
     if (input.giveAppAccess && await tx.invitation.findFirst({ where: { organizationId, email: input.email, status: "pending", expiresAt: { gt: new Date() } } })) emailConflict("alreadyInvited")
-    if (!existingMember) await createResourceLimits(tx).assert(organizationId, "teamMembers")
+    if (input.takesAppointments && input.isActive) await createResourceLimits(tx).assert(organizationId, "teamMembers")
     const staff = input.takesAppointments ? await tx.staffMember.create({ data: {
       organizationId, name: input.name, email: input.email || null, phone: input.phone || null, bio: input.bio || null, timezone: input.timezone || null,
       memberId: existingMember?.id, acceptsAppointments: true, isActive: input.isActive,
@@ -79,7 +80,6 @@ export async function createPerson(db: PrismaClient, organizationId: string, act
 export async function createPersonInvitation(tx: Database, organizationId: string, actorUserId: string, input: { name: string; email: string; role: "admin" | "member"; sendEmail: boolean; staffMemberId?: string }, origin: string, locale: "en" | "fi") {
   if (await tx.invitation.findFirst({ where: { organizationId, status: "pending", expiresAt: { gt: new Date() }, OR: [{ email: input.email }, ...(input.staffMemberId ? [{ staffMemberId: input.staffMemberId }] : [])] } })) emailConflict("alreadyInvited")
   if (await tx.invitation.count({ where: { organizationId, status: "pending", expiresAt: { gt: new Date() } } }) >= 100) throw new TRPCError({ code: "FORBIDDEN", message: "There are too many pending invitations" })
-  if (!input.staffMemberId) await createResourceLimits(tx).assert(organizationId, "teamMembers")
   const organization = await tx.organization.findUniqueOrThrow({ where: { id: organizationId }, select: { name: true } })
   const invitation = await tx.invitation.create({ data: { id: generateId(), organizationId, inviterId: actorUserId, inviteeName: input.name, email: input.email, role: input.role, staffMemberId: input.staffMemberId, status: "pending", expiresAt: new Date(Date.now() + 14 * 86400000) } })
   const inviteUrl = new URL(`/invite/${encodeURIComponent(invitation.id)}`, origin).toString()
@@ -113,12 +113,14 @@ export async function updatePerson(db: PrismaClient, organizationId: string, inp
   return db.$transaction(async (tx) => {
     await schedulingLock(tx, organizationId)
     const person = await personData(tx, organizationId, input.id)
+    if ((person.staff?.acceptsAppointments ?? false) !== input.takesAppointments) await assertOrganizationSubscription(organizationId, tx)
     if (!person.staff && !input.takesAppointments && !options.accountUserId) throw new TRPCError({ code: "BAD_REQUEST", message: "Enable appointments to create a staff profile" })
     await validateAssignments(tx, organizationId, input.serviceIds, input.locationIds)
     const email = person.member?.user.email ?? input.email
     if (email && await tx.staffMember.findFirst({ where: { organizationId, id: { not: person.staff?.id }, email: { equals: email, mode: "insensitive" } } })) emailConflict("alreadyStaff")
     if (person.invitation && email !== person.email) throw new TRPCError({ code: "BAD_REQUEST", message: "Cancel the pending invitation before changing the email address", cause: Object.assign(new Error("pendingInvitation"), { appCode: "pendingInvitation" }) })
     const data = { name: input.name, email: email || null, phone: input.phone || null, bio: input.bio || null, timezone: input.timezone || null, isActive: options.preserveActivation ? person.staff?.isActive ?? true : input.isActive, acceptsAppointments: input.takesAppointments }
+    if (data.isActive && data.acceptsAppointments && !(person.staff?.isActive && person.staff.acceptsAppointments)) await createResourceLimits(tx).assert(organizationId, "teamMembers")
     const staff = person.staff ? await tx.staffMember.update({ where: { id: person.staff.id, organizationId }, data }) : await tx.staffMember.create({ data: { ...data, organizationId, memberId: person.member!.id } })
     await tx.staffService.deleteMany({ where: { staffMemberId: staff.id, service: { deletedAt: null }, serviceId: { notIn: input.serviceIds } } })
     await tx.staffLocation.deleteMany({ where: { staffMemberId: staff.id, locationId: { notIn: input.locationIds } } })

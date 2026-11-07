@@ -23,6 +23,7 @@ import { BookingDetailsForm, type BookingDraft } from "./booking-details-form"
 import { useBookingNavigation } from "./use-booking-navigation"
 import { PublicBookingProfile } from "./public-booking-profile"
 import { PublicBookingFavicon } from "./public-booking-favicon"
+import { RecentBookingToasts } from "./recent-booking-toasts"
 import { BookingReview } from "./booking-review"
 import { BookingServiceSelection } from "./booking-service-selection"
 import { BookingSummary } from "./booking-summary"
@@ -46,14 +47,16 @@ export function PublicBookingPage(scope: BookingScope) {
   const page = useQuery(
     trpc.booking.getPage.queryOptions(scope, { retry: false, retryOnMount: false }),
   )
-  const data = page.data
+  const notFound = page.error?.data?.code === "NOT_FOUND"
+  const subscriptionInactive = page.error?.data?.appCode === "SUBSCRIPTION_INACTIVE"
+  const data = notFound || subscriptionInactive ? undefined : page.data
 
   return (
     <div className="flex h-dvh pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] flex-col overflow-hidden bg-background pb-[env(safe-area-inset-bottom,0px)] text-foreground" style={bookingPageColorStyle(data?.page?.accentColor)}>
       <title>
         {data
           ? `${t("title")} · ${data.organization.name}`
-          : t("title")}
+          : t(notFound ? "bookingPageNotFound" : "title")}
       </title>
       <PublicBookingFavicon accentColor={data?.page?.accentColor} organization={data?.organization} />
       <header className="shrink-0 pt-[env(safe-area-inset-top,0px)]">
@@ -98,6 +101,12 @@ export function PublicBookingPage(scope: BookingScope) {
       </header>
       {data ? (
         <>
+          {data.showRecentBookings ? <RecentBookingToasts
+            key={`${scope.organizationSlug}/${scope.bookingPageSlug ?? ""}`}
+            scope={scope}
+            formatPreference={formatPreference.value}
+            timeZone={data.settings.timezone}
+          /> : null}
           {page.isError ? (
             <div className="mx-auto w-full max-w-5xl px-4 pb-3 lg:px-0">
               <Alert className="border-0" variant="warning">
@@ -125,16 +134,17 @@ export function PublicBookingPage(scope: BookingScope) {
       ) : (
         <main className={cn(
           "mx-auto flex min-h-0 w-full max-w-5xl flex-1 justify-center p-4 sm:p-6",
-          page.isPending || page.error?.data?.code === "NOT_FOUND" ? "items-center" : "items-start",
+          page.isPending || notFound ? "items-center" : "items-start",
         )}>
           {page.isPending ? (
             <PublicBookingLoading label={t("bookingLoading")} />
           ) : (
             <PublicBookingUnavailable
-              notFound={page.error?.data?.code === "NOT_FOUND"}
+              notFound={notFound}
               onRetry={() => void page.refetch()}
               retrying={page.isFetching}
-              title={t(page.error?.data?.code === "NOT_FOUND" ? "bookingPageNotFound" : "unavailable")}
+              showRetry={!subscriptionInactive}
+              title={t(notFound ? "bookingPageNotFound" : "unavailable")}
             />
           )}
         </main>

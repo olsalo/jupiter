@@ -1,7 +1,8 @@
+import { localizationDefaults } from "~/lib/localization/defaults"
 import { businessLocationSchema } from "~/lib/schemas/business-location"
 import { generateId } from "~/lib/database/id"
 import type { TRPCRouterRecord } from "@trpc/server"
-import { permissionProcedure, organizationProcedure } from "../trpc"
+import { permissionProcedure, settingsPermissionProcedure, organizationProcedure } from "../trpc"
 import { idInput, locationInput, locationUpdateInput } from "~/lib/schemas/appointments"
 import { notFound, schedulingLock } from "../services/scheduling"
 
@@ -22,7 +23,7 @@ export const locationRouter = {
       email: location?.email ?? "",
     }
   }),
-  saveBusinessDetails: permissionProcedure({ business: ["configure"], locations: ["configure"] }).input(businessLocationSchema).mutation(({ ctx, input }) => ctx.prisma.$transaction(async (tx) => {
+  saveBusinessDetails: settingsPermissionProcedure({ business: ["configure"], locations: ["configure"] }).input(businessLocationSchema).mutation(({ ctx, input }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)
     const { id, ...values } = input
     const data = { ...values, addressLine1: values.addressLine1 || null, addressLine2: values.addressLine2 || null, postalCode: values.postalCode || null, city: values.city || null, phone: values.phone || null, email: values.email || null }
@@ -35,13 +36,13 @@ export const locationRouter = {
     const current = await tx.location.findFirst({ where: { organizationId: ctx.organizationId, isActive: true }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] })
     const location = current
       ? await tx.location.update({ where: { id: current.id, organizationId: ctx.organizationId }, data })
-      : await tx.location.create({ data: { ...data, organizationId: ctx.organizationId, slug: generateId().toLowerCase() } })
+      : await tx.location.create({ data: { ...data, organizationId: ctx.organizationId, slug: generateId().toLowerCase(), timezone: ctx.organization.settings?.timezone ?? localizationDefaults.timezone } })
     return { ...values, id: location.id }
   })),
   list: organizationProcedure.query(({ ctx }) => ctx.prisma.location.findMany({ where: { organizationId: ctx.organizationId }, orderBy: { name: "asc" } })),
   create: permissionProcedure({ locations: ["configure"] }).input(locationInput).mutation(({ ctx, input }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)
-    return tx.location.create({ data: { ...input, organizationId: ctx.organizationId } })
+    return tx.location.create({ data: { ...input, organizationId: ctx.organizationId, timezone: input.timezone ?? ctx.organization.settings?.timezone ?? localizationDefaults.timezone } })
   })),
   update: permissionProcedure({ locations: ["configure"] }).input(locationUpdateInput).mutation(({ ctx, input: { id, ...data } }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)

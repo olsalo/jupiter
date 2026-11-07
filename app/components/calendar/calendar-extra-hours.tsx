@@ -31,7 +31,7 @@ export function CalendarExtraHours({ staffMemberId, timezone, close, onBusyChang
   close: () => void
   onBusyChange: (busy: boolean) => void
 }) {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const root = useRouteLoaderData<typeof rootLoader>("root")
   const trpc = useTRPC()
   const queryClient = useQueryClient()
@@ -43,7 +43,7 @@ export function CalendarExtraHours({ staffMemberId, timezone, close, onBusyChang
   const [flow, setFlow] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [removingId, setRemovingId] = useState<string | null>(null)
-  const language = root?.locale === "fi" ? "fi" : "en"
+  const language = i18n.resolvedLanguage === "fi" ? "fi" : "en"
   const formatPreference = root?.formatPreference ?? "eu"
   const pending = submitting || create.isPending || remove.isPending
   const busy = open || removingId !== null || pending

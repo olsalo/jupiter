@@ -2,6 +2,7 @@ import { useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate, useOutletContext } from "react-router"
 
+import { localizationDefaults } from "~/lib/localization/defaults"
 import { useAppContext } from "~/lib/hooks/use-app-context"
 import Icon from "~/components/icons"
 import type { NoteModalContext } from "~/components/notes/note-modal-context"
@@ -9,7 +10,7 @@ import { NoteModalSkeleton } from "~/components/notes/note-modal-skeleton"
 import { Alert, AlertDescription } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { ResponsiveSheetDescription, ResponsiveSheetFooter, ResponsiveSheetHeader, ResponsiveSheetPanel, ResponsiveSheetTitle } from "~/components/overlays/responsive-sheet"
-import { createDateTimeFormatter, defaultTimeZone } from "~/lib/localization/format-preference"
+import { createDateTimeFormatter } from "~/lib/localization/format-preference"
 
 export function loader() {
   return null
@@ -31,7 +32,7 @@ export default function NoteView() {
       createDateTimeFormatter({
         formatPreference: rootData?.formatPreference ?? "eu",
         language: i18n.resolvedLanguage === "fi" ? "fi" : "en",
-        timeZone: rootData?.organizationTimezone ?? defaultTimeZone,
+        timeZone: rootData?.organizationTimezone ?? localizationDefaults.timezone,
       }),
     [
       i18n.resolvedLanguage,

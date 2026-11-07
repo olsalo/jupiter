@@ -5,7 +5,7 @@ import { useTRPC } from "~/lib/trpc/client"
 import { notifyBookingPageSaved } from "~/lib/booking/booking-page-sync"
 
 export function BookingPageSwitch({ name, checked, disabled }: {
-  name: "isActive" | "allowStaffSelection"
+  name: "isActive" | "allowStaffSelection" | "showRecentBookings"
   checked: boolean
   disabled: boolean
 }) {
@@ -15,12 +15,18 @@ export function BookingPageSwitch({ name, checked, disabled }: {
   const mutation = useMutation(trpc.bookingPage.updateSwitches.mutationOptions())
   const queryKey = trpc.bookingPage.get.queryKey()
 
-  const updateCache = (value: boolean, slug?: string) => queryClient.setQueryData(queryKey, (current) => {
-    if (!current) return current
-    const values = { ...current.values, [name]: value }
-    const basePath = `/book/${encodeURIComponent(current.organization.slug)}`
-    return { ...current, values, published: current.bookingEnabled && values.isActive, ...(slug && current.publicPath === basePath ? { publicPath: `${basePath}/${encodeURIComponent(slug)}` } : {}) }
-  })
+  const updateCache = (value: boolean, slug?: string) => {
+    if (name === "isActive") {
+      queryClient.setQueryData(trpc.organizations.bookingSettings.queryKey(), (current) => current ? { ...current, bookingEnabled: value } : current)
+    }
+    queryClient.setQueryData(queryKey, (current) => {
+      if (!current) return current
+      const values = { ...current.values, [name]: value }
+      const basePath = `/book/${encodeURIComponent(current.organization.slug)}`
+      const bookingEnabled = name === "isActive" ? value : current.bookingEnabled
+      return { ...current, bookingEnabled, values, published: bookingEnabled && values.isActive, ...(slug && current.publicPath === basePath ? { publicPath: `${basePath}/${encodeURIComponent(slug)}` } : {}) }
+    })
+  }
 
   return <SettingsSwitch
     checked={checked}
@@ -35,8 +41,10 @@ export function BookingPageSwitch({ name, checked, disabled }: {
       const data = queryClient.getQueryData(queryKey)
       if (data) notifyBookingPageSaved(data.organization.slug)
       return Promise.all([
+        queryClient.invalidateQueries(trpc.bookingPage.get.queryFilter()),
         queryClient.invalidateQueries(trpc.booking.getPage.queryFilter()),
         queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
+        queryClient.invalidateQueries(trpc.organizations.bookingSettings.queryFilter()),
       ])
     }}
   />

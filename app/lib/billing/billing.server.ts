@@ -8,16 +8,27 @@ import {
 } from "~/lib/billing/billing"
 
 export function isBillingEnforced() {
-  const enabled = Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET && process.env.STRIPE_PRO_PRICE_ID)
-  const localDemo = process.env.NODE_ENV !== "production" && process.env.DEMO_BYPASS_ONBOARDING_PAYMENT === "true"
-  return enabled && !localDemo
+  const enabled = Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET && process.env.STRIPE_SOLO_PRICE_ID && process.env.STRIPE_TEAM_PRICE_ID && process.env.STRIPE_EXTRA_STAFF_PRICE_ID)
+  return enabled
+}
+
+export function isDemoPlan(plan: string) {
+  return plan === "demo" || plan === "demo_solo" || plan === "demo_team"
+}
+
+export function isDemoMode() {
+  return process.env.NODE_ENV !== "production" && process.env.DEMO_BYPASS_ONBOARDING_PAYMENT === "true"
+}
+
+export function isDemoSubscriptionAllowed(subscription: { plan: string }) {
+  return !isDemoPlan(subscription.plan) || isDemoMode()
 }
 
 type SubscriptionDatabase = Pick<Prisma.TransactionClient, "subscription">
 
 export async function assertOrganizationSubscription(organizationId: string, db: SubscriptionDatabase = prisma) {
   if (isBillingEnforced() && !await hasActiveOrganizationSubscription({ organizationId, db })) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "An active subscription is required" })
+    throw new TRPCError({ code: "FORBIDDEN", message: "An active subscription is required", cause: Object.assign(new Error("subscriptionInactive"), { appCode: "SUBSCRIPTION_INACTIVE" }) })
   }
 }
 
@@ -50,7 +61,7 @@ export async function getActiveOrganizationSubscription({
 
   return (
     subscriptions.find((subscription) =>
-      isSubscriptionEntitled(subscription as SubscriptionEntitlement),
+      isDemoSubscriptionAllowed(subscription) && isSubscriptionEntitled(subscription as SubscriptionEntitlement),
     ) ?? null
   )
 }

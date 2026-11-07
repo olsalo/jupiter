@@ -7,8 +7,6 @@ export const formatLocaleByPreference: Record<FormatPreference, string> = {
   us: "en-US",
 }
 
-export const defaultTimeZone = "Europe/Helsinki"
-
 const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>()
 
 function getDateTimeFormatter(locale: string, options: Intl.DateTimeFormatOptions) {
@@ -125,8 +123,7 @@ export function formatDateTime(
     return timeLabel
   }
 
-  const timeConnector =
-    formatPreference === "eu" && language === "fi" ? "klo" : "at"
+  const timeConnector = language === "fi" ? "klo" : "at"
 
   return `${dateLabel} ${timeConnector} ${timeLabel}`
 }

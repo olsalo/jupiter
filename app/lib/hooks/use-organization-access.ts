@@ -19,5 +19,12 @@ export function useCurrentOrganizationRole(): OrganizationRole | null {
 }
 
 export function useOrganizationPermission(permissions: OrganizationPermissions) {
+  const role = useCurrentOrganizationRole()
+  const root = useAppContext()
+  const requiresWrite = Object.entries(permissions).some(([resource, actions]) => resource !== "billing" && actions.some((action: string) => action !== "read"))
+  return !(root.subscriptionReadOnly && requiresWrite) && hasOrganizationPermission(role, permissions)
+}
+
+export function useOrganizationRolePermission(permissions: OrganizationPermissions) {
   return hasOrganizationPermission(useCurrentOrganizationRole(), permissions)
 }

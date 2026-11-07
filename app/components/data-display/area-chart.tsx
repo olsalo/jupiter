@@ -2,8 +2,9 @@ import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "re
 import type { CSSProperties, KeyboardEvent, PointerEvent } from "react"
 import { createPortal } from "react-dom"
 
+import { localizationDefaults } from "~/lib/localization/defaults"
 import { Spinner } from "~/components/ui/spinner"
-import { defaultTimeZone, formatDateTime, formatNumber } from "~/lib/localization/format-preference"
+import { formatDateTime, formatNumber } from "~/lib/localization/format-preference"
 import type { FormatPreference } from "~/lib/localization/format-preference"
 import { cn } from "~/lib/utils"
 
@@ -45,7 +46,7 @@ export default function AreaChart({
   color,
   formatPreference = "eu",
   language = "en",
-  timeZone = defaultTimeZone,
+  timeZone = localizationDefaults.timezone,
   showXAxis = true,
   showDotPattern = false,
   showTooltipArrow = true,

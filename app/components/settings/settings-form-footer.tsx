@@ -5,7 +5,8 @@ import { DialogFooter } from "~/components/ui/dialog"
 import { DrawerFooter } from "~/components/ui/drawer"
 import type { SettingsPersonFormState } from "~/components/team/team-person-form"
 
-export function SettingsFormFooter({ formId, isMobile, onCancel, state }: {
+export function SettingsFormFooter({ disabled = false, formId, isMobile, onCancel, state }: {
+  disabled?: boolean
   formId: string
   isMobile: boolean
   onCancel: () => void
@@ -18,7 +19,7 @@ export function SettingsFormFooter({ formId, isMobile, onCancel, state }: {
   return (
     <Footer className={isMobile ? "shrink-0" : "shrink-0 rounded-b-2xl"}>
       <Button disabled={state.isSubmitting} onClick={onCancel} type="button" variant="ghost">{t("settings.cancel")}</Button>
-      <Button disabled={state.isSubmitting} form={formId} loading={state.isSubmitting} type="submit">
+      <Button disabled={disabled || state.isSubmitting} form={formId} loading={state.isSubmitting} type="submit">
         {t("settings.save")}
       </Button>
     </Footer>

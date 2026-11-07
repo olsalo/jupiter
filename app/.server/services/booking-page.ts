@@ -1,5 +1,6 @@
 import { bookingPageImagePath, getBookingPageImageKey } from "~/lib/booking/booking-page-image"
 import { getHiddenBookingPageServiceIds } from "~/lib/booking/booking-page-services"
+import { showBookingNotifications } from "~/lib/booking/booking-page-notifications"
 import { TRPCError } from "@trpc/server"
 import { notFound, type Database } from "./scheduling"
 import { assertOrganizationSubscription } from "~/lib/billing/billing.server.ts"
@@ -52,7 +53,7 @@ export async function getBookingPage(db: Database, input: { organizationSlug: st
   const openingHours = openingRules.length
     ? openingRules.filter((rule) => rule.isActive).map(({ dayOfWeek, startMinute, endMinute }) => ({ dayOfWeek, startMinute, endMinute }))
     : [1, 2, 3, 4, 5].map((dayOfWeek) => ({ dayOfWeek, startMinute: settings.defaultStartHour * 60, endMinute: settings.defaultEndHour * 60 }))
-  return { openingHours, organization: { name: organization.name, slug: organization.slug, logo: organization.logo },
+  return { openingHours, showRecentBookings: showBookingNotifications(page?.metadata), organization: { name: organization.name, slug: organization.slug, logo: organization.logo },
     page: page ? { imageUrl: getBookingPageImageKey(page.metadata) ? bookingPageImagePath(organization.slug, page.slug, getBookingPageImageKey(page.metadata)!) : null, accentColor: page.accentColor, slug: page.slug, title: page.title, description: page.description, successMessage: page.successMessage, allowStaffSelection: page.allowStaffSelection, allowLocationSelection: page.allowLocationSelection, defaultLocationId: page.defaultLocationId ?? organization.settings?.defaultLocationId ?? null } : null,
     settings: { autoConfirmAppointments: settings.autoConfirmAppointments, maxBookingAdvanceDays: settings.maxBookingAdvanceDays, cancellationNoticeMinutes: settings.cancellationNoticeMinutes, rescheduleNoticeMinutes: settings.rescheduleNoticeMinutes, timezone: settings.bookingTimezone ?? settings.timezone, weekStartsOn: settings.weekStartsOn, defaultLocationId: settings.defaultLocationId, currency: settings.currency, requireCustomerEmail: settings.requireCustomerEmail, requireCustomerPhone: settings.requireCustomerPhone, allowCustomerCancellation: settings.allowCustomerCancellation, allowCustomerRescheduling: settings.allowCustomerRescheduling },
     services: services.filter((service) => staff.some((person) => person.staffServices.some((link) => link.serviceId === service.id) && (!service.serviceLocations.length || service.serviceLocations.some((location) => person.staffLocations.some((link) => link.locationId === location.locationId))))).map((service) => ({

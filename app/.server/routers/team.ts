@@ -86,7 +86,6 @@ export const teamRouter = {
       if (!member || !isManager(member)) throw new TRPCError({ code: "FORBIDDEN" })
       return inviteStaff(ctx.prisma, ctx.organizationId, ctx.user.id, { ...input, staffMemberId: input.staffMemberId }, process.env.BETTER_AUTH_URL ?? "http://localhost:5175", ctx.locale)
     }
-    await createResourceLimits(ctx.prisma).assert(ctx.organizationId, "teamMembers")
     try {
       // Better Auth checks the sender's membership and invitation permissions.
       const { name, sendEmail, ...invitationInput } = input
@@ -242,7 +241,6 @@ export const teamRouter = {
             return { error: "unavailable" as const, organizationName: null }
           }
         } else {
-          await createResourceLimits(ctx.prisma).assert(invitation.organizationId, "teamMembers", 0)
           try {
             await auth.api.acceptInvitation({ headers: ctx.headers, body: input })
           } catch (error) {

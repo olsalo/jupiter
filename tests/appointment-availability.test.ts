@@ -149,6 +149,42 @@ try {
   assert.deepEqual(await holidayStarts(), [at(60)], "Business-wide extra hours override the holiday")
   extraEnabled = false
   assert.deepEqual(await holidayStarts(), [], "The holiday remains closed without extra hours")
+  const special = { id: "exception-morning", name: "Morning", date: "2026-10-11", endDate: "2026-10-13", enabled: true, closed: false, startMinute: 540, endMinute: 600 }
+  let specials = [special, { ...special, id: "exception-late", name: "Late", startMinute: 660, endMinute: 720 }]
+  const rangeDb = {
+    ...db,
+    organizationSettings: { findUnique: async () => ({ timezone: "UTC", businessHolidays: { exceptions: specials } }) },
+    appointment: { findMany: async () => [] },
+  } as unknown as typeof db
+  const rangeStarts = async (query = input, queryOptions = options) => (await getAvailableSlots(rangeDb, "business", query, queryOptions)).days.flatMap((day) => day.slots.map((slot) => +new Date(slot.startsAt)))
+  assert.deepEqual(await rangeStarts(), [start, at(120)], "Disjoint opening hours combine while their gap stays unavailable")
+  specials.reverse()
+  assert.deepEqual(await rangeStarts(), [start, at(120)], "Availability is independent of the order exceptions were saved")
+  const publicOptions = { now: options.now }
+  const publicStarts = (await getAvailableSlots(rangeDb, "business", input, publicOptions)).days.flatMap((day) => day.slots.map((slot) => +new Date(slot.startsAt)))
+  assert.deepEqual(publicStarts, [start, at(15), at(30), at(120), at(135), at(150)], "Public slots use the union of opening hours and never bridge a closed gap")
+  for (const candidate of [start, at(45), at(60), at(120)]) {
+    const exact = { ...input, from: new Date(candidate), to: new Date(candidate + 1) }
+    const slots = (await getAvailableSlots(rangeDb, "business", exact, publicOptions)).days.flatMap((day) => day.slots)
+    assert.equal(slots.length > 0, publicStarts.includes(candidate), "Booking submission rechecks agree with advertised public slots")
+  }
+  const threeDays = await getAvailableSlots(rangeDb, "business", { ...input, from: new Date("2026-10-11T00:00Z"), to: new Date("2026-10-14T00:00Z") }, publicOptions)
+  assert.deepEqual(threeDays.days.map((day) => day.date), ["2026-10-11", "2026-10-12", "2026-10-13"], "The full inclusive date range opens bookings, including weekends")
+  specials = [special, { ...special, id: "exception-overlap", startMinute: 570, endMinute: 660 }]
+  assert.deepEqual(await rangeStarts(), [start, at(15), at(30), at(45), at(60)], "Overlapping opening hours merge into a continuous bookable window")
+  specials = [special, { ...special, id: "exception-adjacent", startMinute: 600, endMinute: 660 }]
+  assert.deepEqual(await rangeStarts(), [start, at(15), at(30), at(45), at(60)], "Touching opening hours allow appointments across their shared boundary")
+  const closure = { ...special, id: "exception-closed", date: "2026-10-12", endDate: "2026-10-12", closed: true }
+  for (const entries of [[closure, special], [special, closure]]) {
+    specials = entries
+    assert.deepEqual(await rangeStarts(), [], "A closed entry takes priority regardless of save order")
+    assert.deepEqual((await getAvailableSlots(rangeDb, "business", input, publicOptions)).days, [], "The public booking engine also respects closure priority")
+  }
+  specials = [special, { ...closure, enabled: false }]
+  assert.deepEqual(await rangeStarts(), [start], "Disabled closures do not cancel open hours")
+  specials = [special, closure]
+  const closedRange = await getAvailableSlots(rangeDb, "business", { ...input, from: new Date("2026-10-11T00:00Z"), to: new Date("2026-10-14T00:00Z") }, publicOptions)
+  assert.deepEqual(closedRange.days.map((day) => day.date), ["2026-10-11", "2026-10-13"], "A one-day closure only closes that day inside a longer opening range")
   assert.deepEqual(generateSlots({ ...base, windows: [] }), [])
   assert.equal(generateSlots({ ...base, windows: [...base.windows, { start: at(240), end: at(360) }], to: at(360) }).length, 14)
   assert.equal(generateSlots({ ...base, windows: [...base.windows, ...base.windows] }).length, 9)

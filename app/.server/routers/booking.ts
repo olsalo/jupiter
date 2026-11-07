@@ -10,6 +10,7 @@ import { limitBookingLookup, limitPublicBooking } from "../services/booking-rate
 import { notFound } from "../services/scheduling"
 import { getBookingManagementPage } from "../services/booking-management"
 import { getReschedulePage, getRescheduleSlots } from "../services/booking-reschedule"
+import { getRecentBookings } from "../services/recent-bookings"
 
 const bookingProcedure = publicProcedure.use(async ({ ctx, next, path }) => {
   const started = performance.now()
@@ -28,6 +29,11 @@ async function bookingIdentity(ctx: { prisma: typeof import("~/lib/database/pris
   return appointment
 }
 export const bookingRouter = {
+  getRecentBookings: bookingProcedure.input(pageInput).query(async ({ ctx, input }) => {
+    const { organization } = await resolveBookingPage(ctx.prisma, input)
+    await limitPublicBooking(ctx.prisma, ctx.headers, organization.id, false)
+    return getRecentBookings(ctx.prisma, input)
+  }),
   getImage: bookingProcedure.input(pageInput).query(async ({ ctx, input }) => {
     const { organization, page } = await resolveBookingPage(ctx.prisma, input)
     await limitPublicBooking(ctx.prisma, ctx.headers, organization.id, false)

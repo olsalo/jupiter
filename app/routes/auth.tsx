@@ -3,7 +3,6 @@ import { Trans, useTranslation } from "react-i18next"
 import {
   redirect,
   useNavigate,
-  useNavigation,
   useRouteLoaderData,
   useSearchParams,
 } from "react-router"
@@ -11,6 +10,7 @@ import type { FormApi } from "@rvf/react"
 
 import type { Route } from "./+types/auth"
 import type { loader as rootLoader } from "~/root"
+import { getStandalonePageStyles, standalonePageLogoClassName, standalonePagePadding } from "~/components/layout/standalone-page-styles"
 import { AuthPreview } from "~/components/auth/auth-preview"
 import { AppLogo } from "~/components/navigation/app-logo"
 import { AppForm } from "~/components/forms/app-form"
@@ -84,7 +84,6 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
   const firstOtpInput = useRef<HTMLInputElement>(null)
   const otpFocusFrame = useRef<number | null>(null)
   const navigate = useNavigate()
-  const navigation = useNavigation()
   const { sendOtp: sendOtpSchema, signIn: signInSchema } = useMemo(
     () => createAuthFormSchemas(t),
     [t],
@@ -189,7 +188,7 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
 
   return (
     <main
-      className="auth-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] relative grid min-h-dvh grid-cols-1 bg-background text-foreground md:grid-cols-2"
+      className={`auth-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] relative grid min-h-dvh grid-cols-1 bg-background text-foreground md:grid-cols-2 ${getStandalonePageStyles(isElectron)}`}
       data-electron={isElectron}
     >
       <title>{t("title")}</title>
@@ -200,10 +199,10 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
         />
       ) : null}
       <section
-        className={`grid flex-1 grid-cols-1 grid-rows-[1fr_auto_1fr] gap-4 p-5 md:flex md:flex-col md:p-4 md:pb-[calc(1rem+var(--tappable-inset-bottom,0px))] ${isElectron ? "pt-[calc(52px+env(safe-area-inset-top,0px))] md:pt-[calc(3rem+env(safe-area-inset-top,0px))]" : "pt-[calc(1.25rem+env(safe-area-inset-top,0px))] md:pt-[calc(1rem+env(safe-area-inset-top,0px))]"}`}
+        className={`grid flex-1 grid-cols-1 grid-rows-[1fr_auto_1fr] gap-4 md:flex md:flex-col ${standalonePagePadding}`}
       >
         <header className="col-start-1 row-start-1 flex items-center justify-between self-start">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground md:size-9">
+          <div className={standalonePageLogoClassName}>
             <AppLogo aria-hidden="true" className="size-5 md:size-6" />
           </div>
         </header>
@@ -257,8 +256,7 @@ export default function Auth({ loaderData }: Route.ComponentProps) {
               {(form) => {
                 const isSubmitting =
                   form.formState.isSubmitting ||
-                  isSigningIn ||
-                  navigation.state !== "idle"
+                  isSigningIn
 
                 return (
                   <>
@@ -447,7 +445,10 @@ function getInvitationIdFromSearchParams(searchParams: URLSearchParams) {
 
 function getAuthRedirect(searchParams: URLSearchParams) {
   const invitationId = getInvitationIdFromSearchParams(searchParams)
+  const destination = getSafeRedirectTo(searchParams)
   return invitationId
     ? `/invite/${encodeURIComponent(invitationId)}`
-    : getSafeRedirectTo(searchParams)
+    : destination === "/" || destination.startsWith("/?") || destination.startsWith("/#")
+      ? `/calendar${destination.slice(1)}`
+      : destination
 }

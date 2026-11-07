@@ -10,6 +10,7 @@ import {
 
 import type { Route } from "./+types/onboarding"
 import type { loader as rootLoader } from "~/root"
+import { getStandalonePageStyles, standalonePageLogoClassName, standalonePagePadding } from "~/components/layout/standalone-page-styles"
 import { AppLogo } from "~/components/navigation/app-logo"
 import Icon from "~/components/icons"
 import { LanguageSwitch } from "~/components/settings/preferences/language-switch"
@@ -31,7 +32,7 @@ import { cn } from "~/lib/utils"
 
 export const middleware: Route.MiddlewareFunction[] = [requireAuthMiddleware, organizationMiddleware]
 
-type OnboardingStepId = "business" | "availability" | "holidays" | "subscription"
+type OnboardingStepId = "business" | "location" | "availability" | "holidays" | "subscription"
 
 type OnboardingStepState = {
   complete: boolean
@@ -41,18 +42,21 @@ type OnboardingStepState = {
 function getOnboardingSteps({
   billingEnabled,
   businessComplete,
+  locationComplete,
   availabilityComplete,
   holidaysComplete,
   subscriptionComplete,
 }: {
   billingEnabled: boolean
   businessComplete: boolean
+  locationComplete: boolean
   availabilityComplete: boolean
   holidaysComplete: boolean
   subscriptionComplete: boolean
 }): OnboardingStepState[] {
   const setupSteps: OnboardingStepState[] = [
     { complete: businessComplete, id: "business" },
+    { complete: locationComplete, id: "location" },
     { complete: availabilityComplete, id: "availability" },
     { complete: holidaysComplete, id: "holidays" },
   ]
@@ -75,15 +79,13 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   )
 
   const url = new URL(loaderArgs.url)
-  const steps = getOnboardingSteps(status)
-  const requestedStepIndex = status.demoOnboardingPaymentBypassEnabled
-    ? steps.findIndex((item) => url.pathname === `/onboarding/${item.id}`)
-    : -1
-
-  const currentStepIndex =
-    requestedStepIndex !== -1
-      ? requestedStepIndex
-      : steps.findIndex((item) => !item.complete)
+  const steps = getOnboardingSteps({ ...status, subscriptionComplete: status.subscriptionComplete || status.previouslySubscribed })
+  const firstIncompleteIndex = steps.findIndex((item) => !item.complete)
+  const requestedStepIndex = steps.findIndex((item) => url.pathname === `/onboarding/${item.id}`)
+  const canRevisitOnboarding = process.env.NODE_ENV !== "production"
+  const canVisitRequestedStep = canRevisitOnboarding && requestedStepIndex !== -1
+  const defaultStepIndex = canRevisitOnboarding && firstIncompleteIndex === -1 ? 0 : firstIncompleteIndex
+  const currentStepIndex = canVisitRequestedStep ? requestedStepIndex : defaultStepIndex
 
   if (currentStepIndex === -1) {
     throw redirect(getAfterOnboardingRedirect(url.searchParams))
@@ -91,14 +93,13 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
 
   const currentStep = steps[currentStepIndex]!
   const step: OnboardingStep = currentStepIndex + 1
-  const nextStep =
-    currentStepIndex < steps.length - 1 ? steps[currentStepIndex + 1]!.id : null
+  const nextStep = steps.slice(currentStepIndex + 1).find((item) => canRevisitOnboarding || item.id !== "subscription" || !item.complete)?.id ?? null
 
   const stepPath = `/onboarding/${currentStep.id}`
 
   if (
-    requestedStepIndex === -1 &&
-    (url.pathname !== stepPath || url.searchParams.has("step"))
+    url.pathname !== stepPath ||
+    (!status.demoOnboardingPaymentBypassEnabled && url.searchParams.has("step"))
   ) {
     url.pathname = stepPath
     url.searchParams.delete("step")
@@ -129,7 +130,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
         />
       ) : null}
     >
-      <title>{t("title")}</title>
+      <title>{t(`pageTitles.${loaderData.stepId}`)}</title>
       <Outlet context={loaderData} />
     </OnboardingShell>
   )
@@ -160,54 +161,48 @@ function OnboardingShell({ children, header }: {
 
   return (
     <main
-      className="floating-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] relative h-dvh w-full overflow-x-clip bg-background text-foreground"
+      className={cn("floating-layout pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] relative h-dvh w-full overflow-x-clip bg-background text-foreground", getStandalonePageStyles(isElectron), "max-lg:[--page-gutter:1.25rem]", isElectron && "max-lg:[--page-top:calc(52px+env(safe-area-inset-top,0px))]")}
       data-electron={isElectron}
     >
       <ScrollArea
         className="h-full w-full"
         fill={true}
-        scrollbarClassName="z-20 max-md:hidden [&[data-orientation=horizontal]]:hidden"
+        scrollbarClassName="z-20 max-lg:hidden [&[data-orientation=horizontal]]:hidden"
         viewportProps={{
           className: "app-page-scroll !overflow-x-hidden",
           ref: scrollViewportRef,
         }}
       >
-        <div className={cn("flex min-h-full flex-col", isElectron && "pt-7")}>
-          <div className="mx-auto flex w-[calc(100%-44px)] max-w-md flex-1 flex-col pb-[calc(1.5rem*sign(env(safe-area-inset-bottom,0px)))] md:w-[calc(100%-160px)] md:pb-0 md:pt-24">
-            <div className="mb-[calc(1.5rem*(1-sign(env(safe-area-inset-top,0px))))] flex shrink-0 items-center justify-between pt-[calc(1.25rem+env(safe-area-inset-top,0px))] md:contents">
-              <div
-                className={cn(
-                  "electron-no-drag flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground md:fixed md:top-3.5 md:left-3.5 md:z-20 md:size-9",
-                  isElectron && "md:top-[46px]",
-                )}
-              >
-                <AppLogo aria-hidden="true" className="size-5 md:size-6" />
-              </div>
-              <div
-                className={cn(
-                  "electron-no-drag flex items-center gap-3 md:fixed md:top-3.5 md:right-3.5 md:z-20",
-                  isElectron && "md:top-[46px]",
-                )}
-              >
-                <ThemeSwitch />
-                <LanguageSwitch />
-                <Button
-                  aria-label={t("actions.logOut")}
-                  className="size-8"
-                  loading={logOut.isPending}
-                  onClick={() => logOut.mutate()}
-                  size="icon"
-                  type="button"
-                  variant="outline"
-                >
-                  <Icon className="size-4" name="logOut" size={16} />
-                </Button>
-              </div>
+        <div className={cn("flex min-h-full flex-col", standalonePagePadding, "max-lg:pb-5")}>
+          <div className="mb-[calc(1.5rem*(1-sign(env(safe-area-inset-top,0px))))] flex shrink-0 items-center justify-between lg:mb-0">
+            <div
+              className={cn(standalonePageLogoClassName, "md:size-8 electron-no-drag lg:fixed lg:top-(--page-top) lg:left-[calc(var(--page-gutter)+env(safe-area-inset-left,0px))] lg:z-20 lg:size-9")}
+            >
+              <AppLogo aria-hidden="true" className="size-5 lg:size-6" />
             </div>
+            <div
+              className="electron-no-drag flex items-center gap-3 lg:fixed lg:top-(--page-top) lg:right-[calc(var(--page-gutter)+env(safe-area-inset-right,0px))] lg:z-20"
+            >
+              <ThemeSwitch />
+              <LanguageSwitch />
+              <Button
+                aria-label={t("actions.logOut")}
+                className="size-8"
+                loading={logOut.isPending}
+                onClick={() => logOut.mutate()}
+                size="icon"
+                type="button"
+                variant="outline"
+              >
+                <Icon className="size-4" name="logOut" size={16} />
+              </Button>
+            </div>
+          </div>
 
+          <div className={cn("mx-auto flex w-full max-w-md flex-1 flex-col lg:w-[calc(100%-128px)] lg:pt-[calc(6rem-var(--page-top))]", isElectron && "max-lg:pt-[26px] lg:pt-[calc(9rem-var(--page-top))]")}>
             {header ? (
               <header className="route-header shrink-0">
-                <div className={cn("relative", isElectron && "md:pt-4")}>
+                <div className="relative">
                   {header}
                 </div>
               </header>
@@ -229,7 +224,7 @@ function OnboardingShell({ children, header }: {
 
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-10 h-8 bg-background/75 md:bg-transparent md:bg-linear-to-t md:from-background/75 md:from-50% md:to-transparent backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_top,black_0%,black_45%,transparent_100%)] md:backdrop-blur-none md:backdrop-saturate-100 md:[mask-image:none] will-change-opacity"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-10 h-8 bg-background/75 lg:bg-transparent lg:bg-linear-to-t lg:from-background/75 lg:from-50% lg:to-transparent backdrop-blur-[28px] backdrop-saturate-150 mask-[linear-gradient(to_top,black_0%,black_45%,transparent_100%)] lg:backdrop-blur-none lg:backdrop-saturate-100 lg:[mask-image:none] will-change-opacity"
         ref={bottomFadeRef}
       />
     </main>

@@ -16,7 +16,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/
 import { useMediaQuery } from "~/lib/hooks"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
+import { useOrganizationPermission, useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
 
 export const handle = { workspace: true, pageLayout: "viewport-desktop" }
 
@@ -47,6 +47,7 @@ export default function TeamV2() {
     startTransition(() => setClosingLocationKey(location.key))
   } }
   const canManage = useOrganizationPermission({ team: ["manage"] })
+  const showManage = useOrganizationRolePermission({ team: ["manage"] })
 
   return (
     <Page header={
@@ -60,7 +61,7 @@ export default function TeamV2() {
           <InputGroupInput nativeInput={true} aria-label={t("people.search")} onChange={(event) => setSearch(event.target.value)} placeholder={t("people.search")} type="search" value={search} />
           <InputGroupAddon><Icon aria-hidden={true} name="search" size={16} /></InputGroupAddon>
         </InputGroup>}
-        actions={canManage ? <Button aria-label={t("people.addAction")} className="max-md:size-9 max-md:p-0" render={<Link to={memberId ? `${location.pathname.replace(/\/new\/?$/, "")}/new${location.search}` : "new"} state={{ returnTo: `${location.pathname}${location.search}` }} />} size="lg" type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("people.addAction")}</span></Button> : null}
+        actions={showManage ? <Button aria-label={t("people.addAction")} className="max-md:size-9 max-md:p-0" disabled={!canManage} render={canManage ? <Link to={memberId ? `${location.pathname.replace(/\/new\/?$/, "")}/new${location.search}` : "new"} state={{ returnTo: `${location.pathname}${location.search}` }} /> : undefined} size="lg" type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("people.addAction")}</span></Button> : null}
       />
     }>
       <title>{t("v2.title")}</title>
@@ -69,7 +70,7 @@ export default function TeamV2() {
         <AlertDescription>{t(team.data ? "staleDescription" : "retryDescription")}</AlertDescription>
         <AlertAction><Button disabled={team.isFetching} loading={team.isFetching} onClick={() => void team.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
       </Alert> : null}
-      <div className="@container/team relative isolate flex min-h-0 min-w-0 flex-1 sm:overflow-hidden sm:bg-background sm:rounded-md sm:p-px after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] sm:after:border sm:after:border-border" data-slot="team-master-detail">
+      <div className="@container/team relative isolate flex min-h-0 min-w-0 flex-1 sm:overflow-hidden sm:bg-background sm:rounded-lg sm:p-px after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] sm:after:border sm:after:border-border" data-slot="team-master-detail">
         <aside aria-label={t("members")} className="flex min-h-0 w-full min-w-0 flex-col sm:w-64 sm:shrink-0 sm:border-r lg:w-80">
           <TeamMemberList search={search} onSearchChange={setSearch} people={team.data?.people ?? []} selectedId={closingLocationKey === location.key ? undefined : memberId} loading={team.isPending} failed={team.isError && !team.data} />
         </aside>

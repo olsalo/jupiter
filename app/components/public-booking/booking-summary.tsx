@@ -43,7 +43,9 @@ export function BookingSummary({
       ? t("online")
       : service?.deliveryType === "PHONE"
         ? t("telephone")
-        : null
+        : service?.deliveryType === "FLEXIBLE"
+          ? t("flexible")
+          : null
   const startTime = slot
     ? formatDateTime(slot.startsAt, { ...options, includeDate: false })
     : ""
@@ -175,7 +177,7 @@ export function BookingSummary({
                 </div>
               </div>
             ) : null}
-            {address ? (
+            {address && service?.deliveryType !== "FLEXIBLE" ? (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">{t("location")}</p>
                 <div className="flex items-start gap-2">
@@ -196,7 +198,7 @@ export function BookingSummary({
                 <Icon
                   aria-hidden={true}
                   className="size-4"
-                  name={service?.deliveryType === "ONLINE" ? "plug" : "phone"}
+                  name={service?.deliveryType === "ONLINE" ? "plug" : service?.deliveryType === "PHONE" ? "phone" : "calendar"}
                 />
                 {delivery}
               </p>

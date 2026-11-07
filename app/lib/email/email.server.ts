@@ -63,6 +63,12 @@ export async function sendEmail(message: EmailMessage) {
 }
 
 export async function sendOtpEmail({ email, locale, otp, type }: OtpEmailOptions) {
+  const authUrl = process.env.BETTER_AUTH_URL ? new URL(process.env.BETTER_AUTH_URL) : null
+  if (process.env.LOCAL_PREVIEW_EMAIL === "console" && authUrl?.protocol === "http:" && authUrl.hostname === "127.0.0.1") {
+    console.info(`[better-auth:local-preview] ${type} OTP for ${email}: ${otp}`)
+    return
+  }
+
   const provider = getEmailProvider()
 
   if (!provider) {

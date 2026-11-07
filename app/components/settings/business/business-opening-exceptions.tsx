@@ -21,7 +21,7 @@ import { useTRPC } from "~/lib/trpc/client"
 import type { loader as rootLoader } from "~/root"
 
 export function BusinessOpeningExceptions({ timezone, disabled }: { timezone: string; disabled: boolean }) {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const root = useRouteLoaderData<typeof rootLoader>("root")
   const trpc = useTRPC()
   const queryClient = useQueryClient()
@@ -29,7 +29,7 @@ export function BusinessOpeningExceptions({ timezone, disabled }: { timezone: st
   const entries = readBusinessExceptions(organization.data?.settings?.businessHolidays)
   const [dialog, setDialog] = useState<{ open: boolean; entry?: BusinessHoliday; flow: number }>({ open: false, flow: 0 })
   const [submitting, setSubmitting] = useState(false)
-  const language = root?.locale === "fi" ? "fi" : "en"
+  const language = i18n.resolvedLanguage === "fi" ? "fi" : "en"
   const formatPreference = root?.formatPreference ?? "eu"
   const refresh = () => Promise.all([
     queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
@@ -47,10 +47,7 @@ export function BusinessOpeningExceptions({ timezone, disabled }: { timezone: st
   const pending = disabled || submitting || save.isPending || remove.isPending
   const edit = (entry?: BusinessHoliday) => setDialog((state) => ({ open: true, entry, flow: state.flow + 1 }))
   const formatTime = (minute: number) => formatDateTime(new Date(Date.UTC(2000, 0, 1, 0, minute)), { formatPreference, language, timeZone: "UTC", includeDate: false })
-  const schema = businessExceptionSchema.superRefine((value, ctx) => {
-    if (entries.some((entry) => entry.id !== value.id && entry.date === value.date)) ctx.addIssue({ code: "custom", path: ["date"], message: t("businessExceptions.dateTaken") })
-  })
-  return <section className="mt-6 border-t pt-6">
+  return <section>
     <div className="flex items-start justify-between gap-3">
       <SettingsSectionHeader description={t("businessExceptions.description")} title={t("businessExceptions.title")} />
       <Button disabled={pending || entries.length >= 100} onClick={() => edit()} size="sm" type="button" variant="outline"><Icon aria-hidden={true} className="size-4" name="plus" />{t("businessExceptions.add")}</Button>
@@ -58,7 +55,7 @@ export function BusinessOpeningExceptions({ timezone, disabled }: { timezone: st
     {entries.length === 0 ? <Alert className="mt-4"><AlertDescription>{t("businessExceptions.empty")}</AlertDescription></Alert> : <ul className="mt-4 divide-y">{entries.map((entry) => <li className="flex items-center gap-3 py-3" key={entry.id}>
       <div className="grid min-w-0 flex-1 gap-1">
         <span className="truncate text-sm font-medium">{entry.name}</span>
-        <span className="text-xs text-muted-foreground">{formatDateTime(calendarDateFromValue(entry.date, timezone), { formatPreference, language, timeZone: timezone, includeTime: false, includeWeekday: true })}</span>
+        <span className="text-xs text-muted-foreground">{formatDateTime(calendarDateFromValue(entry.date, timezone), { formatPreference, language, timeZone: timezone, includeTime: false, includeWeekday: true })}{entry.endDate && entry.endDate !== entry.date ? ` - ${formatDateTime(calendarDateFromValue(entry.endDate, timezone), { formatPreference, language, timeZone: timezone, includeTime: false, includeWeekday: true })}` : null}</span>
       </div>
       <Badge className="shrink-0" size="sm" variant="secondary">{entry.closed ? t("businessSchedule.closed") : `${formatTime(entry.startMinute)} – ${formatTime(entry.endMinute)}`}</Badge>
       <Button aria-label={t("businessExceptions.editNamed", { name: entry.name })} disabled={pending} onClick={() => edit(entry)} size="icon-sm" type="button" variant="ghost"><Icon aria-hidden={true} className="size-4" name="edit" /></Button>
@@ -71,8 +68,9 @@ export function BusinessOpeningExceptions({ timezone, disabled }: { timezone: st
           className="contents"
           defaultValues={dialog.entry ?? { id: `exception-${generateId()}`, name: "", date: "", enabled: true, closed: true, startMinute: 540, endMinute: 1020 }}
           key={dialog.flow}
+          otherFormProps={{ noValidate: true }}
           onFormStateChange={(state) => setSubmitting(state.isSubmitting)}
-          schema={schema}
+          schema={businessExceptionSchema}
           submitFn={async (values) => {
             await save.mutateAsync(values)
             await refresh()

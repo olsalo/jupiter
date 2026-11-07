@@ -1,10 +1,8 @@
 import type { FormApi } from "@rvf/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Temporal } from "@js-temporal/polyfill"
 import { useRef } from "react"
 import { useTranslation } from "react-i18next"
 
-import { BusinessOpeningExceptions } from "~/components/settings/business/business-opening-exceptions"
 import { AppForm, type AppFormState } from "~/components/forms/app-form"
 import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
 import { TeamWorkingHoursFields } from "~/components/team/team-working-hours-fields"
@@ -13,9 +11,8 @@ import { Alert, AlertAction, AlertDescription } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { SettingsLoading } from "~/components/settings/settings-loading"
 import { LazyTabsPanel } from "~/components/navigation/lazy-tabs-panel"
-import { upcomingBusinessHolidays } from "~/lib/business/business-holidays"
 import { BusinessHolidayFields } from "~/components/settings/business/business-holiday-fields"
-import { businessScheduleSchema, type BusinessScheduleValues } from "~/lib/schemas/business-schedule"
+import { createBusinessScheduleSchema, type BusinessScheduleValues } from "~/lib/schemas/business-schedule"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 
@@ -32,25 +29,27 @@ export function BusinessScheduleSettings({ activeTab, onFormStateChange, onTabCh
   const queryClient = useQueryClient()
   const business = useBusinessWorkingHours()
   const organization = useQuery(trpc.organizations.getCurrent.queryOptions())
+  const holidays = useQuery(trpc.organizations.businessHolidays.queryOptions())
   const formRef = useRef<FormApi<BusinessScheduleValues>>(null)
   const mutation = useMutation(trpc.organizations.updateBusinessSchedule.mutationOptions({ onError: () => toast.error(t("settings.saveError")) }))
   resetRef.current = () => formRef.current?.resetForm()
-  if (business.isError || organization.isError) return <Alert variant="error">
+  if (business.isError || organization.isError || holidays.isError) return <Alert variant="error">
     <AlertDescription>{t("settings.loadError")}</AlertDescription>
     <AlertAction>
-      <Button loading={business.isFetching || organization.isFetching} onClick={() => void Promise.all([business.refetch(), organization.refetch()])} size="sm" type="button" variant="outline">{t("businessSchedule.retry")}</Button>
+      <Button loading={business.isFetching || organization.isFetching || holidays.isFetching} onClick={() => void Promise.all([business.refetch(), organization.refetch(), holidays.refetch()])} size="sm" type="button" variant="outline">{t("businessSchedule.retry")}</Button>
     </AlertAction>
   </Alert>
-  if (business.isPending || !organization.data) return <SettingsLoading />
+  if (business.isPending || !organization.data || !holidays.data) return <SettingsLoading />
+  const schema = createBusinessScheduleSchema(holidays.data)
   const hours = business.hours.map(({ dayOfWeek, startMinute, endMinute, isActive }) => ({ dayOfWeek, startMinute, endMinute, isActive, timezone: business.timezone, validFrom: null, validUntil: null }))
   return <AppForm<BusinessScheduleValues, BusinessScheduleValues, unknown>
     className="flex flex-1 flex-col"
-    defaultValues={{ workingHours: hours, breaks: [], holidays: upcomingBusinessHolidays(organization.data.settings?.businessHolidays, Temporal.Now.plainDateISO(business.timezone).toString()) }}
+    defaultValues={{ workingHours: hours, breaks: [], holidays: holidays.data }}
     disableFocusOnError={true}
     id={businessScheduleFormId}
     onFormStateChange={onFormStateChange}
     onInvalidSubmit={() => {
-      const result = businessScheduleSchema.safeParse(formRef.current?.transient.value())
+      const result = schema.safeParse(formRef.current?.transient.value())
       if (!result.success) onTabChange(result.error.issues[0]?.path[0] === "workingHours" ? "opening-hours" : "holidays")
     }}
     onSubmitSuccess={async () => {
@@ -58,18 +57,18 @@ export function BusinessScheduleSettings({ activeTab, onFormStateChange, onTabCh
       if (values) formRef.current?.resetForm(values)
       await Promise.all([
         queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
+        queryClient.invalidateQueries(trpc.organizations.businessHolidays.queryFilter()),
         queryClient.invalidateQueries(trpc.availability.pathFilter()),
         queryClient.invalidateQueries(trpc.booking.pathFilter()),
       ])
     }}
     ref={formRef}
-    schema={businessScheduleSchema}
+    schema={schema}
     submitFn={(values) => mutation.mutateAsync(values)}
   >{(form) => <>
     <LazyTabsPanel active={activeTab === "opening-hours"} className="m-0" value="opening-hours">
       <SettingsSectionHeader title={t("businessSchedule.openingHours")} description={t("businessSchedule.hoursDescription")} />
       <div className="mt-4"><TeamWorkingHoursFields defaultHours={[1, 2, 3, 4, 5].map((dayOfWeek) => ({ dayOfWeek, startMinute: 480, endMinute: 1080, isActive: true, timezone: business.timezone }))} showReset={false} scope={form.scope()} showHeader={false} timezone={business.timezone} /></div>
-      <BusinessOpeningExceptions disabled={form.formState.isSubmitting} timezone={business.timezone} />
     </LazyTabsPanel>
     <LazyTabsPanel active={activeTab === "holidays"} className="m-0" value="holidays">
       <BusinessHolidayFields form={form} timezone={business.timezone} />

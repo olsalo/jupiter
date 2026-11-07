@@ -19,12 +19,14 @@ export const staffRouter = {
   create: permissionProcedure({ team: ["manage"] }).input(staffCreateInput).mutation(({ ctx, input: { serviceIds, locationIds, ...data } }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)
     await checkAssignments(tx, ctx.organizationId, data.memberId, serviceIds, locationIds)
-    if (!data.memberId) await createResourceLimits(tx).assert(ctx.organizationId, "teamMembers")
+    if (data.isActive && data.acceptsAppointments) await createResourceLimits(tx).assert(ctx.organizationId, "teamMembers")
     return tx.staffMember.create({ data: { ...data, organizationId: ctx.organizationId, staffServices: { create: serviceIds.map((serviceId) => ({ serviceId })) }, staffLocations: { create: locationIds.map((locationId) => ({ locationId })) } } })
   })),
   update: permissionProcedure({ team: ["manage"] }).input(staffUpdateInput).mutation(({ ctx, input: { id, ...data } }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)
-    if (!await tx.staffMember.findFirst({ where: { id, organizationId: ctx.organizationId } })) notFound()
+    const current = await tx.staffMember.findFirst({ where: { id, organizationId: ctx.organizationId } })
+    if (!current) notFound()
+    if ((data.isActive ?? current.isActive) && (data.acceptsAppointments ?? current.acceptsAppointments) && !(current.isActive && current.acceptsAppointments)) await createResourceLimits(tx).assert(ctx.organizationId, "teamMembers")
     await checkAssignments(tx, ctx.organizationId, data.memberId)
     return tx.staffMember.update({ where: { id, organizationId: ctx.organizationId }, data })
   })),

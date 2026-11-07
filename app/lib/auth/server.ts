@@ -1,5 +1,3 @@
-import { createResourceLimits } from "~/.server/resource-limits/service"
-import { ResourceLimitError } from "~/.server/resource-limits/errors"
 import { hasOrganizationPermission, organizationAccessControl, organizationRoles } from "~/lib/auth/permissions"
 import { i18n } from "@better-auth/i18n"
 import { stripe } from "@better-auth/stripe"
@@ -11,7 +9,11 @@ import { linkInvitationStaff } from "~/.server/services/team"
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { emailOTP, organization } from "better-auth/plugins"
-import Stripe from "stripe"
+import { plans } from "~/lib/billing/plans"
+import { getStripePriceId, stripeClient, stripeBillingEnabled } from "~/lib/billing/stripe.server"
+import { isDemoMode } from "~/lib/billing/billing.server"
+import { getBillingPortalConfiguration, reconcileOrganizationBilling, syncStripeSubscription } from "~/lib/billing/subscriptions.server"
+export { stripeBillingEnabled } from "~/lib/billing/stripe.server"
 
 import enAuth from "~/locales/en/auth.json"
 import fiAuth from "~/locales/fi/auth.json"
@@ -52,15 +54,8 @@ const allowedHosts = [
   ...envAllowedHosts,
 ]
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-const stripeProPriceId = process.env.STRIPE_PRO_PRICE_ID
-const stripeProAnnualPriceId = process.env.STRIPE_PRO_ANNUAL_PRICE_ID
-const stripeClient = stripeSecretKey ? new Stripe(stripeSecretKey) : null
-
-export const stripeBillingEnabled = Boolean(
-  stripeSecretKey && stripeWebhookSecret && stripeProPriceId,
-)
+const stripeSoloPriceId = getStripePriceId("solo", "month")
 
 const stripePlugin = createStripePlugin()
 
@@ -78,8 +73,8 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
   session: {
-    disableSessionRefresh: true,
     expiresIn: oneYearInSeconds,
+    updateAge: 60 * 60 * 24,
   },
   advanced: {
     ipAddress: { ipAddressHeaders: [trustedIpHeader()] },
@@ -167,12 +162,8 @@ export const auth = betterAuth({
         inviteeName: { type: "string", required: false },
       } } },
       organizationHooks: {
-        async beforeAddMember({ member }) {
-          await assertTeamCapacity(member.organizationId)
-        },
         async beforeCreateInvitation({ invitation }) {
           if (typeof invitation.staffMemberId !== "string") {
-            await assertTeamCapacity(invitation.organizationId)
             return
           }
           const staff = await prisma.staffMember.findFirst({ where: { id: invitation.staffMemberId, organizationId: invitation.organizationId, isActive: true } })
@@ -181,7 +172,6 @@ export const auth = betterAuth({
           }
         },
         async beforeAcceptInvitation({ invitation, user }) {
-          await assertTeamCapacity(invitation.organizationId, 0)
           if (!user.emailVerified) throw new APIError("FORBIDDEN", { message: "Verify your email before accepting" })
           if (typeof invitation.staffMemberId !== "string") return
           const staff = await prisma.staffMember.findFirst({ where: { id: invitation.staffMemberId, organizationId: invitation.organizationId }, include: { member: true } })
@@ -217,25 +207,33 @@ export const auth = betterAuth({
 })
 
 function createStripePlugin() {
-  if (!stripeBillingEnabled || !stripeClient || !stripeWebhookSecret || !stripeProPriceId) {
+  if (!stripeBillingEnabled || !stripeClient || !stripeWebhookSecret || !stripeSoloPriceId) {
     return null
   }
 
   return stripe({
     stripeClient,
     stripeWebhookSecret,
+    onEvent: async (event) => {
+      if (event.type.startsWith("customer.subscription.")) {
+        await syncStripeSubscription((event.data.object as { id: string }).id)
+      } else if (event.type.startsWith("subscription_schedule.")) {
+        const schedule = event.data.object as { subscription?: string | { id: string } | null; released_subscription?: string | null }
+        const subscription = schedule.subscription ?? schedule.released_subscription
+        if (subscription) await syncStripeSubscription(typeof subscription === "string" ? subscription : subscription.id)
+      } else if (event.type === "checkout.session.completed") {
+        const subscription = event.data.object.subscription
+        if (subscription) await syncStripeSubscription(typeof subscription === "string" ? subscription : subscription.id)
+      }
+    },
     subscription: {
       enabled: true,
-      plans: [
-        {
-          name: "pro",
-          annualDiscountPriceId: stripeProAnnualPriceId,
-          priceId: stripeProPriceId,
-          freeTrial: {
-            days: 14,
-          },
-        },
-      ],
+      plans: plans.map((plan) => ({
+        name: plan.id,
+        priceId: getStripePriceId(plan.id, "month"),
+        annualDiscountPriceId: getStripePriceId(plan.id, "year"),
+        freeTrial: { days: 14 },
+      })),
       getCheckoutSessionParams: () => ({
         params: {
           automatic_tax: { enabled: true },
@@ -257,7 +255,7 @@ function createStripePlugin() {
           return
         }
 
-        await stripeClient.subscriptions.update(stripeSubscription.id, {
+        await stripeClient!.subscriptions.update(stripeSubscription.id, {
           payment_settings: {
             save_default_payment_method: "on_subscription",
           },
@@ -267,14 +265,15 @@ function createStripePlugin() {
         })
 
         if (paymentMethodId) {
-          await stripeClient.customers.update(customerId, {
+          await stripeClient!.customers.update(customerId, {
             invoice_settings: {
               default_payment_method: paymentMethodId,
             },
           })
         }
       },
-      authorizeReference: async ({ user, referenceId }) => {
+      authorizeReference: async ({ user, referenceId, action }) => {
+        if (action === "upgrade-subscription" || action === "billing-portal") return false
         const member = await prisma.member.findFirst({
           select: { role: true },
           where: {
@@ -290,55 +289,6 @@ function createStripePlugin() {
       enabled: true,
     },
   })
-}
-
-export async function createOrganizationTrial({
-  customerEmail,
-  organizationId,
-  organizationName,
-}: {
-  customerEmail: string
-  organizationId: string
-  organizationName: string
-}) {
-  if (!stripeBillingEnabled || !stripeClient || !stripeProPriceId) {
-    return null
-  }
-
-  const stripeCustomer = await stripeClient.customers.create(
-    {
-      email: customerEmail,
-      name: organizationName,
-      metadata: {
-        customerType: "organization",
-        organizationId,
-      },
-    },
-    {
-      idempotencyKey: `organization-trial-customer-${organizationId}`,
-    },
-  )
-  const stripeSubscription = await stripeClient.subscriptions.create(
-    {
-      collection_method: "charge_automatically",
-      customer: stripeCustomer.id,
-      items: [{ price: stripeProPriceId }],
-      metadata: {
-        referenceId: organizationId,
-      },
-      trial_period_days: 14,
-      trial_settings: {
-        end_behavior: {
-          missing_payment_method: "cancel",
-        },
-      },
-    },
-    {
-      idempotencyKey: `organization-trial-subscription-${organizationId}`,
-    },
-  )
-
-  return { stripeCustomer, stripeSubscription }
 }
 
 export async function createOrganizationPaymentMethodPortal({
@@ -365,6 +315,7 @@ export async function createOrganizationPaymentMethodPortal({
 
   const session = await stripeClient.billingPortal.sessions.create({
     customer: organization.stripeCustomerId,
+    configuration: await getBillingPortalConfiguration(),
     flow_data: {
       after_completion: {
         redirect: { return_url: returnUrl },
@@ -416,7 +367,7 @@ export async function createOrganizationCancellationPortal({
     return null
   }
 
-  const stripeSubscription = await stripeClient.subscriptions.retrieve(
+  const stripeSubscription = await stripeClient!.subscriptions.retrieve(
     subscription.stripeSubscriptionId,
   )
 
@@ -429,6 +380,7 @@ export async function createOrganizationCancellationPortal({
 
   const session = await stripeClient.billingPortal.sessions.create({
     customer: organization.stripeCustomerId,
+    configuration: await getBillingPortalConfiguration(),
     flow_data: {
       after_completion: {
         redirect: { return_url: returnUrl },
@@ -444,104 +396,6 @@ export async function createOrganizationCancellationPortal({
   })
 
   return session.url
-}
-
-export async function changeOrganizationBillingInterval({
-  interval,
-  organizationId,
-}: {
-  interval: "month" | "year"
-  organizationId: string
-}) {
-  if (!stripeBillingEnabled || !stripeClient) {
-    return null
-  }
-
-  const targetPriceId =
-    interval === "year" ? stripeProAnnualPriceId : stripeProPriceId
-
-  if (!targetPriceId) {
-    return null
-  }
-
-  const [organization, subscription] = await Promise.all([
-    prisma.organization.findUnique({
-      select: { stripeCustomerId: true },
-      where: { id: organizationId },
-    }),
-    prisma.subscription.findFirst({
-      select: { stripeSubscriptionId: true, status: true },
-      where: {
-        referenceId: organizationId,
-        status: { in: ["active", "trialing", "past_due"] },
-      },
-    }),
-  ])
-
-  if (!organization?.stripeCustomerId || !subscription?.stripeSubscriptionId) {
-    return null
-  }
-
-  const stripeSubscription = await stripeClient.subscriptions.retrieve(
-    subscription.stripeSubscriptionId,
-    { expand: ["items.data.price", "schedule"] },
-  )
-
-  if (
-    stripeSubscription.status !== "active" &&
-    stripeSubscription.status !== "trialing" &&
-    stripeSubscription.status !== "past_due"
-  ) {
-    return null
-  }
-
-  const subscriptionItem = stripeSubscription.items.data.find((item) =>
-    [stripeProPriceId, stripeProAnnualPriceId].includes(item.price.id),
-  )
-
-  if (!subscriptionItem) {
-    return null
-  }
-
-  if (subscriptionItem.price.id === targetPriceId) {
-    return { billingInterval: interval }
-  }
-
-  if (stripeSubscription.schedule) {
-    const scheduleId =
-      typeof stripeSubscription.schedule === "string"
-        ? stripeSubscription.schedule
-        : stripeSubscription.schedule.id
-    const schedule = await stripeClient.subscriptionSchedules.retrieve(scheduleId)
-
-    if (schedule.status === "active") {
-      await stripeClient.subscriptionSchedules.release(scheduleId)
-    }
-  }
-
-  const updatedSubscription = await stripeClient.subscriptions.update(
-    stripeSubscription.id,
-    {
-      items: [{
-        id: subscriptionItem.id,
-        price: targetPriceId,
-      }],
-      proration_behavior: "create_prorations",
-    },
-  )
-
-  await prisma.subscription.updateMany({
-    data: {
-      billingInterval: interval,
-      stripeScheduleId: null,
-    },
-    where: {
-      referenceId: organizationId,
-      stripeSubscriptionId: updatedSubscription.id,
-    },
-  })
-
-  return { billingInterval: interval }
 }
 
 export async function listOrganizationPaymentMethods({
@@ -671,7 +525,7 @@ export async function setOrganizationDefaultPaymentMethod({
     return null
   }
 
-  await stripeClient.customers.update(organization.stripeCustomerId, {
+  await stripeClient!.customers.update(organization.stripeCustomerId, {
     invoice_settings: {
       default_payment_method: paymentMethod.id,
     },
@@ -695,7 +549,7 @@ export async function setOrganizationDefaultPaymentMethod({
     subscriptions.data
       .filter((subscription) => updateableStatuses.has(subscription.status))
       .map((subscription) =>
-        stripeClient.subscriptions.update(subscription.id, {
+        stripeClient!.subscriptions.update(subscription.id, {
           default_payment_method: paymentMethod.id,
         }),
       ),
@@ -709,8 +563,10 @@ export async function listOrganizationSubscriptions({
 }: {
   organizationId: string
 }) {
+  await reconcileOrganizationBilling(organizationId)
   const subscriptions = await prisma.subscription.findMany({
     select: {
+      seats: true,
       billingInterval: true,
       cancelAt: true,
       cancelAtPeriodEnd: true,
@@ -722,7 +578,7 @@ export async function listOrganizationSubscriptions({
       stripeScheduleId: true,
       stripeSubscriptionId: true,
     },
-    where: { referenceId: organizationId },
+    where: { referenceId: organizationId, ...(!isDemoMode() ? { NOT: { plan: { startsWith: "demo" } } } : {}) },
   })
 
   if (!stripeBillingEnabled || !stripeClient) {
@@ -736,7 +592,7 @@ export async function listOrganizationSubscriptions({
       }
 
       try {
-        const stripeSubscription = await stripeClient.subscriptions.retrieve(
+        const stripeSubscription = await stripeClient!.subscriptions.retrieve(
           subscription.stripeSubscriptionId,
         )
         const cancelAt = stripeSubscription.cancel_at
@@ -808,7 +664,7 @@ export async function listOrganizationInvoices({
   return invoices.data
     .filter((invoice) => invoice.status !== "draft")
     .map((invoice) => {
-      const plan = invoice.lines.data[0]?.description ?? "Pro"
+      const plan = invoice.lines.data[0]?.description ?? "Jupiter"
 
       return {
         amount:
@@ -843,10 +699,11 @@ export async function getOrganizationBillingNotification({
   }
 
   try {
-    const [subscriptions, paymentMethods] = await Promise.all([
+    const [allSubscriptions, paymentMethods] = await Promise.all([
       listOrganizationSubscriptions({ organizationId }),
       listOrganizationPaymentMethods({ organizationId }),
     ])
+    const subscriptions = allSubscriptions.filter((subscription) => !subscription.plan.startsWith("demo"))
 
     if (
       subscriptions.some(({ status }) =>
@@ -960,11 +817,11 @@ export async function getOrganizationNextCharge({
     return null
   }
 
-  const stripeSubscription = await stripeClient.subscriptions.retrieve(
+  const stripeSubscription = await stripeClient!.subscriptions.retrieve(
     subscription.stripeSubscriptionId,
     { expand: ["items.data.price"] },
   )
-  const subscriptionItem = stripeSubscription.items.data[0]
+  const subscriptionItem = stripeSubscription.items.data.find((item) => plans.some((plan) => [getStripePriceId(plan.id, "month"), getStripePriceId(plan.id, "year")].includes(item.price.id)))
   const nextChargeTimestamp =
     stripeSubscription.trial_end ?? subscriptionItem?.current_period_end
 
@@ -982,11 +839,10 @@ export async function getOrganizationNextCharge({
   }
 
   const price = subscriptionItem?.price
-  const amount =
-    price?.unit_amount !== null && price?.unit_amount !== undefined
-      ? price.unit_amount * (subscriptionItem.quantity ?? 1)
-      : null
-  const currency = price?.currency ?? null
+  let amount = stripeSubscription.items.data.every((item) => item.price.unit_amount !== null)
+    ? stripeSubscription.items.data.reduce((total, item) => total + item.price.unit_amount! * (item.quantity ?? 1), 0)
+    : null
+  let currency = price?.currency ?? null
   let taxAmount: number | null = null
 
   try {
@@ -994,6 +850,8 @@ export async function getOrganizationNextCharge({
       customer: organization.stripeCustomerId,
       subscription: stripeSubscription.id,
     })
+    amount = invoicePreview.total_excluding_tax ?? invoicePreview.subtotal
+    currency = invoicePreview.currency
     const previewTaxAmount = invoicePreview.total_taxes?.reduce(
       (total, tax) => total + tax.amount,
       0,
@@ -1008,6 +866,7 @@ export async function getOrganizationNextCharge({
         ? previewTaxAmount
         : null
   } catch {
+    amount = null
     taxAmount = null
   }
 
@@ -1040,15 +899,4 @@ function isSupportedLocale(locale: unknown): locale is (typeof supportedLanguage
       locale as (typeof supportedLanguages)[number],
     )
   )
-}
-
-async function assertTeamCapacity(organizationId: string, additional = 1) {
-  try {
-    await createResourceLimits(prisma).assert(organizationId, "teamMembers", additional)
-  } catch (error) {
-    if (error instanceof ResourceLimitError) {
-      throw new APIError("FORBIDDEN", { code: error.appCode, message: error.message })
-    }
-    throw error
-  }
 }

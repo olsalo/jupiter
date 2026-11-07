@@ -29,6 +29,7 @@ const vite = await createServer({
             return { ...options, queryKey: ["booking", input], queryFn: async () => {
               if (result === "success") return { organization: { name: "Aino" } }
               if (result === "unexpected") throw new Error("Private server details")
+              if (result === "subscription") throw new TRPCError({ code: "FORBIDDEN", cause: Object.assign(new Error("Private cause"), { appCode: "SUBSCRIPTION_INACTIVE" }) })
               throw new TRPCError({ code: result, message: "Private server details", cause: new Error("Private cause") })
             } }
           } }
@@ -43,10 +44,10 @@ try {
   for (const route of ["public-booking", "booking-details", "reschedule-booking"]) {
     const { loader, clientLoader } = await vite.ssrLoadModule(`/app/routes/booking/${route}.tsx`) as typeof import("../app/routes/booking/public-booking")
     const fixture = await vite.ssrLoadModule("/app/lib/trpc/server.ts") as { setResult: (result: string) => void }
-    for (const outcome of ["NOT_FOUND", "INTERNAL_SERVER_ERROR", "TOO_MANY_REQUESTS", "unexpected", "success"]) {
+    for (const outcome of ["NOT_FOUND", "INTERNAL_SERVER_ERROR", "TOO_MANY_REQUESTS", "unexpected", "subscription", "success"]) {
       fixture.setResult(outcome)
       const initial = await loader({ params: { organizationSlug: "test", bookingCode: "code" } } as unknown as Parameters<typeof loader>[0])
-      const expectedStatus = outcome === "success" ? 200 : outcome === "NOT_FOUND" ? 404 : outcome === "TOO_MANY_REQUESTS" ? 429 : 500
+      const expectedStatus = outcome === "success" ? 200 : outcome === "NOT_FOUND" ? 404 : outcome === "TOO_MANY_REQUESTS" ? 429 : outcome === "subscription" ? 403 : 500
       const handler = createStaticHandler([{ path: "/", loader: () => initial }])
       const response = await handler.query(new Request("https://example.invalid/"))
       assert.ok(!(response instanceof Response))
@@ -70,7 +71,8 @@ try {
           assert.equal(result.data?.organization.name, "Aino")
         } else {
           assert.equal(result.status, "error")
-          assert.equal((result.error as unknown as { data: { code: string } }).data.code, outcome === "unexpected" ? "INTERNAL_SERVER_ERROR" : outcome)
+          assert.equal((result.error as unknown as { data: { code: string } }).data.code, outcome === "unexpected" ? "INTERNAL_SERVER_ERROR" : outcome === "subscription" ? "FORBIDDEN" : outcome)
+          if (outcome === "subscription") assert.equal((result.error as unknown as { data: { appCode: string } }).data.appCode, "SUBSCRIPTION_INACTIVE")
           assert.doesNotMatch(JSON.stringify(transported), /Private server details|Private cause|stack/, "Server error details stay on the server")
         }
         await observer.refetch()

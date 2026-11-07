@@ -9,11 +9,12 @@ import { Menu, MenuItem, MenuPopup, MenuTrigger } from "~/components/ui/menu"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 
-export function TeamTimeOffActionsMenu({ id, title, staffMemberId, repeating = false }: { id: string; title: string; staffMemberId: string; repeating?: boolean }) {
+export function TeamTimeOffActionsMenu({ id, title, staffMemberId, repeating = false, disabled = false, self = false }: { id: string; title: string; staffMemberId: string; repeating?: boolean; disabled?: boolean; self?: boolean }) {
   const { t } = useTranslation("team")
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const removeOwn = useMutation(trpc.profile.removeTimeOff.mutationOptions())
   const remove = useMutation(trpc.availability.deleteBlockedTime.mutationOptions({
     onSuccess: async () => {
       setConfirmOpen(false)
@@ -35,7 +36,7 @@ export function TeamTimeOffActionsMenu({ id, title, staffMemberId, repeating = f
 
   return <>
     <Menu>
-      <MenuTrigger aria-label={t("timeOff.actionsFor", { title })} render={<Button disabled={remove.isPending} size="icon" type="button" variant="ghost" />}>
+      <MenuTrigger aria-label={t("timeOff.actionsFor", { title })} render={<Button disabled={disabled || remove.isPending} size="icon" type="button" variant="ghost" />}>
         <Icon aria-hidden={true} className="size-4.5 sm:size-4" name="dotsVertical" size={18} />
       </MenuTrigger>
       <MenuPopup align="end" className="min-w-48" sideOffset={6}>
@@ -45,6 +46,6 @@ export function TeamTimeOffActionsMenu({ id, title, staffMemberId, repeating = f
         </MenuItem>
       </MenuPopup>
     </Menu>
-    <DeleteConfirmationDialog cancelLabel={t("cancel")} closeOnConfirm={false} confirmLabel={t(repeating ? "timeOff.removeSeries" : "timeOff.remove")} description={t(repeating ? "timeOff.removeSeriesDescription" : "timeOff.removeDescription")} forceBackdrop={true} isPending={remove.isPending} onConfirm={() => remove.mutate({ id })} onOpenChange={setConfirmOpen} open={confirmOpen} title={t(repeating ? "timeOff.removeSeries" : "timeOff.remove")} />
+    <DeleteConfirmationDialog cancelLabel={t("cancel")} closeOnConfirm={false} confirmLabel={t(repeating ? "timeOff.removeSeries" : "timeOff.remove")} description={t(repeating ? "timeOff.removeSeriesDescription" : "timeOff.removeDescription")} forceBackdrop={true} isPending={remove.isPending || removeOwn.isPending} onConfirm={() => self ? removeOwn.mutate({ id }, { onSuccess: () => { setConfirmOpen(false); toast.success(t("timeOff.removed")); void queryClient.invalidateQueries() }, onError: () => toast.error(t("timeOff.removeError")) }) : remove.mutate({ id })} onOpenChange={setConfirmOpen} open={confirmOpen} title={t(repeating ? "timeOff.removeSeries" : "timeOff.remove")} />
   </>
 }

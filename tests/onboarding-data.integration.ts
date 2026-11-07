@@ -52,6 +52,7 @@ try {
           update: (args: { data: { name: string }, where: { id: string } }) => Promise<void>
         }
         organizationSettings: {
+          findUnique: () => Promise<typeof existingSettings>
           upsert: (args: { create: { currency: string }, update: { currency: string } }) => Promise<void>
         }
       }) => Promise<void>) => callback({
@@ -67,6 +68,7 @@ try {
           },
         },
         organizationSettings: {
+          findUnique: async () => existingSettings,
           upsert: async ({ create, update }) => {
             assert.equal(create.currency, update.currency)
             savedCurrency = update.currency
@@ -81,6 +83,7 @@ try {
         },
       },
       subscription: {
+        findFirst: async () => null,
         findMany: async ({ where }: {
           where: { referenceId: string, status: { in: string[] } }
         }) => {
@@ -96,13 +99,17 @@ try {
   assert.deepEqual(await caller.status(), {
     billingEnabled: demoBypassEnabled,
     businessComplete: false,
+    locationComplete: false,
     availabilityComplete: false,
     holidaysComplete: false,
     setupComplete: false,
     demoOnboardingPaymentBypassEnabled: demoBypassEnabled,
     subscriptionComplete: false,
+    previouslySubscribed: false,
   })
 
+  context.headers.set("x-real-ip", "8.8.4.4")
+  globalThis.fetch = async () => Response.json({ ip: "8.8.4.4", location: { country: "FI", timezone: "Europe/Helsinki", currency: ["EUR"] } })
   const defaults = await caller.business()
   assert.equal(defaults.name, "Matti Meikäläinen")
   assert.equal(defaults.businessName, "")
@@ -128,8 +135,44 @@ try {
   ipResponse.location.currency = ["USN", "USD"]
   assert.equal((await caller.business()).currency, "USD")
   ipResponse.location.currency = ["ZZZ"]
-  assert.equal((await caller.business()).currency, "EUR")
+  assert.equal((await caller.business()).currency, "")
   ipResponse.location.currency = ["USD"]
+
+  ipResponse.location.country = "JP"
+  ipResponse.location.currency = ["JPY"]
+  ipResponse.location.timezone = "Asia/Tokyo"
+  const unsupportedDefaults = await caller.business()
+  assert.equal(unsupportedDefaults.location, "")
+  assert.equal(unsupportedDefaults.currency, "")
+  assert.equal(unsupportedDefaults.timezone, "")
+  // An unsupported country must not populate even otherwise supported values
+  ipResponse.location.currency = ["USD"]
+  ipResponse.location.timezone = "America/Chicago"
+  assert.deepEqual(await caller.business(), unsupportedDefaults)
+
+  const { onboardingCurrencyItems, onboardingTimezoneItems } = await vite.ssrLoadModule("/app/lib/localization/onboarding.ts") as typeof import("../app/lib/localization/onboarding")
+  const { onboardingFormSchema } = await vite.ssrLoadModule("/app/lib/schemas/onboarding.ts") as typeof import("../app/lib/schemas/onboarding")
+  assert.deepEqual(onboardingCurrencyItems.map(({ value }) => value).sort(), [
+    "AUD", "CAD", "CHF", "CZK", "DKK", "EUR", "GBP", "HUF", "ISK", "NOK", "NZD", "PLN", "RON", "SEK", "USD",
+  ])
+  const timezoneValues = new Set(onboardingTimezoneItems.map(({ value }) => value))
+  for (const timezone of ["Europe/Helsinki", "Asia/Nicosia", "Asia/Famagusta", "Atlantic/Azores", "Atlantic/Canary", "Pacific/Chatham", "Australia/Lord_Howe", "America/St_Johns", "America/Chicago", "Pacific/Honolulu"]) {
+    assert.ok(timezoneValues.has(timezone), `${timezone} must be available`)
+  }
+  for (const timezone of ["Asia/Tokyo", "Asia/Kolkata", "America/Mexico_City", "Africa/Johannesburg"]) {
+    assert.equal(timezoneValues.has(timezone), false)
+    assert.equal(onboardingFormSchema.safeParse({ ...defaults, businessName: "Yritys Oy", timezone }).success, false)
+  }
+  for (const { value: currency } of onboardingCurrencyItems) {
+    assert.equal(onboardingFormSchema.safeParse({ ...defaults, businessName: "Yritys Oy", currency }).success, true)
+  }
+  for (const { value: timezone } of onboardingTimezoneItems) {
+    assert.equal(onboardingFormSchema.safeParse({ ...defaults, businessName: "Yritys Oy", timezone }).success, true)
+  }
+  assert.equal(onboardingFormSchema.parse({ ...defaults, businessName: "Yritys Oy", timezone: "US/Eastern" }).timezone, "America/New_York")
+  for (const input of [{ currency: "JPY" }, { timezone: "Asia/Tokyo" }, { location: "" }, { currency: "" }, { timezone: "" }]) {
+    await assert.rejects(caller.complete({ ...defaults, businessName: "Yritys Oy", ...input }), { code: "BAD_REQUEST" })
+  }
 
   membership = {
     organizationId: "onboarding-org",
@@ -183,20 +226,13 @@ try {
     name: "Matti Meikäläinen",
     timezone: "Europe/Helsinki",
   }
-  if (demoBypassEnabled) {
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      const result = await caller.complete(updatedDetails)
-      assert.equal(result.organizationId, "onboarding-org")
-      assert.equal(savedCurrency, "EUR")
-      assert.equal(savedBusinessName, updatedDetails.businessName)
-    }
-  } else {
-    await assert.rejects(() => caller.complete(updatedDetails), (error: unknown) => (
-      error instanceof Error && "code" in error && error.code === "CONFLICT"
-    ))
-    assert.equal(savedCurrency, "SEK")
-    assert.equal(savedBusinessName, "Yritys Oy")
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const result = await caller.complete(updatedDetails)
+    assert.equal(result.organizationId, "onboarding-org")
+    assert.equal(savedCurrency, "EUR")
+    assert.equal(savedBusinessName, updatedDetails.businessName)
   }
+
   await assert.rejects(() => caller.complete({
     ...defaults,
     businessName: "Yritys Oy",
@@ -209,13 +245,13 @@ try {
   assert.equal(subscription.organizationId, "onboarding-org")
   assert.equal(subscription.billingEnabled, false)
   assert.equal(subscription.locale, "fi")
-  assert.deepEqual(subscription.prices, { month: null, year: null })
-  assert.ok(subscription.plan.features.length > 0)
+  assert.deepEqual(subscription.plans.map((plan) => [plan.id, plan.monthlyAmount]), [["solo", 4000], ["team", 8000]])
+  assert.ok(subscription.plans[0]!.features.length > 0)
 
   const englishCaller = router.createCaller({ ...context, locale: "en" } as unknown as Context)
   const englishSubscription = await englishCaller.subscription()
   assert.equal(englishSubscription.locale, "en")
-  assert.notDeepEqual(englishSubscription.plan.features, subscription.plan.features)
+  assert.notDeepEqual(englishSubscription.plans[0]!.features, subscription.plans[0]!.features)
 
   const anonymousCaller = router.createCaller({ ...context, user: undefined } as unknown as Context)
   for (const query of [() => anonymousCaller.status(), () => anonymousCaller.business(), () => anonymousCaller.subscription()]) {

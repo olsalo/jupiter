@@ -14,6 +14,7 @@ import { WelcomeDialog } from "~/components/onboarding/welcome-dialog"
 import { appNavigationItems } from "~/lib/routing/app-navigation"
 import { getRoutePermissions, hasOrganizationPermission } from "~/lib/auth/permissions"
 import { stripeBillingEnabled } from "~/lib/auth/server"
+import { isBillingEnforced, isDemoMode } from "~/lib/billing/billing.server"
 import { useAppContext } from "~/lib/hooks/use-app-context"
 import { useMediaQuery } from "~/lib/hooks"
 import { desktopViewportQuery } from "~/lib/routing/mobile-navigation"
@@ -49,7 +50,9 @@ export const middleware: Route.MiddlewareFunction[] = [
 export async function loader(args: Route.LoaderArgs) {
   const trpc = await createTRPC(args)
   const status = await getQueryClient().query(trpc.onboarding.status.queryOptions())
-  if (!status.setupComplete || (status.billingEnabled && !status.subscriptionComplete && !status.demoOnboardingPaymentBypassEnabled)) {
+  const needsSetup = process.env.NODE_ENV !== "development" && !status.setupComplete
+  const needsSubscription = process.env.NODE_ENV !== "development" && status.billingEnabled && !status.subscriptionComplete && !status.previouslySubscribed && !status.demoOnboardingPaymentBypassEnabled
+  if (needsSetup || needsSubscription) {
     const destination = new URL(args.url)
     const search = new URLSearchParams()
     if (destination.pathname !== "/") search.set("redirectTo", `${destination.pathname}${destination.search}`)
@@ -58,10 +61,14 @@ export async function loader(args: Route.LoaderArgs) {
   const appContext = await getQueryClient().query(trpc.profile.getAppContext.queryOptions())
   return {
     ...appContext,
+    subscriptionReadOnly: isBillingEnforced() && !status.subscriptionComplete,
+    billingNotification: isBillingEnforced() && !status.subscriptionComplete
+      ? { type: "subscription-inactive" as const }
+      : appContext.billingNotification,
     org: args.context.get(organizationContext),
     staffProfile: args.context.get(membershipContext)?.staffProfile ?? null,
-    billingEnabled: stripeBillingEnabled,
-    billingAnnualEnabled: Boolean(process.env.STRIPE_PRO_ANNUAL_PRICE_ID),
+    billingEnabled: stripeBillingEnabled || isDemoMode(),
+    billingAnnualEnabled: Boolean(process.env.STRIPE_SOLO_ANNUAL_PRICE_ID && process.env.STRIPE_TEAM_ANNUAL_PRICE_ID && process.env.STRIPE_EXTRA_STAFF_ANNUAL_PRICE_ID),
   }
 }
 

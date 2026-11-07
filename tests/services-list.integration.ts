@@ -21,7 +21,8 @@ try {
   const i18n = createInstance()
   await i18n.init({ resources, lng: "en", defaultNS: "common", interpolation: { escapeValue: false } })
   let role = "owner"
-  const handler = createStaticHandler([{ id: "root", path: "/", Component: Outlet, loader: () => ({ locale: i18n.language, org: { id: "org" }, organizations: [{ id: "org", role }], formatPreference: "eu" }), children: [{ path: "services", Component: Services }] }])
+  let subscriptionReadOnly = false
+  const handler = createStaticHandler([{ id: "root", path: "/", Component: Outlet, loader: () => ({ locale: i18n.language, org: { id: "org" }, organizations: [{ id: "org", role }], formatPreference: "eu", subscriptionReadOnly }), children: [{ path: "services", Component: Services }] }])
   async function render(path = "/services") {
     const context = await handler.query(new Request(`https://example.invalid${path}`))
     assert.ok(!(context instanceof Response))
@@ -46,6 +47,11 @@ try {
   assert.match(english, /aria-label="Actions for Consultation"/)
   assert.match(english, /aria-label="Actions for Haircut"/)
   assert.match(english, /href="\/services\/service-1\/edit"/)
+  subscriptionReadOnly = true
+  const readOnly = await render()
+  assert.match(readOnly, /href="\/services\/service-1\/edit"/, "Inactive subscriptions can open the service edit view")
+  assert.match(readOnly.match(/<button\b[^>]*aria-label="New service"[^>]*>/)?.[0] ?? "", /disabled=""/, "Creating a service remains disabled")
+  subscriptionReadOnly = false
   assert.match(english, /30 min/)
   assert.match(english, /25,50/)
   assert.match(english, /Hidden from booking page/)

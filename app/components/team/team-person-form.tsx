@@ -27,6 +27,7 @@ import { breaksSnapshot } from "~/lib/team/team-breaks"
 import { currentScheduleDate, scheduleAt, type ScheduleRule } from "~/lib/calendar/availability"
 import { TeamPanelLoading } from "./team-panel-loading"
 import { useTRPC } from "~/lib/trpc/client"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 import { toast } from "~/lib/toast"
 import { PermissionLevelSelect } from "./permission-level-select"
 import { TeamBreaksFields } from "./team-breaks-fields"
@@ -34,6 +35,7 @@ import { TeamPersonTimeOff } from "./team-person-time-off"
 import { TeamPersonEditHeader } from "./team-person-edit-header"
 import { TeamPersonNavigationLayout } from "./team-person-navigation-layout"
 import { TeamPersonAccess } from "./team-person-access"
+import { TeamBookableSwitch } from "./team-bookable-switch"
 import { TeamWorkingHoursFields } from "./team-working-hours-fields"
 import { useBusinessWorkingHours } from "./use-business-working-hours"
 import type { TeamPerson } from "./team-types"
@@ -62,6 +64,7 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
   const queryClient = useQueryClient()
   const location = useLocation()
   const root = useRouteLoaderData<typeof rootLoader>("root")
+  const subscriptionReadOnly = Boolean(useAppContext().subscriptionReadOnly)
   const initialTab = new URLSearchParams(location.search).get("editTab")
   const [localEditTab, setLocalEditTab] = useState(person && (initialTab === "access" || initialTab === "services" || initialTab === "availability" || initialTab === "breaks" || initialTab === "time-off") ? initialTab : "profile")
   const editTab = selfSettings ? settingsTab : localEditTab
@@ -219,7 +222,8 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
           const appCode = (error as { data?: { appCode?: string } }).data?.appCode
           if (appCode === "RESOURCE_LIMIT_REACHED") {
             const limit = (error as { data?: { resourceLimit?: { limit: number } } }).data?.resourceLimit?.limit
-            toast.error(t("common:settings.teamMemberLimitReached", { count: limit }))
+            setEditTab(selfSettings ? "appointments" : "profile")
+            formApi.current?.unstable_setCustomError("takesAppointments", t("common:settings.teamMemberLimitReached", { count: limit }))
           } else if (appCode && ["alreadyStaff", "alreadyMember", "alreadyInvited", "alreadyLinked", "pendingInvitation"].includes(appCode)) {
             const messages: Record<string, string> = { alreadyStaff: t("people.alreadyStaff"), alreadyMember: t("invite.alreadyMember"), alreadyInvited: t("invite.alreadyInvited"), alreadyLinked: t("people.alreadyLinked"), pendingInvitation: t("people.pendingEmail") }
             setEditTab(selfSettings ? "general" : "profile")
@@ -281,7 +285,7 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
             {selfSettings ? null : <Separator />}
             {selfSettings ? null : <>
             {editing ? <SettingsSectionHeader title={t("people.appointments")} description={t("people.bookingSettingsDescription")} /> : null}
-            <FormSwitch label={t("people.takesAppointments")} description={t("people.bookableDescription")} error={editing ? form.error("takesAppointments") : useError} showError={editing} aria-describedby={useError ? useErrorId : undefined} checked={bookable.value} onCheckedChange={(checked) => {
+            <TeamBookableSwitch subscriptionInactive={subscriptionReadOnly} label={t("people.takesAppointments")} description={t("people.bookableDescription")} error={editing ? form.error("takesAppointments") : useError} showError={true} aria-describedby={useError ? useErrorId : undefined} checked={bookable.value} onCheckedChange={(checked) => {
               bookable.onChange(checked)
               if (!checked && !person) {
                 form.setValue("phone", "")
@@ -293,7 +297,7 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
             </>}
             </PersonFormSection>
             {selfSettings ? <PersonFormSection settings={true} editing={true} selectedTab={editTab} tab="appointments">
-              <FormSwitch label={t("people.takesAppointments")} description={t("people.bookableDescription")} error={form.error("takesAppointments")} checked={bookable.value} onCheckedChange={bookable.onChange} onBlur={bookable.onBlur} ref={bookable.ref} name={bookable.name} />
+              <TeamBookableSwitch subscriptionInactive={subscriptionReadOnly} dimLabels={false} label={t("people.takesAppointments")} description={t("people.bookableDescription")} error={form.error("takesAppointments")} checked={bookable.value} onCheckedChange={bookable.onChange} onBlur={bookable.onBlur} ref={bookable.ref} name={bookable.name} />
               <FormLabel label={t("people.bio")} description={t("people.bioDescription")} error={form.error("bio")}><Textarea {...form.getInputProps("bio")} placeholder={t("people.bioPlaceholder")} aria-invalid={Boolean(form.error("bio"))} /></FormLabel>
             </PersonFormSection> : null}
             {!selfSettings ? <PersonFormSection settings={false} editing={editing} selectedTab={editTab} tab="services">

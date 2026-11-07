@@ -43,7 +43,7 @@ export function CalendarSidePanel({ title, subtitle, titleAdornment, returnTo, c
 
   return <aside
     aria-labelledby={titleId}
-    className="relative flex min-h-0 w-[min(28rem,80%)] min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border bg-popover text-popover-foreground max-lg:hidden"
+    className="relative flex min-h-0 w-[min(28rem,80%)] min-w-0 shrink-0 flex-col overflow-hidden rounded-lg border bg-popover text-popover-foreground max-lg:hidden"
     data-slot="calendar-side-panel"
   >
     <DialogHeader className="shrink-0 pr-14 pb-3">

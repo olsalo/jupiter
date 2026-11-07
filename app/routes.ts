@@ -1,8 +1,10 @@
-import { type RouteConfig, index, route } from "@react-router/dev/routes"
+import { type RouteConfig, index, layout, route } from "@react-router/dev/routes"
 
 export default [
-  route("/", "routes/layout.tsx", [
-    index("routes/overview.tsx"),
+  index("routes/home.tsx"),
+  route("marketing", "routes/marketing.tsx"),
+  layout("routes/layout.tsx", [
+    route("overview", "routes/overview.tsx"),
     route("example", "routes/example/example.tsx", [
       route("new", "routes/example/new-note-modal.tsx"),
       route(":noteId", "routes/example/note-modal.tsx", [
@@ -75,6 +77,7 @@ export default [
   route("/invite/:invitationId", "routes/invite.tsx"),
   route("/onboarding", "routes/onboarding/onboarding.tsx", [
     route("business", "routes/onboarding/business.tsx"),
+    route("location", "routes/onboarding/location.tsx"),
     route("availability", "routes/onboarding/availability.tsx"),
     route("holidays", "routes/onboarding/holidays.tsx"),
     route("subscription", "routes/onboarding/subscription.tsx"),

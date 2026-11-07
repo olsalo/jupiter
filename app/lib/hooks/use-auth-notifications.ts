@@ -11,7 +11,7 @@ export function useAuthNotifications() {
   const location = useLocation()
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search)
+    const searchParams = new URLSearchParams(window.location.search)
     const hasQueryMarker = searchParams.get("sessionExpired") === "1"
     const hasStorageMarker = window.sessionStorage.getItem("sessionExpiredToast") === "1"
     if (!hasQueryMarker && !hasStorageMarker) return
@@ -23,7 +23,7 @@ export function useAuthNotifications() {
       window.history.replaceState(
         window.history.state,
         "",
-        `${location.pathname}${search ? `?${search}` : ""}${location.hash}`,
+        `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`,
       )
     }
     toast.error(t("toasts.sessionExpired"))

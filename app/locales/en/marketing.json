@@ -1,0 +1,77 @@
+{
+  "metaTitle": "Jupiter · Online booking for your business",
+  "metaDescription": "Let customers book online, keep your team’s calendar organized, and send appointment reminders automatically with Jupiter",
+  "skipToContent": "Skip to content",
+  "signIn": "Sign in",
+  "openApp": "Open app",
+  "getStarted": "Get started",
+  "accessRequest": {
+    "cta": "Get early access",
+    "successTitle": "Request received",
+    "successDescription": "We’ll be in touch about access to Jupiter",
+    "error": "Your request could not be sent — please try again",
+    "tooManyRequests": "Please wait a while before requesting access again"
+  },
+  "seeHow": "See how it works",
+  "eyebrow": "A little less admin, a little more time",
+  "title": "Less booking admin.",
+  "titleSecondLine": "More time for your customers.",
+  "subtitle": "Let customers book online, keep your team’s calendar organized, and handle everyday appointment changes in one place",
+  "featuresLabel": "Explore Jupiter",
+  "videoLabel": "Watch: {{title}}",
+  "videoFallback": "Your browser cannot play this video",
+  "downloadVideo": "Open the video",
+  "videoError": "The video could not be loaded",
+  "playVideo": "Play video",
+  "pauseVideo": "Pause video",
+  "restartVideo": "Restart video",
+  "videoControls": "Video controls: {{title}}",
+  "closingTitle": "Make room for a simpler working day",
+  "closingDescription": "Keep your bookings, team and customer details in one place",
+  "footer": "More time for what you do best",
+  "founder": {
+    "greeting": "Hello,",
+    "thanks": "Thank you for taking a look at Jupiter. I hope it gives you a little more room for the work you love",
+    "signoff": "All the best,",
+    "label": "A note from the founder",
+    "title": "Your work deserves more of your day",
+    "note": "Every appointment comes with a little work around it: finding a time, sending a reminder, keeping track of changes. I want Jupiter to make that part easier, so you can give more of your attention to the people who come to you",
+    "promise": "The idea is simple: clear tools for the everyday work of running a service business. A calendar you can trust, an easy way for customers to book, and fewer things to keep in your head",
+    "name": "Olli Salo",
+    "role": "Software developer and the founder of Jupiter",
+    "portrait": "Founder portrait",
+    "signature": "Olli Salo"
+  },
+  "sections": {
+    "booking": {
+      "label": "Online booking",
+      "title": "Online booking, even when you’re busy",
+      "description": "Customers can choose a service, pick a team member and book an available time without calling or messaging you. Share your booking link on your website, social media or anywhere your customers find you"
+    },
+    "calendar": {
+      "label": "Team calendar",
+      "title": "Your team’s day, clearly laid out",
+      "description": "See appointments and free time in one shared calendar. Switch between day, week and list views, focus on a team member, and drag appointments to adjust the schedule when plans change"
+    },
+    "availability": {
+      "label": "Working hours",
+      "title": "Working hours that fit real life",
+      "description": "Set regular working hours and breaks, add time off, or open up extra hours for a busy week. Jupiter uses your availability and service preparation times to show customers suitable appointment slots"
+    },
+    "reminders": {
+      "label": "Reminders & changes",
+      "title": "Keep customers informed automatically",
+      "description": "Send booking confirmations, appointment reminders and updates when plans change. Choose when reminders go out and let customers cancel or reschedule within the rules you set"
+    },
+    "page": {
+      "label": "Your booking page",
+      "title": "A booking page that feels like your business",
+      "description": "Add your logo, a cover photo and a welcome message, then choose which services customers can book. Share your page with a simple link or a QR code customers can scan"
+    },
+    "customers": {
+      "label": "Customer details",
+      "title": "Remember the details that matter",
+      "description": "Keep customer contact details, past appointments and private notes together. Before the next visit, your team can quickly check what happened last time and what to keep in mind"
+    }
+  }
+}

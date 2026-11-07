@@ -8,6 +8,7 @@ export const adminBookingPageSchema = z.object({
   successMessage: z.string().trim().max(2000),
   accentColor: z.string().regex(/^#[\da-f]{6}$/i).nullable(),
   isActive: z.boolean(),
+  showRecentBookings: z.boolean(),
   allowStaffSelection: z.boolean(),
   allowLocationSelection: z.boolean(),
   defaultLocationId: z.string(),
@@ -18,5 +19,5 @@ export const adminBookingPageSchema = z.object({
 
 export type AdminBookingPageValues = z.output<typeof adminBookingPageSchema>
 
-export const adminBookingPageFormSchema = adminBookingPageSchema.omit({ isActive: true, allowStaffSelection: true, imageKey: true })
+export const adminBookingPageFormSchema = adminBookingPageSchema.omit({ isActive: true, allowStaffSelection: true, showRecentBookings: true, imageKey: true, accentColor: true })
 export type AdminBookingPageFormValues = z.output<typeof adminBookingPageFormSchema>

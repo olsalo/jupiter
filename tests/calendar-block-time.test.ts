@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { getCalendarSchedule, type CalendarScheduleRule } from "../app/lib/calendar/schedule.ts"
 import { getCalendarTimelineLayout } from "../app/lib/calendar/timeline-layout.ts"
 import { calendarDateFromValue, getCalendarDateState } from "../app/lib/calendar/date.ts"
-import { businessHolidayWindows } from "../app/lib/business/business-holidays.ts"
+import { businessHolidayWindows } from "../app/lib/business/business-holidays.server.ts"
 import { timeOffIntervals, type TimeOffValues } from "../app/lib/team/team-time-off.ts"
 
 const timeZone = "Europe/Helsinki"

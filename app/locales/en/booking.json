@@ -1,4 +1,7 @@
 {
+  "recentBookingLabel": "Someone booked",
+  "recentBooking": "Someone booked {{service}}",
+  "recentBookingTime": "Appointment time: {{time}}",
   "openingHours": "Opening hours",
   "closed": "Closed",
   "title": "Available appointments",
@@ -24,6 +27,7 @@
   "date": "Date & time",
   "online": "Online appointment",
   "telephone": "Phone appointment",
+  "flexible": "By arrangement",
   "previousWeek": "Previous week",
   "nextWeek": "Next week",
   "noTimes": "No times available this week",

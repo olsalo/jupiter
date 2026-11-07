@@ -6,13 +6,14 @@ import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
 import { Menu, MenuItem, MenuPopup, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger } from "~/components/ui/menu"
 
-export function ServiceCategoryMenu({ categories, totalCount, value, onValueChange, onCreate, canManage, disabled, popupAnchor }: {
+export function ServiceCategoryMenu({ categories, totalCount, value, onValueChange, onCreate, canManage, createDisabled = false, disabled, popupAnchor }: {
   categories: { id: string; name: string; count: number }[]
   totalCount: number
   value: string
   onValueChange: (value: string) => void
   onCreate: () => void
   canManage: boolean
+  createDisabled?: boolean
   disabled: boolean
   popupAnchor?: ComponentProps<typeof MenuPopup>["anchor"]
 }) {
@@ -29,7 +30,7 @@ export function ServiceCategoryMenu({ categories, totalCount, value, onValueChan
         <MenuRadioItem className="grid-cols-[.75rem_minmax(0,1fr)] [&>span]:min-w-0" closeOnClick={true} value=""><span className="flex min-w-0 items-center justify-between gap-2"><span className="min-w-0 truncate">{t("allCategories")}</span><Badge className="tabular-nums" size="sm" variant="secondary">{totalCount}</Badge></span></MenuRadioItem>
         {categories.map((category) => <MenuRadioItem className="grid-cols-[.75rem_minmax(0,1fr)] [&>span]:min-w-0" closeOnClick={true} key={category.id} value={category.id}><span className="flex min-w-0 items-center justify-between gap-2"><span className="min-w-0 truncate">{category.name}</span><Badge className="tabular-nums" size="sm" variant="secondary">{category.count}</Badge></span></MenuRadioItem>)}
       </MenuRadioGroup>
-      {canManage ? <><MenuSeparator /><MenuItem closeOnClick={true} onClick={onCreate}><Icon aria-hidden={true} name="plus" size={16} /><span className="min-w-0 truncate">{t("newCategory")}</span></MenuItem></> : null}
+      {canManage ? <><MenuSeparator /><MenuItem closeOnClick={true} disabled={createDisabled} onClick={onCreate}><Icon aria-hidden={true} name="plus" size={16} /><span className="min-w-0 truncate">{t("newCategory")}</span></MenuItem></> : null}
     </MenuPopup>
   </Menu>
 }

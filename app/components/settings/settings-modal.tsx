@@ -1,3 +1,4 @@
+import { BillingPlanForm } from "~/components/billing/billing-plan-form"
 import { PlanUsage } from "~/components/billing/plan-usage"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { FormApi } from "@rvf/react"
@@ -12,11 +13,13 @@ import { getSettingsItemIdFromHash, getVisibleSettingsItems, isSettingsHash, typ
 import { ProfilePreferences } from "~/components/settings/profile/profile-preferences"
 import { SessionsSettings } from "~/components/settings/sessions-settings"
 import { SettingsLoading } from "~/components/settings/settings-loading"
+import { useSettingsFooterScroll } from "~/components/settings/use-settings-footer-scroll"
 import { SettingsFormFooter } from "~/components/settings/settings-form-footer"
 import type { PersonFormFields } from "~/lib/schemas/team"
 import { ProfileSettingsHeader } from "~/components/settings/profile/profile-settings-header"
 import { BookingSettings, bookingSettingsFormId } from "~/components/settings/business/booking-settings"
 import { BusinessLocationSettings, businessLocationFormId } from "~/components/settings/business/business-location-settings"
+import { BusinessExceptionsSettings } from "~/components/settings/business/business-exceptions-settings"
 import { BusinessScheduleSettings, businessScheduleFormId } from "~/components/settings/business/business-schedule-settings"
 import { BusinessSettingsHeader } from "~/components/settings/business/business-settings-header"
 import { TeamPersonForm, type SettingsPersonFormState } from "~/components/team/team-person-form"
@@ -74,7 +77,6 @@ import {
   SelectValue,
 } from "~/components/ui/select"
 import { Separator } from "~/components/ui/separator"
-import { Radio, RadioGroup } from "~/components/ui/radio-group"
 import { Spinner } from "~/components/ui/spinner"
 import { Tabs } from "~/components/ui/tabs"
 import { LazyTabsPanel } from "~/components/navigation/lazy-tabs-panel"
@@ -176,10 +178,11 @@ export function SettingsModal({
     right: false,
   })
   const settingsNavRef = useRef<HTMLElement>(null)
+  const settingsPanelRef = useSettingsFooterScroll(open)
   const generalFormApi = useRef<FormApi<OrganizationSettingsFormInput>>(null)
   const profileResetRef = useRef<(() => void) | null>(null)
   const profileFormApi = useRef<FormApi<PersonFormFields>>(null)
-  const businessFormState = businessTab === "general" ? generalFormState : businessTab === "location" ? businessLocationState : businessScheduleState
+  const businessFormState = businessTab === "exceptions" ? { isDirty: false, isSubmitting: false } : businessTab === "general" ? generalFormState : businessTab === "location" ? businessLocationState : businessScheduleState
   const activeBusinessFormId = businessTab === "general" ? generalFormId : businessTab === "location" ? businessLocationFormId : businessScheduleFormId
   const activeItem = visibleSettingsItems.find((item) => item.id === activeItemId) ?? visibleSettingsItems[0]!
   const Root = isMobile ? Drawer : Dialog
@@ -205,7 +208,10 @@ export function SettingsModal({
         <LazyTabsPanel active={businessTab === "location"} className={businessTab === "location" ? "m-0 flex flex-1 flex-col" : "hidden"} value="location">
           <BusinessLocationSettings onFormStateChange={setBusinessLocationState} resetRef={businessLocationReset} />
         </LazyTabsPanel>
-        <div className={businessTab === "general" || businessTab === "location" ? "hidden" : "flex flex-1 flex-col"}>
+        <LazyTabsPanel active={businessTab === "exceptions"} className="m-0" value="exceptions">
+          <BusinessExceptionsSettings />
+        </LazyTabsPanel>
+        <div className={businessTab === "general" || businessTab === "location" || businessTab === "exceptions" ? "hidden" : "flex flex-1 flex-col"}>
           <BusinessScheduleSettings activeTab={businessTab} onTabChange={setBusinessTab} onFormStateChange={setBusinessScheduleState} resetRef={businessScheduleReset} />
         </div>
       </>
@@ -434,6 +440,7 @@ export function SettingsModal({
         }}>
         <SettingsMainSection isMobile={isMobile}>
           <DialogPanel
+            ref={settingsPanelRef}
             className="flex min-h-full flex-1 flex-col p-0"
             scrollbarClassName="hidden"
             stickyHeader={activeItemId === "profile" ? (
@@ -598,14 +605,9 @@ function BillingSettingsContent({
   const setDefaultPaymentMethodMutation = useMutation(
     trpc.billing.setDefaultPaymentMethod.mutationOptions(),
   )
+  const billingPortalMutation = useMutation(trpc.billing.portal.mutationOptions())
   const cancellationPortalMutation = useMutation(
     trpc.billing.cancellationPortal.mutationOptions(),
-  )
-  const billingIntervalMutation = useMutation(
-    trpc.billing.changeInterval.mutationOptions({
-      onSuccess: () => toast.success(t("settings.billingCycleUpdated")),
-      onError: () => toast.error(t("settings.billingCycleUpdateError")),
-    }),
   )
   const canManage = hasOrganizationPermission(useCurrentOrganizationRole(), { billing: ["manage"] })
   const paymentMethodsQuery = useQuery({
@@ -627,6 +629,16 @@ function BillingSettingsContent({
   const subscriptionQuery = useQuery({
     ...trpc.billing.subscriptions.queryOptions(),
     enabled: Boolean(rootData?.billingEnabled && organizationId && canManage),
+  })
+  const planQuery = useQuery({
+    ...trpc.billing.plan.queryOptions(),
+    enabled: Boolean(rootData?.billingEnabled && organizationId && canManage),
+    staleTime: 0,
+  })
+  const usageQuery = useQuery({
+    ...trpc.resourceLimits.getAll.queryOptions(),
+    enabled: Boolean(rootData?.billingEnabled && organizationId && canManage),
+    staleTime: 0,
   })
   const activeSubscription = subscriptionQuery.data?.find((item) =>
     ["active", "past_due", "trialing"].includes(item.status) &&
@@ -650,17 +662,6 @@ function BillingSettingsContent({
     subscriptionQuery.data?.[0]
   const currentBillingInterval: BillingInterval =
     subscription?.billingInterval === "year" ? "year" : "month"
-  const [selectedBillingInterval, setSelectedBillingInterval] =
-    useState<BillingInterval | null>(null)
-  useEffect(() => {
-    if (subscriptionQuery.isPending) {
-      return
-    }
-
-    setSelectedBillingInterval(currentBillingInterval)
-  }, [currentBillingInterval, subscriptionQuery.isPending])
-  const billingAnnualEnabled = Boolean(rootData?.billingAnnualEnabled)
-  const canChooseBillingInterval = billingAnnualEnabled
   const canCancelSubscription = Boolean(
     activeSubscription?.stripeSubscriptionId &&
       !activeSubscription.cancelAtPeriodEnd &&
@@ -690,6 +691,8 @@ function BillingSettingsContent({
     organizationLoading ||
     (canManage &&
       (subscriptionLoading ||
+        planQuery.isLoading ||
+        usageQuery.isLoading ||
         nextChargeLoading ||
         paymentMethodsLoading ||
         invoicesLoading))
@@ -713,28 +716,7 @@ function BillingSettingsContent({
       : null
 
   async function startCheckout() {
-    if (!organizationId) {
-      return
-    }
-
-    setPendingAction("checkout")
-
-    const result = await authClient.subscription.upgrade({
-      annual: selectedBillingInterval === "year",
-      cancelUrl: window.location.href,
-      customerType: "organization",
-      plan: "pro",
-      locale: language,
-      referenceId: organizationId,
-      subscriptionId: activeSubscription?.stripeSubscriptionId ?? undefined,
-      successUrl: window.location.href,
-    })
-
-    if (result.error) {
-      toast.error(t("settings.billingActionError"))
-    }
-
-    setPendingAction(null)
+    document.getElementById("billing-plan-choice")?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
 
   async function openBillingPortal(action: "portal" | "view-all" = "portal") {
@@ -744,18 +726,13 @@ function BillingSettingsContent({
 
     setPendingAction(action)
 
-    const result = await authClient.subscription.billingPortal({
-      customerType: "organization",
-      locale: language,
-      referenceId: organizationId,
-      returnUrl: window.location.href,
-    })
-
-    if (result.error) {
+    try {
+      const result = await billingPortalMutation.mutateAsync({ locale: language, returnUrl: window.location.href })
+      window.location.assign(result.url)
+    } catch {
       toast.error(t("settings.billingActionError"))
+      setPendingAction(null)
     }
-
-    setPendingAction(null)
   }
 
   async function openPaymentMethodPortal() {
@@ -814,39 +791,6 @@ function BillingSettingsContent({
     }
   }
 
-  async function switchBillingInterval(interval: BillingInterval) {
-    if (!organizationId || !activeSubscription?.stripeSubscriptionId) {
-      return
-    }
-
-    if (interval === currentBillingInterval) {
-      return
-    }
-
-    setPendingAction("billing-interval")
-    setBillingRefreshSnapshot({
-      billingInterval: currentBillingInterval,
-      nextCharge: nextChargeQuery.data,
-    })
-
-    try {
-      await billingIntervalMutation.mutateAsync({
-        interval,
-      })
-
-      await Promise.all([
-        invoicesQuery.refetch(),
-        subscriptionQuery.refetch(),
-        nextChargeQuery.refetch(),
-      ])
-    } catch {
-      setSelectedBillingInterval(currentBillingInterval)
-    } finally {
-      setBillingRefreshSnapshot(null)
-      setPendingAction(null)
-    }
-  }
-
   async function restartSubscription() {
     if (!organizationId || !subscription?.stripeSubscriptionId) {
       return
@@ -857,11 +801,6 @@ function BillingSettingsContent({
     const hasPendingCancellation = Boolean(
       subscription.cancelAtPeriodEnd || subscription.cancelAt,
     )
-    const restartInterval =
-      selectedBillingInterval ?? currentBillingInterval
-    const shouldChangeBillingInterval =
-      restartInterval !== currentBillingInterval
-
     if (
       hasPendingCancellation &&
       ["active", "trialing"].includes(subscription.status)
@@ -876,16 +815,6 @@ function BillingSettingsContent({
         toast.error(t("settings.billingActionError"))
         setPendingAction(null)
         return
-      }
-
-      if (shouldChangeBillingInterval) {
-        try {
-          await billingIntervalMutation.mutateAsync({
-            interval: restartInterval,
-          })
-        } catch {
-          setSelectedBillingInterval(currentBillingInterval)
-        }
       }
 
       setBillingRefreshSnapshot({
@@ -905,26 +834,13 @@ function BillingSettingsContent({
       return
     }
 
-    const result = await authClient.subscription.upgrade({
-      annual: selectedBillingInterval === "year",
-      cancelUrl: window.location.href,
-      customerType: "organization",
-      locale: language,
-      plan: "pro",
-      referenceId: organizationId,
-      subscriptionId: subscription.stripeSubscriptionId,
-      successUrl: window.location.href,
-    })
-
-    if (result.error) {
-      toast.error(t("settings.billingActionError"))
-      setPendingAction(null)
-    }
+    setPendingAction(null)
+    await startCheckout()
   }
 
   if (!rootData?.billingEnabled) {
     return (
-      <Alert variant="info">
+      <Alert>
         <AlertTitle>{t("settings.billingNotConfiguredTitle")}</AlertTitle>
         <AlertDescription>
           {t("settings.billingNotConfiguredDescription")}
@@ -935,7 +851,7 @@ function BillingSettingsContent({
 
   if (!canManage) {
     return (
-      <Alert variant="info">
+      <Alert>
         <AlertTitle>{t("settings.billingOwnerTitle")}</AlertTitle>
         <AlertDescription>
           {t("settings.billingOwnerDescription")}
@@ -950,7 +866,7 @@ function BillingSettingsContent({
 
   if (subscriptionQuery.isError) {
     return (
-      <Alert variant="error">
+      <Alert>
         <AlertTitle>{t("settings.billingLoadError")}</AlertTitle>
         <AlertDescription>{t("settings.billingLoadErrorDescription")}</AlertDescription>
       </Alert>
@@ -1012,30 +928,24 @@ function BillingSettingsContent({
 
   return (
     <div className="flex min-h-full flex-1 flex-col gap-8">
-      {canManage ? <PlanUsage /> : null}
-      <Card className="overflow-hidden">
-        <CardHeader className="gap-2 p-4">
+      <Card className="overflow-hidden rounded-lg shadow-none before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-none dark:before:shadow-none">
+        <CardHeader className="grid-rows-1 gap-0 p-4">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex min-w-0 items-start gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Icon aria-hidden="true" name="creditCard" size={19} />
-              </div>
-              <div className="min-w-0">
-                <CardTitle className="text-base">
-                  {subscription?.plan
-                    ? formatSubscriptionPlan(subscription.plan)
-                    : t("settings.billingPlan")}
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  {effectiveStatus === "trialing"
-                    ? t("settings.billingTrialDescription")
-                    : effectiveStatus === "canceled"
-                      ? t("settings.billingInactivePlanDescription")
-                      : subscription
-                        ? t("settings.billingPlanDescription")
-                        : t("settings.billingNotActiveDescription")}
-                </CardDescription>
-              </div>
+            <div className="min-w-0">
+              <CardTitle className="text-base">
+                {subscription?.plan
+                  ? formatSubscriptionPlan(subscription.plan)
+                  : t("settings.billingPlan")}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {effectiveStatus === "trialing"
+                  ? t("settings.billingTrialDescription")
+                  : effectiveStatus === "canceled"
+                    ? t("settings.billingInactivePlanDescription")
+                    : subscription
+                      ? t("settings.billingPlanDescription")
+                      : t("settings.billingNotActiveDescription")}
+              </CardDescription>
             </div>
             <Badge
               className="!h-7 !min-h-0 !min-w-0 rounded-full !px-2.5 !py-1 !text-sm sm:!h-7 sm:!min-h-0 sm:!min-w-0 sm:!px-2.5 sm:!py-1 sm:!text-sm"
@@ -1119,67 +1029,14 @@ function BillingSettingsContent({
           </CardPanel>
         ) : null}
 
+        {canManage && subscription && ["active", "past_due", "trialing"].includes(subscription.status) && !subscription.endedAt ? <PlanUsage /> : null}
+        <div className="border-t p-4" id="billing-plan-choice">
+          <BillingPlanForm />
+        </div>
+        {activeSubscription || canRestartSubscription ? (
         <CardFooter className="flex flex-col items-stretch gap-3 border-t p-4">
-          {canChooseBillingInterval ? (
-            <div className="flex flex-col gap-3 border-b border-border pb-3">
-              <div className="flex min-w-0 items-baseline justify-between gap-3">
-                <p className="shrink-0 text-sm font-medium">
-                  {t("settings.billingCycle")}
-                </p>
-                <p className="min-w-0 text-right text-xs text-muted-foreground">
-                  {activeSubscription
-                    ? t("settings.billingCycleChangeDescription")
-                    : canRestartSubscription
-                      ? t("settings.billingCycleRestartDescription")
-                      : t("settings.billingCycleNewDescription")}
-                </p>
-              </div>
-              <RadioGroup
-                aria-label={t("settings.billingCycle")}
-                className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2"
-                onValueChange={(value) => {
-                  if (value !== "month" && value !== "year") {
-                    return
-                  }
-
-                  const interval = value as BillingInterval
-                  setSelectedBillingInterval(interval)
-
-                  if (activeSubscription) {
-                    void switchBillingInterval(interval)
-                  }
-                }}
-                value={selectedBillingInterval ?? currentBillingInterval}
-              >
-                <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-3 py-2 transition-colors has-data-[checked]:border-primary has-data-[checked]:bg-primary/5 has-data-[disabled]:cursor-not-allowed has-data-[disabled]:opacity-64">
-                  <Radio disabled={pendingAction !== null} value="month" />
-                  <span className="text-sm font-medium">
-                    {t("settings.billingCycleMonthly")}
-                  </span>
-                </label>
-                <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-3 py-2 transition-colors has-data-[checked]:border-primary has-data-[checked]:bg-primary/5 has-data-[disabled]:cursor-not-allowed has-data-[disabled]:opacity-64">
-                  <Radio
-                    disabled={pendingAction !== null}
-                    value="year"
-                  />
-                  <span className="text-sm font-medium">
-                    {t("settings.billingCycleYearly")}
-                  </span>
-                </label>
-              </RadioGroup>
-            </div>
-          ) : null}
 
           <div className="flex flex-wrap gap-2">
-            {!activeSubscription && !canRestartSubscription ? (
-              <Button
-                disabled={pendingAction !== null}
-                loading={pendingAction === "checkout"}
-                onClick={() => void startCheckout()}
-              >
-                {t("settings.billingChoosePlan")}
-              </Button>
-            ) : null}
             {activeSubscription ? (
               <>
                 {canRestartSubscription ? (
@@ -1234,6 +1091,7 @@ function BillingSettingsContent({
             ) : null}
           </div>
         </CardFooter>
+        ) : null}
       </Card>
 
       {canManage ? (
@@ -1330,7 +1188,7 @@ function BillingSettingsContent({
                 </div>
               ))
             ) : (
-              <Alert variant="info">
+              <Alert>
                 <AlertDescription>
                   {t("settings.billingNoPaymentMethods")}
                 </AlertDescription>
@@ -1363,7 +1221,7 @@ function BillingSettingsContent({
               {t("settings.billingRecentTransactionsLoading")}
             </div>
           ) : invoicesQuery.isError ? (
-            <Alert variant="info">
+            <Alert>
               <AlertDescription>
                 {t("settings.billingRecentTransactionsError")}
               </AlertDescription>
@@ -1424,7 +1282,7 @@ function BillingSettingsContent({
               </div>
             ))
           ) : (
-            <Alert variant="info">
+            <Alert>
               <AlertDescription>
                 {t("settings.billingNoTransactions")}
               </AlertDescription>
@@ -1482,6 +1340,8 @@ function formatDateRange(start: string | null, end: string | null, fallback: str
 }
 
 function formatSubscriptionPlan(plan: string) {
+  if (plan === "demo_solo") return "Demo · Solo"
+  if (plan === "demo_team") return "Demo · Team"
   return plan.slice(0, 1).toUpperCase() + plan.slice(1)
 }
 
@@ -1629,7 +1489,14 @@ function GeneralSettingsContent({
           formApi.current?.resetForm(values)
         }
 
-        await queryClient.invalidateQueries(trpc.organizations.general.queryFilter())
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.organizations.pathFilter()),
+          queryClient.invalidateQueries(trpc.location.pathFilter()),
+          queryClient.invalidateQueries(trpc.availability.pathFilter()),
+          queryClient.invalidateQueries(trpc.appointment.pathFilter()),
+          queryClient.invalidateQueries(trpc.booking.pathFilter()),
+          queryClient.invalidateQueries(trpc.profile.getAppContext.queryFilter()),
+        ])
         await revalidator.revalidate()
       }}
       ref={formApi}

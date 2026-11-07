@@ -1,0 +1,77 @@
+{
+  "metaTitle": "Jupiter · Ajanvaraus yrityksellesi",
+  "metaDescription": "Anna asiakkaiden varata aika verkossa, pidä tiimin kalenteri järjestyksessä ja lähetä ajanvarausmuistutukset automaattisesti Jupiterilla",
+  "skipToContent": "Siirry sisältöön",
+  "signIn": "Kirjaudu sisään",
+  "openApp": "Avaa sovellus",
+  "getStarted": "Aloita käyttö",
+  "accessRequest": {
+    "cta": "Pyydä ennakkopääsyä",
+    "successTitle": "Pyyntö vastaanotettu",
+    "successDescription": "Otamme sinuun yhteyttä Jupiterin käyttöönotosta",
+    "error": "Pyyntöä ei voitu lähettää – yritä uudelleen",
+    "tooManyRequests": "Odota hetki ennen uuden pyynnön lähettämistä"
+  },
+  "seeHow": "Katso, miten Jupiter toimii",
+  "eyebrow": "Vähemmän järjestelyä, enemmän aikaa",
+  "title": "Vähemmän varausten järjestelyä.",
+  "titleSecondLine": "Enemmän aikaa asiakkaille.",
+  "subtitle": "Anna asiakkaiden varata aika verkossa, pidä tiimin kalenteri järjestyksessä ja hoida ajanvarausten muutokset samassa paikassa",
+  "featuresLabel": "Tutustu Jupiteriin",
+  "videoLabel": "Katso: {{title}}",
+  "videoFallback": "Selaimesi ei voi toistaa tätä videota",
+  "downloadVideo": "Avaa video",
+  "videoError": "Videota ei voitu ladata",
+  "playVideo": "Toista video",
+  "pauseVideo": "Pysäytä video",
+  "restartVideo": "Toista alusta",
+  "videoControls": "Videon säätimet: {{title}}",
+  "closingTitle": "Tee tilaa sujuvammalle työpäivälle",
+  "closingDescription": "Pidä ajanvaraukset, tiimi ja asiakastiedot yhdessä paikassa",
+  "footer": "Enemmän aikaa omalle työllesi",
+  "founder": {
+    "greeting": "Hei,",
+    "thanks": "Kiitos, että tutustuit Jupiteriin. Toivon sen antavan sinulle vähän enemmän aikaa sille työlle, josta pidät",
+    "signoff": "Terveisin,",
+    "label": "Terveiset perustajalta",
+    "title": "Enemmän aikaa sille työlle, jota haluat tehdä",
+    "note": "Jokaisen ajanvarauksen ympärillä on pientä työtä: sopivan ajan etsimistä, muistuttamista ja muutosten kirjaamista. Haluan Jupiterin helpottavan juuri tätä arkea, jotta sinulle jää enemmän aikaa asiakkaillesi",
+    "promise": "Ajatus on yksinkertainen: selkeät työkalut palveluyrityksen päivittäiseen työhön. Kalenteri, johon voit luottaa, helppo tapa varata aika ja vähemmän muistettavaa",
+    "name": "Olli Salo",
+    "role": "Sovelluskehittäjä ja Jupiterin perustaja",
+    "portrait": "Perustajan kuva",
+    "signature": "Olli Salo"
+  },
+  "sections": {
+    "booking": {
+      "label": "Ajanvaraus verkossa",
+      "title": "Asiakkaat varaavat, vaikka sinulla olisi kiire",
+      "description": "Asiakas voi valita palvelun, tekijän ja vapaan ajan ilman soittoa tai viestiä. Jaa varauslinkki verkkosivuillasi, somessa tai siellä, missä asiakkaasi sinut löytävät"
+    },
+    "calendar": {
+      "label": "Tiimin kalenteri",
+      "title": "Koko tiimin päivä selkeästi näkyvissä",
+      "description": "Näe ajanvaraukset ja vapaat ajat yhteisessä kalenterissa. Vaihda päivä-, viikko- ja listanäkymän välillä, tarkastele yhden tekijän varauksia ja siirrä ajanvarauksia vetämällä suunnitelmien muuttuessa"
+    },
+    "availability": {
+      "label": "Työajat",
+      "title": "Työajat arjen mukaan",
+      "description": "Määritä säännölliset työajat ja tauot, lisää vapaat tai avaa lisätunteja kiireiselle viikolle. Jupiter huomioi työajat sekä palvelujen valmisteluajat ja näyttää asiakkaille sopivat varausajat"
+    },
+    "reminders": {
+      "label": "Muistutukset ja muutokset",
+      "title": "Pidä asiakkaat ajan tasalla automaattisesti",
+      "description": "Lähetä varausvahvistukset, muistutukset ja tiedot ajanvarausten muutoksista automaattisesti. Valitse muistutusten ajankohdat ja anna asiakkaiden perua tai siirtää aika määrittämiesi sääntöjen mukaan"
+    },
+    "page": {
+      "label": "Oma varaussivu",
+      "title": "Yrityksesi näköinen varaussivu",
+      "description": "Lisää logo, kansikuva ja tervetuloviesti, ja valitse verkossa varattavat palvelut. Jaa varaussivu helposti linkillä tai QR-koodilla, jonka asiakkaasi voivat skannata"
+    },
+    "customers": {
+      "label": "Asiakastiedot",
+      "title": "Muista asiakkaalle tärkeät asiat",
+      "description": "Pidä yhteystiedot, aiemmat käynnit ja tiimin omat muistiinpanot yhdessä paikassa. Ennen seuraavaa käyntiä näet nopeasti, mitä viimeksi tehtiin ja mitä kannattaa huomioida"
+    }
+  }
+}

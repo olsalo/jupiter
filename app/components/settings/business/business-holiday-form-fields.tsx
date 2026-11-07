@@ -4,30 +4,51 @@ import { useRouteLoaderData } from "react-router"
 
 import { DatePicker } from "~/components/forms/date-picker"
 import FormLabel from "~/components/forms/form-label"
-import { FormSwitch } from "~/components/forms/form-switch"
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group"
 import { TimePicker } from "~/components/forms/time-picker"
 import { Input } from "~/components/ui/input"
 import type { BusinessHolidayValues } from "~/lib/schemas/business-schedule"
 import type { loader as rootLoader } from "~/root"
 
 export function BusinessHolidayFormFields({ form, timezone, custom, repeatsYearly = true, nameLabel }: { form: FormApi<BusinessHolidayValues>; timezone: string; custom: boolean; repeatsYearly?: boolean; nameLabel?: string }) {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const root = useRouteLoaderData<typeof rootLoader>("root")
-  const language = root?.locale === "fi" ? "fi" : "en"
+  const language = i18n.resolvedLanguage === "fi" ? "fi" : "en"
   const formatPreference = root?.formatPreference ?? "eu"
   const pending = form.formState.isSubmitting
-  const date = form.getControlProps("date")
   const closed = form.getControlProps("closed")
   return <div className="grid gap-4">
     {custom ? <>
       <FormLabel error={form.error("name")} label={nameLabel ?? t("businessSchedule.name")}>
         <Input {...form.getInputProps("name")} aria-invalid={Boolean(form.error("name"))} disabled={pending} type="text" />
       </FormLabel>
-      <FormLabel description={repeatsYearly ? t("businessSchedule.repeatsYearly") : undefined} error={form.error("date")} label={t("businessSchedule.date")}>
-        <DatePicker clearLabel={t("businessSchedule.clearDate")} disabled={pending} formatPreference={formatPreference} inputRef={date.ref} invalid={Boolean(form.error("date"))} label={t("businessSchedule.date")} language={language} onBlur={date.onBlur} onChange={(value) => date.onChange(value ?? "")} placeholder={t("businessSchedule.chooseDate")} timeZone={timezone} value={date.value || null} />
-      </FormLabel>
+      <div className="grid grid-cols-2 gap-4">{(["date", "endDate"] as const).map((field) => {
+        const control = form.getControlProps(field)
+        const label = t(field === "date" ? "businessSchedule.startDate" : "businessSchedule.endDate")
+        return <FormLabel error={form.error(field)} key={field} label={label}>
+          <DatePicker clearLabel={t("businessSchedule.clearDate")} defaultMonth={form.value("date") ? new Date(`${form.value("date")}T12:00:00Z`) : undefined} disabled={pending} formatPreference={formatPreference} inputRef={control.ref} invalid={Boolean(form.error(field))} label={label} language={language} onBlur={control.onBlur} onChange={(value) => control.onChange(value ?? "")} placeholder={t(field === "endDate" ? "businessSchedule.sameDay" : "businessSchedule.chooseDate")} timeZone={timezone} value={control.value || null} />
+        </FormLabel>
+      })}</div>
+      {repeatsYearly ? <p className="text-xs text-muted-foreground">{t("businessSchedule.repeatsYearly")}</p> : null}
     </> : null}
-    <FormSwitch checked={closed.value} disabled={pending} label={t("businessSchedule.closedAllDay")} onBlur={closed.onBlur} onCheckedChange={closed.onChange} ref={closed.ref} />
+    <FormLabel error={form.error("closed")} label={t("businessSchedule.dayStatus")}>
+      <ToggleGroup
+        aria-label={t("businessSchedule.dayStatus")}
+        className="grid w-full grid-cols-2 rounded-lg bg-muted p-1"
+        disabled={pending}
+        multiple={false}
+        onBlur={closed.onBlur}
+        onValueChange={(values) => {
+          const value = values[0]
+          if (value === "closed" || value === "open") closed.onChange(value === "closed")
+        }}
+        ref={closed.ref}
+        value={[closed.value ? "closed" : "open"]}
+      >
+        <ToggleGroupItem className="h-8 w-full data-pressed:bg-background data-pressed:shadow-xs" type="button" value="closed">{t("businessSchedule.closed")}</ToggleGroupItem>
+        <ToggleGroupItem className="h-8 w-full data-pressed:bg-background data-pressed:shadow-xs" type="button" value="open">{t("businessSchedule.open")}</ToggleGroupItem>
+      </ToggleGroup>
+    </FormLabel>
     {!closed.value ? <div className="grid grid-cols-2 gap-4">{(["startMinute", "endMinute"] as const).map((field) => {
       const control = form.getControlProps(field)
       const label = t(field === "startMinute" ? "businessSchedule.opensAt" : "businessSchedule.closesAt")

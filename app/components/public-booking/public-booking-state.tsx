@@ -16,11 +16,12 @@ export function PublicBookingLoading({ label, className }: { label: string; clas
   )
 }
 
-export function PublicBookingUnavailable({ notFound, title, onRetry, retrying }: {
+export function PublicBookingUnavailable({ notFound, title, onRetry, retrying, showRetry = true }: {
   notFound: boolean
   title: string
   onRetry: () => void
   retrying: boolean
+  showRetry?: boolean
 }) {
   const { t } = useTranslation("booking")
 
@@ -40,7 +41,7 @@ export function PublicBookingUnavailable({ notFound, title, onRetry, retrying }:
       <AlertDescription>
         {t("unavailableHint")}
       </AlertDescription>
-      <AlertAction><Button loading={retrying} onClick={onRetry} type="button" variant="outline">{t("retry")}</Button></AlertAction>
+      {showRetry ? <AlertAction><Button loading={retrying} onClick={onRetry} type="button" variant="outline">{t("retry")}</Button></AlertAction> : null}
     </Alert>
   )
 }

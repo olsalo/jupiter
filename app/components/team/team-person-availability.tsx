@@ -15,7 +15,7 @@ import { useBusinessWorkingHours } from "./use-business-working-hours"
 import type { TeamPerson } from "./team-types"
 
 export function TeamPersonAvailability({ staff }: { staff: NonNullable<TeamPerson["staff"]> }) {
-  const { t } = useTranslation("team")
+  const { i18n, t } = useTranslation("team")
   const root = useRouteLoaderData<typeof rootLoader>("root")
   const trpc = useTRPC()
   const rules = useQuery(trpc.availability.getRules.queryOptions({ staffMemberId: staff.id }))
@@ -27,11 +27,11 @@ export function TeamPersonAvailability({ staff }: { staff: NonNullable<TeamPerso
   const failed = rules.isError || (useDefaults && businessHours.isError)
   const formatTime = (minute: number) => formatDateTime(new Date(Date.UTC(2000, 0, 1, 0, minute)), {
     formatPreference: root?.formatPreference ?? "eu",
-    language: root?.locale === "fi" ? "fi" : "en",
+    language: i18n.resolvedLanguage === "fi" ? "fi" : "en",
     includeDate: false,
     timeZone: "UTC",
   })
-  const options = { formatPreference: root?.formatPreference ?? "eu", language: root?.locale === "fi" ? "fi" as const : "en" as const }
+  const options = { formatPreference: root?.formatPreference ?? "eu", language: i18n.resolvedLanguage === "fi" ? "fi" as const : "en" as const }
 
   return (
     <TeamPersonSection loadingLabel={pending ? t("people.loadingAvailability") : undefined} header={<TeamScheduleViewHeader title={t("people.availability")} description={t("people.hoursDescription")} />}>

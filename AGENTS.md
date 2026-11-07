@@ -29,3 +29,5 @@
 - in ui labels, only use period at end if there is comma in sentence
 - Browser testing is available through the Playwright MCP tools (mcp__playwright). Use them to inspect and test the local UI; an unavailable Browser plugin connection does not mean Playwright is unavailable
 - Give Vite-based test servers a dedicated cacheDir under node_modules/.vite-tests so tests do not invalidate dependencies in an already running dev server
+- always list files with link to them that you made changes to
+- never use – in ui labels

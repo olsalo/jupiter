@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { createServer } from "vite"
+import { localPreviewHeaders } from "../scripts/lib/local-preview.ts"
 
 process.env.NODE_ENV = "production"
 process.env.BETTER_AUTH_SECRET = "production-auth-regression-test-secret-123456789"
@@ -7,7 +8,7 @@ process.env.STRIPE_SECRET_KEY = ""
 
 const appPath = new URL("../app", import.meta.url).pathname
 
-for (const origin of ["http://localhost:3000", "http://192.168.100.34:3000", "https://jupiter.example.com"]) {
+for (const [index, origin] of ["http://127.0.0.1:3000", "http://localhost:3000", "http://192.168.100.34:3000", "https://jupiter.example.com"].entries()) {
   process.env.BETTER_AUTH_URL = origin
   const secure = origin.startsWith("https:")
   const vite = await createServer({
@@ -35,7 +36,9 @@ for (const origin of ["http://localhost:3000", "http://192.168.100.34:3000", "ht
   try {
     const { auth } = await vite.ssrLoadModule("/app/lib/auth/server.ts") as typeof import("../app/lib/auth/server")
     const email = "production-auth@example.invalid"
-    const headers = new Headers({ origin, host: new URL(origin).host })
+    const headers = new Headers(origin === "http://127.0.0.1:3000"
+      ? Object.fromEntries(Object.entries(localPreviewHeaders({ origin, "x-real-ip": "198.51.100.1" }, origin, "127.0.0.1")).map(([key, value]) => [key, String(value)]))
+      : { origin, host: new URL(origin).host, "x-real-ip": `127.0.0.${index + 1}`, "x-forwarded-for": `127.0.0.${index + 1}` })
     const otp = await auth.api.createVerificationOTP({ headers, body: { email, type: "sign-in" } })
     const signedIn = await auth.handler(new Request(`${origin}/api/auth/sign-in/email-otp`, {
       method: "POST",

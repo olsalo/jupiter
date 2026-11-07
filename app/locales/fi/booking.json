@@ -1,4 +1,7 @@
 {
+  "recentBookingLabel": "Joku varasi ajan",
+  "recentBooking": "Uusi varaus: {{service}}",
+  "recentBookingTime": "Varattu aika: {{time}}",
   "openingHours": "Aukioloajat",
   "closed": "Suljettu",
   "title": "Vapaat ajat",
@@ -24,6 +27,7 @@
   "date": "Päivä ja aika",
   "online": "Etätapaaminen",
   "telephone": "Puhelinaika",
+  "flexible": "Sovittavissa",
   "previousWeek": "Edellinen viikko",
   "nextWeek": "Seuraava viikko",
   "noTimes": "Tälle viikolle ei ole vapaita aikoja",

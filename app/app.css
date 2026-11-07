@@ -22,6 +22,8 @@
 @theme {
   --font-sans: "Inter";
   --font-heading: "Inter";
+  --font-serif: "Lora";
+  --font-signature: "Caveat";
   --font-mono:
     "Geist Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo,
     monospace;
@@ -241,7 +243,7 @@
 /* Document appearance and touch scrolling */
 html,
 body {
-  @apply bg-background font-sans text-foreground;
+  @apply bg-background font-sans text-foreground selection:bg-foreground/15;
   overscroll-behavior: none;
   touch-action: manipulation;
 }

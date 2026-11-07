@@ -2,9 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Alert, AlertAction, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
-import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from "~/components/ui/card"
 import { Meter, MeterIndicator, MeterLabel, MeterTrack } from "~/components/ui/meter"
-import { Skeleton } from "~/components/ui/skeleton"
 import { useTRPC } from "~/lib/trpc/client"
 
 export function PlanUsage() {
@@ -13,15 +11,12 @@ export function PlanUsage() {
   const usage = useQuery({ ...trpc.resourceLimits.getAll.queryOptions(), staleTime: 0 })
   const team = usage.data?.teamMembers
 
+  if (!team && !usage.isError) return null
+
   return (
-    <Card>
-      <CardHeader className="gap-2 p-4">
-        <CardTitle className="text-base">{t("settings.planUsage")}</CardTitle>
-        <CardDescription className="text-xs">{t("settings.teamMemberUsageDescription")}</CardDescription>
-      </CardHeader>
-      <CardPanel className="px-4 pt-0 pb-4">
+    <div className="border-t px-4 py-4">
         {usage.isError ? (
-          <Alert variant="error">
+          <Alert>
             <AlertTitle>{t("settings.planUsageError")}</AlertTitle>
             <AlertAction><Button disabled={usage.isFetching} loading={usage.isFetching} onClick={() => void usage.refetch()} size="sm" type="button" variant="outline">{t("settings.planUsageRetry")}</Button></AlertAction>
           </Alert>
@@ -32,9 +27,9 @@ export function PlanUsage() {
               <span className="text-sm tabular-nums">{team.used} / {team.limit}</span>
             </div>
             <MeterTrack className="rounded-full"><MeterIndicator className={team.reached ? "bg-warning" : undefined} /></MeterTrack>
+            <p className="text-xs text-muted-foreground">{t("settings.teamMemberUsageDescription")}</p>
           </Meter>
-        ) : <Skeleton className="h-9 w-full rounded-lg" />}
-      </CardPanel>
-    </Card>
+        ) : null}
+    </div>
   )
 }

@@ -10,7 +10,7 @@ import type { PersonFormFields } from "~/lib/schemas/team"
 import { workingTimeValue } from "./team-working-hours-week"
 
 export function TeamScheduleTimeFields({ form, field, index, day }: { form: FormApi<Pick<PersonFormFields, "workingHours" | "breaks">>; field: "workingHours" | "breaks"; index: number; day: number }) {
-  const { t } = useTranslation("team")
+  const { i18n, t } = useTranslation("team")
   const root = useRouteLoaderData<typeof rootLoader>("root")
 
   return (
@@ -41,7 +41,7 @@ export function TeamScheduleTimeFields({ form, field, index, day }: { form: Form
             intervalMinutes={15}
             invalid={Boolean(error)}
             label={`${t(`people.weekdays.${day}`)}: ${label}`}
-            language={root?.locale === "fi" ? "fi" : "en"}
+            language={i18n.resolvedLanguage === "fi" ? "fi" : "en"}
             onBlur={control.onBlur}
             onChange={(time) => {
               const [hour, minute] = time.split(":").map(Number)

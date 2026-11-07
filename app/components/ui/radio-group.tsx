@@ -2,6 +2,7 @@
 
 import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
+import type { ComponentProps } from "react";
 
 import { cn } from "@coss/ui/lib/utils";
 
@@ -13,6 +14,16 @@ function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
       {...props}
     />
   );
+}
+
+function RadioCard({ className, ...props }: ComponentProps<"label">) {
+  return (
+    <label
+      className={cn("flex w-full cursor-pointer items-center gap-3 rounded-lg border border-input px-3 py-2.5 transition-colors has-data-checked:border-primary/50 has-data-checked:bg-primary/5 has-data-disabled:cursor-not-allowed has-data-disabled:opacity-64", className)}
+      data-slot="radio-card"
+      {...props}
+    />
+  )
 }
 
 function Radio({ className, ...props }: RadioPrimitive.Root.Props) {
@@ -33,4 +44,4 @@ function Radio({ className, ...props }: RadioPrimitive.Root.Props) {
   );
 }
 
-export { RadioGroup, Radio, Radio as RadioGroupItem };
+export { RadioGroup, Radio, Radio as RadioGroupItem, RadioCard };

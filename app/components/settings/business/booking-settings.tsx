@@ -13,9 +13,12 @@ import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "~/c
 import { Separator } from "~/components/ui/separator"
 import { SettingsLoading } from "~/components/settings/settings-loading"
 import { SettingsSwitch } from "~/components/settings/settings-switch"
+import { notifyBookingPageSaved } from "~/lib/booking/booking-page-sync"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 import { bookingWindowSchema, type BookingSettingsValues, type BookingWindowValues } from "~/lib/schemas/booking-settings"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
+import { SubscriptionRequiredAlert } from "~/components/billing/subscription-required-alert"
 
 export const bookingSettingsFormId = "booking-settings-form"
 const noticeTimingOptions = [0, 60, 120, 180, 360, 720, 1440, 2880, 4320, 10080]
@@ -143,23 +146,35 @@ function BookingSettingsFields({ busy, form, onFormStateChange, settings }: {
 
 function BookingSettingSwitch({ name, checked }: { name: ToggleName; checked: boolean }) {
   const { t } = useTranslation()
+  const { org, subscriptionReadOnly } = useAppContext()
+  const unavailable = name === "bookingEnabled" && Boolean(subscriptionReadOnly)
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const queryKey = trpc.organizations.bookingSettings.queryKey()
   const mutation = useMutation(trpc.organizations.updateBookingSettings.mutationOptions())
 
-  return <SettingsSwitch
-    checked={checked}
-    disabled={false}
+  return <><SettingsSwitch
+    checked={checked && !unavailable}
+    disabled={unavailable}
     label={t(`bookingSettings.${name}`)}
     description={t(`bookingSettings.${name}Description`)}
     errorMessage={t("settings.saveError")}
     save={(value) => mutation.mutateAsync({ [name]: value })}
     getChecked={(saved) => saved[name]}
-    updateCache={(value, saved) => queryClient.setQueryData(queryKey, (current) => current ? { ...current, [name]: value } : saved)}
-    onSaved={() => Promise.all([
-      queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
-      queryClient.invalidateQueries(trpc.availability.pathFilter()),
-    ])}
-  />
+    updateCache={(value, saved) => {
+      queryClient.setQueryData(queryKey, (current) => current ? { ...current, [name]: value } : saved)
+      if (name === "bookingEnabled") {
+        queryClient.setQueryData(trpc.bookingPage.get.queryKey(), (current) => current ? { ...current, bookingEnabled: value, values: { ...current.values, isActive: value }, published: value } : current)
+      }
+    }}
+    onSaved={() => {
+      if (org) notifyBookingPageSaved(org.slug)
+      return Promise.all([
+        queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
+        queryClient.invalidateQueries(trpc.availability.pathFilter()),
+        queryClient.invalidateQueries(trpc.bookingPage.get.queryFilter()),
+        queryClient.invalidateQueries(trpc.booking.pathFilter()),
+      ])
+    }}
+  />{unavailable ? <SubscriptionRequiredAlert /> : null}</>
 }

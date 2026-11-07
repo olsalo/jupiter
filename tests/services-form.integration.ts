@@ -49,7 +49,8 @@ try {
     assert.equal(result.success, false, `${field} rejects ${invalid}`)
     if (!result.success) assert.equal(result.error.issues[0]?.path[0], field)
   }
-  const handler = createStaticHandler([{ path: "/services/new", Component: NewService }])
+  const rootData = { subscriptionReadOnly: false }
+  const handler = createStaticHandler([{ id: "root", path: "/services/new", Component: NewService, loader: () => rootData }])
   const context = await handler.query(new Request("https://example.invalid/services/new"))
   assert.ok(!(context instanceof Response))
   const staticContext = context
@@ -80,7 +81,7 @@ try {
   function renderEdit() {
     const edit = createElement(ServiceFormSheet, { serviceId: "service-edit" })
     const provided = createElement(TRPCProvider, { queryClient, trpcClient: trpc, children: edit })
-    const editRouter = createStaticRouter([{ id: "0", path: "/services/new", Component: () => provided }], staticContext)
+    const editRouter = createStaticRouter([{ id: "root", path: "/services/new", Component: () => provided }], staticContext)
     const contextProvider = createElement(StaticRouterProvider, { router: editRouter, context: staticContext, hydrate: false })
     return renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(QueryClientProvider, { client: queryClient }, contextProvider)))
   }
@@ -91,6 +92,11 @@ try {
   assert.match(editEnglish, /value="45"/)
   assert.match(editEnglish, /value="65.50"/)
   assert.match(editEnglish, /Save changes/)
+  rootData.subscriptionReadOnly = true
+  const readOnlyEdit = renderEdit()
+  assert.match(readOnlyEdit, /value="Existing haircut"/, "The service details remain visible")
+  assert.match(readOnlyEdit.match(/<button\b[^>]*>[\s\S]*?Save changes<\/button>/)?.[0] ?? "", /disabled=""/, "Saving is disabled without a subscription")
+  rootData.subscriptionReadOnly = false
   assert.doesNotMatch(editEnglish, /Coming soon|Information architecture/)
   const editData = queryClient.getQueryData(options.service.get.queryKey({ id: "service-edit" }))
   assert.ok(editData)
@@ -98,7 +104,7 @@ try {
   const unsetEdit = renderEdit()
   assert.match(unsetEdit, /placeholder="0"[^>]*value=""/)
   queryClient.setQueryData([...options.service.get.queryKey({ id: "service-edit" })], { ...editData, price: "0" })
-  assert.match(renderEdit(), /placeholder="0"[^>]*value="0"/)
+  assert.match(renderEdit(), /placeholder="0"[^>]*value="0\.00"/)
   const sourceCategory = { id: "treatments", name: "Treatments", organizationId: "org", description: null, sortOrder: 0, isActive: true, createdAt: new Date(), updatedAt: new Date() }
   queryClient.setQueryData(options.service.categories.queryKey(), [sourceCategory])
   const selectedCategoryContext = await handler.query(new Request("https://example.invalid/services/new?category=treatments"))

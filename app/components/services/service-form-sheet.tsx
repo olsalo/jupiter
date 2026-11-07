@@ -15,7 +15,7 @@ import { SettingsSectionHeader } from "~/components/settings/settings-section-he
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
-import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
+import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "~/components/ui/number-field"
 import { Select, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "~/components/ui/select"
 import { OverlayLoading } from "~/components/overlays/overlay-loading"
 import { Separator } from "~/components/ui/separator"
@@ -23,6 +23,7 @@ import { Textarea } from "~/components/ui/textarea"
 import { serviceFormSchema, type ServiceFormInput, type ServiceFormValues } from "~/lib/schemas/services"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 
 const defaultValues: ServiceFormInput = {
   name: "", categoryId: "", description: "", durationMinutes: "60", bufferBeforeMinutes: "0", bufferAfterMinutes: "0",
@@ -36,8 +37,9 @@ export function ServiceFormSheet({ serviceId }: { serviceId?: string }) {
 }
 
 function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { serviceId?: string; duplicateId?: string; initialCategoryId: string }) {
-  const { t } = useTranslation("services")
+  const { t, i18n } = useTranslation("services")
   const trpc = useTRPC()
+  const readOnly = Boolean(useAppContext().subscriptionReadOnly)
   const queryClient = useQueryClient()
   const staff = useQuery(trpc.staff.list.queryOptions())
   const locations = useQuery(trpc.location.list.queryOptions())
@@ -61,7 +63,6 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
     } : { ...defaultValues, categoryId: initialCategoryId, staffIds: (staff.data ?? []).filter((person) => person.isActive && person.acceptsAppointments).map((person) => person.id) }
   }
   const staffItems = (staff.data ?? []).filter((person) => (person.isActive && person.acceptsAppointments) || initialValues.current?.staffIds.includes(person.id)).map((person) => ({ value: person.id, label: person.name }))
-  const locationItems = (locations.data ?? []).filter((location) => location.isActive || initialValues.current?.locationIds.includes(location.id)).map((location) => ({ value: location.id, label: location.name }))
   const deliveryItems = (["IN_PERSON", "ONLINE", "PHONE", "FLEXIBLE"] as const).map((value) => ({ value, label: t(value) }))
   const location = useLocation()
   const [submitting, setSubmitting] = useState(false)
@@ -81,6 +82,7 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
     initialValues.current = null
   }
   const pending = submitting || create.isPending || update.isPending || saved
+  const disabled = pending || readOnly
   const optionsError = staff.isError || locations.isError || organization.isError
   const initialQuery = sourceId ? service : staff
 
@@ -137,22 +139,49 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
             const color = form.getControlProps("color")
             const active = form.getControlProps("isActive")
             const staffIds = form.getControlProps("staffIds")
-            const locationIds = form.getControlProps("locationIds")
+            const number = (name: "durationMinutes" | "bufferBeforeMinutes" | "bufferAfterMinutes" | "price") => {
+              const control = form.getControlProps(name)
+              const isPrice = name === "price"
+              const label = t(name === "durationMinutes" ? "duration" : name)
+              const unit = isPrice ? service.data?.currency ?? organization.data?.currency ?? "EUR" : t("minutes")
+              return <FormLabel label={`${label} (${unit})`} error={form.error(name)} errorPlacement="below">
+                <NumberField
+                  disabled={disabled}
+                  format={{ maximumFractionDigits: isPrice ? 2 : 0, minimumFractionDigits: isPrice ? 2 : 0, useGrouping: false }}
+                  locale={i18n.language}
+                  max={isPrice ? 9999999999.99 : name === "durationMinutes" ? 1440 : 240}
+                  min={name === "durationMinutes" ? 5 : 0}
+                  name={control.name}
+                  onValueChange={(value) => {
+                    control.onChange(value === null ? "" : isPrice ? value.toFixed(2) : String(value))
+                    form.unstable_setCustomError(name, null)
+                  }}
+                  step={isPrice ? 1 : 5}
+                  value={control.value === "" ? null : Number(control.value.replace(",", "."))}
+                >
+                  <NumberFieldGroup>
+                    <NumberFieldDecrement aria-label={t("decrease", { field: label })} />
+                    <NumberFieldInput aria-invalid={Boolean(form.error(name))} onBlur={control.onBlur} placeholder={isPrice ? "0" : undefined} ref={control.ref} />
+                    <NumberFieldIncrement aria-label={t("increase", { field: label })} />
+                  </NumberFieldGroup>
+                </NumberField>
+              </FormLabel>
+            }
             return <>
               <ResponsiveSheetPanel className="flex flex-col gap-5 pb-8!" scrollFade={true}>
-                <fieldset className="contents" disabled={pending}>
+                <fieldset className="contents" disabled={disabled}>
                   <SettingsSectionHeader title={t("general")} />
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
                     <FormLabel label={t("name")} error={form.error("name")}>
                       <Input {...form.getInputProps("name")} aria-invalid={Boolean(form.error("name"))} autoComplete="off" placeholder={t("namePlaceholder")} type="text" />
                     </FormLabel>
                     <FormLabel label={t("color")} labelClassName="sr-only" error={form.error("color")} errorPlacement="below" className="gap-0">
-                      <ColorPicker value={color.value} onChange={color.onChange} onBlur={color.onBlur} name={color.name} ref={color.ref} label={t("color")} colors={colorPickerPalette.map((item) => ({ value: item.value, label: t(`colors.${item.name}`) }))} disabled={pending} invalid={Boolean(form.error("color"))} />
+                      <ColorPicker value={color.value} onChange={color.onChange} onBlur={color.onBlur} name={color.name} ref={color.ref} label={t("color")} colors={colorPickerPalette.map((item) => ({ value: item.value, label: t(`colors.${item.name}`) }))} disabled={disabled} invalid={Boolean(form.error("color"))} />
                     </FormLabel>
                   </div>
                   {categories.isError ? <Alert variant="error"><AlertTitle>{t("categoriesLoadError")}</AlertTitle><AlertDescription>{t("categoriesRetryDescription")}</AlertDescription><AlertAction><Button disabled={categories.isFetching} loading={categories.isFetching} onClick={() => void categories.refetch()} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
                   <FormLabel label={t("category")} error={form.error("categoryId") === "invalidAssignment" ? t("invalidAssignment") : form.error("categoryId")}>
-                    <ServiceCategoryPicker categories={categoryOptions} value={category.value ?? ""} onChange={category.onChange} onBlur={category.onBlur} inputRef={category.ref} disabled={pending || categories.isPending || categories.isError} invalid={Boolean(form.error("categoryId"))} onCreate={() => {
+                    <ServiceCategoryPicker categories={categoryOptions} value={category.value ?? ""} onChange={category.onChange} onBlur={category.onBlur} inputRef={category.ref} disabled={disabled || categories.isPending || categories.isError} invalid={Boolean(form.error("categoryId"))} onCreate={() => {
                       setCategoryFlow((flow) => flow + 1)
                       setCategoryOpen(true)
                     }} />
@@ -161,45 +190,34 @@ function ServiceFormSession({ serviceId, duplicateId, initialCategoryId }: { ser
                     <Textarea {...form.getInputProps("description")} aria-invalid={Boolean(form.error("description"))} placeholder={t("descriptionPlaceholder")} />
                   </FormLabel>
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <FormLabel label={t("duration")} error={form.error("durationMinutes")} errorPlacement="below">
-                      <InputGroup><InputGroupInput {...form.getInputProps("durationMinutes")} aria-invalid={Boolean(form.error("durationMinutes"))} inputMode="numeric" type="text" /><InputGroupAddon align="inline-end">{t("minutes")}</InputGroupAddon></InputGroup>
-                    </FormLabel>
-                    <FormLabel label={t("price")} error={form.error("price")} errorPlacement="below">
-                      <InputGroup><InputGroupInput {...form.getInputProps("price")} aria-invalid={Boolean(form.error("price"))} inputMode="decimal" placeholder="0" type="text" /><InputGroupAddon align="inline-end">{service.data?.currency ?? organization.data?.currency ?? "EUR"}</InputGroupAddon></InputGroup>
-                    </FormLabel>
+                    {number("durationMinutes")}
+                    {number("price")}
                   </div>
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    {(["bufferBeforeMinutes", "bufferAfterMinutes"] as const).map((field) => <FormLabel key={field} label={t(field)} error={form.error(field)} errorPlacement="below">
-                      <InputGroup><InputGroupInput {...form.getInputProps(field)} aria-invalid={Boolean(form.error(field))} inputMode="numeric" type="text" /><InputGroupAddon align="inline-end">{t("minutes")}</InputGroupAddon></InputGroup>
-                    </FormLabel>)}
+                    {number("bufferBeforeMinutes")}
+                    {number("bufferAfterMinutes")}
                   </div>
                   <FormLabel label={t("delivery")} error={form.error("deliveryType")}>
-                    <Select items={deliveryItems} value={delivery.value} onValueChange={(value) => { if (value) delivery.onChange(value) }} name={delivery.name} disabled={pending}>
+                    <Select items={deliveryItems} value={delivery.value} onValueChange={(value) => { if (value) delivery.onChange(value) }} name={delivery.name} disabled={disabled}>
                       <SelectTrigger ref={delivery.ref} onBlur={delivery.onBlur} aria-invalid={Boolean(form.error("deliveryType"))}><SelectValue /></SelectTrigger>
                       <SelectPopup>{deliveryItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
                     </Select>
                   </FormLabel>
-                  <FormSwitch label={t("showOnBookingPage")} description={t("showOnBookingPageDescription")} checked={active.value} onCheckedChange={active.onChange} onBlur={active.onBlur} ref={active.ref} name={active.name} error={form.error("isActive")} disabled={pending} />
+                  <FormSwitch label={t("showOnBookingPage")} description={t("showOnBookingPageDescription")} checked={active.value} onCheckedChange={active.onChange} onBlur={active.onBlur} ref={active.ref} name={active.name} error={form.error("isActive")} disabled={disabled} />
                   <Separator />
-                  <SettingsSectionHeader title={t(editing ? "assignments" : "serviceTeam")} description={t(editing ? "assignmentsDescription" : staff.isSuccess && staffItems.length === 0 ? "noStaff" : "staffDescription")} />
+                  <SettingsSectionHeader title={t("serviceTeam")} description={t(staff.isSuccess && staffItems.length === 0 ? "noStaff" : "staffDescription")} />
                   {optionsError ? <Alert variant="error"><AlertTitle>{t("optionsError")}</AlertTitle><AlertDescription>{t("retryDescription")}</AlertDescription><AlertAction><Button disabled={staff.isFetching || locations.isFetching || organization.isFetching} loading={staff.isFetching || locations.isFetching || organization.isFetching} onClick={() => void Promise.all([staff.refetch(), locations.refetch(), organization.refetch()])} type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
-                  <FormLabel label={t("staff")} labelGroupClassName={editing ? undefined : "sr-only"} errorPlacement={editing ? "inline" : "below"} error={form.error("staffIds") === "invalidAssignment" ? t("invalidAssignment") : form.error("staffIds")} description={editing ? t(staff.isSuccess && staffItems.length === 0 ? "noStaff" : "staffDescription") : undefined}>
-                    <Select multiple={true} items={staffItems} value={staffIds.value} onValueChange={staffIds.onChange} name={staffIds.name} disabled={pending || staff.isPending || staff.isError || staffItems.length === 0}>
+                  <FormLabel label={t("staff")} labelGroupClassName="sr-only" errorPlacement="below" error={form.error("staffIds") === "invalidAssignment" ? t("invalidAssignment") : form.error("staffIds")}>
+                    <Select multiple={true} items={staffItems} value={staffIds.value} onValueChange={staffIds.onChange} name={staffIds.name} disabled={disabled || staff.isPending || staff.isError || staffItems.length === 0}>
                       <SelectTrigger ref={staffIds.ref} onBlur={staffIds.onBlur} aria-invalid={Boolean(form.error("staffIds"))}><SelectValue placeholder={t(staff.isPending ? "loading" : "chooseStaff")} /></SelectTrigger>
                       <SelectPopup>{staffItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
                     </Select>
                   </FormLabel>
-                  {editing ? <FormLabel label={t("locations")} error={form.error("locationIds") === "invalidAssignment" ? t("invalidAssignment") : form.error("locationIds")} description={locations.isSuccess && locationItems.length === 0 ? t("noLocations") : t("locationsDescription")}>
-                    <Select multiple={true} items={locationItems} value={locationIds.value} onValueChange={locationIds.onChange} name={locationIds.name} disabled={pending || locations.isPending || locations.isError || locationItems.length === 0}>
-                      <SelectTrigger ref={locationIds.ref} onBlur={locationIds.onBlur} aria-invalid={Boolean(form.error("locationIds"))}><SelectValue placeholder={t(locations.isPending ? "loading" : "chooseLocations")} /></SelectTrigger>
-                      <SelectPopup>{locationItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
-                    </Select>
-                  </FormLabel> : null}
                 </fieldset>
               </ResponsiveSheetPanel>
               <ResponsiveSheetFooter className="shrink-0">
                 <Button disabled={pending} onClick={close} type="button" variant="ghost">{t("cancel")}</Button>
-                <Button disabled={pending || (!editing && !locations.isSuccess)} loading={pending} type="submit">{t(editing ? "saveService" : "create")}</Button>
+                <Button disabled={disabled || (!editing && !locations.isSuccess)} loading={pending} type="submit">{t(editing ? "saveService" : "create")}</Button>
               </ResponsiveSheetFooter>
             </>
           }}

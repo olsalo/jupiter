@@ -1,3 +1,5 @@
+> This is the original template design. Jupiter now uses Solo/Team subscriptions and bookable-staff capacity instead of a fixed Pro member limit. See [Jupiter billing](../jupiter/billing.md) for the implementation and Stripe setup.
+
 # Resource Limits Implementation
 
 ## Overview

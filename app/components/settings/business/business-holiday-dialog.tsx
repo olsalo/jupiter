@@ -9,7 +9,7 @@ import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 import { generateId } from "~/lib/database/id"
 import { businessHolidaySchema, type BusinessHolidayValues } from "~/lib/schemas/business-schedule"
-import type { BusinessHoliday } from "~/lib/business/business-holidays"
+import { recurringHolidayRangesOverlap, type BusinessHoliday } from "~/lib/business/business-holidays"
 
 export function BusinessHolidayDialog({ open, onOpenChange, holiday, holidays, timezone, flow, onSave, persist = true }: {
   persist?: boolean
@@ -28,7 +28,7 @@ export function BusinessHolidayDialog({ open, onOpenChange, holiday, holidays, t
     onError: (error) => { if (!error.data?.zodError) toast.error(t("settings.saveError")) },
   }))
   const schema = businessHolidaySchema.superRefine((value, ctx) => {
-    if (holidays.some((entry) => entry.id !== value.id && entry.enabled && entry.date.slice(5) === value.date.slice(5))) ctx.addIssue({ code: "custom", path: ["date"], message: t("businessSchedule.dateTaken") })
+    if (holidays.some((entry) => entry.id !== value.id && entry.enabled && recurringHolidayRangesOverlap(entry, value))) ctx.addIssue({ code: "custom", path: ["date"], message: t("businessSchedule.dateTaken") })
   })
   return <Dialog open={open} onOpenChange={(next) => { if (!mutation.isPending) onOpenChange(next) }}>
     <DialogPopup className="sm:max-w-md" forceBackdrop={true} onSubmit={(event) => event.stopPropagation()}>
@@ -46,6 +46,7 @@ export function BusinessHolidayDialog({ open, onOpenChange, holiday, holidays, t
           onSave(saved)
           if (persist) await Promise.all([
             queryClient.invalidateQueries(trpc.organizations.getCurrent.queryFilter()),
+            queryClient.invalidateQueries(trpc.organizations.businessHolidays.queryFilter()),
             queryClient.invalidateQueries(trpc.availability.pathFilter()),
             queryClient.invalidateQueries(trpc.booking.pathFilter()),
             queryClient.invalidateQueries(trpc.appointment.pathFilter()),
@@ -56,7 +57,7 @@ export function BusinessHolidayDialog({ open, onOpenChange, holiday, holidays, t
         <DialogPanel><BusinessHolidayFormFields custom={true} form={form} timezone={timezone} /></DialogPanel>
         <DialogFooter>
           <Button disabled={form.formState.isSubmitting} onClick={() => onOpenChange(false)} type="button" variant="ghost">{t("settings.cancel")}</Button>
-          <Button disabled={form.formState.isSubmitting} loading={form.formState.isSubmitting} type="submit">{t(holiday ? "settings.save" : "businessSchedule.addHoliday")}</Button>
+          <Button disabled={form.formState.isSubmitting} loading={form.formState.isSubmitting} type="submit">{t("settings.save")}</Button>
         </DialogFooter>
       </>}</AppForm>
     </DialogPopup>

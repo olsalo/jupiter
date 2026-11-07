@@ -22,10 +22,13 @@ import fiNotFound from "./fi/not-found.json"
 import fiOnboarding from "./fi/onboarding.json"
 import fiZod from "./fi/zod.json"
 import fiTeam from "./fi/team.json"
+import enMarketing from "./en/marketing.json"
+import fiMarketing from "./fi/marketing.json"
 
 export const supportedLanguages = ["en", "fi"] as const
 export const fallbackLanguage = "en"
 export const namespaces = [
+  "marketing",
   "booking",
   "email",
   "common",
@@ -42,6 +45,7 @@ export const namespaces = [
 
 export const resources = {
   en: {
+    marketing: enMarketing,
     booking: enBooking,
     email: enEmail,
     common: enCommon,
@@ -56,6 +60,7 @@ export const resources = {
     services: enServices,
   },
   fi: {
+    marketing: fiMarketing,
     booking: fiBooking,
     email: fiEmail,
     common: fiCommon,

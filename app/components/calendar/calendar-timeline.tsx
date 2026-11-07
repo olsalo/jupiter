@@ -333,7 +333,7 @@ export function CalendarTimeline({ expandToContent = false, centerCurrentTimeOnM
 
   return <>
     {waitingForInitialPosition ? <div className="absolute inset-0 flex" data-slot="calendar-position-loading"><CalendarLoading /></div> : null}
-    <section aria-busy={waitingForInitialPosition || undefined} aria-label={t(isWeekView ? "calendarGrid.week" : "calendarGrid.day")} className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-xl border bg-background", waitingForInitialPosition && "invisible", expandToContent && "flex-none", isMobileView && "rounded-none border-0", !isMobileView && "[--calendar-divider:color-mix(in_srgb,var(--background)_86%,var(--foreground))]", className)} data-slot={isWeekView ? "week-calendar" : "day-calendar"} data-presentation={isMobileView ? "mobile" : "desktop"}>
+    <section aria-busy={waitingForInitialPosition || undefined} aria-label={t(isWeekView ? "calendarGrid.week" : "calendarGrid.day")} className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border bg-background", waitingForInitialPosition && "invisible", expandToContent && "flex-none", isMobileView && "rounded-none border-0", !isMobileView && "[--calendar-divider:color-mix(in_srgb,var(--background)_86%,var(--foreground))]", className)} data-slot={isWeekView ? "week-calendar" : "day-calendar"} data-presentation={isMobileView ? "mobile" : "desktop"}>
     {!isMobileView && !isWeekView && days[0] ? <div className="flex shrink-0">
       <div aria-hidden={true} className="shrink-0 border-r" style={{ width: timeGutterWidth }} />
       <div className="min-w-0 flex-1 border-b"><CalendarDateHeading day={days[0]} formatPreference={formatPreference} relative={true} timeZone={timeZone} today={today} /></div>

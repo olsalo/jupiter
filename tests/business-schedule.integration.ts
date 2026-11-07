@@ -8,7 +8,7 @@ process.env.EMAIL_PROVIDER = ""
 const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/business-schedule", appType: "custom", resolve: { alias: { "~": new URL("../app", import.meta.url).pathname } }, server: { ws: false, middlewareMode: true, hmr: false, watch: null } })
 const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")
 const { appRouter } = await vite.ssrLoadModule("/app/.server/main.ts") as typeof import("../app/.server/main")
-const { defaultBusinessHolidays, holidaysForYear, businessHolidayWindows, upcomingBusinessHolidays } = await vite.ssrLoadModule("/app/lib/business/business-holidays.ts") as typeof import("../app/lib/business/business-holidays")
+const { defaultBusinessHolidays, holidaysForYear, businessHolidayWindows, upcomingBusinessHolidays } = await vite.ssrLoadModule("/app/lib/business/business-holidays.server.ts") as typeof import("../app/lib/business/business-holidays.server")
 const { businessScheduleSchema } = await vite.ssrLoadModule("/app/lib/schemas/business-schedule.ts") as typeof import("../app/lib/schemas/business-schedule")
 let organizationId: string | undefined
 let userId: string | undefined
@@ -108,12 +108,56 @@ try {
   assert.ok(nextChristmas.every((window) => window.holidayId !== exception.id), "Exceptions do not repeat annually")
   const exceptionSchedule = await caller.availability.calendarSchedule({ from, to })
   assert.ok(exceptionSchedule.some((rule) => "title" in rule && rule.title === exception.name), "Calendar shows exception names")
-  await assert.rejects(caller.organizations.saveBusinessException({ ...exception, id: "exception-duplicate" }), { code: "BAD_REQUEST" })
+  const overlap = { ...exception, id: "exception-overlap", startMinute: 720, endMinute: 840 }
+  await caller.organizations.saveBusinessException(overlap)
+  const combined = (await caller.availability.getSlots(slotQuery)).days.flatMap((day) => day.slots)
+  assert.equal(combined[0].startsAt, "2026-12-25T09:00:00.000Z")
+  assert.equal(combined.at(-1)?.endsAt, "2026-12-25T12:00:00.000Z", "Overlapping saved entries combine opening hours")
+  await caller.organizations.saveBusinessException({ ...exception, closed: true })
+  assert.equal((await caller.availability.getSlots(slotQuery)).days.length, 0, "A saved closure overrides another overlapping opening")
+  await caller.organizations.removeBusinessException({ id: overlap.id })
   await assert.rejects(caller.organizations.saveBusinessException({ ...exception, closed: false, endMinute: 600 }), { code: "BAD_REQUEST" })
   await caller.organizations.saveBusinessException({ ...exception, closed: true })
   assert.equal((await caller.availability.getSlots(slotQuery)).days.length, 0, "A full-day exception closes an otherwise open holiday")
   await caller.organizations.removeBusinessException({ id: exception.id })
   assert.equal((await caller.availability.getSlots(slotQuery)).days.flatMap((day) => day.slots)[0].startsAt, "2026-12-25T08:00:00.000Z", "Removing the exception restores the holiday hours")
+  const rangeOpening = { ...exception, id: "exception-range", date: "2026-12-27", endDate: "2026-12-29" }
+  const rangeOverlap = { ...rangeOpening, id: "exception-range-overlap", startMinute: 720, endMinute: 840 }
+  await caller.organizations.saveBusinessException(rangeOpening)
+  await caller.organizations.saveBusinessException(rangeOverlap)
+  const rangeQuery = { serviceId: service.id, staffMemberId: staff.id, from: new Date("2026-12-26T22:00Z"), to: new Date("2026-12-29T22:00Z") }
+  const rangeSlots = await caller.availability.getSlots(rangeQuery)
+  assert.deepEqual(rangeSlots.days.map((day) => day.date), ["2026-12-27", "2026-12-28", "2026-12-29"], "Persisted ranges apply to all three days")
+  const anonymous = appRouter.createCaller({ headers: new Headers(), request: undefined, prisma, user: undefined, session: undefined, organizationId: null, formatPreference: "eu", formatLocale: "fi-FI", locale: "en" })
+  const publicRangeQuery = { ...rangeQuery, organizationSlug: org.slug }
+  const publicSlots = await anonymous.booking.getAvailableSlots(publicRangeQuery)
+  const sortedSlots = (days: typeof rangeSlots.days) => days.map((day) => ({ ...day, slots: [...day.slots].sort((a, b) => a.startsAt.localeCompare(b.startsAt)) }))
+  assert.deepEqual(sortedSlots(publicSlots.days), sortedSlots(rangeSlots.days), "Public and internal slots agree for overlapping saved ranges")
+  const rangeClosure = { ...rangeOpening, id: "exception-range-closure", date: "2026-12-28", endDate: "2026-12-28", closed: true }
+  await caller.organizations.saveBusinessException(rangeClosure)
+  const publicBooking = { organizationSlug: org.slug, serviceId: service.id, staffMemberId: staff.id, startsAt: new Date("2026-12-28T09:00Z"), customer: { firstName: "Range guest", email: `range-${suffix}@example.invalid` } }
+  await assert.rejects(anonymous.booking.create(publicBooking), { code: "CONFLICT" }, "Booking submission rejects a newly closed overlapping date after slots were offered")
+  await caller.organizations.removeBusinessException({ id: rangeClosure.id })
+  const booked = await anonymous.booking.create(publicBooking)
+  assert.equal(booked.startsAt.toISOString(), publicBooking.startsAt.toISOString(), "Booking submission accepts the combined open range")
+  await caller.organizations.saveBusinessException({ ...rangeClosure, date: "2026-12-29", endDate: "2026-12-29" })
+  await assert.rejects(anonymous.booking.reschedule({ bookingCode: booked.bookingCode, startsAt: new Date("2026-12-29T09:00Z") }), { code: "CONFLICT" }, "Rescheduling uses the same closure precedence")
+  await caller.organizations.removeBusinessException({ id: rangeClosure.id })
+  await anonymous.booking.reschedule({ bookingCode: booked.bookingCode, startsAt: new Date("2026-12-29T09:00Z") })
+  console.info("PASS overlapping date ranges through persistence, public/internal slots, booking submission, late closures and rescheduling")
+  await prisma.organizationSettings.update({ where: { organizationId }, data: { countryCode: "US", timezone: "America/New_York", onboardingStep: "holidays" } })
+  const americanSchedule = await caller.onboarding.schedule()
+  assert.equal(americanSchedule.countryCode, "US")
+  assert.ok(americanSchedule.holidays.some((holiday) => holiday.labels?.en === "Thanksgiving Day"), "Onboarding suggests holidays for the saved country")
+  assert.equal(americanSchedule.holidays.some(({ id }) => id === "independence"), false, "Onboarding does not suggest Finnish Independence Day for the US")
+  const foreignHoliday = defaultBusinessHolidays(2027, "fi").find(({ id }) => id === "independence")!
+  await assert.rejects(caller.onboarding.confirmHolidays({ ...americanSchedule, holidays: [...americanSchedule.holidays, foreignHoliday] }), { code: "BAD_REQUEST" })
+  await caller.onboarding.confirmHolidays(americanSchedule)
+  assert.equal((await caller.onboarding.status()).holidaysComplete, true)
+  assert.deepEqual(await caller.organizations.businessHolidays(), americanSchedule.holidays, "Settings and onboarding use the same country calendar and saved choices")
+  await assert.rejects(caller.organizations.updateBusinessSchedule({ ...americanSchedule, holidays: [...americanSchedule.holidays, foreignHoliday] }), { code: "BAD_REQUEST" })
+  const americanCalendar = await caller.availability.calendarSchedule({ from: new Date("2027-11-25T05:00:00Z"), to: new Date("2027-11-26T05:00:00Z") })
+  assert.ok(americanCalendar.some((rule) => "title" in rule && rule.title === "Thanksgiving Day"), "Calendar shows readable country-specific holiday names")
   await prisma.member.updateMany({ where: { organizationId, userId }, data: { role: "member" } })
   await assert.rejects(caller.organizations.updateBusinessSchedule(values), { code: "FORBIDDEN" })
   await assert.rejects(caller.organizations.saveCustomBusinessHoliday(modalHoliday), { code: "FORBIDDEN" })
@@ -121,7 +165,10 @@ try {
   await assert.rejects(caller.organizations.removeBusinessException({ id: exception.id }), { code: "FORBIDDEN" })
   console.info("PASS one-off exceptions, holiday precedence, exception edits and removal, preservation, permissions, Finnish dates, next occurrences, recurring custom holidays, legacy settings, switches, immutable defaults, DST, booking hours, validation and permissions")
 } finally {
-  if (organizationId) await prisma.organization.delete({ where: { id: organizationId } })
+  if (organizationId) {
+    await prisma.appointment.deleteMany({ where: { organizationId } })
+    await prisma.organization.delete({ where: { id: organizationId } })
+  }
   if (userId) await prisma.user.delete({ where: { id: userId } })
   await prisma.$disconnect()
   await vite.close()

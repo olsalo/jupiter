@@ -3,7 +3,7 @@ import { useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation, useSearchParams } from "react-router"
 
-import { useAppContext } from "~/lib/hooks/use-app-context"
+import { useCalendarState } from "~/components/calendar/use-calendar-state"
 import { CalendarWeeklyAvailability } from "~/components/calendar/calendar-weekly-availability"
 import { CalendarTimeOff } from "~/components/calendar/calendar-time-off"
 import { CalendarExtraHours } from "~/components/calendar/calendar-extra-hours"
@@ -25,7 +25,7 @@ type ScheduleKind = "workingHours" | "breaks" | "timeOff" | "extraHours"
 export function CalendarAvailability({ initialKind = "workingHours" }: { initialKind?: ScheduleKind }) {
   const { t } = useTranslation()
   const trpc = useTRPC()
-  const root = useAppContext()
+  const { timeZone: calendarTimezone, locations } = useCalendarState({ preview: false })
   const organizationRole = useCurrentOrganizationRole()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -43,9 +43,9 @@ export function CalendarAvailability({ initialKind = "workingHours" }: { initial
   const own = members.find((member) => member.memberId === organization.data?.memberId)
   const selected = canManage ? members.find((member) => member.id === selectedId) ?? own ?? members[0] : own
   const items = members.map((member) => ({ value: member.id, label: member.name }))
-  const loading = organization.isPending || staff.isPending
-  const error = organization.isError || staff.isError
-  const timezone = selected?.timezone ?? organization.data?.settings?.timezone ?? root?.organizationTimezone ?? "Europe/Helsinki"
+  const loading = organization.isPending || staff.isPending || locations.isPending
+  const error = organization.isError || staff.isError || locations.isError
+  const timezone = selected?.timezone ?? calendarTimezone
 
   return <RouteFormSheet closeLabel={t("team:people.close")} description={t("calendarAvailability.description")} drawerClassName="max-sm:h-(--app-drawer-height) max-sm:border-t max-sm:border-border" headerClassName="pb-3!" pending={pending} returnTo={destination.current} title={t("routeTitles.availability")}>{(close) => <>
         <div className="grid gap-4 px-6 pb-4">
@@ -66,7 +66,7 @@ export function CalendarAvailability({ initialKind = "workingHours" }: { initial
             <TabsTab disabled={pending} value="extraHours"><Icon aria-hidden={true} name="calendarEvent" size={16} />{t("calendarExtraHours.tab")}</TabsTab>
           </TabsList></div>
           {loading ? <div className="relative min-h-0 flex-1"><TeamPanelLoading label={t("team:people.loadingAvailability")} /></div> : error ? <ResponsiveSheetPanel>
-            <Alert variant="error"><AlertTitle>{t("team:people.availabilityError")}</AlertTitle><AlertDescription>{t("team:retryDescription")}</AlertDescription><AlertAction><Button disabled={organization.isFetching || staff.isFetching} loading={organization.isFetching || staff.isFetching} onClick={() => void Promise.all([organization.refetch(), staff.refetch()])} type="button" variant="outline">{t("team:retry")}</Button></AlertAction></Alert>
+            <Alert variant="error"><AlertTitle>{t("team:people.availabilityError")}</AlertTitle><AlertDescription>{t("team:retryDescription")}</AlertDescription><AlertAction><Button disabled={organization.isFetching || staff.isFetching} loading={organization.isFetching || staff.isFetching} onClick={() => void Promise.all([organization.refetch(), staff.refetch(), locations.refetch()])} type="button" variant="outline">{t("team:retry")}</Button></AlertAction></Alert>
           </ResponsiveSheetPanel> : selected ? <div className="flex min-h-0 flex-1 flex-col" key={selected.id}>
             {kind === "timeOff" ? <CalendarTimeOff staffMemberId={selected.id} timezone={timezone} close={close} onBusyChange={setPending} /> : kind === "extraHours" ? <CalendarExtraHours staffMemberId={selected.id} timezone={timezone} close={close} onBusyChange={setPending} /> : <CalendarWeeklyAvailability key={kind} staffMemberId={selected.id} kind={kind} onPendingChange={setPending} close={close} />}
           </div> : <ResponsiveSheetPanel><Alert><AlertTitle>{t("team:people.notBookable")}</AlertTitle><AlertDescription>{t("team:people.noStaffDescription")}</AlertDescription></Alert></ResponsiveSheetPanel>}

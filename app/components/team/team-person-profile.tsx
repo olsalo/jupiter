@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 import { Tabs, TabsPanel } from "~/components/ui/tabs"
 import { cn } from "~/lib/utils"
+import { useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
 import { TeamPersonSection } from "./team-person-section"
 import { TeamPersonAbout } from "./team-person-about"
 import { TeamPersonTimeOff } from "./team-person-time-off"
@@ -23,6 +24,8 @@ import type { TeamPerson } from "./team-types"
 
 export function TeamPersonProfile({ person, canManage, sideNavigation = false }: { person: TeamPerson; canManage: boolean; sideNavigation?: boolean }) {
   const { t } = useTranslation("team")
+  const roleCanManage = useOrganizationRolePermission({ team: ["manage"] })
+  const showManage = canManage || roleCanManage
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedTab = searchParams.get("profileTab")
@@ -44,9 +47,9 @@ export function TeamPersonProfile({ person, canManage, sideNavigation = false }:
               <h2 className="break-words text-xl font-semibold leading-7">{person.name}</h2>
               <TeamPersonStatusBadges person={person} />
             </div>
-            {canManage ? (
+            {showManage ? (
               <div className="flex max-w-32 flex-wrap justify-end gap-2">
-                <Button aria-label={t("people.editProfile")} className="@max-[32rem]/profile-header:size-8 @max-[32rem]/profile-header:p-0" render={<Link to={editHref} replace={true} state={location.state} />} size="default" type="button" variant="outline">
+                <Button aria-label={t("people.editProfile")} className="@max-[32rem]/profile-header:size-8 @max-[32rem]/profile-header:p-0" disabled={!canManage} render={canManage ? <Link to={editHref} replace={true} state={location.state} /> : undefined} size="default" type="button" variant="outline">
                   <Icon aria-hidden={true} name="edit" size={16} />
                   <span className="@max-[32rem]/profile-header:hidden">{t("people.editProfile")}</span>
                 </Button>

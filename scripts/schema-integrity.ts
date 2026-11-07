@@ -55,7 +55,7 @@ try {
       if (Number(result.count)) failures.push(`${name}: ${result.count} invalid rows`)
     }
     if (tables.has("organization_settings")) {
-      const [steps] = await db.$queryRawUnsafe<{ count: bigint }[]>(`SELECT count(*) AS count FROM organization_settings WHERE "onboardingStep" IS NOT NULL AND "onboardingStep" NOT IN ('availability', 'holidays')`)
+      const [steps] = await db.$queryRawUnsafe<{ count: bigint }[]>(`SELECT count(*) AS count FROM organization_settings WHERE "onboardingStep" IS NOT NULL AND "onboardingStep"::text NOT IN ('location', 'availability', 'holidays')`)
       if (Number(steps.count)) failures.push(`${steps.count} unknown onboarding steps`)
     }
     if (failures.length) throw new Error(`Schema preflight failed:\n${failures.join("\n")}`)

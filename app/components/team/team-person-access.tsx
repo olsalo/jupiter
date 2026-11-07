@@ -19,7 +19,7 @@ import { TeamRoleMenu } from "./team-role-menu"
 import type { TeamPerson } from "./team-types"
 
 export function TeamPersonAccess({ person, disabled = false }: { person: TeamPerson; disabled?: boolean }) {
-  const { t } = useTranslation("team")
+  const { i18n, t } = useTranslation("team")
   const root = useAppContext()
   const ownRole = useCurrentOrganizationRole()
   const canManage = hasOrganizationRole(ownRole, "owner") || hasOrganizationRole(ownRole, "admin")
@@ -51,7 +51,7 @@ export function TeamPersonAccess({ person, disabled = false }: { person: TeamPer
               <span className="break-words text-sm font-medium">{invitation.email}</span>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">{t(invitation.role === "admin" ? "roles.admin" : "roles.member")}</Badge>
-                <span className="text-xs">{t("expires")} {formatDateTime(invitation.expiresAt, { formatPreference: root?.formatPreference ?? "eu", language: root?.locale === "fi" ? "fi" : "en", timeZone: root?.organizationTimezone, includeTime: false })}</span>
+                <span className="text-xs">{t("expires")} {formatDateTime(invitation.expiresAt, { formatPreference: root?.formatPreference ?? "eu", language: i18n.resolvedLanguage === "fi" ? "fi" : "en", timeZone: root?.organizationTimezone, includeTime: false })}</span>
               </div>
           </IconListItem>
         </ul>

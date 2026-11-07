@@ -59,7 +59,7 @@ export function clientLoader() {
 export const handle = { workspace: true, pageLayout: "viewport" }
 
 export default function Team() {
-  const { t } = useTranslation("team")
+  const { i18n, t } = useTranslation("team")
   const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState("all")
@@ -75,12 +75,13 @@ export default function Team() {
   const invitationCount = team.data?.invitations.length ?? counts.data?.invitations
   const organizationRole = useCurrentOrganizationRole()
   const canInvite = organizationRole === "owner" || organizationRole === "admin"
+  const readOnly = Boolean(root?.subscriptionReadOnly)
   const formatDate = useCallback((value: Date) => formatDateTime(value, {
     formatPreference: root?.formatPreference ?? "eu",
-    language: root?.locale === "fi" ? "fi" : "en",
+    language: i18n.resolvedLanguage === "fi" ? "fi" : "en",
     timeZone: root?.organizationTimezone,
     includeTime: false,
-  }), [root?.formatPreference, root?.locale, root?.organizationTimezone])
+  }), [root?.formatPreference, i18n.resolvedLanguage, root?.organizationTimezone])
   const roleLabel = useCallback((role: string | null) => (role ?? "member").split(",").map((value) => {
     const key = value.trim()
     return key === "owner" || key === "admin" || key === "member" ? t(`roles.${key}`) : key
@@ -133,13 +134,14 @@ export default function Team() {
       cell: ({ row: { original: invitation } }) => (
         <InvitationActionsMenu
           canInvite={canInvite}
+          disabled={readOnly}
           email={invitation.email}
           invitationId={invitation.id}
         />
       ),
       meta: { align: "end", width: "7rem", isAction: true, mobileActionPlacement: "top-right" },
     },
-  ], [canInvite, formatDate, roleLabel, t])
+  ], [canInvite, readOnly, formatDate, roleLabel, t])
 
   return (
     <ViewportPage header={
@@ -150,7 +152,7 @@ export default function Team() {
         showDescriptionOnMobile={false}
         actions={<div className="flex items-center gap-2">
           <Button aria-label={t("v2.detailView")} className="max-md:size-9 max-md:p-0" render={<Link to="/team" />} type="button" variant="outline"><Icon aria-hidden={true} className="md:hidden" name="layoutSidebarInactive" size={18} /><span className="hidden md:inline">{t("v2.detailView")}</span></Button>
-          {canInvite ? <Button aria-label={t("people.addAction")} className="max-md:size-9 max-md:p-0" render={<Link to="new" state={{ returnTo: `${location.pathname}${location.search}` }} />} type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("people.addAction")}</span></Button> : null}
+          {canInvite ? <Button aria-label={t("people.addAction")} className="max-md:size-9 max-md:p-0" disabled={readOnly} render={readOnly ? undefined : <Link to="new" state={{ returnTo: `${location.pathname}${location.search}` }} />} type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("people.addAction")}</span></Button> : null}
         </div>}
       />
     }>

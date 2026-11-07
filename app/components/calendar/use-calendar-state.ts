@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query"
 import { TZDate } from "react-day-picker"
 import { useRouteLoaderData, useSearchParams } from "react-router"
 
+import { getPrimaryLocation } from "~/lib/locations/primary-location"
+import { localizationDefaults } from "~/lib/localization/defaults"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { calendarDateToValue, getCalendarDateState } from "~/lib/calendar/date"
 import { calendarReferenceQueryOptions } from "~/lib/calendar/query-options"
-import { defaultTimeZone } from "~/lib/localization/format-preference"
+
 import { useMediaQuery } from "~/lib/hooks"
 import { sortCalendarMembers } from "~/lib/calendar/schedule"
 import { useTRPC } from "~/lib/trpc/client"
@@ -19,6 +21,7 @@ export function useCalendarState({ preview: showPreview = true, mobile }: { prev
   const isMobile = mobile ?? matchesMobile
   const trpc = useTRPC()
   const organization = useQuery({ ...trpc.organizations.getCurrent.queryOptions(), ...calendarReferenceQueryOptions })
+  const locations = useQuery({ ...trpc.location.list.queryOptions(), ...calendarReferenceQueryOptions })
   const staff = useQuery({ ...trpc.staff.list.queryOptions(), ...calendarReferenceQueryOptions })
   const calendar = useRouteLoaderData<typeof calendarClientLoader>("routes/calendar/calendar")
   const now = calendar?.now ?? Date.now()
@@ -34,7 +37,8 @@ export function useCalendarState({ preview: showPreview = true, mobile }: { prev
     ? bookableMembers.find((member) => member.memberId === memberId) ?? bookableMembers[0]
     : undefined)
   const settings = organization.data?.settings
-  const timeZone = settings?.timezone ?? root?.organizationTimezone ?? defaultTimeZone
+  const location = getPrimaryLocation(locations.data, settings?.defaultLocationId)
+  const timeZone = location?.timezone ?? settings?.timezone ?? root?.organizationTimezone ?? localizationDefaults.timezone
   const calendarParams = new URLSearchParams(searchParams)
   if (showPreview && preview && (!selectedMember || preview.member.id === selectedMember.id)) calendarParams.set("date", calendarDateToValue(new TZDate(preview.startsAt, timeZone)))
   const calendarParamsKey = calendarParams.toString()
@@ -47,7 +51,7 @@ export function useCalendarState({ preview: showPreview = true, mobile }: { prev
   const mode = isMobile && dateState.mode === "week" ? "day" : dateState.mode
 
   return {
-    ...dateState, mode, now, isMobile, centerCurrentTimeOnMobile: calendar?.centerCurrentTimeOnMobile ?? false, dayLayout: !isMobile && searchParams.get("layout") === "rows" ? "rows" as const : "columns" as const, organization, staff, bookableMembers, selectedMember, timeZone, searchParams, setSearchParams,
+    ...dateState, mode, now, isMobile, centerCurrentTimeOnMobile: calendar?.centerCurrentTimeOnMobile ?? false, dayLayout: !isMobile && searchParams.get("layout") === "rows" ? "rows" as const : "columns" as const, organization, staff, bookableMembers, selectedMember, location, locations, timeZone, searchParams, setSearchParams,
     formatPreference: root?.formatPreference ?? "eu",
     startMinute: (settings?.defaultStartHour ?? 8) * 60,
     endMinute: (settings?.defaultEndHour ?? 18) * 60,

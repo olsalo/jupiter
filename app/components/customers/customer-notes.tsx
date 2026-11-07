@@ -14,10 +14,10 @@ import { formatDateTime } from "~/lib/localization/format-preference"
 import { customerNoteSchema } from "~/lib/schemas/customers"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
-import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
+import { useOrganizationPermission, useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
 
 export function CustomerNotes({ customerId, onPendingChange }: { customerId: string; onPendingChange: (pending: boolean) => void }) {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const root = useAppContext()
@@ -26,13 +26,14 @@ export function CustomerNotes({ customerId, onPendingChange }: { customerId: str
   const update = useMutation(trpc.customer.updateNote.mutationOptions())
   const [editing, setEditing] = useState<{ id?: string; body: string } | null>(null)
   const canUpdate = useOrganizationPermission({ customers: ["update"] })
+  const showUpdate = useOrganizationRolePermission({ customers: ["update"] })
   const notes = query.data?.pages.flatMap((page) => page.items) ?? []
   const pending = add.isPending || update.isPending
-  const options = { formatPreference: root?.formatPreference ?? "eu", language: root?.locale === "fi" ? "fi" as const : "en" as const, timeZone: root?.organizationTimezone ?? "Europe/Helsinki" }
+  const options = { formatPreference: root?.formatPreference ?? "eu", language: i18n.resolvedLanguage === "fi" ? "fi" as const : "en" as const, timeZone: root?.organizationTimezone ?? "Europe/Helsinki" }
 
   return <div className="grid gap-5">
     <Alert variant="info"><AlertTitle>{t("customerPage.notesPrivate")}</AlertTitle></Alert>
-    {canUpdate && !editing ? <Button className="justify-self-start" onClick={() => setEditing({ body: "" })} type="button" variant="outline">{t("customerPage.addNote")}</Button> : null}
+    {showUpdate && !editing ? <Button className="justify-self-start" disabled={!canUpdate} onClick={() => setEditing({ body: "" })} type="button" variant="outline">{t("customerPage.addNote")}</Button> : null}
     {canUpdate && editing ? <AppForm
       defaultValues={{ body: editing.body }}
       key={editing.id ?? "new"}
@@ -60,7 +61,7 @@ export function CustomerNotes({ customerId, onPendingChange }: { customerId: str
     {query.isError ? <Alert variant="error"><AlertTitle>{t("customerPage.notesError")}</AlertTitle><AlertAction><Button disabled={query.isFetching} loading={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction></Alert> : null}
     {query.isPending ? <div className="flex justify-center py-6"><Spinner aria-label={t("customerPage.loading")} /></div> : !notes.length && !query.isError ? <Empty><EmptyHeader><EmptyTitle>{t("customerPage.noNotes")}</EmptyTitle></EmptyHeader></Empty> : null}
     <ul className="grid gap-3">{notes.map((note) => <li className="grid gap-3 rounded-lg border p-4" key={note.id}>
-      <div className="flex items-start justify-between gap-3"><div className="grid gap-1"><span className="text-sm font-medium">{note.authorName ?? t("customerPage.staffNote")}</span><time className="text-xs text-muted-foreground" dateTime={new Date(note.createdAt).toISOString()}>{formatDateTime(note.createdAt, options)}{+new Date(note.updatedAt) > +new Date(note.createdAt) ? ` · ${t("customerPage.edited")}` : ""}</time></div>{canUpdate ? <Button disabled={pending || Boolean(editing)} onClick={() => setEditing({ id: note.id, body: note.body })} size="sm" type="button" variant="ghost">{t("customerPage.editNote")}</Button> : null}</div>
+      <div className="flex items-start justify-between gap-3"><div className="grid gap-1"><span className="text-sm font-medium">{note.authorName ?? t("customerPage.staffNote")}</span><time className="text-xs text-muted-foreground" dateTime={new Date(note.createdAt).toISOString()}>{formatDateTime(note.createdAt, options)}{+new Date(note.updatedAt) > +new Date(note.createdAt) ? ` · ${t("customerPage.edited")}` : ""}</time></div>{showUpdate ? <Button disabled={!canUpdate || pending || Boolean(editing)} onClick={() => setEditing({ id: note.id, body: note.body })} size="sm" type="button" variant="ghost">{t("customerPage.editNote")}</Button> : null}</div>
       <p className="whitespace-pre-wrap break-words text-sm leading-6">{note.body}</p>
     </li>)}</ul>
     {query.hasNextPage ? <Button disabled={query.isFetchingNextPage} loading={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()} type="button" variant="outline">{t("customerPage.loadMore")}</Button> : null}

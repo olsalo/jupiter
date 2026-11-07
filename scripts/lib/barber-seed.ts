@@ -3,7 +3,7 @@ import { Temporal } from "@js-temporal/polyfill"
 import { z } from "zod"
 import type { Prisma, PrismaClient } from "../../generated/prisma/client.ts"
 import { generateId } from "../../app/lib/database/id.ts"
-import { businessHolidayWindows, defaultBusinessHolidays } from "../../app/lib/business/business-holidays.ts"
+import { businessHolidayWindows, defaultBusinessHolidays } from "../../app/lib/business/business-holidays.server.ts"
 
 export const barberSeedOptions = z.object({
   ownerName: z.string().trim().min(1).max(100),
@@ -75,7 +75,7 @@ export async function seedBarberShop(db: PrismaClient, input: z.input<typeof bar
     await tx.location.create({ data: {
       id: locationId, organizationId, name: "City Centre", slug: "city-centre",
       addressLine1: "Fredrikinkatu 24", city: "Helsinki", postalCode: "00120", country: "FI", timezone,
-      email: `hello@${slug}.example.invalid`, bookingInstructions: "Please arrive five minutes before your appointment",
+      email: "hello.northsidebarbers@example.com", bookingInstructions: "Please arrive five minutes before your appointment",
     } })
     const bookingPageId = generateId()
     await tx.bookingPage.create({ data: {
@@ -95,11 +95,11 @@ export async function seedBarberShop(db: PrismaClient, input: z.input<typeof bar
 
     const people = [
       { name: options.ownerName, email: options.ownerEmail, userId: owner.id, role: "owner", bio: "Shop owner, looking after the team and the day-to-day running of the business" },
-      { name: "Alex Morgan", email: `alex@${slug}.example.invalid`, role: "admin", bio: "Senior barber with a passion for sharp fades and modern styles" },
-      { name: "Daniel Brooks", email: `daniel@${slug}.example.invalid`, role: "member", bio: "Beard specialist who loves a clean finish and a good conversation" },
-      { name: "Jamie Parker", email: `jamie@${slug}.example.invalid`, role: "member", bio: "Friendly barber offering relaxed cuts for adults and children" },
-      { name: "Oliver Reed", email: `oliver@${slug}.example.invalid`, role: "member", bio: "Experienced barber specialising in classic scissor cuts and traditional shaving" },
-      { name: "Ethan Clarke", email: `ethan@${slug}.example.invalid`, role: "member", bio: "Afternoon barber with an eye for textured cuts and precise beard lines" },
+      { name: "Alex Morgan", email: `alex.morgan+${slug.slice(-8)}@example.com`, role: "admin", bio: "Senior barber with a passion for sharp fades and modern styles" },
+      { name: "Daniel Brooks", email: `daniel.brooks+${slug.slice(-8)}@example.com`, role: "member", bio: "Beard specialist who loves a clean finish and a good conversation" },
+      { name: "Jamie Parker", email: `jamie.parker+${slug.slice(-8)}@example.com`, role: "member", bio: "Friendly barber offering relaxed cuts for adults and children" },
+      { name: "Oliver Reed", email: `oliver.reed+${slug.slice(-8)}@example.com`, role: "member", bio: "Experienced barber specialising in classic scissor cuts and traditional shaving" },
+      { name: "Ethan Clarke", email: `ethan.clarke+${slug.slice(-8)}@example.com`, role: "member", bio: "Afternoon barber with an eye for textured cuts and precise beard lines" },
     ]
     const staffIds: string[] = []
     for (const person of people) {
@@ -152,7 +152,7 @@ export async function seedBarberShop(db: PrismaClient, input: z.input<typeof bar
     const names = customerNames.flatMap((name) => [name, ...["Anderson", "Cooper", "Foster", "Bennett", "Phillips", "Russell", "Ward", "Hayes", "Griffin"].map((lastName) => `${name.split(" ")[0]} ${lastName}`)])
     const customers = names.map((name, index) => {
       const [firstName, lastName] = name.split(" ")
-      return { id: generateId(), organizationId, firstName, lastName, email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.invalid`, locale: "en", timezone, marketingConsent: index % 3 === 0 }
+      return { id: generateId(), organizationId, firstName, lastName, email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@example.com`, locale: "en", timezone, marketingConsent: index % 3 === 0 }
     })
     await tx.customer.createMany({ data: customers })
     const tagId = generateId()

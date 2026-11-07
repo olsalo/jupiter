@@ -1,11 +1,9 @@
-const locationApiUrl =
-  process.env.LOCATION_API_URL ?? "https://locara.humade.studio/p/v1/location"
-
 export type IpLocation = {
   ip: string
   location: {
     area?: number
     country?: string
+    eu?: boolean
     country_name?: string
     country_native?: string
     continent?: string
@@ -23,13 +21,36 @@ export type IpLocation = {
 export async function getIpLocationFromHeaders(
   headers: Headers,
 ): Promise<IpLocation | null> {
+  if (process.env.NODE_ENV === "development") {
+    return {
+      ip: "82.203.166.234",
+      location: {
+        latitude: 60.1717,
+        longitude: 24.9349,
+        area: 200,
+        country: "FI",
+        eu: true,
+        timezone: "Europe/Helsinki",
+        country_name: "Finland",
+        country_native: "Suomi",
+        continent: "EU",
+        continent_name: "Europe",
+        capital: "Helsinki",
+        phone: [358],
+        currency: ["EUR"],
+        languages: ["fi", "sv"],
+      },
+    }
+  }
+
   return getIpLocation(getClientIp(headers))
 }
 
 export async function getIpLocation(ip: string | null): Promise<IpLocation | null> {
   const apiKey = process.env.LOCATION_API_KEY
+  const locationApiUrl = process.env.LOCATION_API_URL
 
-  if (!apiKey || !ip) {
+  if (!apiKey || !locationApiUrl || !ip) {
     return null
   }
 

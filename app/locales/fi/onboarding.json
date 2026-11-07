@@ -3,24 +3,37 @@
     "title": "Määritä yrityksen tiedot",
     "description": "Lisää nimesi ja yrityksesi tiedot, niin pääset alkuun"
   },
-  "loading": "Ladataan aloitusta…",
   "title": "Määritä yrityksen tiedot",
   "description": "Voit muuttaa näitä tietoja myöhemmin",
+  "pageTitles": {
+    "business": "Yrityksen tiedot",
+    "location": "Toimipaikan tiedot",
+    "availability": "Aukioloajat",
+    "holidays": "Vapaapäivien aukioloajat",
+    "subscription": "Valitse tilaus"
+  },
   "progress": {
     "label": "Aloituksen vaiheet",
     "step": "Vaihe {{current}} / {{total}}"
   },
   "name": {
     "label": "Nimesi",
-    "placeholder": "Matti Meikäläinen"
+    "placeholder": "Anna Korhonen"
   },
   "businessName": {
     "label": "Yrityksen nimi",
-    "placeholder": "Esimerkkistudio"
+    "placeholder": "Studio Helmi",
+    "description": "Asiakkaat näkevät tämän nimen varaussivullasi ja varausviesteissä"
   },
   "location": {
     "label": "Maa",
     "placeholder": "Valitse maa"
+  },
+  "locationStep": {
+    "title": "Toimipaikan tiedot",
+    "description": "Osoite ja yhteystiedot näkyvät asiakkaille",
+    "phone": "Puhelin (valinnainen)",
+    "email": "Sähköposti (valinnainen)"
   },
   "timezone": {
     "label": "Aikavyöhyke",
@@ -41,7 +54,7 @@
   },
   "subscription": {
     "title": "Valitse tilauksesi",
-    "description": "Kokeile maksutta 14 päivää ja maksa sitten kuukausittain tai vuosittain. Voit perua milloin tahansa",
+    "description": "Kokeile maksutta 14 päivää ja peru milloin tahansa",
     "billingLabel": "Laskutusväli",
     "monthly": "Kuukausittain",
     "yearly": "Vuosittain",
@@ -58,11 +71,11 @@
     "billingNotConfigured": "Tilauksen tekeminen ei vielä onnistu. Yritä myöhemmin uudelleen"
   },
   "availability": {
-    "title": "Valitse tavalliset aukioloajat",
-    "description": "Tiimisi käyttää näitä aikoja, ellei henkilölle ole asetettu omaa aikataulua"
+    "title": "Määritä aukioloajat",
+    "description": "Nämä ajat koskevat koko tiimiä, ellei työntekijälle ole asetettu omia työaikoja"
   },
   "holidays": {
-    "title": "Vahvista pyhäpäivät",
-    "description": "Tarkista ehdotetut pyhäpäivät ja muokkaa yrityksesi aukioloa"
+    "title": "Tarkista vapaapäivät",
+    "description": "Tarkista ehdotetut vapaapäivät ja muokkaa tarvittaessa aukioloaikoja"
   }
 }

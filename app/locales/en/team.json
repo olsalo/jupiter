@@ -122,6 +122,7 @@
     "bookingSettingsDescription": "Control whether customers can book this member",
     "appEmail": "Sign-in email",
     "takesAppointments": "Takes appointments",
+    "subscriptionRequired": "An active subscription is needed to change this setting",
     "bookableDescription": "Add services and working hours before customers can book",
     "active": "Active",
     "activeDescription": "Turning this off keeps their appointment history",

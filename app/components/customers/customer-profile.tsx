@@ -8,7 +8,7 @@ import { SettingsSectionHeader } from "~/components/settings/settings-section-he
 import { Button } from "~/components/ui/button"
 import { Tabs, TabsList, TabsPanel, TabsTab } from "~/components/ui/tabs"
 import { UserAvatar } from "~/components/data-display/user-avatar"
-import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
+import { useOrganizationPermission, useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
 import { CustomerAppointments } from "./customer-appointments"
 import { customerName, type Customer } from "./customer-types"
 
@@ -16,6 +16,7 @@ export function CustomerProfile({ customer }: { customer: Customer }) {
   const { t } = useTranslation()
   const location = useLocation()
   const canUpdate = useOrganizationPermission({ customers: ["update"] })
+  const showUpdate = useOrganizationRolePermission({ customers: ["update"] })
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedTab = searchParams.get("customerTab")
   const tab = requestedTab === "appointments" ? "appointments" : "overview"
@@ -34,7 +35,7 @@ export function CustomerProfile({ customer }: { customer: Customer }) {
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-6 pb-5 pt-10 sm:py-4.5">
         <UserAvatar className="size-14 text-lg" decorative={true} name={name} stableId={customer.id} />
         <h2 className="min-w-0 break-words text-xl font-semibold leading-7">{name}</h2>
-        {canUpdate ? <Button aria-label={t("customerPage.edit")} className="@max-[32rem]/customer-header:size-8 @max-[32rem]/customer-header:p-0" render={<Link replace={true} state={location.state} to={`edit${location.search}`} />} type="button" variant="outline"><Icon aria-hidden={true} name="edit" size={16} /><span className="@max-[32rem]/customer-header:hidden">{t("customerPage.edit")}</span></Button> : null}
+        {showUpdate ? <Button aria-label={t("customerPage.edit")} className="@max-[32rem]/customer-header:size-8 @max-[32rem]/customer-header:p-0" disabled={!canUpdate} render={canUpdate ? <Link replace={true} state={location.state} to={`edit${location.search}`} /> : undefined} type="button" variant="outline"><Icon aria-hidden={true} name="edit" size={16} /><span className="@max-[32rem]/customer-header:hidden">{t("customerPage.edit")}</span></Button> : null}
       </div>
       <div className="px-6"><TabsList aria-label={t("customerPage.details")} className="grid w-full grid-cols-2" variant="underline">{(["overview", "appointments"] as const).map((value) => <TabsTab key={value} value={value}><Icon aria-hidden={true} name={value === "overview" ? "user" : "calendar"} size={16} />{t(value === "overview" ? "customerPage.profile" : "customerPage.appointments")}</TabsTab>)}</TabsList></div>
     </div>

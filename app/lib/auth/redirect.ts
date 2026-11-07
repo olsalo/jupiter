@@ -50,10 +50,11 @@ export function getAfterOnboardingRedirect(searchParams: URLSearchParams, welcom
     pathname = "/onboarding"
   }
   if (pathname === "/onboarding" || pathname.startsWith("/onboarding/")) {
-    destination.pathname = "/"
+    destination.pathname = "/calendar"
     destination.search = ""
     destination.hash = ""
   }
+  if (destination.pathname === "/") destination.pathname = "/calendar"
   if (welcome) destination.searchParams.set("welcome", "true")
   return `${destination.pathname}${destination.search}${destination.hash}`
 }

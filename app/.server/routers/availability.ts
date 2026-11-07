@@ -1,6 +1,7 @@
+import { localizationDefaults } from "~/lib/localization/defaults"
 import english from "~/locales/en/common.json"
 import finnish from "~/locales/fi/common.json"
-import { businessHolidayWindows } from "~/lib/business/business-holidays"
+import { businessHolidayWindows } from "~/lib/business/business-holidays.server"
 import { canAccessAvailability, hasOrganizationPermission } from "~/lib/auth/permissions"
 import type { TRPCRouterRecord } from "@trpc/server"
 import { TRPCError } from "@trpc/server"
@@ -23,7 +24,7 @@ export const availabilityRouter = {
     assertAvailabilityAccess(ctx.member, input.staffMemberId)
     await assertScope(tx, ctx.organizationId, input)
     const settings = await tx.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } })
-    const timezone = settings?.timezone ?? "Europe/Helsinki"
+    const timezone = settings?.timezone ?? localizationDefaults.timezone
     const date = Temporal.PlainDate.from(input.effectiveFrom)
     if (Temporal.PlainDate.compare(date, Temporal.Now.plainDateISO(timezone)) <= 0) throw new TRPCError({ code: "BAD_REQUEST", message: "Only upcoming changes can be deleted" })
     const at = new Date(date.toZonedDateTime(timezone).epochMilliseconds)
@@ -44,7 +45,7 @@ export const availabilityRouter = {
     assertAvailabilityAccess(ctx.member, input.staffMemberId)
     await assertScope(tx, ctx.organizationId, input)
     const settings = await tx.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } })
-    const timezone = settings?.timezone ?? "Europe/Helsinki"
+    const timezone = settings?.timezone ?? localizationDefaults.timezone
     const date = Temporal.PlainDate.from(input.effectiveFrom)
     if (Temporal.PlainDate.compare(date, Temporal.Now.plainDateISO(timezone)) < 0) {
       throw new TRPCError({ code: "BAD_REQUEST", cause: new z.ZodError([{ code: "custom", path: ["effectiveFrom"], message: "Choose today or a future date" }]) })
@@ -74,11 +75,11 @@ export const availabilityRouter = {
       getBlockedTimeInRange(ctx.prisma, ctx.organizationId, input),
     ])
     const settings = ctx.organization.settings
-    const holidays = businessHolidayWindows(settings?.businessHolidays, input.from, input.to, settings?.timezone ?? "Europe/Helsinki")
+    const holidays = businessHolidayWindows(settings?.businessHolidays, input.from, input.to, settings?.timezone ?? localizationDefaults.timezone, settings?.countryCode ?? undefined)
     const holidayLabels = (ctx.locale === "fi" ? finnish : english).businessSchedule.defaults
     return [...holidays.map((holiday) => ({
       staffMemberId: null, locationId: null, isBreak: false, isExtra: holiday.isOpen, isBlocked: !holiday.isOpen,
-      title: holiday.title || holidayLabels[holiday.holidayId as keyof typeof holidayLabels] || holiday.holidayId, windows: [{ start: Math.max(holiday.start, +input.from), end: Math.min(holiday.end, +input.to) }],
+      title: holiday.title || holidayLabels[holiday.holidayId as keyof typeof holidayLabels] || holiday.labels?.[ctx.locale] || holiday.holidayId, windows: [{ start: Math.max(holiday.start, +input.from), end: Math.min(holiday.end, +input.to) }],
     })), ...rules.map((rule) => ({
       locationId: rule.locationId,
       staffMemberId: rule.staffMemberId,

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react"
 import { useTranslation } from "react-i18next"
+import { useMatches } from "react-router"
 
 import Icon from "~/components/icons"
 import {
@@ -39,16 +40,18 @@ const getServerNarrowViewportStatus = () => false
 
 export function AppStatusDialog() {
   const { t } = useTranslation()
+  const isMarketingPage = useMatches().some(({ handle }) => (handle as { marketing?: boolean } | undefined)?.marketing === true)
   const isOnline = useSyncExternalStore(
     subscribeToOnlineStatus,
     getOnlineStatus,
     getServerOnlineStatus,
   )
-  const isNarrowViewport = useSyncExternalStore(
+  const narrowViewport = useSyncExternalStore(
     subscribeToNarrowViewport,
     getNarrowViewportStatus,
     getServerNarrowViewportStatus,
   )
+  const isNarrowViewport = narrowViewport && !isMarketingPage
   const isOffline = !isOnline
   const isBlocked = isOffline || isNarrowViewport
   const showOffline = isOffline && !isNarrowViewport

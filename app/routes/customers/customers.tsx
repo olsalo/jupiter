@@ -17,7 +17,7 @@ import { useDebouncedValue } from "~/lib/hooks/use-debounced-value"
 import { useMediaQuery } from "~/lib/hooks"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
+import { useOrganizationPermission, useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
 
 export const handle = { workspace: true, pageLayout: "viewport-desktop" }
 
@@ -48,6 +48,7 @@ export default function Customers() {
     startTransition(() => setClosingLocationKey(location.key))
   } }
   const canCreate = useOrganizationPermission({ customers: ["create"] })
+  const showCreate = useOrganizationRolePermission({ customers: ["create"] })
 
   return (
     <Page header={
@@ -61,7 +62,7 @@ export default function Customers() {
           <InputGroupInput nativeInput={true} aria-label={t("customerPage.search")} onChange={(event) => setSearch(event.target.value)} placeholder={t("customerPage.search")} type="search" value={search} />
           <InputGroupAddon><Icon aria-hidden={true} name="search" size={16} /></InputGroupAddon>
         </InputGroup>}
-        actions={canCreate ? <Button aria-label={t("customerPage.add")} className="max-md:size-9 max-md:p-0" render={<Link to={customerId ? `${location.pathname.replace(/\/new\/?$/, "")}/new${location.search}` : "new"} state={{ returnTo: `${location.pathname}${location.search}` }} />} size="lg" type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("customerPage.add")}</span></Button> : null}
+        actions={showCreate ? <Button aria-label={t("customerPage.add")} className="max-md:size-9 max-md:p-0" disabled={!canCreate} render={canCreate ? <Link to={customerId ? `${location.pathname.replace(/\/new\/?$/, "")}/new${location.search}` : "new"} state={{ returnTo: `${location.pathname}${location.search}` }} /> : undefined} size="lg" type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{t("customerPage.add")}</span></Button> : null}
       />
     }>
       <title>{t("customerPage.title")}</title>
@@ -70,7 +71,7 @@ export default function Customers() {
         <AlertDescription>{t(customers.data ? "customerPage.staleDescription" : "customerPage.retryDescription")}</AlertDescription>
         <AlertAction><Button disabled={customers.isFetching} loading={customers.isFetching} onClick={() => void customers.refetch()} size="sm" type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction>
       </Alert> : null}
-      <div className="@container/customers relative isolate flex min-h-0 min-w-0 flex-1 sm:overflow-hidden sm:bg-background sm:rounded-md sm:p-px after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] sm:after:border sm:after:border-border" data-slot="customer-master-detail">
+      <div className="@container/customers relative isolate flex min-h-0 min-w-0 flex-1 sm:overflow-hidden sm:bg-background sm:rounded-lg sm:p-px after:pointer-events-none after:absolute after:inset-0 after:z-20 after:rounded-[inherit] sm:after:border sm:after:border-border" data-slot="customer-master-detail">
         <aside aria-label={t("customerPage.title")} className="flex min-h-0 w-full min-w-0 flex-col sm:w-64 sm:shrink-0 sm:border-r lg:w-80">
           <CustomerList search={search} onSearchChange={setSearch} customers={customers.data?.pages.flatMap((page) => page.items) ?? []} hasMore={customers.hasNextPage} fetchingMore={customers.isFetchingNextPage} onLoadMore={() => void customers.fetchNextPage()} selectedId={closingLocationKey === location.key ? undefined : customerId} loading={customers.isPending} failed={customers.isError && !customers.data} />
         </aside>

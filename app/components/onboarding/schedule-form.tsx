@@ -8,7 +8,7 @@ import { BusinessHolidayFields } from "~/components/settings/business/business-h
 import Icon from "~/components/icons"
 import { TeamWorkingHoursFields } from "~/components/team/team-working-hours-fields"
 import { Button } from "~/components/ui/button"
-import { businessScheduleSchema, type BusinessScheduleValues } from "~/lib/schemas/business-schedule"
+import { businessScheduleSchema, createBusinessScheduleSchema, type BusinessScheduleValues } from "~/lib/schemas/business-schedule"
 import { toast } from "~/lib/toast"
 import { getAfterOnboardingRedirect } from "~/lib/auth/redirect"
 import { useTRPC } from "~/lib/trpc/client"
@@ -21,8 +21,8 @@ const availabilitySchema = z.object({
 })
 
 export function OnboardingScheduleForm({ defaultValues, nextStep, step }: {
-  defaultValues: BusinessScheduleValues & { timezone: string }
-  nextStep: "business" | "availability" | "holidays" | "subscription" | null
+  defaultValues: BusinessScheduleValues & { timezone: string; countryCode?: string }
+  nextStep: "business" | "location" | "availability" | "holidays" | "subscription" | null
   step: "availability" | "holidays"
 }) {
   const { t } = useTranslation("onboarding")
@@ -34,6 +34,7 @@ export function OnboardingScheduleForm({ defaultValues, nextStep, step }: {
   const availability = useMutation(trpc.onboarding.saveAvailability.mutationOptions())
   const holidays = useMutation(trpc.onboarding.confirmHolidays.mutationOptions())
 
+
   return <>
     <div className="flex flex-col gap-1.5">
       <h1 className="text-2xl font-semibold">{t(`${step}.title`)}</h1>
@@ -44,7 +45,7 @@ export function OnboardingScheduleForm({ defaultValues, nextStep, step }: {
       defaultValues={defaultValues}
       key={step}
       otherFormProps={{ noValidate: true }}
-      schema={step === "availability" ? availabilitySchema : businessScheduleSchema}
+      schema={step === "availability" ? availabilitySchema : createBusinessScheduleSchema(defaultValues.holidays)}
       submitFn={async (values) => {
         try {
           if (step === "availability") await availability.mutateAsync(values)

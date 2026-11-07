@@ -22,11 +22,12 @@ import { TooltipProvider } from "~/components/ui/tooltip"
 import { formatPreferenceCookie, localeCookie, themeCookie } from "~/lib/http/cookies.server.ts"
 import { isFormatPreference } from "~/lib/localization/format-preference"
 import { getFormatPreferenceFromRequest } from "~/lib/localization/format-preference.server.ts"
-import { restrictKeyboardFocus } from "~/lib/browser/keyboard-focus"
 import { isSupportedLocale } from "~/lib/localization/locale"
 import { syncUserLocale } from "~/lib/localization/locale.server.ts"
 import { isElectron, isReactNativeWebView } from "~/lib/browser/platform"
+import { restrictKeyboardFocus } from "~/lib/browser/keyboard-focus"
 import { shouldRevalidateRootRoute } from "~/lib/routing/should-revalidate"
+import { getAppBaseUrl } from "~/lib/routing/app-url.server"
 import { defaultTheme, isTheme, syncThemeColor } from "~/lib/preferences/theme"
 import { TRPCReactProvider } from "~/lib/trpc/client"
 import { useAuthNotifications } from "~/lib/hooks/use-auth-notifications"
@@ -69,6 +70,7 @@ export async function loader(args: Route.LoaderArgs) {
   for (const cookie of cookies) headers.append("Set-Cookie", cookie)
 
   return data({
+    appBaseUrl: getAppBaseUrl(new URL(request.url)),
     user,
     isElectron: isElectron(request.headers.get("user-agent") ?? ""),
     isReactNativeWebView: isReactNativeWebView(request.headers.get("user-agent") ?? ""),
@@ -115,6 +117,20 @@ export function Layout({ children }: { children: ReactNode }) {
             font-weight: 100 900;
             font-display: swap;
           }
+          @font-face {
+            font-family: "Lora";
+            src: url("/fonts/lora.woff2") format("woff2");
+            font-style: normal;
+            font-weight: 400 700;
+            font-display: swap;
+          }
+          @font-face {
+            font-family: "Caveat";
+            src: url("/fonts/caveat.woff2") format("woff2");
+            font-style: normal;
+            font-weight: 400 700;
+            font-display: swap;
+          }
         `}</style>
         <Meta />
         <Links />
@@ -150,9 +166,12 @@ export default function App({ loaderData }: Route.ComponentProps) {
   const { i18n } = useTranslation()
   const languageSetting = useBackgroundSetting(`${loaderData.user?.id}:language`, loaderData.locale)
 
+  useEffect(() => {
+    if (import.meta.env.PROD) return restrictKeyboardFocus()
+  }, [])
+
   useAuthNotifications()
   useOfflineLocale(languageSetting.value)
-  useEffect(restrictKeyboardFocus, [])
   useEffect(() => {
     if (i18n.language !== languageSetting.value) {
       void i18n.changeLanguage(languageSetting.value)

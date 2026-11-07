@@ -1,3 +1,1 @@
-export const PRO_LIMITS = {
-  teamMembers: 10,
-} as const
+export const LIMIT_RESOURCES = ["teamMembers"] as const

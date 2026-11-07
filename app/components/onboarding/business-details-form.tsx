@@ -19,10 +19,9 @@ import {
 } from "~/components/ui/select"
 import { Separator } from "~/components/ui/separator"
 import { onboardingCountries } from "~/lib/localization/countries"
-import { currencyItems } from "~/lib/localization/currencies"
+import { onboardingCurrencyItems, onboardingTimezoneItems } from "~/lib/localization/onboarding"
 import { onboardingFormSchema } from "~/lib/schemas/onboarding"
 import { toast } from "~/lib/toast"
-import { timezoneItems } from "~/lib/localization/timezones"
 import { getAfterOnboardingRedirect } from "~/lib/auth/redirect"
 import { useTRPC } from "~/lib/trpc/client"
 
@@ -36,7 +35,7 @@ type OnboardingFormValues = {
 
 export function BusinessDetailsForm({ defaultValues, nextStep }: {
   defaultValues: OnboardingFormValues
-  nextStep: "business" | "availability" | "holidays" | "subscription" | null
+  nextStep: "business" | "location" | "availability" | "holidays" | "subscription" | null
 }) {
   const { t } = useTranslation("onboarding")
   const formApi = useRef<FormApi<OnboardingFormValues>>(null)
@@ -124,6 +123,8 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                 <Separator />
 
                 <FormLabel
+                  description={t("businessName.description")}
+                  descriptionPlacement="after"
                   error={form.error("businessName")}
                   label={t("businessName.label")}
                 >
@@ -160,7 +161,7 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                       locationField.onChange(value)
                       form.unstable_setCustomError("location", null)
                     }}
-                    value={locationField.value}
+                    value={locationField.value || null}
                   >
                     <SelectTrigger
                       aria-invalid={Boolean(form.error("location")) || undefined}
@@ -184,7 +185,7 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                   label={t("currency.label")}
                 >
                   <Select
-                    items={currencyItems}
+                    items={onboardingCurrencyItems}
                     onValueChange={(value) => {
                       if (typeof value !== "string") {
                         return
@@ -193,7 +194,7 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                       currencyField.onChange(value)
                       form.unstable_setCustomError("currency", null)
                     }}
-                    value={currencyField.value}
+                    value={currencyField.value || null}
                   >
                     <SelectTrigger
                       aria-invalid={Boolean(form.error("currency")) || undefined}
@@ -201,11 +202,11 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                       ref={currencyField.ref}
                     >
                       <SelectValue placeholder={t("currency.placeholder")}>
-                        {(value) => currencyItems.find((item) => item.value === value)?.label ?? t("currency.placeholder")}
+                        {(value) => onboardingCurrencyItems.find((item) => item.value === value)?.label ?? t("currency.placeholder")}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectPopup>
-                      {currencyItems.map((currency) => (
+                      {onboardingCurrencyItems.map((currency) => (
                         <SelectItem key={currency.value} value={currency.value}>
                           <span className="flex min-w-0 items-center gap-2">
                             <span className="truncate">{currency.label}</span>
@@ -222,7 +223,7 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                   label={t("timezone.label")}
                 >
                   <Select
-                    items={timezoneItems}
+                    items={onboardingTimezoneItems}
                     onValueChange={(value) => {
                       if (typeof value !== "string") {
                         return
@@ -231,7 +232,7 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                       timezoneField.onChange(value)
                       form.unstable_setCustomError("timezone", null)
                     }}
-                    value={timezoneField.value}
+                    value={timezoneField.value || null}
                   >
                     <SelectTrigger
                       aria-invalid={Boolean(form.error("timezone")) || undefined}
@@ -241,7 +242,7 @@ export function BusinessDetailsForm({ defaultValues, nextStep }: {
                       <SelectValue placeholder={t("timezone.placeholder")} />
                     </SelectTrigger>
                     <SelectPopup>
-                      {timezoneItems.map((item) => (
+                      {onboardingTimezoneItems.map((item) => (
                         <SelectItem key={item.value} value={item.value}>
                           {item.label}
                         </SelectItem>

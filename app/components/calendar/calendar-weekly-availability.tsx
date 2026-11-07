@@ -30,7 +30,7 @@ export function CalendarWeeklyAvailability({ staffMemberId, kind, onPendingChang
   onPendingChange: (pending: boolean) => void
   close: () => void
 }) {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const root = useRouteLoaderData<typeof rootLoader>("root")
   const trpc = useTRPC()
   const queryClient = useQueryClient()
@@ -46,7 +46,7 @@ export function CalendarWeeklyAvailability({ staffMemberId, kind, onPendingChang
   const [formPending, setFormPending] = useState(false)
   const formId = useId()
   const savedEffectiveFrom = useRef<string | undefined>(undefined)
-  const formatOptions = { formatPreference: root?.formatPreference ?? "eu", language: root?.locale === "fi" ? "fi" as const : "en" as const, timeZone: business.timezone, includeTime: false }
+  const formatOptions = { formatPreference: root?.formatPreference ?? "eu", language: i18n.resolvedLanguage === "fi" ? "fi" as const : "en" as const, timeZone: business.timezone, includeTime: false }
   const schema = calendarAvailabilitySchema(t("team:people.endTimeError")).safeExtend({
     effectiveFrom: calendarAvailabilitySchema().shape.effectiveFrom.refine((date) => date >= today, t("calendarAvailability.dateError")),
   })

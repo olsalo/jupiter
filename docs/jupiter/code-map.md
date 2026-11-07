@@ -16,9 +16,10 @@ This inventory describes the current scheduling product. Follow the shared [code
 | `forms/` | `AppForm`, `FormLabel`, and reusable form inputs |
 | `information-architecture/` | Route information architecture view |
 | `layout/` | App shells, page layouts, route headers, and page headings |
+| `marketing/` | Public landing page and feature videos |
 | `navigation/` | App logo, navigation icons, and profile menu |
 | `notes/` | Note form and modal support |
-| `onboarding/` | Setup forms, progress, step state, and welcome dialog |
+| `onboarding/` | Business and location setup forms, progress, step state, and welcome dialog |
 | `overlays/` | Responsive dialogs and sheets, popup wrappers, loading, and confirmation |
 | `overview/` | Dashboard cards and table |
 | `placeholders/` | Route and booking loading placeholders |
@@ -53,6 +54,7 @@ See [page layouts](../../app/components/layout/page-layout.md) and [calendar det
 | `http/` | Server cookie handling |
 | `localization/` | Locale synchronization, date/number formatting, countries, currencies, and timezones |
 | `localization/data/` | Country, currency, dialing code, and timezone JSON datasets |
+| `locations/` | Shared primary active location selection for calendars and settings |
 | `overview/` | Dashboard greeting time calculations |
 | `preferences/` | Theme, background settings, avatar colors, and settings save queue |
 | `query/` | Shared query cache helpers |
@@ -63,3 +65,5 @@ See [page layouts](../../app/components/layout/page-layout.md) and [calendar det
 | `trpc/` | tRPC server/client and TanStack Query setup |
 | `validation/` | Localized Zod setup |
 
+
+Holiday suggestions and recurring closures are calculated on the server in `app/lib/business/business-holidays.server.ts`, using `national-holidays.server.ts` for country calendars. Shared holiday types and saved-settings readers stay in `business-holidays.ts`.

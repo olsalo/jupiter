@@ -9,6 +9,7 @@ import {
 import { Button } from "~/components/ui/button"
 import type { BillingNotification } from "~/lib/billing/billing"
 import { cn } from "~/lib/utils"
+import { useCurrentOrganizationRole } from "~/lib/hooks/use-organization-access"
 
 export function BillingNotificationBar({
   notification,
@@ -18,6 +19,7 @@ export function BillingNotificationBar({
   variant?: "banner" | "inline"
 }) {
   const { t } = useTranslation()
+  const role = useCurrentOrganizationRole()
 
   if (!notification) {
     return null
@@ -37,10 +39,10 @@ export function BillingNotificationBar({
       variant={isError ? "error" : "warning"}
     >
       <AlertTitle>{content.title}</AlertTitle>
-      <AlertDescription className="hidden text-xs sm:flex">
+      <AlertDescription className={cn("text-xs", notification.type !== "subscription-inactive" && "hidden sm:flex")}>
         {content.description}
       </AlertDescription>
-      <AlertAction className="max-sm:!col-start-3 max-sm:!mt-0 max-sm:!self-center">
+      {role === "owner" ? <AlertAction className="max-sm:!col-start-3 max-sm:!mt-0 max-sm:!self-center">
         <Button
           className="billing-notification-fix bg-background"
           render={<a href="#settings/billing" />}
@@ -49,7 +51,7 @@ export function BillingNotificationBar({
         >
           {t("billingNotice.action")}
         </Button>
-      </AlertAction>
+      </AlertAction> : null}
     </Alert>
   )
 }

@@ -47,7 +47,7 @@ import { useMediaQuery } from "~/lib/hooks"
 import { useDebouncedValue } from "~/lib/hooks/use-debounced-value"
 import { calendarBookingEditSchema } from "~/lib/calendar/booking-schema"
 import { toast } from "~/lib/toast"
-import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
+import { useOrganizationPermission, useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
 import { useTRPC } from "~/lib/trpc/client"
 import type { appRouter } from "~/.server/main"
 
@@ -117,6 +117,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
   const selectedService = availableServices.find((service) => service.id === serviceId)
   const hasStackedButtons = useMediaQuery("max-40rem")
   const canEdit = useOrganizationPermission({ appointments: ["update"] })
+  const showEdit = useOrganizationRolePermission({ appointments: ["update"] })
   const { setPreview, clearPreview, dragging } = useCalendarBookingPreview()
   const [changingTime, setChangingTime] = useState(Boolean(dragSelection))
   const [memberFilter, setMemberFilter] = useState<string | undefined>()
@@ -279,8 +280,8 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
     }}
   >{(form) => {
     const customer = form.getControlProps("customerId")
-    const saveButton = canEdit ? <Button disabled={disabled} loading={form.formState.isSubmitting || pending} type="submit">{t("bookingForm.saveChanges")}</Button> : null
-    const deleteButton = canEdit ? <Button className={hasStackedButtons ? undefined : "sm:mr-auto"} disabled={disabled} onClick={() => setDeleteOpen(true)} type="button" variant="destructive-outline"><Icon aria-hidden={true} name="delete" size={16} />{t("bookingForm.delete")}</Button> : null
+    const saveButton = showEdit ? <Button disabled={disabled} loading={form.formState.isSubmitting || pending} type="submit">{t("bookingForm.saveChanges")}</Button> : null
+    const deleteButton = showEdit ? <Button className={hasStackedButtons ? undefined : "sm:mr-auto"} disabled={disabled} onClick={() => setDeleteOpen(true)} type="button" variant="destructive-outline"><Icon aria-hidden={true} name="delete" size={16} />{t("bookingForm.delete")}</Button> : null
     const closeButton = <CalendarPanelClose disabled={pending} returnTo={returnTo} type="button" variant="ghost">{t("bookingForm.close")}</CalendarPanelClose>
     return <>
       <ScrollArea className="min-h-0 flex-1" scrollFade={true}>
@@ -292,7 +293,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
             savedIssues={appointment.availabilityIssues}
             savedPosition={{ startsAt: appointment.startsAt, endsAt: appointment.endsAt, memberId: appointment.staffMemberId ?? "", locationId: appointment.locationId, status: appointment.status }}
           />
-          {!canEdit ? <Alert variant="info"><AlertTitle>{t("bookingForm.readOnly")}</AlertTitle></Alert> : null}
+          {!showEdit ? <Alert variant="info"><AlertTitle>{t("bookingForm.readOnly")}</AlertTitle></Alert> : null}
           <FormLabel error={form.error("customerId")} label={t("bookingForm.customerLabel")}>
             <CustomerPicker onCustomerChange={setSummaryCustomer} selectedCustomer={appointment.customer} disabled={disabled} inputRef={customer.ref} invalid={Boolean(form.error("customerId"))} onBlur={customer.onBlur} onChange={customer.onChange} onCreate={() => { setCustomerFlow((flow) => flow + 1); setCustomerModalOpen(true) }} value={customer.value} />
           </FormLabel>
@@ -313,7 +314,7 @@ function BookingEditForm({ appointment, dragSelection, returnTo }: { appointment
           </FormLabel>
           {services.isError ? <Alert variant="error"><AlertTitle>{t("bookingForm.servicesError")}</AlertTitle><AlertAction><Button disabled={services.isFetching} loading={services.isFetching} onClick={() => void services.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
           <CalendarBookingDurationField availability={{ startsAt: selectedDay ? getCalendarTimeRange(selectedDay, startHour * 60 + startMinute, calendarMinDurationMinutes, timeZone).startsAt : undefined, memberId: targetMemberId, appointmentId: appointment.id, length, beforeMinutes: serviceChanged ? selectedService?.bufferBeforeMinutes : bookedService?.bufferBeforeMinutes, afterMinutes: serviceChanged ? selectedService?.bufferAfterMinutes : bookedService?.bufferAfterMinutes }} serviceDurations={serviceDurations} minLength={calendarMinDurationMinutes} disabled={disabled || !canReschedule || appointment.services.length !== 1} language={i18n.resolvedLanguage === "fi" ? "fi" : "en"} length={length} lengthError={!validLength ? t("bookingForm.lengthError") : undefined} onLengthChange={(value) => { setLength(value); setChangingTime(true); setPreserveScroll(false); setTimeError("") }} />
-          {canReschedule ? <Button disabled={disabled} onClick={() => {
+          {showEdit && Boolean(service && appointment.staffMemberId && canRescheduleAppointment(appointment.status)) ? <Button disabled={disabled} onClick={() => {
             setPreserveScroll(false)
             setChangingTime(serviceChanged || !changingTime)
             if (changingTime) {

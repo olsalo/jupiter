@@ -97,6 +97,7 @@ const t = initTRPC.context<Context>().create({
       resourceLimit: error.cause instanceof ResourceLimitError ? { resource: error.cause.resource, limit: error.cause.limit } : null,
       zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
       appCode: error.cause && "appCode" in error.cause ? error.cause.appCode : null,
+      capacityUsed: error.cause && "capacityUsed" in error.cause && typeof error.cause.capacityUsed === "number" ? error.cause.capacityUsed : null,
     },
   }),
 })
@@ -134,18 +135,18 @@ export const protectedProcedure = resourceLimitProcedure.use(async ({ ctx, next 
   })
 })
 
-export const subscribedProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+export const subscribedProcedure = protectedProcedure.use(async ({ ctx, next, type }) => {
   if (!ctx.organizationId) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "An active subscription is required",
     })
   }
-  await assertOrganizationSubscription(ctx.organizationId, ctx.prisma)
+  if (type !== "query") await assertOrganizationSubscription(ctx.organizationId, ctx.prisma)
   return next()
 })
 
-export const organizationProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+export const organizationMemberProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   const organizationId = ctx.session?.activeOrganizationId
   if (!organizationId || organizationId !== ctx.organizationId) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Choose a business first" })
@@ -155,14 +156,23 @@ export const organizationProcedure = protectedProcedure.use(async ({ ctx, next }
     include: { organization: { include: { settings: true } }, staffProfile: true },
   })
   if (!member || !member.role.split(",").some((role) => ["owner", "admin", "member"].includes(role.trim()))) throw new TRPCError({ code: "FORBIDDEN" })
-  await assertOrganizationSubscription(organizationId, ctx.prisma)
   return next({ ctx: { organizationId, organization: member.organization, member } })
+})
+
+export const organizationProcedure = organizationMemberProcedure.use(async ({ ctx, next, type }) => {
+  if (type !== "query") await assertOrganizationSubscription(ctx.organizationId, ctx.prisma)
+  return next()
 })
 
 export const permissionProcedure = (permissions: OrganizationPermissions) => organizationProcedure.use(({ ctx, next }) => {
   if (!hasOrganizationPermission(ctx.member.role, permissions)) {
     throw new TRPCError({ code: "FORBIDDEN" })
   }
+  return next()
+})
+
+export const settingsPermissionProcedure = (permissions: OrganizationPermissions) => organizationMemberProcedure.use(({ ctx, next }) => {
+  if (!hasOrganizationPermission(ctx.member.role, permissions)) throw new TRPCError({ code: "FORBIDDEN" })
   return next()
 })
 

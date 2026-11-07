@@ -23,7 +23,7 @@ import { Spinner } from "~/components/ui/spinner"
 import { toast } from "~/lib/toast"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import { useOrganizationPermission } from "~/lib/hooks/use-organization-access"
+import { useOrganizationPermission, useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
 import { cn } from "~/lib/utils"
 
 export const handle = { workspace: true, pageLayout: "scroll" } as const
@@ -59,6 +59,7 @@ function ServicesPage() {
   const [serviceDeleteOpen, setServiceDeleteOpen] = useState(false)
   const visibleItems = categoryId ? items.filter((service) => service.categoryId === categoryId) : items
   const canManage = useOrganizationPermission({ services: ["configure"] })
+  const showManage = useOrganizationRolePermission({ services: ["configure"] })
   const listRef = useRef<HTMLUListElement>(null)
   const title = common("routeTitles.services")
   const removeService = useMutation(trpc.service.delete.mutationOptions({
@@ -78,9 +79,9 @@ function ServicesPage() {
     },
     onError: () => toast.error(t("serviceDeleteError")),
   }))
-  const addButton = <Button aria-label={common("routeActions.newService")} className="max-md:size-9 max-md:p-0" render={<Link to={`new${location.search}`} state={{ returnTo: `${location.pathname}${location.search}` }} />} size="lg" type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{common("routeActions.newService")}</span></Button>
+  const addButton = <Button aria-label={common("routeActions.newService")} className="max-md:size-9 max-md:p-0" disabled={!canManage} render={canManage ? <Link to={`new${location.search}`} state={{ returnTo: `${location.pathname}${location.search}` }} /> : undefined} size="lg" type="button"><Icon aria-hidden={true} name="add" size={18} /><span className="hidden md:inline">{common("routeActions.newService")}</span></Button>
 
-  return <ScrollPage header={<RouteHeader title={title} description={common("routeDescriptions.services")} refreshing={services.isRefetching} showDescriptionOnMobile={false} controls={<ServiceCategoryControls />} actions={canManage ? addButton : null} />}>
+  return <ScrollPage header={<RouteHeader title={title} description={common("routeDescriptions.services")} refreshing={services.isRefetching} showDescriptionOnMobile={false} controls={<ServiceCategoryControls />} actions={showManage ? addButton : null} />}>
     <title>{title}</title>
     <div className={cn("@container flex min-w-0 flex-col gap-4", (services.isPending || (!services.isError && visibleItems.length === 0)) && "min-h-0 flex-1")}>
     {categories.isError ? <Alert variant="error"><AlertTitle>{t("categoriesLoadError")}</AlertTitle><AlertDescription>{t("categoriesRetryDescription")}</AlertDescription><AlertAction><Button disabled={categories.isFetching} loading={categories.isFetching} onClick={() => void categories.refetch()} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction></Alert> : null}
@@ -89,7 +90,7 @@ function ServicesPage() {
     ) : visibleItems.length === 0 ? (
       <Empty>
         <EmptyHeader><EmptyMedia variant="icon"><Icon aria-hidden={true} name="forms" /></EmptyMedia><EmptyTitle>{t(categoryId ? "categoryEmpty" : "empty")}</EmptyTitle><EmptyDescription>{t(categoryId ? canManage ? "categoryEmptyDescription" : "categoryEmptyReadOnlyDescription" : "emptyDescription")}</EmptyDescription></EmptyHeader>
-        {categoryId && canManage && selectedCategory ? <EmptyContent><Button disabled={removeCategory.isPending || removeService.isPending} onClick={editCategory} type="button" variant="outline"><Icon aria-hidden={true} name="edit" size={16} />{t("editCategory")}</Button></EmptyContent> : null}
+        {categoryId && showManage && selectedCategory ? <EmptyContent><Button disabled={!canManage || removeCategory.isPending || removeService.isPending} onClick={editCategory} type="button" variant="outline"><Icon aria-hidden={true} name="edit" size={16} />{t("editCategory")}</Button></EmptyContent> : null}
       </Empty>
     ) : <>
       <DragDropProvider
@@ -110,8 +111,8 @@ function ServicesPage() {
         }}
       >
         <ul className="relative isolate z-0 flex flex-col gap-3" ref={listRef}>
-          {visibleItems.map((service, index) => <SortableServiceListItem key={service.id} id={service.id} index={index} name={service.name} color={service.color} showHandle={canManage} disabled={!canManage || removeCategory.isPending || removeService.isPending || visibleItems.length < 2} containerRef={listRef} actions={canManage ? <ServiceActionsMenu id={service.id} name={service.name} disabled={removeCategory.isPending || removeService.isPending} onDelete={() => { setServiceDeleteTarget({ id: service.id, name: service.name }); setServiceDeleteOpen(true) }} /> : null}>
-            <Link className="w-fit max-w-full wrap-anywhere text-balance text-sm font-medium outline-none after:absolute after:inset-0 after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring max-sm:flex max-sm:min-h-9 max-sm:items-center max-sm:text-base" draggable={false} to={`${service.id}${canManage ? "/edit" : ""}${location.search}`} state={{ returnTo: `${location.pathname}${location.search}` }}>{service.name}</Link>
+          {visibleItems.map((service, index) => <SortableServiceListItem key={service.id} id={service.id} index={index} name={service.name} color={service.color} showHandle={showManage} disabled={!canManage || removeCategory.isPending || removeService.isPending || visibleItems.length < 2} containerRef={listRef} actions={showManage ? <ServiceActionsMenu id={service.id} name={service.name} disabled={!canManage || removeCategory.isPending || removeService.isPending} onDelete={() => { setServiceDeleteTarget({ id: service.id, name: service.name }); setServiceDeleteOpen(true) }} /> : null}>
+            <Link className="w-fit max-w-full wrap-anywhere text-balance text-sm font-medium outline-none after:absolute after:inset-0 after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring max-sm:flex max-sm:min-h-9 max-sm:items-center max-sm:text-base" draggable={false} to={`${service.id}${showManage ? "/edit" : ""}${location.search}`} state={{ returnTo: `${location.pathname}${location.search}` }}>{service.name}</Link>
             <ServiceListDetails service={service} />
           </SortableServiceListItem>)}
         </ul>

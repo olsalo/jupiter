@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { createInstance } from "i18next"
 import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 const vite = await createServer({
   configFile: false,
@@ -19,6 +20,8 @@ const vite = await createServer({
 
 try {
   const { AccentColorSelect } = await vite.ssrLoadModule("/app/components/settings/preferences/accent-color-select.tsx") as typeof import("../app/components/settings/preferences/accent-color-select")
+  const { BookingPageAccentColor } = await vite.ssrLoadModule("/app/components/booking-page/booking-page-accent-color.tsx") as typeof import("../app/components/booking-page/booking-page-accent-color")
+  const { TRPCProvider, trpc } = await vite.ssrLoadModule("/app/lib/trpc/client.tsx") as typeof import("../app/lib/trpc/client")
   const { bookingPageAccentColors, bookingPageColorStyle } = await vite.ssrLoadModule("/app/lib/booking/booking-page-colors.ts") as typeof import("../app/lib/booking/booking-page-colors")
   const { resources } = await vite.ssrLoadModule("/app/locales/index.ts") as typeof import("../app/locales")
   const i18n = createInstance()
@@ -36,6 +39,19 @@ try {
       if (!color) assert.ok(html.includes("background-color:var(--color-neutral-800)"), "The blackberry swatch uses the same dark color in either app theme")
     }
   }
+  const queryClient = new QueryClient()
+  for (const disabled of [false, true]) {
+    const control = createElement(BookingPageAccentColor, { value: "#aabbcc", disabled })
+    const html = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(QueryClientProvider, { client: queryClient }, createElement(TRPCProvider, { queryClient, trpcClient: trpc, children: control }))))
+    const trigger = html.match(/<button\b[^>]*role="combobox"[^>]*>/)?.[0] ?? ""
+    assert.equal(trigger.includes('disabled=""'), disabled, "The color selector reflects the booking page's disabled state")
+    const label = html.match(/<label\b[^>]*data-slot="field-label"[^>]*>/)?.[0] ?? ""
+    const description = html.match(/<p\b[^>]*data-slot="field-description"[^>]*>/)?.[0] ?? ""
+    assert.equal(label.includes("opacity-64"), disabled, "The label reflects the disabled state")
+    assert.equal(description.includes("opacity-64"), disabled, "The description reflects the disabled state")
+    assert.ok(html.includes("background-color:#aabbcc"), "The selected color remains visible")
+  }
+  queryClient.clear()
   assert.equal(bookingPageColorStyle(null), undefined)
   for (const color of [...bookingPageAccentColors.map((item) => item.color), "#ffffff", "#888888", "#aabbcc", "#000000"]) {
     const style = bookingPageColorStyle(color) as Record<string, string>

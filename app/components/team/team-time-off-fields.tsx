@@ -13,9 +13,9 @@ import { Select, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "~/c
 import type { TimeOffValues } from "~/lib/team/team-time-off"
 
 export function TeamTimeOffFields({ form, timezone }: { form: FormApi<TimeOffValues>; timezone: string }) {
-  const { t } = useTranslation("team")
+  const { i18n, t } = useTranslation("team")
   const root = useRouteLoaderData<typeof rootLoader>("root")
-  const language = root?.locale === "fi" ? "fi" : "en"
+  const language = i18n.resolvedLanguage === "fi" ? "fi" : "en"
   const formatPreference = root?.formatPreference ?? "eu"
   const repeatItems = (["none", "weekly", "monthly", "yearly"] as const).map((value) => ({ value, label: t(`timeOff.repeatOptions.${value}`) }))
   const values = form.value()

@@ -2,6 +2,8 @@ import { dehydrate } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 import { Outlet } from "react-router"
 
+import { getPrimaryLocation } from "~/lib/locations/primary-location"
+import { localizationDefaults } from "~/lib/localization/defaults"
 import { CalendarAgenda } from "~/components/calendar/calendar-agenda"
 import { CalendarHeaderActions } from "~/components/calendar/header-actions"
 import { CalendarSchedule } from "~/components/calendar/calendar-schedule"
@@ -11,7 +13,7 @@ import { useCalendarState } from "~/components/calendar/use-calendar-state"
 import { RouteHeader } from "~/components/layout/route-header"
 import { ScrollPage, ViewportPage } from "~/components/layout/page-layout"
 import { getCalendarBookingRange, getCalendarDateState } from "~/lib/calendar/date"
-import { defaultTimeZone } from "~/lib/localization/format-preference"
+
 import { resolvePageLayout } from "~/lib/routing/page-layout"
 import { shouldRevalidateAppRoute } from "~/lib/routing/should-revalidate"
 import { getQueryClient } from "~/lib/trpc/client"
@@ -23,13 +25,17 @@ export async function loader(loaderArgs: Route.LoaderArgs) {
   const queryClient = getQueryClient()
   const trpc = await createTRPC(loaderArgs)
   const staffPromise = queryClient.query(trpc.staff.list.queryOptions()).catch(() => undefined)
-  const organization = await queryClient.query(trpc.organizations.getCurrent.queryOptions()).catch(() => undefined)
+  const [organization, locations] = await Promise.all([
+    queryClient.query(trpc.organizations.getCurrent.queryOptions()).catch(() => undefined),
+    queryClient.query(trpc.location.list.queryOptions()).catch(() => undefined),
+  ])
   if (organization) {
     const settings = organization.settings
-    const timeZone = settings?.timezone ?? defaultTimeZone
+    const location = getPrimaryLocation(locations, settings?.defaultLocationId)
+    const timeZone = location?.timezone ?? settings?.timezone ?? localizationDefaults.timezone
     const state = getCalendarDateState(new URL(loaderArgs.request.url).searchParams, {
       now,
-      timeZone: settings?.timezone ?? defaultTimeZone,
+      timeZone,
       weekStartsOn: settings?.weekStartsOn ?? 1,
       defaultCalendarView: settings?.defaultCalendarView ?? "week",
     })

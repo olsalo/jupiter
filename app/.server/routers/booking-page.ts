@@ -3,6 +3,8 @@ import { permissionProcedure } from "../trpc"
 import { schedulingLock } from "../services/scheduling"
 import { adminBookingPageFormSchema, adminBookingPageSchema } from "~/lib/schemas/admin-booking-page"
 import { getHiddenBookingPageServiceIds } from "~/lib/booking/booking-page-services"
+import { showBookingNotifications } from "~/lib/booking/booking-page-notifications"
+import { hasActiveOrganizationSubscription, isBillingEnforced } from "~/lib/billing/billing.server"
 import { z } from "~/lib/validation/zod"
 
 import { deleteObject, isObjectStorageReady, getObjectUrl, verifyObject } from "~/lib/storage/object-storage.server"
@@ -14,6 +16,17 @@ import { getBookingPageImageKey } from "~/lib/booking/booking-page-image"
 const configure = permissionProcedure({ bookingPage: ["configure"] })
 
 export const bookingPageRouter = {
+  updateAccentColor: configure.input(adminBookingPageSchema.pick({ accentColor: true })).mutation(({ ctx, input }) => ctx.prisma.$transaction(async (tx) => {
+    await schedulingLock(tx, ctx.organizationId)
+    const settings = await tx.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } })
+    const current = (settings?.defaultBookingPageId ? await tx.bookingPage.findFirst({ where: { id: settings.defaultBookingPageId, organizationId: ctx.organizationId } }) : null)
+      ?? await tx.bookingPage.findFirst({ where: { organizationId: ctx.organizationId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] })
+    const page = current
+      ? await tx.bookingPage.update({ where: { id: current.id, organizationId: ctx.organizationId }, data: input })
+      : await tx.bookingPage.create({ data: { organizationId: ctx.organizationId, name: ctx.organization.name, slug: "booking", ...input } })
+    await tx.organizationSettings.upsert({ where: { organizationId: ctx.organizationId }, create: { organizationId: ctx.organizationId, defaultBookingPageId: page.id }, update: { defaultBookingPageId: page.id } })
+    return { slug: page.slug, accentColor: page.accentColor }
+  })),
   uploadImage: configure.input(imageUploadSchema).mutation(({ ctx, input }) => uploadBookingImage(ctx.prisma, ctx.organizationId, input.base64)),
   get: configure.query(async ({ ctx }) => {
     const defaultId = ctx.organization.settings?.defaultBookingPageId
@@ -29,20 +42,24 @@ export const bookingPageRouter = {
     const linkedServices = page?.services.filter((link) => availableIds.has(link.serviceId)) ?? []
     const linkedIds = new Set(linkedServices.map((link) => link.serviceId))
     const unlinkedServices = services.filter((service) => !linkedIds.has(service.id))
+    const subscriptionActive = !isBillingEnforced() || await hasActiveOrganizationSubscription({ organizationId: ctx.organizationId, db: ctx.prisma })
+    const bookingEnabled = subscriptionActive && (ctx.organization.settings?.bookingEnabled ?? true)
+    const published = bookingEnabled && (page?.isActive ?? true)
     return {
       imageUploadEnabled: isObjectStorageReady(),
       imageUrl: isObjectStorageReady() && getBookingPageImageKey(page?.metadata) ? await getObjectUrl(getBookingPageImageKey(page?.metadata)!) : null,
       organization: { name: ctx.organization.name, slug: ctx.organization.slug, logo: ctx.organization.logo },
       publicPath: `/book/${encodeURIComponent(ctx.organization.slug)}${page ? `/${encodeURIComponent(page.slug)}` : ""}`,
-      bookingEnabled: ctx.organization.settings?.bookingEnabled ?? true,
-      published: (ctx.organization.settings?.bookingEnabled ?? true) && (page?.isActive ?? true),
+      bookingEnabled,
+      published,
       services, staff, locations,
       values: {
+        showRecentBookings: showBookingNotifications(page?.metadata),
         imageKey: getBookingPageImageKey(page?.metadata),
         slug: page?.slug ?? "booking",
         accentColor: page?.accentColor ?? null,
         title: page?.title ?? "", description: page?.description ?? "", successMessage: page?.successMessage ?? "",
-        isActive: page?.isActive ?? true, allowStaffSelection: page?.allowStaffSelection ?? true, allowLocationSelection: page?.allowLocationSelection ?? true,
+        isActive: published, allowStaffSelection: page?.allowStaffSelection ?? true, allowLocationSelection: page?.allowLocationSelection ?? true,
         defaultLocationId: page?.defaultLocationId ?? ctx.organization.settings?.defaultLocationId ?? "",
         serviceIds: [...linkedServices.map((link) => link.serviceId), ...unlinkedServices.map((service) => service.id)],
         hiddenServiceIds: [...linkedServices.filter((link) => hiddenIds.has(link.serviceId)).map((link) => link.serviceId), ...(page?.services.length ? unlinkedServices.map((service) => service.id) : [])],
@@ -102,16 +119,20 @@ export const bookingPageRouter = {
     }
     return { imageKey: saved.imageKey, imageUrl: saved.imageUrl, slug: saved.slug, cleanupPending }
   }),
-  updateSwitches: configure.input(adminBookingPageSchema.pick({ isActive: true, allowStaffSelection: true }).partial().refine((values) => Object.keys(values).length > 0)).mutation(({ ctx, input }) => ctx.prisma.$transaction(async (tx) => {
+  updateSwitches: configure.input(adminBookingPageSchema.pick({ isActive: true, allowStaffSelection: true, showRecentBookings: true }).partial().refine((values) => Object.keys(values).length > 0)).mutation(({ ctx, input }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)
     const settings = await tx.organizationSettings.findUnique({ where: { organizationId: ctx.organizationId } })
     const current = (settings?.defaultBookingPageId ? await tx.bookingPage.findFirst({ where: { id: settings.defaultBookingPageId, organizationId: ctx.organizationId } }) : null)
       ?? await tx.bookingPage.findFirst({ where: { organizationId: ctx.organizationId }, orderBy: [{ createdAt: "asc" }, { id: "asc" }] })
+    const { showRecentBookings, ...switches } = input
+    const metadata = current?.metadata && typeof current.metadata === "object" && !Array.isArray(current.metadata) ? current.metadata : {}
+    const data = { ...switches, ...(showRecentBookings === undefined ? {} : { metadata: { ...metadata, showRecentBookings } }) }
     const page = current
-      ? await tx.bookingPage.update({ where: { id: current.id, organizationId: ctx.organizationId }, data: input })
-      : await tx.bookingPage.create({ data: { organizationId: ctx.organizationId, name: ctx.organization.name, slug: "booking", ...input } })
-    await tx.organizationSettings.upsert({ where: { organizationId: ctx.organizationId }, create: { organizationId: ctx.organizationId, defaultBookingPageId: page.id }, update: { defaultBookingPageId: page.id } })
-    return { slug: page.slug, isActive: page.isActive, allowStaffSelection: page.allowStaffSelection }
+      ? await tx.bookingPage.update({ where: { id: current.id, organizationId: ctx.organizationId }, data })
+      : await tx.bookingPage.create({ data: { organizationId: ctx.organizationId, name: ctx.organization.name, slug: "booking", ...data } })
+    const bookingEnabled = input.isActive === undefined ? {} : { bookingEnabled: input.isActive }
+    await tx.organizationSettings.upsert({ where: { organizationId: ctx.organizationId }, create: { organizationId: ctx.organizationId, defaultBookingPageId: page.id, ...bookingEnabled }, update: { defaultBookingPageId: page.id, ...bookingEnabled } })
+    return { slug: page.slug, isActive: page.isActive, allowStaffSelection: page.allowStaffSelection, showRecentBookings: showBookingNotifications(page.metadata) }
   })),
   save: configure.input(adminBookingPageFormSchema).mutation(({ ctx, input }) => ctx.prisma.$transaction(async (tx) => {
     await schedulingLock(tx, ctx.organizationId)

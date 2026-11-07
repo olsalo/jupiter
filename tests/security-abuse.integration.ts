@@ -19,6 +19,9 @@ const counters = new Map<string, Counter>()
 let subscriptions: Record<string, unknown>[] = []
 let writes = 0
 let membership = true
+let membershipRole = "owner"
+let ownStaff: { id: string; isActive: boolean; acceptsAppointments: boolean } | null = null
+let removedTimeOffScope: Record<string, unknown> | null = null
 let acquireUploadLock = true
 let deliveries = 0
 let pages: { metadata: { imageKey: string } }[] = []
@@ -51,9 +54,13 @@ Object.assign(database, {
       return value
     },
   },
-  member: { findFirst: async () => membership ? { id: "member", role: "owner", organization: { id: "org", settings: {} }, staffProfile: null } : null },
+  member: { findFirst: async () => membership ? { id: "member", role: membershipRole, user: { name: "Owner", email: "owner@example.invalid" }, organization: { id: "org", settings: {} }, staffProfile: ownStaff } : null },
   organization: { findUnique: async () => ({ id: "org", settings: { bookingEnabled: true } }) },
   subscription: { findMany: async () => subscriptions },
+  organizationSettings: { upsert: async () => ({ bookingEnabled: true, minBookingNoticeMinutes: 0, maxBookingAdvanceDays: null, allowCustomerCancellation: true, cancellationNoticeMinutes: 0, allowCustomerRescheduling: true, rescheduleNoticeMinutes: 0, requireCustomerEmail: true, requireCustomerPhone: false }) },
+  blockedTime: { deleteMany: async ({ where }: { where: Record<string, unknown> }) => { removedTimeOffScope = where; return { count: 1 } } },
+  staffMember: { findFirst: async () => ownStaff ? { ...ownStaff, name: "Owner", email: "owner@example.invalid", memberId: "member" } : null },
+  invitation: { findFirst: async () => null },
   customer: { create: async ({ data }: { data: object }) => { writes++; return { id: "customer", ...data } } },
   user: { update: async ({ data }: { data: object }) => data },
   bookingPage: { findMany: async () => pages },
@@ -90,9 +97,23 @@ try {
 
   process.env.STRIPE_SECRET_KEY = "sk_test_isolated"
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_isolated"
-  process.env.STRIPE_PRO_PRICE_ID = "price_isolated"
+  process.env.STRIPE_SOLO_PRICE_ID = "price_isolated"
+  process.env.STRIPE_TEAM_PRICE_ID = "price_team"
+  process.env.STRIPE_EXTRA_STAFF_PRICE_ID = "price_extra"
   const context = { prisma: database, headers: new Headers(), user: { id: "user" }, session: { activeOrganizationId: "org" }, organizationId: "org", locale: "en", formatLocale: "en-GB", formatPreference: "eu" } as Awaited<ReturnType<typeof createTRPCContext>>
   const caller = appRouter.createCaller(context)
+  assert.equal((await caller.organizations.getCurrent()).id, "org", "Inactive organizations can read their workspace")
+  assert.equal((await caller.organizations.updateBookingSettings({})).bookingEnabled, true, "Owners can change settings without an active subscription")
+  await assert.rejects(caller.organizations.updateBookingSettings({ bookingEnabled: true }), { code: "FORBIDDEN" }, "Online booking cannot be enabled without a subscription")
+  await assert.rejects(caller.organizations.updateSettings({ bookingEnabled: true }), { code: "FORBIDDEN" }, "The general settings endpoint cannot enable online booking either")
+  membershipRole = "member"
+  await assert.rejects(caller.organizations.updateBookingSettings({}), { code: "FORBIDDEN" }, "Settings still require the appropriate role")
+  membershipRole = "owner"
+  ownStaff = { id: "own-staff", isActive: true, acceptsAppointments: true }
+  await assert.rejects(caller.profile.updateTeamProfile({ name: "Owner", takesAppointments: false }), { code: "FORBIDDEN" }, "Profile settings cannot change booking availability without an active subscription")
+  await caller.profile.removeTimeOff({ id: "time-off" })
+  assert.deepEqual(removedTimeOffScope, { id: "time-off", organizationId: "org", staffMemberId: "own-staff" }, "Profile settings can remove only the current user's time off")
+  ownStaff = null
   await assert.rejects(caller.customer.create({ firstName: "Audit" }), { code: "FORBIDDEN" })
   await assert.rejects(caller.bookingPage.uploadImage({ base64: "YQ==" }), { code: "FORBIDDEN" })
   await assert.rejects(resolveBookingPage(database, { organizationSlug: "org" }), { code: "FORBIDDEN" })
@@ -104,6 +125,7 @@ try {
   await caller.customer.create({ firstName: "Audit" })
   assert.equal(writes, 1)
   membership = false
+  await assert.rejects(caller.organizations.getCurrent(), { code: "FORBIDDEN" })
   await assert.rejects(caller.customer.create({ firstName: "Audit" }), { code: "FORBIDDEN" })
   membership = true
   assert.equal(isSubscriptionEntitled({ ...active, periodEnd: new Date(0) }), false)

@@ -16,6 +16,11 @@ const vite = await createServer({
 try {
   const { auth } = await vite.ssrLoadModule("/app/lib/auth/server.ts") as typeof import("../app/lib/auth/server")
   const { loader } = await vite.ssrLoadModule("/app/routes/auth.tsx") as typeof import("../app/routes/auth")
+  const { loader: homeLoader } = await vite.ssrLoadModule("/app/routes/home.tsx") as typeof import("../app/routes/home")
+  for (const origin of ["http://localhost", "https://app.example.com", "https://example.com"]) {
+    assert.throws(() => homeLoader({ request: new Request(`${origin}/?welcome=true`) } as Parameters<typeof homeLoader>[0]),
+      (error: unknown) => error instanceof Response && error.headers.get("Location") === "/calendar?welcome=true")
+  }
   const { getSafeRedirectTo, getAfterOnboardingRedirect } = await vite.ssrLoadModule("/app/lib/auth/redirect.ts") as typeof import("../app/lib/auth/redirect")
   const { createAuthFormSchemas } = await vite.ssrLoadModule("/app/lib/schemas/auth.ts") as typeof import("../app/lib/schemas/auth")
   const { requireOrganizationMiddleware } = await vite.ssrLoadModule("/app/middleware/auth.ts") as typeof import("../app/middleware/auth")
@@ -32,7 +37,9 @@ try {
     }
     for (const [search, destination] of [
       ["redirectTo=%2Fcustomers%2Fcustomer-one", "/customers/customer-one"],
-      ["redirectTo=%2Fauth", "/"],
+      ["redirectTo=%2Fauth", "/calendar"],
+      ["", "/calendar"],
+      ["redirectTo=%2F%3Fwelcome%3Dtrue", "/calendar?welcome=true"],
       ["invite=invite-one", "/invite/invite-one"],
       ["redirectTo=%2Finvite%2Finvite-one.data%3F_routes%3Droot", "/invite/invite-one"],
     ]) {
@@ -41,8 +48,8 @@ try {
     auth.api.getSession = (async () => null) as typeof auth.api.getSession
     assert.deepEqual(await load(""), { invitation: null })
     assert.equal(getAfterOnboardingRedirect(new URLSearchParams({ redirectTo: "/customers/customer-one?tab=test" }), true), "/customers/customer-one?tab=test&welcome=true")
-    assert.equal(getAfterOnboardingRedirect(new URLSearchParams({ redirectTo: "/onboarding/business" })), "/")
-    assert.equal(getAfterOnboardingRedirect(new URLSearchParams(), true), "/?welcome=true")
+    assert.equal(getAfterOnboardingRedirect(new URLSearchParams({ redirectTo: "/onboarding/business" })), "/calendar")
+    assert.equal(getAfterOnboardingRedirect(new URLSearchParams(), true), "/calendar?welcome=true")
     await assert.rejects(async () => requireOrganizationMiddleware({
       request: new Request("http://localhost/customers/customer-one"),
       url: new URL("http://localhost/customers/customer-one"),

@@ -5,6 +5,9 @@ import { formatDateTime } from "../app/lib/localization/format-preference.ts"
 const value = "2026-10-19T09:30:00Z"
 const base = { formatPreference: "eu", language: "fi", timeZone: "Europe/Helsinki" } as const
 assert.equal(formatDateTime(value, base), "19.10.2026 klo 12:30")
+assert.equal(formatDateTime(value, { ...base, language: "en" }), "19.10.2026 at 12:30")
+assert.equal(formatDateTime(value, { ...base, formatPreference: "us" }), "Oct 19 2026 klo 12:30 PM")
+assert.equal(formatDateTime(value, { ...base, formatPreference: "us", language: "en" }), "Oct 19 2026 at 12:30 PM")
 assert.equal(formatDateTime(value, { ...base, includeDate: false }), "12:30")
 assert.equal(formatDateTime(value, { ...base, includeTime: false, includeYear: false }), "19.10")
 assert.equal(formatDateTime(value, { ...base, includeTime: false, includeWeekday: true, language: "en" }), "Monday 19.10.2026")

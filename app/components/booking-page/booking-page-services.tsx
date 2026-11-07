@@ -22,7 +22,7 @@ export function BookingPageServices({ label, description, items, value, hiddenSe
   const itemsById = new Map(items.map((item) => [item.id, item]))
   const orderedItems = value.flatMap((id) => itemsById.has(id) ? [itemsById.get(id)!] : [])
 
-  return <FormLabel label={label} description={description} error={error}>
+  return <FormLabel label={label} labelClassName={disabled ? "opacity-64" : undefined} description={description} descriptionClassName={disabled ? "opacity-64" : undefined} error={error}>
     {orderedItems.length > 0 ? <DragDropProvider
       sensors={(defaults) => defaults.map((sensor) => sensor === PointerSensor ? PointerSensor.configure({ activationConstraints: (event) => event.pointerType === "touch" ? [new PointerActivationConstraints.Distance({ value: 8 })] : undefined }) : sensor)}
       plugins={(defaults) => [...defaults, Feedback.configure({ dropAnimation: null })]}
@@ -37,7 +37,7 @@ export function BookingPageServices({ label, description, items, value, hiddenSe
         onChange(next)
       }}
     >
-      <ul aria-description={error || undefined} aria-invalid={Boolean(error)} aria-label={label} className="relative isolate z-0 w-full divide-y rounded-lg border aria-invalid:border-destructive" onBlur={onBlur} ref={listRef}>
+      <ul aria-description={error || undefined} aria-disabled={disabled} aria-invalid={Boolean(error)} aria-label={label} className="relative isolate z-0 w-full divide-y rounded-lg border aria-invalid:border-destructive" onBlur={onBlur} ref={listRef}>
         {orderedItems.map((item, index) => <SortableBookingPageChoice
           key={item.id}
           id={item.id}

@@ -1,238 +1,42 @@
 import { dehydrate, useQuery } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { useNavigate, useSearchParams } from "react-router"
-
+import { useSearchParams } from "react-router"
 import type { Route } from "./+types/subscription"
-import { OnboardingActions } from "~/components/onboarding/onboarding-actions"
-import { OnboardingStepError, OnboardingStepLoading } from "~/components/onboarding/step-state"
-import { getQueryClient, useTRPC } from "~/lib/trpc/client"
+import { BillingPlanForm } from "~/components/billing/billing-plan-form"
+import { OnboardingStepError } from "~/components/onboarding/step-state"
+import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
-import Icon from "~/components/icons"
-import { Badge } from "~/components/ui/badge"
-import { Button } from "~/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
-import { Tabs, TabsList, TabsTab } from "~/components/ui/tabs"
 import { getAfterOnboardingRedirect } from "~/lib/auth/redirect"
-import { authClient } from "~/lib/auth/client"
-import type { BillingInterval } from "~/lib/billing/billing"
-import type { StripePriceData } from "~/lib/billing/stripe.server.ts"
-import { toast } from "~/lib/toast"
 
 export async function loader(loaderArgs: Route.LoaderArgs) {
   const queryClient = getQueryClient()
   const trpc = await createTRPC(loaderArgs)
-  await queryClient.query(trpc.onboarding.subscription.queryOptions()).catch(() => undefined)
+  await Promise.all([
+    queryClient.query(trpc.onboarding.subscription.queryOptions()).catch(() => undefined),
+    queryClient.query(trpc.billing.plan.queryOptions()).catch(() => undefined),
+  ])
 
   return { queryClient: dehydrate(queryClient) }
 }
 
-export function clientLoader() {
-  // Client queries own fetching and freshness after the initial server render.
+export async function clientLoader() {
+  const { queryClient, trpc } = getClientTRPC()
+  await Promise.all([
+    queryClient.query(trpc.onboarding.subscription.queryOptions()).catch(() => undefined),
+    queryClient.query(trpc.billing.plan.queryOptions()).catch(() => undefined),
+  ])
+
   return null
 }
 
 export default function SubscriptionStep() {
   const trpc = useTRPC()
   const subscription = useQuery(trpc.onboarding.subscription.queryOptions())
-  const subscriptionData = subscription.data
-  const { i18n, t } = useTranslation("onboarding")
-  const navigate = useNavigate()
+  const { t } = useTranslation("onboarding")
   const [searchParams] = useSearchParams()
-  const [selectedBillingInterval, setSelectedBillingInterval] = useState<BillingInterval>(
-    () => searchParams.get("billing") === "year" ? "year" : "month",
-  )
-  const billingInterval: BillingInterval =
-    selectedBillingInterval === "year" && subscriptionData?.prices.year
-      ? "year"
-      : "month"
-  const setBillingInterval = (value: BillingInterval) => {
-    setSelectedBillingInterval(value)
-
-    const url = new URL(window.location.href)
-    url.searchParams.set("billing", value)
-    window.history.replaceState(window.history.state, "", url)
-  }
-  const [isChoosingSubscription, setIsChoosingSubscription] = useState(false)
-  useEffect(() => {
-    const resetChoosingSubscription = () => setIsChoosingSubscription(false)
-
-    window.addEventListener("pageshow", resetChoosingSubscription)
-
-    return () => {
-      window.removeEventListener("pageshow", resetChoosingSubscription)
-    }
-  }, [])
-
-  const chooseSubscription = async () => {
-    if (subscriptionData?.demoOnboardingPaymentBypassEnabled) {
-      setIsChoosingSubscription(true)
-      await navigate(getAfterOnboardingRedirect(searchParams, true), { replace: true })
-      return
-    }
-
-    if (!subscriptionData?.organizationId || !subscriptionData.billingEnabled) {
-      toast.error(t("errors.billingNotConfigured"))
-      return
-    }
-
-    setIsChoosingSubscription(true)
-
-    try {
-      const result = await authClient.subscription.upgrade({
-        annual: billingInterval === "year",
-        cancelUrl: window.location.href,
-        customerType: "organization",
-        locale: i18n.resolvedLanguage === "fi" ? "fi" : "en",
-        plan: subscriptionData.plan.id,
-        referenceId: subscriptionData.organizationId,
-        successUrl: `${window.location.origin}${getAfterOnboardingRedirect(searchParams, true)}`,
-      })
-      if (result.error) throw new Error(result.error.message)
-    } catch {
-      toast.error(t("errors.subscription"))
-      setIsChoosingSubscription(false)
-    }
-  }
-
-  if (!subscriptionData) {
-    return subscription.isError ? (
-      <OnboardingStepError isFetching={subscription.isFetching} onRetry={() => void subscription.refetch()} />
-    ) : (
-      <OnboardingStepLoading step="subscription" />
-    )
-  }
-
-  const { plan, prices, locale } = subscriptionData
-  const annualEnabled = Boolean(prices.year)
-  const annualDiscount = calculateAnnualDiscount(prices)
-
-  return (
-    <div className="flex flex-col">
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-2xl font-semibold">{t("subscription.title")}</h1>
-          <p className="text-sm text-muted-foreground">
-            {t("subscription.description")}
-          </p>
-        </div>
-
-        <Tabs
-          className="w-full"
-          onValueChange={(value) => {
-            if (value === "month" || (value === "year" && annualEnabled)) {
-              setBillingInterval(value)
-            }
-          }}
-          value={billingInterval}
-        >
-          <TabsList
-            aria-label={t("subscription.billingLabel")}
-            className="grid w-full grid-cols-2"
-          >
-            <TabsTab value="month">{t("subscription.monthly")}</TabsTab>
-            <TabsTab disabled={!annualEnabled} value="year">
-              {t("subscription.yearly")}
-              {annualDiscount !== null ? (
-                <Badge size="sm" variant="success">
-                  -{annualDiscount}%
-                </Badge>
-              ) : null}
-            </TabsTab>
-          </TabsList>
-        </Tabs>
-
-        <Card className="overflow-hidden">
-          <CardHeader className="!flex !p-[18px] flex-row items-center gap-4 border-b bg-muted/30">
-            <CardTitle className="shrink-0 whitespace-nowrap text-2xl">
-              {plan.name}
-            </CardTitle>
-            <div className="ms-auto flex shrink-0 items-baseline gap-1 whitespace-nowrap">
-              <p className="font-heading text-2xl font-semibold leading-none">
-                {formatPrice(
-                  prices[billingInterval],
-                  locale,
-                  t("subscription.priceUnavailable"),
-                )}
-              </p>
-              <span className="text-sm text-muted-foreground">
-                {billingInterval === "month"
-                  ? t("subscription.perMonth")
-                  : t("subscription.perYear")}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="p-[18px]">
-            <ul className="flex flex-col gap-3">
-              {plan.features.map((feature) => (
-                <li className="flex items-center gap-2.5 text-sm" key={feature}>
-                  <Icon
-                    className="shrink-0 text-primary"
-                    name="circleCheckFilled"
-                    size={18}
-                  />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-      </div>
-      <OnboardingActions>
-        <Button
-          disabled={
-            isChoosingSubscription ||
-            (!annualEnabled && billingInterval === "year")
-          }
-          loading={isChoosingSubscription}
-          onClick={() => void chooseSubscription()}
-          type="button"
-        >
-          {t("actions.chooseSubscription")}
-        </Button>
-      </OnboardingActions>
-    </div>
-  )
-}
-
-function formatPrice(
-  price: StripePriceData | null,
-  locale: string,
-  fallback: string,
-) {
-  if (price?.unitAmount === null || price?.unitAmount === undefined) {
-    return fallback
-  }
-
-  return new Intl.NumberFormat(locale === "fi" ? "fi-FI" : "en-US", {
-    currency: price.currency.toUpperCase(),
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 0,
-    style: "currency",
-  }).format(price.unitAmount / 100)
-}
-
-function calculateAnnualDiscount({
-  month,
-  year,
-}: {
-  month: StripePriceData | null
-  year: StripePriceData | null
-}) {
-  const monthlyAmount = month?.unitAmount
-  const annualAmount = year?.unitAmount
-
-  if (
-    monthlyAmount === null ||
-    monthlyAmount === undefined ||
-    annualAmount === null ||
-    annualAmount === undefined ||
-    monthlyAmount <= 0 ||
-    annualAmount >= monthlyAmount * 12
-  ) {
-    return null
-  }
-
-  return Math.round((1 - annualAmount / (monthlyAmount * 12)) * 100)
+  if (!subscription.data) return subscription.isError ? <OnboardingStepError isFetching={subscription.isFetching} onRetry={() => void subscription.refetch()} /> : null
+  return <div className="flex flex-col gap-5">
+    <div className="space-y-1.5"><h1 className="text-2xl font-semibold">{t("subscription.title")}</h1><p className="text-sm text-muted-foreground">{t("subscription.description")}</p></div>
+    <BillingPlanForm onboarding={true} successUrl={typeof window === "undefined" ? undefined : `${window.location.origin}${getAfterOnboardingRedirect(searchParams, true)}`} />
+  </div>
 }

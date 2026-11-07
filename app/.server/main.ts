@@ -14,8 +14,10 @@ import { organizationsRouter } from "./routers/organizations"
 import { profileRouter } from "./routers/profile"
 import { teamRouter } from "./routers/team"
 import { bookingPageRouter } from "./routers/booking-page"
+import { marketingRouter } from "./routers/marketing"
 
 export const appRouter = createTRPCRouter({
+  marketing: marketingRouter,
   resourceLimits: resourceLimitsRouter,
   bookingPage: bookingPageRouter,
   staff: staffRouter,

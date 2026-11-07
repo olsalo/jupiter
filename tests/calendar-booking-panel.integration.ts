@@ -37,7 +37,7 @@ try {
     staffMemberId: staffMember.id, staffMember, locationId: null, internalNotes: "Booking notes", customerNotes: null, answers: [],
     services: [{ ...service, id: "booked-service", serviceId: service.id, service }],
   })
-  const rootData = { org: { id: "business" }, organizations: [{ id: "business", role: "owner" }], formatPreference: "eu" }
+  const rootData = { org: { id: "business" }, organizations: [{ id: "business", role: "owner" }], formatPreference: "eu", subscriptionReadOnly: false }
   const handler = createStaticHandler([{
     id: "root", path: "/", Component: Outlet, loader: () => rootData,
     children: [{ path: "calendar/:appointmentId/edit", Component: CalendarBookingEdit }],
@@ -70,6 +70,14 @@ try {
   const render = () => renderToStaticMarkup(createElement(I18nextProvider, { i18n },
     createElement(QueryClientProvider, { client: queryClient },
       createElement(TRPCProvider, { trpcClient: trpc, queryClient, children: createElement(StaticRouterProvider, { router, context, hydrate: false }) }))))
+  rootData.subscriptionReadOnly = true
+  const readOnlyMarkup = render()
+  assert.doesNotMatch(readOnlyMarkup, new RegExp(i18n.t("bookingForm.readOnly")), "An inactive subscription does not add a read-only booking alert")
+  for (const label of [i18n.t("bookingForm.saveChanges"), i18n.t("bookingForm.delete"), i18n.t("bookingForm.changeTime")]) {
+    const button = readOnlyMarkup.match(/<button\b[^>]*>[\s\S]*?<\/button>/g)?.find((item) => item.includes(label)) ?? ""
+    assert.match(button, /disabled=""/, `${label} remains visible and disabled without a subscription`)
+  }
+  rootData.subscriptionReadOnly = false
   for (const [customerNotes, internalNotes, expected] of [
     ["Customer message", "Member note", "Customer message\n\nMember note"],
     ["Customer message", null, "Customer message"],
