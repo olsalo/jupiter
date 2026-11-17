@@ -1,5 +1,5 @@
 import { useState, type Ref } from "react"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "~/components/ui/popover"
 

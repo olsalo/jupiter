@@ -24,7 +24,7 @@ Auth uses the installed Better Auth defaults for IP resolution: `X-Forwarded-For
 
 In an isolated production-mode auth instance with a memory database and stubbed email transport, four sends from one forwarded IP returned `200, 200, 200, 429`. Six further sends to the same recipient with six different forwarded IP values all returned `200`.
 
-If the public ingress preserves an attacker-supplied first forwarded address, an unauthenticated caller can repeatedly trigger OTP emails and consume email delivery capacity. The same trust boundary affects booking limits when `BOOKING_TRUSTED_IP_HEADER=x-forwarded-for`. This is not a demonstrated OTP guessing or account takeover vulnerability.
+If the public ingress preserves an attacker-supplied first forwarded address, an unauthenticated caller can repeatedly trigger OTP emails and consume email delivery capacity. The same trust boundary affects booking limits when configured to use `X-Forwarded-For`. This is not a demonstrated OTP guessing or account takeover vulnerability.
 
 Fix: configure IP resolution for the actual ingress, ensure the ingress overwrites untrusted values, and add a shared recipient cooldown plus recipient and overall delivery budgets. Deployment proxy behavior was not inspected, so external exploitability remains conditional.
 

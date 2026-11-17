@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next"
 import { Link, useLocation, useSearchParams } from "react-router"
 
 import { CopyableContact } from "~/components/data-display/copyable-contact"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { ResponsiveSheetPanel } from "~/components/overlays/responsive-sheet"
 import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
 import { Button } from "~/components/ui/button"

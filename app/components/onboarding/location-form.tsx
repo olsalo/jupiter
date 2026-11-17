@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { useNavigate, useNavigation, useSearchParams } from "react-router"
 
 import { AppForm } from "~/components/forms/app-form"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { OnboardingActions } from "~/components/onboarding/onboarding-actions"
 import { BusinessLocationFields } from "~/components/settings/business/business-location-fields"
 import { Button } from "~/components/ui/button"

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 import { Link, useLocation, useSearchParams } from "react-router"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { IconListItem } from "~/components/data-display/icon-list-item"
 import { ServiceListDetails } from "~/components/services/service-list-details"
 import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
@@ -10,10 +10,11 @@ import { UserAvatar } from "~/components/data-display/user-avatar"
 import { Button } from "~/components/ui/button"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 import { Tabs, TabsPanel } from "~/components/ui/tabs"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
 import { TeamPersonSection } from "./team-person-section"
 import { TeamPersonAbout } from "./team-person-about"
+import { TeamPersonExtraHours } from "./team-person-extra-hours"
 import { TeamPersonTimeOff } from "./team-person-time-off"
 import { TeamPersonBreaks } from "./team-person-breaks"
 import { TeamPersonAvailability } from "./team-person-availability"
@@ -29,7 +30,7 @@ export function TeamPersonProfile({ person, canManage, sideNavigation = false }:
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedTab = searchParams.get("profileTab")
-  const tab = requestedTab === "availability" || requestedTab === "services" || requestedTab === "breaks" || requestedTab === "time-off" ? requestedTab : "about"
+  const tab = requestedTab === "availability" || requestedTab === "services" || requestedTab === "breaks" || requestedTab === "time-off" || requestedTab === "extra-hours" ? requestedTab : "about"
   const editHref = tab === "about" || !person.staff ? "edit" : `edit?editTab=${tab}`
   const services = person.staff?.staffServices.filter((link) => link.isActive) ?? []
 
@@ -80,6 +81,9 @@ export function TeamPersonProfile({ person, canManage, sideNavigation = false }:
         </TabsPanel>
         <TabsPanel className="flex min-h-0 flex-1 flex-col" value="breaks">
           {person.staff ? <TeamPersonBreaks staff={person.staff} /> : <Alert className="m-6"><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
+        </TabsPanel>
+        <TabsPanel className="flex min-h-0 flex-1 flex-col" value="extra-hours">
+          {person.staff ? <TeamPersonExtraHours staff={person.staff} canManage={canManage} /> : <Alert className="m-6"><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
         </TabsPanel>
         <TabsPanel className="flex min-h-0 flex-1 flex-col" value="time-off">
           {person.staff ? <TeamPersonTimeOff staff={person.staff} canManage={canManage} /> : <Alert className="m-6"><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}

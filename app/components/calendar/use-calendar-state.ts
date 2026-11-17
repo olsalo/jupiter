@@ -16,7 +16,7 @@ import { useAppContext } from "~/lib/hooks/use-app-context"
 import type { clientLoader as calendarClientLoader } from "~/routes/calendar/calendar"
 
 export function useCalendarState({ preview: showPreview = true, mobile }: { preview?: boolean, mobile?: boolean } = {}) {
-  const { preview } = useCalendarBookingPreview()
+  const { preview, bookingDay } = useCalendarBookingPreview()
   const matchesMobile = useMediaQuery("max-768px")
   const isMobile = mobile ?? matchesMobile
   const trpc = useTRPC()
@@ -40,7 +40,9 @@ export function useCalendarState({ preview: showPreview = true, mobile }: { prev
   const location = getPrimaryLocation(locations.data, settings?.defaultLocationId)
   const timeZone = location?.timezone ?? settings?.timezone ?? root?.organizationTimezone ?? localizationDefaults.timezone
   const calendarParams = new URLSearchParams(searchParams)
-  if (showPreview && preview && (!selectedMember || preview.member.id === selectedMember.id)) calendarParams.set("date", calendarDateToValue(new TZDate(preview.startsAt, timeZone)))
+  // Load the selected day's calendar range alongside slots, before a slot is chosen
+  if (showPreview && bookingDay) calendarParams.set("date", bookingDay)
+  else if (showPreview && preview && (!selectedMember || preview.member.id === selectedMember.id)) calendarParams.set("date", calendarDateToValue(new TZDate(preview.startsAt, timeZone)))
   const calendarParamsKey = calendarParams.toString()
   const weekStartsOn = settings?.weekStartsOn ?? 1
   const defaultCalendarView = settings?.defaultCalendarView ?? "week"

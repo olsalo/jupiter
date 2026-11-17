@@ -1,17 +1,18 @@
-"use client";
+"use client"
+
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
-import Icon from "../icons"
+import Icon from "./icons/icons"
 import type * as React from "react";
 import { createContext, useContext, useRef } from "react"
 
 import { createChangeEventDetails } from "@base-ui/react/internals/createBaseUIEventDetails"
-import { useDrawerDropdownState } from "~/components/drawer-dropdown-state"
+import { useDrawerDropdownState } from "./overlays/drawer-dropdown-state"
 
-import { cn } from "@coss/ui/lib/utils";
+import { cn } from "./utils/utils";
 
 const SelectListRefContext = createContext<
   React.RefObject<HTMLDivElement | null> | null
@@ -23,7 +24,7 @@ function Select<Value, Multiple extends boolean | undefined = false>({
   ...props
 }: SelectPrimitive.Root.Props<Value, Multiple>) {
   const listRef = useRef<HTMLDivElement>(null)
-  const dropdown = useDrawerDropdownState<SelectPrimitive.Root.ChangeEventDetails>(props, () => createChangeEventDetails("none"))
+  const dropdown = useDrawerDropdownState<SelectPrimitive.Root.OpenChangeEventDetails>(props, () => ({ ...createChangeEventDetails("none"), preventUnmountOnClose: () => {} }))
 
   return (
     <SelectListRefContext.Provider value={listRef}>
@@ -144,13 +145,14 @@ function SelectPopup({
   className,
   children,
   side = "bottom",
-  sideOffset = 8,
+  sideOffset = 6,
   align = "start",
   alignOffset = 0,
   alignItemWithTrigger = false,
   anchor,
   collisionPadding = 16,
   collisionBoundary = "clipping-ancestors",
+  collisionAvoidance = { align: "none", side: "flip", fallbackAxisSide: "none" },
   portalProps,
   positionMethod,
   ...props
@@ -163,6 +165,7 @@ function SelectPopup({
   anchor?: SelectPrimitive.Positioner.Props["anchor"];
   collisionPadding?: SelectPrimitive.Positioner.Props["collisionPadding"];
   collisionBoundary?: SelectPrimitive.Positioner.Props["collisionBoundary"]
+  collisionAvoidance?: SelectPrimitive.Positioner.Props["collisionAvoidance"]
   portalProps?: SelectPrimitive.Portal.Props
   positionMethod?: SelectPrimitive.Positioner.Props["positionMethod"]
 }) {
@@ -182,11 +185,7 @@ function SelectPopup({
         positionMethod={positionMethod}
         collisionPadding={collisionPadding}
         collisionBoundary={collisionBoundary}
-        collisionAvoidance={{
-          align: "none",
-          side: "flip",
-          fallbackAxisSide: "none"
-        }}
+        collisionAvoidance={collisionAvoidance}
       >
         <SelectPrimitive.Popup
           className="origin-(--transform-origin) text-foreground max-w-(--anchor-width)! max-h-[min(var(--available-height),20rem)]!"

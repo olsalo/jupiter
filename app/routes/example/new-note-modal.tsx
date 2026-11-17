@@ -16,7 +16,7 @@ import {
 } from "~/components/overlays/responsive-sheet"
 import { useTRPC } from "~/lib/trpc/client"
 import { toast } from "~/lib/toast"
-import { useHydrated } from "~/lib/use-hydrated"
+import { useHydrated } from "~/components/ui/utils/use-hydrated"
 import type { Route } from "./+types/new-note-modal"
 import { resources } from "~/locales"
 

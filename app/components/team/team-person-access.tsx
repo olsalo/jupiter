@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import { useAppContext } from "~/lib/hooks/use-app-context"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { IconListItem } from "~/components/data-display/icon-list-item"
 import { InvitationActionsMenu } from "~/components/team/invitation-actions-menu"
 import { InviteMemberDialog } from "~/components/team/invite-member-dialog"

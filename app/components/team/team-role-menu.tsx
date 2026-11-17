@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { Menu, MenuPopup, MenuRadioGroup, MenuRadioItem, MenuTrigger } from "~/components/ui/menu"
 import { Spinner } from "~/components/ui/spinner"

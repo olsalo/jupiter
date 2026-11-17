@@ -5,7 +5,7 @@ import { useRouteLoaderData } from "react-router"
 
 import { BusinessHolidayDialog } from "~/components/settings/business/business-holiday-dialog"
 import { BusinessHolidayFormFields } from "~/components/settings/business/business-holiday-form-fields"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"

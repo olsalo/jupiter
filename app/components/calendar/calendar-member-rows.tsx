@@ -22,7 +22,7 @@ import { calendarIntervalMinutes, calendarMinDurationMinutes } from "~/lib/calen
 import { sortCalendarMembers } from "~/lib/calendar/schedule"
 import { calendarTimelinePadding, getCalendarTimelineLayout } from "~/lib/calendar/timeline-layout"
 import { formatDateTime } from "~/lib/localization/format-preference"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 const empty: never[] = []
 const viewportInsets = { left: 176, top: 44 }

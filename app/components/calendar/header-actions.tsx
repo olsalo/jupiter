@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 import { Link, useLocation, useMatches } from "react-router"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { Menu, MenuLinkItem, MenuPopup, MenuTrigger } from "~/components/ui/menu"
 import { useMediaQuery } from "~/lib/hooks"

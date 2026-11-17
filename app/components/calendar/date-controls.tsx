@@ -3,7 +3,7 @@ import { enUS, fi } from "react-day-picker/locale"
 import { useTranslation } from "react-i18next"
 
 import { useCalendarState } from "~/components/calendar/use-calendar-state"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { Calendar } from "~/components/ui/calendar"
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "~/components/ui/popover"

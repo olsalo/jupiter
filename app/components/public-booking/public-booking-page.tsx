@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useNavigate, useNavigation } from "react-router"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { AppLogo } from "~/components/navigation/app-logo"
 import { LanguageSwitch } from "~/components/settings/preferences/language-switch"
 import { UserAvatar } from "~/components/data-display/user-avatar"
@@ -12,10 +12,11 @@ import { Button } from "~/components/ui/button"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { Spinner } from "~/components/ui/spinner"
 import { FormatPreferenceSwitch } from "~/components/settings/preferences/format-preference-switch"
+import { useAppContext } from "~/lib/hooks/use-app-context"
 import { useFormatPreference } from "~/lib/hooks/use-format-preference"
 import { useTRPC } from "~/lib/trpc/client"
 import { toast } from "~/lib/toast"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { bookingPageColorStyle } from "~/lib/booking/booking-page-colors"
 import { subscribeToBookingPageSaves } from "~/lib/booking/booking-page-sync"
 import type { FormatPreference } from "~/lib/localization/format-preference"
@@ -38,6 +39,7 @@ import type {
 
 export function PublicBookingPage(scope: BookingScope) {
   const { t } = useTranslation("booking")
+  const isElectron = Boolean(useAppContext().isElectron)
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   useEffect(() => subscribeToBookingPageSaves(scope.organizationSlug, () => {
@@ -52,7 +54,12 @@ export function PublicBookingPage(scope: BookingScope) {
   const data = notFound || subscriptionInactive ? undefined : page.data
 
   return (
-    <div className="flex h-dvh pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] flex-col overflow-hidden bg-background pb-[env(safe-area-inset-bottom,0px)] text-foreground" style={bookingPageColorStyle(data?.page?.accentColor)}>
+    <div
+      className={cn("public-booking-layout relative flex h-dvh pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] flex-col overflow-hidden bg-background pb-[env(safe-area-inset-bottom,0px)] text-foreground", isElectron && "pt-8")}
+      data-electron={isElectron}
+      style={bookingPageColorStyle(data?.page?.accentColor)}
+    >
+      {isElectron ? <div aria-hidden={true} className="electron-drag absolute inset-x-0 top-0 z-20 h-8" /> : null}
       <title>
         {data
           ? `${t("title")} · ${data.organization.name}`

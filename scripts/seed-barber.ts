@@ -24,7 +24,8 @@ async function main() {
     console.info(`Owner: ${parsed.data.ownerName} <${parsed.data.ownerEmail}>`)
     console.info("Sign in with the owner's email using the usual email code flow, then select Northside Barbers")
     console.info("Demo email delivery and reminders are disabled. Existing accounts and demo edits are preserved")
-    console.info("If Stripe billing is enabled, use DEMO_BYPASS_ONBOARDING_PAYMENT=true for local demo access")
+    console.info("An active local Team subscription is included with five bookable staff seats")
+    console.info("Local billing previews include sample cards, three paid invoices and the next monthly charge")
   } finally {
     await db.$disconnect()
   }

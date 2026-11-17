@@ -1,5 +1,5 @@
-import Icon, { type AppIconName } from "~/components/icons"
-import { cn } from "~/lib/utils"
+import Icon, { type AppIconName } from "~/components/ui/icons/icons"
+import { cn } from "~/components/ui/utils/utils"
 
 type NavigationIconProps = {
   active: boolean

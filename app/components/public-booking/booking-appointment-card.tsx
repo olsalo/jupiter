@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { UserAvatar } from "~/components/data-display/user-avatar"
 import { Badge } from "~/components/ui/badge"
 import { Card, CardHeader, CardPanel, CardTitle } from "~/components/ui/card"

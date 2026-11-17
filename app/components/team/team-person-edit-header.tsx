@@ -1,5 +1,5 @@
 import { UserAvatar } from "~/components/data-display/user-avatar"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { TeamPersonStatusBadges } from "./team-person-status-badges"
 import { TeamPersonTabs } from "./team-person-tabs"
 import type { TeamPerson } from "./team-types"

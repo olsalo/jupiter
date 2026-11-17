@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon, { type AppIconName } from "~/components/icons"
+import Icon, { type AppIconName } from "~/components/ui/icons/icons"
 import { useCalendarState } from "~/components/calendar/use-calendar-state"
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group"
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 const viewIcons = { day: "calendarEvent", week: "calendarWeek", list: "list" } satisfies Record<string, AppIconName>
 

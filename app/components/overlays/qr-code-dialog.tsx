@@ -1,7 +1,7 @@
 import { QRCodeCanvas } from "qrcode.react"
 import { useRef } from "react"
 import { useTranslation } from "react-i18next"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from "~/components/ui/dialog"
 import { toast } from "~/lib/toast"

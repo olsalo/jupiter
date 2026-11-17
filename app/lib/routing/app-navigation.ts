@@ -1,4 +1,4 @@
-import type { AppIconName } from "~/components/icons"
+import type { AppIconName } from "~/components/ui/icons/icons"
 
 export type AppNavigationItem = {
   activeIcon?: AppIconName

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import { TabsList, TabsTab } from "~/components/ui/tabs"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Avatar, AvatarFallback } from "~/components/ui/avatar"
 
 export function BusinessSettingsHeader({ name, disabled = false }: { name?: string; disabled?: boolean }) {

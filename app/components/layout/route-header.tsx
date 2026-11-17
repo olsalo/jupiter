@@ -1,5 +1,5 @@
 import { PageHeading, type PageHeadingProps } from "~/components/layout/page-heading"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export function RouteHeader({ className, ...props }: PageHeadingProps) {
   const isFloatingLayout = import.meta.env.APP_LAYOUT_STYLE === "floating"

@@ -10,6 +10,8 @@ export const CalendarBookingPreviewContext = createContext<{
   liveDragPreview?: CalendarBookingDragPreviewStore
   dragging?: boolean
   setDragging?: Dispatch<SetStateAction<boolean>>
+  bookingDay?: string | null
+  setBookingDay?: Dispatch<SetStateAction<string | null>>
   preview: CalendarBookingPreview | null
   setPreview: Dispatch<SetStateAction<CalendarBookingPreview | null>>
   clearPreview?: (options: { animate: boolean }) => void
@@ -23,6 +25,7 @@ export function CalendarBookingPreviewProvider({ children }: { children: ReactNo
   const location = useLocation()
   const navigation = useNavigation()
   const previousPath = useRef(location.pathname)
+  const [bookingDay, setBookingDay] = useState<string | null>(null)
   const [dragging, setDragging] = useState(false)
   const [liveDragPreview] = useState(createCalendarBookingDragPreview)
   const [dragUpdate, setDragUpdate] = useState<CalendarBookingDragUpdate | null>(null)
@@ -69,7 +72,7 @@ export function CalendarBookingPreviewProvider({ children }: { children: ReactNo
     setDragUpdate((current) => current && !stillEditing(current.appointmentId) ? null : current)
   }, [location.pathname, navigation.location?.pathname, setPreview])
 
-  return <CalendarBookingPreviewContext.Provider value={{ liveDragPreview, dragging, setDragging, preview, setPreview, clearPreview, returnMotion, scrollState, dragUpdate, setDragUpdate }}>{children}</CalendarBookingPreviewContext.Provider>
+  return <CalendarBookingPreviewContext.Provider value={{ liveDragPreview, dragging, setDragging, bookingDay, setBookingDay, preview, setPreview, clearPreview, returnMotion, scrollState, dragUpdate, setDragUpdate }}>{children}</CalendarBookingPreviewContext.Provider>
 }
 
 export function useCalendarBookingPreview() {

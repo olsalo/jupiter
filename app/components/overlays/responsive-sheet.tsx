@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState, type ComponentProps } from "react"
 
-import Icon from "~/components/icons"
-import type { ServerRenderedSheetPopup } from "~/components/overlays/server-rendered-sheet-popup"
-import { getSheetPopupClassName, getSheetViewportClassName } from "~/components/sheet-popup-styles"
+import Icon from "~/components/ui/icons/icons"
+import type { ServerRenderedSheetPopup } from "~/components/ui/overlays/server-rendered-sheet-popup"
+import { getSheetPopupClassName, getSheetViewportClassName } from "~/components/ui/overlays/sheet-popup-styles"
 import { Button } from "~/components/ui/button"
 import {
   Drawer, DrawerBackdrop, DrawerBar, DrawerClose, DrawerDescription, DrawerFooter,
@@ -10,8 +10,8 @@ import {
 } from "~/components/ui/drawer"
 import type { Sheet, SheetDescription, SheetFooter, SheetHeader, SheetPanel, SheetTitle } from "~/components/ui/sheet"
 import { useMediaQuery } from "~/lib/hooks"
-import { useHydrated } from "~/lib/use-hydrated"
-import { cn } from "~/lib/utils"
+import { useHydrated } from "~/components/ui/utils/use-hydrated"
+import { cn } from "~/components/ui/utils/utils"
 
 const ResponsiveSheetContext = createContext({ isMobile: false, initiallyServerRendered: false, insideOverlay: false })
 

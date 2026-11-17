@@ -1,11 +1,12 @@
-"use client";
+"use client"
+
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { useRef } from "react"
-import { useDrawerDropdownDismiss } from "~/components/drawer-dropdown-state"
+import { useDrawerDropdownDismiss } from "./overlays/drawer-dropdown-state"
 
-import { cn } from "@coss/ui/lib/utils";
+import { cn } from "./utils/utils";
 
 const PopoverCreateHandle = PopoverPrimitive.createHandle;
 
@@ -36,8 +37,8 @@ function PopoverPopup({
   children,
   className,
   side = "bottom",
-  align = "center",
-  sideOffset = 4,
+  align = "start",
+  sideOffset = 6,
   alignOffset = 0,
   tooltipStyle = false,
   anchor,

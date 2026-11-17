@@ -2,14 +2,14 @@ import { Empty, EmptyDescription, EmptyHeader } from "~/components/ui/empty"
 import { useState, type Ref } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Checkbox } from "~/components/ui/checkbox"
 import { CheckboxGroup } from "~/components/ui/checkbox-group"
 import { FieldItem } from "~/components/ui/field"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "~/components/ui/input-group"
 import { Label } from "~/components/ui/label"
 import { ScrollArea } from "~/components/ui/scroll-area"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export function ServiceSelection({ services, value, onChange, onBlur, inputRef, disabled, invalid, label, className }: {
   services: { id: string; name: string; durationMinutes: number }[]

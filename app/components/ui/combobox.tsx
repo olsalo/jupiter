@@ -1,13 +1,14 @@
-"use client";
+"use client"
+
 
 import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox";
-import { Input } from "@coss/ui/components/input";
-import { ScrollArea } from "@coss/ui/components/scroll-area";
-import { cn } from "@coss/ui/lib/utils";
+import { Input } from "./input";
+import { ScrollArea } from "./scroll-area";
+import { cn } from "./utils/utils";
 import * as React from "react";
-import Icon from "../icons"
+import Icon from "./icons/icons"
 import { createChangeEventDetails } from "@base-ui/react/internals/createBaseUIEventDetails"
-import { useDrawerDropdownState } from "~/components/drawer-dropdown-state"
+import { useDrawerDropdownState } from "./overlays/drawer-dropdown-state"
 
 export const ComboboxContext: React.Context<{
   chipsRef: React.RefObject<Element | null> | null;
@@ -24,7 +25,7 @@ export function Combobox<Value, Multiple extends boolean | undefined = false>(
   props: ComboboxPrimitive.Root.Props<Value, Multiple>,
 ): React.ReactElement {
   const chipsRef = React.useRef<Element | null>(null)
-  const dropdown = useDrawerDropdownState<ComboboxPrimitive.Root.ChangeEventDetails>(props, () => createChangeEventDetails("none"))
+  const dropdown = useDrawerDropdownState<ComboboxPrimitive.Root.OpenChangeEventDetails>(props, () => ({ ...createChangeEventDetails("none"), preventUnmountOnClose: () => {} }))
   return (
     <ComboboxContext.Provider value={{ chipsRef, multiple: !!props.multiple }}>
       <ComboboxPrimitive.Root {...props} {...dropdown} />
@@ -126,8 +127,8 @@ export function ComboboxInput({
       {showClear && (
         <ComboboxClear
           className={cn(
-            "absolute top-1/2 inline-flex size-8 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border border-transparent opacity-80 outline-none transition-opacity pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:opacity-100 has-[+[data-slot=combobox-clear]]:hidden sm:size-7 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
-            sizeValue === "sm" ? "inset-e-0" : "inset-e-0.5",
+            "absolute top-1/2 inline-flex size-7 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center rounded-[calc(var(--radius-md)-1px)] border border-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring transition-[opacity] pointer-coarse:after:absolute pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 hover:bg-accent active:bg-accent has-[+[data-slot=combobox-clear]]:hidden sm:size-6 [&_svg:not([class*='size-'])]:size-4.5 sm:[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+            sizeValue === "sm" ? "inset-e-0.5" : "inset-e-1",
           )}
           {...clearProps}
         >
@@ -158,7 +159,7 @@ export function ComboboxPopup({
   className,
   children,
   side = "bottom",
-  sideOffset = 4,
+  sideOffset = 6,
   alignOffset,
   align = "start",
   anchor: anchorProp,
@@ -220,20 +221,7 @@ export function ComboboxItem({
       {...props}
     >
       <ComboboxPrimitive.ItemIndicator className="col-start-1">
-        <svg
-          aria-hidden="true"
-          fill="none"
-          height="24"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-          width="24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path d="M5.252 12.7 10.2 18.63 18.748 5.37" />
-        </svg>
+        <Icon name="check" aria-hidden="true" />
       </ComboboxPrimitive.ItemIndicator>
       <div className="col-start-2">{children}</div>
     </ComboboxPrimitive.Item>

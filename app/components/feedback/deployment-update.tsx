@@ -4,7 +4,7 @@ import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 import { useNavigation } from "react-router"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { AppLogo } from "~/components/navigation/app-logo"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"

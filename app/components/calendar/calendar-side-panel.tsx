@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useId, useRef, type ComponentProp
 import { useTranslation } from "react-i18next"
 import { Link, useNavigate } from "react-router"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { DialogHeader } from "~/components/ui/dialog"
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerPopup, DrawerTitle } from "~/components/ui/drawer"

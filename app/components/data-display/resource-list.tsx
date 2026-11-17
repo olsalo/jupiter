@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-import Icon, { type AppIconName } from "~/components/icons"
+import Icon, { type AppIconName } from "~/components/ui/icons/icons"
 import { Skeleton } from "~/components/ui/skeleton"
 import {
   Empty,
@@ -10,7 +10,7 @@ import {
   EmptyTitle,
 } from "~/components/ui/empty"
 import { Spinner } from "~/components/ui/spinner"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export type ResourceListItem = {
   action?: ReactNode
@@ -122,7 +122,7 @@ export function ResourceList({
       {items.map((item) => {
         const content = (
           <>
-            <span className="flex size-13.5 shrink-0 self-center items-center justify-center rounded-md border border-border/70 bg-muted/36 text-muted-foreground transition-colors group-hover:bg-muted/60 group-active:bg-muted/60 sm:size-12.5">
+            <span className="flex size-13.5 shrink-0 self-center items-center justify-center rounded-md border border-border/70 bg-muted/36 text-muted-foreground transition-none group-hover:bg-muted/60 group-active:bg-muted/60 sm:size-12.5">
               <Icon aria-hidden={true} name={item.icon} size={22} />
             </span>
             <span className="min-w-0 w-full">
@@ -154,8 +154,8 @@ export function ResourceList({
             : onSelect
               ? "grid-cols-[auto_minmax(0,1fr)_auto]"
               : "grid-cols-[auto_minmax(0,1fr)]",
-          onSelect && "transition-colors hover:bg-muted/48 active:bg-muted/48 focus-visible:bg-muted/48 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-          !onSelect && "transition-colors hover:bg-muted/30 active:bg-muted/50",
+          onSelect && "transition-none hover:bg-muted/48 active:bg-muted/48 focus-visible:bg-muted/48 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+          !onSelect && "transition-none hover:bg-muted/30 active:bg-muted/50",
         )
 
         return (

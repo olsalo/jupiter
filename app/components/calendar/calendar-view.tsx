@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export function CalendarView({ alerts, children, list = false }: {
   alerts?: ReactNode

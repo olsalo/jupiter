@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { toast } from "~/lib/toast"
 

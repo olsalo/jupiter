@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { Tooltip, TooltipPopup, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip"
 import { Switch } from "~/components/ui/switch"

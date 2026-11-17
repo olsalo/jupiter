@@ -7,7 +7,7 @@ import { Link, Outlet, useLocation, useNavigate, useRevalidator, useSearchParams
 import type { Route } from "./+types/team"
 import type { AppRouter } from "~/.server/main"
 import { useAppContext } from "~/lib/hooks/use-app-context"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { InvitationActionsMenu } from "~/components/team/invitation-actions-menu"
 import { ViewportPage } from "~/components/layout/page-layout"
 import { RouteHeader } from "~/components/layout/route-header"

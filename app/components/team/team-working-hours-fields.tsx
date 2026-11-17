@@ -1,7 +1,7 @@
 import { useFormScope, type FormScope } from "@rvf/react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
 import { Button } from "~/components/ui/button"
 import { Tooltip, TooltipPopup, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip"

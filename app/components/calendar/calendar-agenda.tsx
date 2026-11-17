@@ -8,7 +8,7 @@ import { CalendarBookingIssueMarker } from "~/components/calendar/calendar-booki
 import { CalendarView } from "~/components/calendar/calendar-view"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { useCalendarState } from "~/components/calendar/use-calendar-state"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
@@ -22,7 +22,7 @@ import type { CalendarAppointment, CalendarMember } from "~/lib/calendar/types"
 import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
 import { useMediaQuery } from "~/lib/hooks"
 import { useTRPC } from "~/lib/trpc/client"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export function CalendarAgenda() {
   const { t } = useTranslation()
@@ -57,7 +57,7 @@ export function CalendarAgenda() {
     <AlertDescription>{t("calendarAgenda.staleDescription")}</AlertDescription>
     <AlertAction><Button disabled={isFetching} onClick={retry} size="sm" type="button" variant="outline">{t("retry")}</Button></AlertAction>
   </Alert> : null}>
-    <CalendarAgendaContent appointments={appointments} days={days} formatPreference={formatPreference} key={`${range.from.toISOString()}/${selectedMember?.id ?? "team"}`} members={staff.data} now={now} timeZone={timeZone} />
+    <CalendarAgendaContent appointments={appointments} days={days} formatPreference={formatPreference} key={range.from.toISOString()} members={staff.data} now={now} timeZone={timeZone} />
   </CalendarView>
 }
 
@@ -190,7 +190,7 @@ export function CalendarAgendaContent({ appointments, days, members, now, timeZo
             <Link
               draggable={false}
               aria-current={selectedId === appointment.id ? "true" : undefined}
-              className={cn("relative grid min-h-24 touch-manipulation grid-cols-[5.25rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2 overflow-hidden rounded-xl px-5 py-3.5 text-sm transition-colors md:border md:bg-background md:shadow-xs duration-150 ease-out [@media(hover:hover)]:hover:bg-accent/50 [@media(hover:none)]:active:bg-accent/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none @min-2xl/agenda:min-h-18 @min-2xl/agenda:grid-cols-[9rem_minmax(0,1fr)_minmax(6rem,0.6fr)] @min-2xl/agenda:gap-x-5 @min-2xl/agenda:rounded-none @min-2xl/agenda:border-0 @min-2xl/agenda:py-3 @min-2xl/agenda:shadow-none md:px-5", muted && "text-muted-foreground", selectedId === appointment.id && "md:bg-accent/60")}
+              className={cn("relative grid min-h-24 touch-manipulation grid-cols-[5.25rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2 overflow-hidden rounded-xl px-5 py-3.5 text-sm transition-none md:border md:bg-background md:shadow-xs duration-150 ease-out [@media(hover:hover)]:hover:bg-accent/50 [@media(hover:none)]:active:bg-accent/50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none @min-2xl/agenda:min-h-18 @min-2xl/agenda:grid-cols-[9rem_minmax(0,1fr)_minmax(6rem,0.6fr)] @min-2xl/agenda:gap-x-5 @min-2xl/agenda:rounded-none @min-2xl/agenda:border-0 @min-2xl/agenda:py-3 @min-2xl/agenda:shadow-none md:px-5", muted && "text-muted-foreground", selectedId === appointment.id && "md:bg-accent/60")}
               data-appointment-id={appointment.id}
               data-slot="calendar-agenda-booking"
               data-status={appointment.status}

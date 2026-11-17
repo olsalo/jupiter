@@ -1,10 +1,10 @@
 import { memo } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Card } from "~/components/ui/card"
 import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 type BreakPeriod = { startMinute: number; endMinute: number }
 

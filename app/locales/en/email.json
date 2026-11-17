@@ -1,22 +1,22 @@
 {
   "otp": {
     "sign-in": {
-      "subject": "Your sign-in code",
+      "subject": "Your verification code is {{otp}}",
       "title": "Your sign-in code",
       "intro": "Use the code below to sign in"
     },
     "email-verification": {
-      "subject": "Your email verification code",
+      "subject": "Your verification code is {{otp}}",
       "title": "Your email verification code",
       "intro": "Use the code below to continue"
     },
     "forget-password": {
-      "subject": "Your password reset code",
+      "subject": "Your verification code is {{otp}}",
       "title": "Your password reset code",
       "intro": "Use the code below to continue"
     },
     "change-email": {
-      "subject": "Your email change code",
+      "subject": "Your verification code is {{otp}}",
       "title": "Your email change code",
       "intro": "Use the code below to continue"
     }
@@ -36,6 +36,7 @@
     "update": "Appointment update",
     "bookingCode": "Booking code",
     "reschedule": "Reschedule appointment",
+    "bookAgain": "Book a new appointment",
     "view": "View appointment"
   }
 }

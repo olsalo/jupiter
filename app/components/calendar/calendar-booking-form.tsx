@@ -16,7 +16,7 @@ import { useCalendarBookingDurationLimit } from "~/components/calendar/use-calen
 import { AppForm } from "~/components/forms/app-form"
 import { DatePicker } from "~/components/forms/date-picker"
 import FormLabel from "~/components/forms/form-label"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { useCalendarState } from "~/components/calendar/use-calendar-state"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { BookingSlotList, bookingSlotKey as slotKey } from "~/components/calendar/booking-slot-list"
@@ -41,7 +41,7 @@ import { getCalendarDraftService, getCalendarServiceSelectionLength } from "~/li
 import { calendarBookingSchema } from "~/lib/calendar/booking-schema"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export function CalendarBookingForm({ dragSelection, selectedDay, onSelectedDayChange: setSelectedDay, onSelectedTimeChange, returnTo }: {
   dragSelection?: CalendarDragSelection
@@ -69,7 +69,7 @@ export function CalendarBookingForm({ dragSelection, selectedDay, onSelectedDayC
   const [rawLength, setLength] = useState(() => String(dragSelection ? dragSelection.endMinute - dragSelection.startMinute : 30))
   const [lengthSource, setLengthSource] = useState<"default" | "specified">(dragSelection ? "specified" : "default")
   const [serviceChoice, setServiceChoice] = useState<string | null>(null)
-  const suggestedService = getCalendarDraftService(availableServices, serviceUsage.data ?? [], lengthSource === "specified" ? Number(rawLength) : undefined)
+  const suggestedService = getCalendarDraftService(availableServices, serviceUsage.data ?? [], dragSelection && lengthSource === "specified" ? Number(rawLength) : undefined)
   const serviceId = serviceChoice ?? suggestedService?.id ?? ""
   const length = lengthSource === "default" && serviceChoice === null && suggestedService ? String(suggestedService.durationMinutes) : rawLength
   const durationMinutes = Number(length)
@@ -180,8 +180,10 @@ export function CalendarBookingForm({ dragSelection, selectedDay, onSelectedDayC
     service: service ? { id: service.id, name: service.name, color: service.color ?? "var(--primary)" } : { id: "", name: "", color: "#808080" },
   } : null, [previewSlot?.startsAt, previewSlot?.endsAt, previewSlot?.staffMemberId, previewSlot?.locationId, preserveScroll, dragSelection, service?.id, service?.name, service?.color, service?.bufferBeforeMinutes, service?.bufferAfterMinutes, previewMember?.id, previewMember?.name])
   useEffect(() => {
+    // Keep the selected week and placeholder while availability is being refreshed
+    if (durationPending || slots.isFetching) return
     if (!dragging && !saved && !dragUpdate?.appointmentId && appliedDrag === dragSelection && (!dragSelection || (chosenSlot && !slots.isError))) setPreview(preview)
-  }, [dragging, saved, appliedDrag, dragSelection, dragUpdate?.appointmentId, preview, chosenSlot, slots.isError, setPreview])
+  }, [dragging, saved, durationPending, slots.isFetching, appliedDrag, dragSelection, dragUpdate?.appointmentId, preview, chosenSlot, slots.isError, setPreview])
   const canContinue = Boolean(!dragging && selectedDay && service && chosenSlot && validLength && !slots.isError)
   const selectedTimeError = timeError || undefined
   const pending = create.isPending || saved

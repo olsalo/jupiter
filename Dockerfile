@@ -12,7 +12,7 @@ FROM node:24-alpine AS build-env
 COPY . /app/
 COPY --from=development-dependencies-env /app/node_modules /app/node_modules
 WORKDIR /app
-RUN npm run build
+RUN npm run db:generate && npm run build
 
 FROM node:24-alpine
 COPY ./package.json package-lock.json /app/

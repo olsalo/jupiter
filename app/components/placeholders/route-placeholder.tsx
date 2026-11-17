@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { Link, Outlet, useLocation } from "react-router"
 
-import Icon, { type AppIconName } from "~/components/icons"
+import Icon, { type AppIconName } from "~/components/ui/icons/icons"
 import { ScrollPage } from "~/components/layout/page-layout"
 import { RouteHeader } from "~/components/layout/route-header"
 import { Badge } from "~/components/ui/badge"

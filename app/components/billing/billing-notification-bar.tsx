@@ -8,7 +8,7 @@ import {
 } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import type { BillingNotification } from "~/lib/billing/billing"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { useCurrentOrganizationRole } from "~/lib/hooks/use-organization-access"
 
 export function BillingNotificationBar({

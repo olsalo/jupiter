@@ -1,9 +1,8 @@
-import { Toast } from "@base-ui/react/toast"
+import { anchoredToastManager, toastManager } from "~/components/ui/toast"
+
+export { anchoredToastManager, toastManager }
 import type { ReactNode } from "react"
 import { getSubmissionErrorToastRemovalHandler } from "~/lib/browser/submission-recovery"
-
-export const toastManager = Toast.createToastManager()
-export const anchoredToastManager = Toast.createToastManager()
 
 type ToastOptions = {
   description?: ReactNode

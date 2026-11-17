@@ -29,7 +29,7 @@ const vite = await createServer({
         .replace('import { useTranslation } from "react-i18next"', `
           const useTranslation = () => fixture.translation
         `)
-        .replace('import { ToastProvider } from "~/components/ui/toast"', 'const ToastProvider = () => null')
+        .replace('import { ToastProvider } from "@/components/ui/toast"', 'const ToastProvider = () => null')
         .replace('import { Toast } from "@base-ui/react/toast"', `
           const Toast = { createToastManager: () => ({
             add: (toast) => { fixture.toasts.push(toast); return "activity-toast" },

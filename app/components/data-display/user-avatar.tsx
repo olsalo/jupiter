@@ -1,9 +1,9 @@
 import type { ComponentProps } from "react"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import { getAvatarColorClass } from "~/lib/preferences/avatar-color"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 type UserAvatarProps = Omit<ComponentProps<typeof Avatar>, "children"> & {
   stableId: string

@@ -2,7 +2,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Alert, AlertAction, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { Combobox, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxPopup, ComboboxTrigger, ComboboxValue } from "~/components/ui/combobox"

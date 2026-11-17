@@ -98,7 +98,7 @@ than a day. Ordinary appointment audit history is retained.
 ## Public endpoint protection
 
 Jupiter defaults to `X-Real-IP` supplied by Traefik. `TRUSTED_CLIENT_IP_HEADER`
-can override the header, with `BOOKING_TRUSTED_IP_HEADER` as a legacy fallback.
+can override the header.
 The trusted proxy must strip client-supplied values and set the visitor's IP.
 Production rejects missing or invalid IP headers instead of sharing an unknown-client bucket. Organization and client
 limits are stored in PostgreSQL and work across app instances: 600 reads or 100

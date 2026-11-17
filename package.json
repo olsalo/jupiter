@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "showcase": "vite --config vite.showcase.config.ts --open /showcase.html",
     "build": "react-router build && npm run build:appointment-jobs",
     "build:appointment-jobs": "vite build --config vite.jobs.config.ts",
     "db:constraints": "node --experimental-strip-types scripts/schema-integrity.ts --apply",

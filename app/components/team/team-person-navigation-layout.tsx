@@ -2,10 +2,10 @@ import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { Link, useLocation, useSearchParams } from "react-router"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { ScrollArea } from "~/components/ui/scroll-area"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { getTeamPersonSections } from "./team-person-tabs"
 
 export function TeamPersonNavigationLayout({ enabled, mode, value, onValueChange, disabled = false, children }: {

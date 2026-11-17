@@ -4,9 +4,9 @@ import { RestrictToElement } from "@dnd-kit/dom/modifiers"
 import { useSortable } from "@dnd-kit/react/sortable"
 import type { Ref, RefObject } from "react"
 import { useTranslation } from "react-i18next"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export function SortableBookingPageChoice({ id, index, name, disabled, sortableDisabled, containerRef, visible, onToggleVisibility, inputRef }: {
   id: string

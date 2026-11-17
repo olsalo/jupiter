@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next"
 import { href } from "react-router"
 
 import { useAppContext } from "~/lib/hooks/use-app-context"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { UserAvatar } from "~/components/data-display/user-avatar"
 import { Badge } from "~/components/ui/badge"
 import {
@@ -22,7 +22,7 @@ import { Spinner } from "~/components/ui/spinner"
 import { authClient } from "~/lib/auth/client"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 type ProfileUser = {
   email?: string | null

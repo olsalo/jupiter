@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip"
 import type { WorkspaceLayoutProps } from "~/components/layout/workspace-layout"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { useMobileMenuNavigation } from "~/lib/routing/mobile-navigation"
 import { useRouteScrollRestoration } from "~/lib/hooks/use-route-scroll-restoration"
 

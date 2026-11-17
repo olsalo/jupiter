@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode, type Ref } from "react"
 import { useTranslation } from "react-i18next"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import FormLabel from "~/components/forms/form-label"
 import { Alert, AlertDescription } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
@@ -8,10 +8,10 @@ import { Input } from "~/components/ui/input"
 import { Spinner } from "~/components/ui/spinner"
 import { imageUploadAccept, isValidImageFile, landscapeImageRequiredError, readImageBase64, type UploadedImage } from "~/lib/storage/image-upload"
 import { useImagePreview } from "~/lib/storage/use-image-preview"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { toast } from "~/lib/toast"
 
-const coverButtonClassName = "size-9 border-white/20 bg-black/55 text-white shadow-sm shadow-black/20 backdrop-blur-md transition-colors hover:bg-black/70 active:bg-black/70 data-pressed:bg-black/70 focus-visible:ring-white focus-visible:ring-offset-black/50 sm:size-9 *:data-[slot=button-loading-indicator]:text-white"
+const coverButtonClassName = "size-9 border-white/20 bg-black/55 text-white shadow-sm shadow-black/20 backdrop-blur-md transition-none hover:bg-black/70 active:bg-black/70 data-pressed:bg-black/70 focus-visible:ring-white focus-visible:ring-offset-black/50 sm:size-9 *:data-[slot=button-loading-indicator]:text-white"
 
 export function BookingPageCoverUpload({ value, imageUrl, label, description, error, enabled = true, disabled = false, onChange, onBlur, inputRef, upload, onUploadingChange, previewClassName, cover = false, previewFooter }: {
   value: string | null

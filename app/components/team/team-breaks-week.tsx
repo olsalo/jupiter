@@ -1,10 +1,10 @@
 import { useId, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { Switch } from "~/components/ui/switch"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { workingWeekdays } from "./team-working-hours-week"
 
 export function TeamBreaksWeek<Rule extends { dayOfWeek: number; isActive: boolean }>({ rules, workingDays, renderTimes, disabled = false, onToggleDay, onAdd, onRemove }: {

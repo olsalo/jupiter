@@ -11,10 +11,10 @@ import {
   AutocompleteItem,
   AutocompleteList,
   AutocompleteSeparator,
-} from "@coss/ui/components/autocomplete";
-import { cn } from "@coss/ui/lib/utils";
+} from "./autocomplete";
+import { cn } from "./utils/utils";
 import type * as React from "react";
-import Icon from "../icons"
+import Icon from "./icons/icons"
 
 export const CommandDialog: typeof CommandDialogPrimitive.Root =
   CommandDialogPrimitive.Root;
@@ -43,7 +43,7 @@ export function CommandDialogBackdrop({
   return (
     <CommandDialogPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-50 bg-black/32 backdrop-blur-sm transition-all duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-50 bg-black/32 backdrop-blur-sm transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
         className,
       )}
       data-slot="command-dialog-backdrop"

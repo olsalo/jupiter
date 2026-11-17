@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react"
 import { useTranslation } from "react-i18next"
 import { useMatches } from "react-router"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import {
   Dialog,
   DialogDescription,

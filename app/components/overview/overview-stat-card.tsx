@@ -1,4 +1,4 @@
-import type { AppIconName } from "~/components/icons"
+import type { AppIconName } from "~/components/ui/icons/icons"
 import { OverviewCardIcon } from "~/components/overview/overview-card-icon"
 import { RollingFormattedNumber } from "~/components/data-display/rolling-formatted-number"
 import { Card, CardPanel, CardTitle } from "~/components/ui/card"

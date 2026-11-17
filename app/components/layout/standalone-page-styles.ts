@@ -1,4 +1,4 @@
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export function getStandalonePageStyles(isElectron: boolean) {
   return cn(

@@ -6,7 +6,7 @@ import type { loader as rootLoader } from "~/root"
 
 import { AppForm } from "~/components/forms/app-form"
 import FormLabel from "~/components/forms/form-label"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { createAuthFormSchemas } from "~/lib/schemas/auth"

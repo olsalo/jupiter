@@ -2,7 +2,7 @@
 
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 
-import { cn } from "@coss/ui/lib/utils";
+import { cn } from "./utils/utils";
 
 function Progress({
   className,
@@ -55,7 +55,7 @@ function ProgressIndicator({
 }: ProgressPrimitive.Indicator.Props) {
   return (
     <ProgressPrimitive.Indicator
-      className={cn("bg-primary transition-all duration-500", className)}
+      className={cn("bg-primary transition-[width,transform] duration-500", className)}
       data-slot="progress-indicator"
       {...props}
     />

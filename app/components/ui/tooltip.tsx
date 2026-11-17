@@ -1,8 +1,9 @@
-"use client";
+"use client"
+
 
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import type React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "./utils/utils";
 
 export const TooltipCreateHandle: typeof TooltipPrimitive.createHandle =
   TooltipPrimitive.createHandle;
@@ -22,7 +23,7 @@ export function TooltipTrigger(
 export function TooltipPopup({
   className,
   align = "center",
-  sideOffset = 4,
+  sideOffset = 6,
   side = "top",
   positionMethod,
   anchor,

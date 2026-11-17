@@ -1,8 +1,8 @@
 "use client";
 
 import { OTPField as OTPFieldPrimitive } from "@base-ui/react/otp-field";
-import { Separator } from "@coss/ui/components/separator";
-import { cn } from "@coss/ui/lib/utils";
+import { Separator } from "./separator";
+import { cn } from "./utils/utils";
 import type * as React from "react";
 
 export function OTPField({

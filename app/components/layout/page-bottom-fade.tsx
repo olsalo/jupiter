@@ -1,4 +1,4 @@
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export function PageBottomFade({ variant }: { variant: "classic" | "floating" }) {
   const floating = variant === "floating"

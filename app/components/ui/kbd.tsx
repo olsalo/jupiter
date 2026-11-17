@@ -1,4 +1,4 @@
-import { cn } from "@coss/ui/lib/utils";
+import { cn } from "./utils/utils";
 import type * as React from "react";
 
 export function Kbd({

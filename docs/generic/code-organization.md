@@ -16,17 +16,9 @@ Keep `.server.ts` suffixes on server-only modules. Client components must not im
 
 ## Root files required by UI primitives
 
-The existing primitives import several files outside `components/ui` directly. These files retain their original paths so `components/ui` can remain untouched:
+UI primitives and their shared popup styles, server-rendered popups, icon map, class-name utility, hydration hook, and drawer coordination live in `app/components/ui`. Import these modules directly from there.
 
-- `app/components/icons.tsx`: shared icon map and icon component
-- `app/components/dialog-popup-styles.ts` and `sheet-popup-styles.ts`: popup geometry and styling
-- `app/components/drawer-dropdown-state.tsx`: coordination between drawers and dropdowns
-- `app/lib/utils.ts`: `cn` and shared utility functions, also exposed through `@coss/ui/lib/utils`
-- `app/lib/hooks.ts`: existing shared hooks used by primitives
-- `app/lib/toast.ts`: toast managers and helpers
-- `app/lib/use-hydrated.ts`, `use-overlay-open.ts`, and `use-sheet-open.ts`: hydration and overlay state used by primitives
-
-These are deliberate exceptions. Place new files in a folder instead of adding more root modules. No compatibility re-export files are needed for the moved modules.
+Toast managers live in the toast component, and overlay state hooks live in `app/components/ui/overlays`. Application-specific toast behavior and other application utilities remain in `app/lib`.
 
 ## Adding and importing files
 

@@ -6,7 +6,7 @@ import { localizationDefaults } from "~/lib/localization/defaults"
 import { Spinner } from "~/components/ui/spinner"
 import { formatDateTime, formatNumber } from "~/lib/localization/format-preference"
 import type { FormatPreference } from "~/lib/localization/format-preference"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 // Client-side history survives route remounts and resets on a full page reload.
 const chartEntryData = new Map<string, string>()

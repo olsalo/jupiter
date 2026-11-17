@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 
 import { useAppContext } from "~/lib/hooks/use-app-context"
 import { useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"

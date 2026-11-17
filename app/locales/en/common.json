@@ -578,7 +578,7 @@
     "edit": "Edit"
   },
   "routeDescriptions": {
-    "calendar": "See upcoming appointments and free times",
+    "calendar": "See appointments and available times",
     "customers": "Keep contact details and booking history together",
     "services": "Set what customers can book and what it costs",
     "bookingPage": "Choose what customers see when booking online"

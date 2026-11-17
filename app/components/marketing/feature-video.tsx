@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Alert, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 

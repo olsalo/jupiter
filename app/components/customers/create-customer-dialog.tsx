@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 
 import { AppForm } from "~/components/forms/app-form"
 import FormLabel from "~/components/forms/form-label"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { PhoneInput } from "~/components/forms/phone-input"
 import { ResponsiveModal, ResponsiveModalClose, ResponsiveModalFooter, ResponsiveModalHeader, ResponsiveModalPanel, ResponsiveModalPopup, ResponsiveModalTitle } from "~/components/overlays/responsive-modal"
 import { Button } from "~/components/ui/button"

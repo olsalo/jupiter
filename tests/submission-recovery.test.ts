@@ -5,11 +5,14 @@ import { transformWithOxc } from "vite"
 
 const sourcePath = new URL("../app/lib/browser/submission-recovery.ts", import.meta.url)
 const source = await readFile(sourcePath, "utf8")
+const toastComponentSource = await readFile(new URL("../app/components/ui/toast.tsx", import.meta.url), "utf8")
+const managerSource = `import { Toast } from ${JSON.stringify(import.meta.resolve("@base-ui/react/toast"))}\n${toastComponentSource.match(/export const toastManager:[\s\S]*?Toast\.createToastManager\(\);/)! [0]}`
 const toastSource = (await readFile(new URL("../app/lib/toast.ts", import.meta.url), "utf8"))
-  .replace('from "@base-ui/react/toast"', `from ${JSON.stringify(import.meta.resolve("@base-ui/react/toast"))}`)
+  .replace('import { anchoredToastManager, toastManager } from "~/components/ui/toast"', '')
+  .replace('export { anchoredToastManager, toastManager }', '')
   .replace('import { getSubmissionErrorToastRemovalHandler } from "~/lib/browser/submission-recovery"', "")
 async function loadRecovery(production: boolean) {
-  const { code } = await transformWithOxc(`${source}\n${toastSource}`, sourcePath.pathname, {
+  const { code } = await transformWithOxc(`${source}\n${managerSource}\n${toastSource}`, sourcePath.pathname, {
     lang: "ts",
     define: { "import.meta.env.PROD": String(production), "import.meta.env.DEV": String(!production) },
   })

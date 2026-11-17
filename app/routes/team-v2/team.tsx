@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Link, Outlet, useLocation, useParams } from "react-router"
 
 import type { Route } from "./+types/team"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { ScrollPage, ViewportPage } from "~/components/layout/page-layout"
 import { RouteHeader } from "~/components/layout/route-header"
 import { TeamMemberList } from "~/components/team/team-member-list"

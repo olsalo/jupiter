@@ -16,10 +16,19 @@ const vite = await createServer({
 
 try {
   const { CalendarTimeline } = await vite.ssrLoadModule("/app/components/calendar/calendar-timeline.tsx") as typeof import("../app/components/calendar/calendar-timeline")
+  const { CalendarBookingPreviewContext } = await vite.ssrLoadModule("/app/components/calendar/calendar-booking-preview.tsx") as typeof import("../app/components/calendar/calendar-booking-preview")
   const i18n = createInstance()
   await i18n.init({ lng: "en", resources: { en: { translation: { loading: "Loading" } } } })
-  for (const expandToContent of [false, true]) for (const formatPreference of ["eu", "us"] as const) for (const viewMode of ["day", "week"] as const) {
-    const markup = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(CalendarTimeline, {
+  for (const expandToContent of [false, true]) for (const formatPreference of ["eu", "us"] as const) for (const viewMode of ["day", "week"] as const) for (const withPreview of [false, true]) {
+    const markup = renderToStaticMarkup(createElement(I18nextProvider, { i18n }, createElement(CalendarBookingPreviewContext.Provider, { value: {
+      preview: withPreview ? {
+        startsAt: "2026-10-30T15:00:00Z",
+        endsAt: "2026-10-30T16:00:00Z",
+        member: { id: "alice", name: "Alice" },
+        service: { id: "service", name: "Service", color: "#808080" },
+      } : null,
+      setPreview: () => {},
+    } }, createElement(CalendarTimeline, {
       expandToContent,
       initialNow: Date.parse("2026-10-30T12:00:00Z"),
       days: Array.from({ length: viewMode === "week" ? 7 : 1 }, (_, index) => new Date(Date.UTC(2026, 9, 26 + index, 12))),
@@ -29,7 +38,7 @@ try {
       timeZone: "Europe/Helsinki",
       formatPreference,
       viewMode,
-    })))
+    }))))
     const section = markup.match(/<section\b[^>]*>/)?.[0] ?? ""
     const gutter = markup.match(/data-slot="calendar-time-gutter" style="width:(\d+)px"/)?.[1]
     const mobile = expandToContent && viewMode === "day"
@@ -39,7 +48,7 @@ try {
       assert.match(dividers, new RegExp(`left:${gutter}px`), "Week dividers use the same offset as the time gutter in both clock formats")
       assert.doesNotMatch(dividers, /left-20/, "Week dividers do not retain the old fixed time-column width")
     }
-    assert.match(section, /aria-busy="true"/, "Desktop and mobile wait for client positioning")
+    assert.match(section, /aria-busy="true"/, "Desktop and mobile wait for client positioning, including when a booking placeholder is present")
     assert.match(section, /\binvisible\b/, "The unpositioned grid reserves space while hidden")
     assert.match(markup, /data-slot="calendar-position-loading"/, "Positioning displays a loading indicator outside the hidden grid")
     assert.match(markup, /aria-label="Loading"/, "The calendar shows a spinner until positioning is ready")

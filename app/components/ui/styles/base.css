@@ -1,0 +1,228 @@
+@custom-variant dark (&:where(.dark, .dark *):not(:where(.form-theme-light, .form-theme-light *)));
+
+@layer base {
+  :where(button, summary, label, [role="button"]) {
+    cursor: default;
+  }
+}
+
+@custom-variant md {
+  @media (min-width: 768px) and (pointer: fine),
+    (min-width: 768px) and (min-height: 600px),
+    (min-width: 768px) and (orientation: portrait) {
+    @slot;
+  }
+}
+
+@custom-variant max-md {
+  @media (width < 768px),
+    (orientation: landscape) and (pointer: coarse) and (height < 600px) {
+    @slot;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/* Base interaction, scrolling, borders, and keyboard focus */
+@layer base {
+  /* Document appearance and touch scrolling */
+  html,
+  body {
+    @apply bg-background font-sans text-foreground selection:bg-foreground/15;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+
+  /* Keep workspace scrolling inside the page rather than the document */
+  html:has(main[data-page-layout]) {
+    overflow: hidden;
+  }
+
+  body:has(main[data-page-layout]) {
+    position: fixed;
+    top: var(--workspace-viewport-top, 0px);
+    inset-inline: 0;
+    height: var(--workspace-viewport-height, 100dvh);
+    overflow: hidden;
+  }
+
+  /* Freeze the page scroll area while an overlay is open */
+  body:has(
+      :is(
+        [data-slot="dialog-backdrop"],
+        [data-slot="sheet-backdrop"],
+        [data-slot="drawer-backdrop"]
+      ):not([hidden])
+    )
+    .app-page-scroll {
+    overflow-y: hidden !important;
+  }
+
+  /* Hide native and custom scrollbars on touch-sized layouts */
+  @media (width < 768px),
+    (orientation: landscape) and (pointer: coarse) and (height < 600px) {
+    * {
+      scrollbar-width: none;
+    }
+
+    *::-webkit-scrollbar {
+      display: none;
+    }
+
+    [data-slot="scroll-area-scrollbar"] {
+      display: none;
+    }
+  }
+
+  *,
+  *::before,
+  *::after {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
+
+  /* Reserve visible focus rings for inputs and explicitly keyboard-focusable elements */
+  :where(
+    *:not(input):not(textarea):not(select):not([contenteditable="true"]):not(
+        [role="textbox"]
+      ):not(.keyboard-focusable):not(#keyboard-focusable):not(
+        .keyboard-focusable *
+      ):not(#keyboard-focusable *)
+  ):focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Skeleton loading animation */
+@theme {
+  --animate-skeleton: skeleton 2s -1s infinite linear;
+  @keyframes skeleton {
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+@theme {
+  --animate-toast-error-odd: toast-shake 350ms ease-in-out;
+  --animate-toast-error-even: toast-shake-alt 350ms ease-in-out;
+  --animate-toast-success-odd: toast-pop 350ms ease-out;
+  --animate-toast-success-even: toast-pop-alt 350ms ease-out;
+}
+
+@keyframes toast-shake-alt {
+  0%,
+  100% {
+    translate: 0;
+  }
+  25% {
+    translate: -2px;
+  }
+  75% {
+    translate: 2px;
+  }
+}
+
+@keyframes toast-pop-alt {
+  0% {
+    scale: 0.98;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+/* Toast feedback animations */
+@keyframes toast-shake {
+  0%,
+  100% {
+    translate: 0;
+  }
+
+  25% {
+    translate: -2px;
+  }
+
+  75% {
+    translate: 2px;
+  }
+}
+
+@keyframes toast-pop {
+  0% {
+    scale: 0.98;
+  }
+
+  100% {
+    scale: 1;
+  }
+}
+
+/* Animate switch state without animating changes to theme colors. */
+@property --switch-on {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+[data-slot="switch"] {
+  --switch-on: 0;
+  background-color: color-mix(
+    in srgb,
+    var(--primary) calc(var(--switch-on) * 100%),
+    var(--input)
+  );
+  transition: box-shadow 200ms, --switch-on 150ms;
+}
+
+[data-slot="switch"][data-checked] {
+  --switch-on: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="switch"] {
+    transition: none;
+  }
+}

@@ -1,8 +1,9 @@
-"use client";
+"use client"
+
 
 import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card";
 
-import { cn } from "@coss/ui/lib/utils";
+import { cn } from "./utils/utils";
 
 const PreviewCard = PreviewCardPrimitive.Root;
 
@@ -16,7 +17,7 @@ function PreviewCardPopup({
   className,
   children,
   align = "center",
-  sideOffset = 4,
+  sideOffset = 6,
   anchor,
   ...props
 }: PreviewCardPrimitive.Popup.Props & {

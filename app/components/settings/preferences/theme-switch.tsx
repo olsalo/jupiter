@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next"
 import { useRevalidator, useRouteLoaderData } from "react-router"
 
 import type { loader as rootLoader } from "~/root"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Tabs, TabsList, TabsTab } from "~/components/ui/tabs"
 import { changeThemeWithTransition, isTheme, type Theme } from "~/lib/preferences/theme"
 import { toast } from "~/lib/toast"

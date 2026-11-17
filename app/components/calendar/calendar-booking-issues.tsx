@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Alert, AlertDescription } from "~/components/ui/alert"
 import type { BookingAvailabilityIssue } from "~/lib/calendar/booking-issues"
 

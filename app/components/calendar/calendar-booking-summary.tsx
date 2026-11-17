@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import type { CustomerOption } from "~/components/customers/customer-picker"
 import { Badge } from "~/components/ui/badge"
 import { Card } from "~/components/ui/card"

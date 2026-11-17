@@ -5,7 +5,7 @@ import { Select, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "~/c
 import { BookingMemberSelect } from "./booking-member-select"
 import { BookingTimePicker } from "./booking-time-picker"
 import { useTRPC } from "~/lib/trpc/client"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { getBookingChoices } from "./booking-choices"
 import type { FormatPreference } from "~/lib/localization/format-preference"
 import type { BookingPageData, BookingScope, BookingService, BookingSlot } from "./booking-types"

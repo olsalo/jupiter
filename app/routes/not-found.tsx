@@ -3,9 +3,9 @@ import { useTranslation } from "react-i18next"
 
 import type { loader as rootLoader } from "~/root"
 import { getStandalonePageStyles, standalonePageLogoClassName, standalonePagePadding } from "~/components/layout/standalone-page-styles"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { AppLogo } from "~/components/navigation/app-logo"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 
 export function loader() {

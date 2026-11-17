@@ -3,7 +3,7 @@ import { useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmation-dialog"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "~/components/ui/menu"
 import { toast } from "~/lib/toast"

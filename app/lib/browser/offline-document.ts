@@ -1,6 +1,6 @@
 import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import Icon from "../../components/icons.tsx"
+import Icon from "../../components/ui/icons/icons.tsx"
 import enCommon from "../../locales/en/common.json" with { type: "json" }
 import fiCommon from "../../locales/fi/common.json" with { type: "json" }
 

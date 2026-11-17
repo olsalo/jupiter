@@ -13,7 +13,7 @@ import { useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 
-import Icon, { type AppIconName } from "~/components/icons"
+import Icon, { type AppIconName } from "~/components/ui/icons/icons"
 import { Skeleton } from "~/components/ui/skeleton"
 import { Button } from "~/components/ui/button"
 import { Checkbox } from "~/components/ui/checkbox"
@@ -28,7 +28,7 @@ import {
 } from "~/components/ui/pagination"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { Spinner } from "~/components/ui/spinner"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 type TanStackTableColumnMeta = {
   width?: CSSProperties["width"]
@@ -749,7 +749,7 @@ export function TanStackTable<Row extends RowData>({
                     multiSelect ? row.getIsSelected() : undefined
                   }
                     className={cn(
-                      "grid min-h-16 items-center transition-colors",
+                      "grid min-h-16 items-center transition-none",
                       (subtable || rowIsClickable) && "cursor-pointer hover:bg-muted/36",
                     subtable
                       ? cn(
@@ -842,7 +842,7 @@ export function TanStackTable<Row extends RowData>({
                             multiSelect ? row.getIsSelected() : undefined
                           }
                           className={cn(
-                            "flex min-w-0 flex-col gap-4 rounded-lg border border-border/80 bg-background p-4 shadow-xs transition-colors",
+                            "flex min-w-0 flex-col gap-4 rounded-lg border border-border/80 bg-background p-4 shadow-xs transition-none",
                             (subtable || rowIsClickable) && "cursor-pointer hover:bg-muted/20",
                             row.getIsSelected() && "bg-muted/48",
                             typeof rowClassName === "function"

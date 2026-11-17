@@ -1,4 +1,4 @@
-import Icon, { type AppIconName } from "~/components/icons"
+import Icon, { type AppIconName } from "~/components/ui/icons/icons"
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "~/components/ui/empty"
 
 export function CalendarBookingEmpty({ icon, title, description }: {

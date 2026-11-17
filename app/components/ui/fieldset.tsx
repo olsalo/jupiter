@@ -2,7 +2,7 @@
 
 import { Fieldset as FieldsetPrimitive } from "@base-ui/react/fieldset";
 
-import { cn } from "@coss/ui/lib/utils";
+import { cn } from "./utils/utils";
 
 function Fieldset({ className, ...props }: FieldsetPrimitive.Root.Props) {
   return (

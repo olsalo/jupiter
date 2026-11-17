@@ -1,17 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useTranslation } from "react-i18next"
-import { Link, useLocation } from "react-router"
+import { Link, useLocation, useNavigate, useNavigation } from "react-router"
 
 import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmation-dialog"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { bookingPageColorStyle } from "~/lib/booking/booking-page-colors"
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Button } from "~/components/ui/button"
 import { ScrollArea } from "~/components/ui/scroll-area"
 import { formatDateTime } from "~/lib/localization/format-preference"
 import { toast } from "~/lib/toast"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { useTRPC } from "~/lib/trpc/client"
 import { useFormatPreference } from "~/lib/hooks/use-format-preference"
 import { BookingAppointmentCard } from "./booking-appointment-card"
@@ -28,6 +28,9 @@ export function BookingManagementPage({ bookingCode }: { bookingCode: string }) 
   const cancel = useMutation(trpc.booking.cancel.mutationOptions())
   const [cancelOpen, setCancelOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+  const navigation = useNavigation()
+  const [startingAnother, setStartingAnother] = useState(false)
   const confirmationMessage = typeof location.state?.confirmationMessage === "string" ? location.state.confirmationMessage : null
   const data = page.data
   const booking = data?.booking
@@ -39,6 +42,23 @@ export function BookingManagementPage({ bookingCode }: { bookingCode: string }) 
   const upcoming = Boolean(booking && +new Date(booking.startsAt) > Date.now() && !data?.expired && ["PENDING", "CONFIRMED", "CHECKED_IN"].includes(booking.status))
   const canReschedule = Boolean(upcoming && data?.canReschedule && +new Date(data.deadline) > Date.now())
   const canCancel = Boolean(upcoming && data?.canCancel && +new Date(data.cancellationDeadline) > Date.now())
+
+  const anotherPending = startingAnother || navigation.state !== "idle"
+  const prefetchBookingPage = () => data
+    ? queryClient.prefetchQuery(trpc.booking.getPage.queryOptions({ organizationSlug: data.organization.slug }, { retry: false }))
+    : Promise.resolve()
+
+  async function bookAnother() {
+    if (!data || anotherPending) return
+    setStartingAnother(true)
+    try {
+      // Keep the business page visible until the destination can render its booking flow
+      await prefetchBookingPage()
+      await navigate(`/book/${data.organization.slug}`)
+    } finally {
+      setStartingAnother(false)
+    }
+  }
 
   async function cancelBooking() {
     if (!canCancel || cancel.isPending) return
@@ -154,7 +174,19 @@ export function BookingManagementPage({ bookingCode }: { bookingCode: string }) 
               </Button> : null}
               {!upcoming ? <Button
                 className="h-12 text-base sm:h-12 sm:text-base"
-                render={<Link to={`/book/${data.organization.slug}`} />}
+                disabled={anotherPending}
+                loading={anotherPending}
+                render={<Link
+                  onClick={(event) => {
+                    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                    event.preventDefault()
+                    void bookAnother()
+                  }}
+                  onFocus={() => void prefetchBookingPage()}
+                  onPointerEnter={() => void prefetchBookingPage()}
+                  prefetch="intent"
+                  to={`/book/${data.organization.slug}`}
+                />}
                 type="button"
                 variant="outline"
               >

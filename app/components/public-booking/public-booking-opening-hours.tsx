@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "~/components/ui/popover"
 import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"

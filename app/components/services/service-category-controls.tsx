@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next"
 import { useSearchParams } from "react-router"
 
 import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmation-dialog"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { ServiceCategoryDialog } from "~/components/services/service-category-dialog"
 import { ServiceCategoryMenu } from "~/components/services/service-category-menu"
 import { Button } from "~/components/ui/button"

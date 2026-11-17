@@ -3,11 +3,11 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 
-import Icon from "../icons"
+import Icon from "./icons/icons"
 
 import type * as React from "react";
 
-import { cn } from "@coss/ui/lib/utils";
+import { cn } from "./utils/utils";
 
 function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
   return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
@@ -42,7 +42,7 @@ function BreadcrumbLink({
   ...props
 }: useRender.ComponentProps<"a">) {
   const defaultProps = {
-    className: cn("transition-colors hover:text-foreground", className),
+    className: cn("transition-none hover:text-foreground", className),
     "data-slot": "breadcrumb-link",
   };
 

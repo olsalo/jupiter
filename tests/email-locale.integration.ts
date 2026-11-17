@@ -58,12 +58,12 @@ try {
   process.env.PLUNK_API_KEY = "test-key"
   process.env.EMAIL_FROM = "Jupiter <verified@example.invalid>"
   await auth.api.sendVerificationOTP({ headers, body: { email, type: "email-verification" } })
-  assert.equal(delivered.at(-1)?.subject, "Your email verification code")
+  assert.match(String(delivered.at(-1)?.subject), /^Your verification code is \d{6}$/)
   await auth.api.sendVerificationOTP({ headers: guestHeaders, body: { email, type: "forget-password" } })
-  assert.equal(delivered.at(-1)?.subject, "Your password reset code", "Signed-out requests use the selected cookie even for an existing account")
+  assert.match(String(delivered.at(-1)?.subject), /^Your verification code is \d{6}$/, "Signed-out requests use the selected cookie even for an existing account")
   guestHeaders.set("cookie", await selectedCookie("fi"))
   await auth.api.sendVerificationOTP({ headers: guestHeaders, body: { email, type: "sign-in" } })
-  assert.equal(delivered.at(-1)?.subject, "Kirjautumiskoodisi")
+  assert.match(String(delivered.at(-1)?.subject), /^Vahvistuskoodisi on \d{6}$/)
   const organization = await prisma.organization.create({ data: { name: "Locale invitation test", slug: `locale-${randomUUID()}`, createdAt: new Date(), members: { create: { userId, role: "owner", createdAt: new Date() } } } })
   organizationId = organization.id
   await auth.api.createInvitation({ headers, body: { organizationId, email: `invite-en-${randomUUID()}@example.invalid`, role: "member" } })

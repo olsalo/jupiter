@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next"
-import { cn } from "@coss/ui/lib/utils";
-import Icon from "../icons";
+import { cn } from "./utils/utils";
+import Icon from "./icons/icons";
 
 // We use React.ComponentProps<typeof Icon> to inherit size, stroke, etc.
 // We Omit 'name' because this specific component hardcodes it to "loader"

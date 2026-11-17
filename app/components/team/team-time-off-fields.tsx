@@ -1,4 +1,5 @@
 import type { FormApi } from "@rvf/react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouteLoaderData } from "react-router"
 
@@ -17,11 +18,15 @@ export function TeamTimeOffFields({ form, timezone }: { form: FormApi<TimeOffVal
   const root = useRouteLoaderData<typeof rootLoader>("root")
   const language = i18n.resolvedLanguage === "fi" ? "fi" : "en"
   const formatPreference = root?.formatPreference ?? "eu"
+  const [titleChoice, setTitleChoice] = useState<string | null>(null)
+  const titleItems = (["holiday", "sickLeave", "appointment", "training", "other"] as const).map((value) => ({ value, label: t(`timeOff.titleOptions.${value}`) }))
   const repeatItems = (["none", "weekly", "monthly", "yearly"] as const).map((value) => ({ value, label: t(`timeOff.repeatOptions.${value}`) }))
   const values = form.value()
   const pending = form.formState.isSubmitting
   const allDay = form.getControlProps("allDay")
   const repeat = form.getControlProps("repeat")
+  const title = form.getControlProps("title")
+  const customTitle = titleChoice === "other"
   const dateField = (field: "startDate" | "endDate" | "repeatUntil") => {
     const control = form.getControlProps(field)
     const label = t(`timeOff.${field}`)
@@ -30,9 +35,19 @@ export function TeamTimeOffFields({ form, timezone }: { form: FormApi<TimeOffVal
     </FormLabel>
   }
   return <>
-    <FormLabel error={form.error("title")} label={t("timeOff.title")}>
-      <Input {...form.getInputProps("title")} aria-invalid={Boolean(form.error("title"))} disabled={pending} placeholder={t("timeOff.placeholder")} type="text" />
+    <FormLabel error={customTitle ? undefined : form.error("title")} label={t("timeOff.title")}>
+      <Select disabled={pending} items={titleItems} value={titleChoice} onValueChange={(value) => {
+        if (value === null) return
+        setTitleChoice(value)
+        title.onChange(value === "other" ? "" : titleItems.find((item) => item.value === value)?.label ?? "")
+      }}>
+        <SelectTrigger aria-invalid={!customTitle && Boolean(form.error("title"))} onBlur={title.onBlur} ref={customTitle ? undefined : title.ref}><SelectValue placeholder={t("timeOff.chooseName")} /></SelectTrigger>
+        <SelectPopup>{titleItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectPopup>
+      </Select>
     </FormLabel>
+    {customTitle ? <FormLabel error={form.error("title")} label={t("timeOff.customName")}>
+      <Input {...form.getInputProps("title")} aria-invalid={Boolean(form.error("title"))} disabled={pending} maxLength={120} placeholder={t("timeOff.placeholder")} type="text" />
+    </FormLabel> : null}
     <div className="grid grid-cols-2 gap-4">{dateField("startDate")}{dateField("endDate")}</div>
     <FormSwitch checked={!allDay.value} disabled={pending} label={t("timeOff.specifyTimes")} onBlur={allDay.onBlur} onCheckedChange={(checked) => allDay.onChange(!checked)} ref={allDay.ref} />
     {!values.allDay ? <div className="grid grid-cols-2 gap-4">

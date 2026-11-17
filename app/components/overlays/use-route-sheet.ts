@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useLocation, useNavigation } from "react-router"
 import { createRouteSheetState } from "~/lib/routing/route-sheet-state"
-import { useHydrated } from "~/lib/use-hydrated"
+import { useHydrated } from "~/components/ui/utils/use-hydrated"
 
 export function useRouteSheet(options: {
   onCloseComplete: () => void

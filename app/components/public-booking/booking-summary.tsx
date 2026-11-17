@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { UserAvatar } from "~/components/data-display/user-avatar"
 import { formatDateTime, formatNumber, type FormatPreference } from "~/lib/localization/format-preference"

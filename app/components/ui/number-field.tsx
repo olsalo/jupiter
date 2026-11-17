@@ -1,11 +1,11 @@
 "use client";
 
 import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field";
-import Icon from "../icons"
+import Icon from "./icons/icons"
 import * as React from "react";
 
-import { cn } from "@coss/ui/lib/utils";
-import { Label } from "@/components/ui/label";
+import { cn } from "./utils/utils";
+import { Label } from "./label";
 
 const NumberFieldContext = React.createContext<{
   fieldId: string;
@@ -58,7 +58,7 @@ function NumberFieldDecrement({
   return (
     <NumberFieldPrimitive.Decrement
       className={cn(
-        "relative flex shrink-0 cursor-pointer items-center justify-center rounded-s-[calc(var(--radius-lg)-1px)] in-data-[size=sm]:px-[calc(--spacing(2.5)-1px)] px-[calc(--spacing(3)-1px)] transition-colors pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 not-disabled:hover:bg-accent not-disabled:active:bg-accent disabled:cursor-default disabled:opacity-40",
+        "relative flex shrink-0 cursor-pointer items-center justify-center rounded-s-[calc(var(--radius-lg)-1px)] in-data-[size=sm]:px-[calc(--spacing(2.5)-1px)] px-[calc(--spacing(3)-1px)] transition-none pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 not-disabled:hover:bg-accent not-disabled:active:bg-accent disabled:cursor-default disabled:opacity-40",
         className,
       )}
       data-slot="number-field-decrement"
@@ -76,7 +76,7 @@ function NumberFieldIncrement({
   return (
     <NumberFieldPrimitive.Increment
       className={cn(
-        "relative flex shrink-0 cursor-pointer items-center justify-center rounded-e-[calc(var(--radius-lg)-1px)] in-data-[size=sm]:px-[calc(--spacing(2.5)-1px)] px-[calc(--spacing(3)-1px)] transition-colors pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 not-disabled:hover:bg-accent not-disabled:active:bg-accent disabled:cursor-default disabled:opacity-40",
+        "relative flex shrink-0 cursor-pointer items-center justify-center rounded-e-[calc(var(--radius-lg)-1px)] in-data-[size=sm]:px-[calc(--spacing(2.5)-1px)] px-[calc(--spacing(3)-1px)] transition-none pointer-coarse:after:absolute pointer-coarse:after:size-full pointer-coarse:after:min-h-11 pointer-coarse:after:min-w-11 not-disabled:hover:bg-accent not-disabled:active:bg-accent disabled:cursor-default disabled:opacity-40",
         className,
       )}
       data-slot="number-field-increment"

@@ -4,7 +4,7 @@ import type { ComponentProps } from "react"
 import { DatePicker } from "~/components/forms/date-picker"
 import { TimePicker } from "~/components/forms/time-picker"
 import { calendarDateToValue } from "~/lib/calendar/date"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 type DateTimePickerProps = Omit<ComponentProps<typeof DatePicker>, "value" | "onChange" | "className"> & {
   defaultTime: string

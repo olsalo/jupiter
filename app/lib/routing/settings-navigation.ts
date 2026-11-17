@@ -1,4 +1,4 @@
-import type { AppIconName } from "~/components/icons"
+import type { AppIconName } from "~/components/ui/icons/icons"
 import { hasOrganizationPermission, type OrganizationPermissions } from "~/lib/auth/permissions"
 
 export const settingsItems = [

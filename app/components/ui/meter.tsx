@@ -2,7 +2,7 @@
 
 import { Meter as MeterPrimitive } from "@base-ui/react/meter";
 
-import { cn } from "@coss/ui/lib/utils";
+import { cn } from "./utils/utils";
 
 function Meter({ className, children, ...props }: MeterPrimitive.Root.Props) {
   return (
@@ -47,7 +47,7 @@ function MeterIndicator({
 }: MeterPrimitive.Indicator.Props) {
   return (
     <MeterPrimitive.Indicator
-      className={cn("bg-primary transition-all duration-500", className)}
+      className={cn("bg-primary transition-[width,transform] duration-500", className)}
       data-slot="meter-indicator"
       {...props}
     />

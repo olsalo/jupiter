@@ -1,7 +1,7 @@
 "use client";
 
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
-import { cn } from "@coss/ui/lib/utils";
+import { cn } from "./utils/utils";
 import type React from "react";
 
 export function ScrollArea({
@@ -138,7 +138,7 @@ export function ScrollBar({
       {...props}
     >
       <ScrollAreaPrimitive.Thumb
-        className="relative flex-1 rounded-full bg-foreground/20"
+        className="relative flex-1 rounded-full bg-foreground/10"
         data-slot="scroll-area-thumb"
       />
     </ScrollAreaPrimitive.Scrollbar>

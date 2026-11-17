@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip"
 import { useCalendarState } from "~/components/calendar/use-calendar-state"
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group"

@@ -5,10 +5,10 @@ import { useSortable } from "@dnd-kit/react/sortable"
 import type { ReactNode, RefObject } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { IconListItem } from "~/components/data-display/icon-list-item"
 import { Button } from "~/components/ui/button"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export function SortableServiceListItem({ id, index, name, color, disabled, showHandle, containerRef, children, actions }: {
   id: string
@@ -31,7 +31,7 @@ export function SortableServiceListItem({ id, index, name, color, disabled, show
   })
 
   return <IconListItem
-    className={cn("relative cursor-pointer bg-background transition-colors max-sm:gap-3 max-sm:p-3", showHandle ? "max-sm:[&>[data-slot=icon-list-item-content]>a]:pr-24" : actions ? "max-sm:[&>[data-slot=icon-list-item-content]>a]:pr-14" : undefined, sortable.isDragging ? "z-10 rounded-lg shadow-lg" : "hover:not-has-[[data-slot=service-list-control]:hover,[data-popup-open]]:bg-muted/40 active:not-has-[[data-slot=service-list-control]:hover,[data-popup-open]]:bg-muted/60")}
+    className={cn("relative cursor-pointer bg-background transition-none max-sm:gap-3 max-sm:p-3", showHandle ? "max-sm:[&>[data-slot=icon-list-item-content]>a]:pr-24" : actions ? "max-sm:[&>[data-slot=icon-list-item-content]>a]:pr-14" : undefined, sortable.isDragging ? "z-10 rounded-lg shadow-lg" : "hover:not-has-[[data-slot=service-list-control]:hover,[data-popup-open]]:bg-muted/40 active:not-has-[[data-slot=service-list-control]:hover,[data-popup-open]]:bg-muted/60")}
     actions={actions ? <div className={cn("relative z-10 shrink-0 max-sm:absolute max-sm:top-3", showHandle ? "max-sm:right-14" : "max-sm:right-3")} data-slot="service-list-control">{actions}</div> : null}
     iconClassName={cn("h-auto w-1 self-stretch", color ? "bg-current" : undefined)}
     iconStyle={color ? { color } : undefined}

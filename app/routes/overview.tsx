@@ -3,7 +3,7 @@ import { redirect } from "react-router"
 
 import type { Route } from "./+types/overview"
 
-import Icon, { type AppIconName } from "~/components/icons"
+import Icon, { type AppIconName } from "~/components/ui/icons/icons"
 import { JoinedTeamDialog } from "~/components/team/joined-team-dialog"
 import { RouteHeader } from "~/components/layout/route-header"
 import { ScrollPage } from "~/components/layout/page-layout"

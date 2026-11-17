@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next"
 import { Link, Outlet, useLocation } from "react-router"
 
 import type { Route } from "./+types/services"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmation-dialog"
 import { useServiceOrder } from "~/components/services/use-service-order"
 import { ServiceListDetails } from "~/components/services/service-list-details"
@@ -24,7 +24,7 @@ import { toast } from "~/lib/toast"
 import { getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { useOrganizationPermission, useOrganizationRolePermission } from "~/lib/hooks/use-organization-access"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export const handle = { workspace: true, pageLayout: "scroll" } as const
 

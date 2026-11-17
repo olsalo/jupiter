@@ -1,10 +1,10 @@
 import { createContext, useContext, useEffect, useRef, useState, type ComponentProps } from "react"
 
-import { getDialogPopupClassName, getDialogViewportClassName } from "~/components/dialog-popup-styles"
+import { getDialogPopupClassName, getDialogViewportClassName } from "~/components/ui/overlays/dialog-popup-styles"
 import { Drawer, DrawerBackdrop, DrawerBar, DrawerClose, DrawerDescription, DrawerFooter, DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle, DrawerTrigger } from "~/components/ui/drawer"
 import { useMediaQuery } from "~/lib/hooks"
-import { useHydrated } from "~/lib/use-hydrated"
-import { cn } from "~/lib/utils"
+import { useHydrated } from "~/components/ui/utils/use-hydrated"
+import { cn } from "~/components/ui/utils/utils"
 
 const ResponsiveModalContext = createContext({ isMobile: false, initiallyServerRendered: false, open: false })
 

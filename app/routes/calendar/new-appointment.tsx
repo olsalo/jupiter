@@ -1,5 +1,5 @@
 import type { CalendarDragSelection } from "~/lib/calendar/types"
-import { useRef, useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useLocation } from "react-router"
 
@@ -15,13 +15,15 @@ import { formatDateTime } from "~/lib/localization/format-preference"
 
 export default function NewAppointmentRoute() {
   const { t, i18n } = useTranslation()
-  const { dragUpdate, preview } = useCalendarBookingPreview()
+  const { dragUpdate, preview, setBookingDay } = useCalendarBookingPreview()
 
   const location = useLocation()
   const initialSelection = (location.state as { dragSelection?: CalendarDragSelection } | null)?.dragSelection
   const dragSelection = getCalendarBookingDragSelection(dragUpdate, initialSelection ? { selection: initialSelection } : undefined)
   const [selectedDay, setSelectedDay] = useState<string | null>(dragSelection?.day ?? null)
   const [selectedTime, setSelectedTime] = useState("")
+  useLayoutEffect(() => { setBookingDay?.(selectedDay) }, [selectedDay, setBookingDay])
+  useLayoutEffect(() => () => { setBookingDay?.(null) }, [setBookingDay])
   const { timeZone, formatPreference } = useCalendarState()
   const { search } = useLocation()
   const returnTo = useRef(`/calendar${search}`).current

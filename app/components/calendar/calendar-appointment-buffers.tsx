@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import type { CalendarAppointment } from "~/lib/calendar/types"
 
 export function CalendarAppointmentBuffers({ appointment, startMinute, endMinute, horizontal, floating = false }: {

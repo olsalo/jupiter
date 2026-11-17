@@ -20,6 +20,11 @@ try {
   const result = await seedBarberShop(db, { ownerName: "John Smith", ownerEmail: ` ${ownerEmail.toUpperCase()} ` }, now)
   organizationId = result.organizationId
   assert.equal(result.created, true)
+  const subscription = await db.subscription.findFirstOrThrow({ where: { referenceId: organizationId } })
+  assert.equal(subscription.plan, "team")
+  assert.equal(subscription.status, "active")
+  assert.equal(subscription.seats, 5)
+  assert.equal(subscription.periodEnd?.toISOString(), "2026-11-22T11:00:00.000Z")
   assert.equal(await db.member.count({ where: { organizationId } }), 6)
   assert.equal(await db.staffMember.count({ where: { organizationId, memberId: { not: null } } }), 6)
   const ownerStaff = await db.staffMember.findFirstOrThrow({ where: { organizationId, member: { userId: owner.id } } })
@@ -88,6 +93,7 @@ try {
   const repeated = await seedBarberShop(db, { ownerName: "Different Name", ownerEmail }, now)
   assert.equal(repeated.created, false)
   assert.equal(repeated.organizationId, organizationId)
+  assert.equal(await db.subscription.count({ where: { referenceId: organizationId } }), 1)
   assert.equal(await db.appointment.count({ where: { organizationId } }), appointments.length)
   assert.equal(await db.service.count({ where: { organizationId, name: "Edited Service" } }), 1)
   console.info("PASS barber seed: owner reuse, linked demo data, repeat runs, scheduling, DST, payments and disabled emails")
@@ -97,6 +103,7 @@ try {
   for (const organization of organizations) {
     const users = await db.member.findMany({ where: { organizationId: organization.id }, select: { userId: true } })
     await db.appointment.deleteMany({ where: { organizationId: organization.id } })
+    await db.subscription.deleteMany({ where: { referenceId: organization.id } })
     await db.organization.delete({ where: { id: organization.id } })
     await db.user.deleteMany({ where: { id: { in: users.map((member) => member.userId).filter((id) => id !== owner.id) } } })
   }

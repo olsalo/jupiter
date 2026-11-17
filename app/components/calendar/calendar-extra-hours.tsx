@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useId, useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { useRouteLoaderData } from "react-router"
 
@@ -8,7 +8,7 @@ import { AppForm } from "~/components/forms/app-form"
 import { DatePicker } from "~/components/forms/date-picker"
 import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmation-dialog"
 import FormLabel from "~/components/forms/form-label"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { IconListItem } from "~/components/data-display/icon-list-item"
 import { ResponsiveSheetPanel, ResponsiveSheetFooter } from "~/components/overlays/responsive-sheet"
 import { TimePicker } from "~/components/forms/time-picker"
@@ -20,25 +20,28 @@ import { Button } from "~/components/ui/button"
 import { Dialog, DialogPopup, DialogHeader, DialogTitle, DialogDescription, DialogPanel, DialogFooter } from "~/components/ui/dialog"
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "~/components/ui/empty"
 import { Spinner } from "~/components/ui/spinner"
+import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
+import { TeamPersonSection } from "~/components/team/team-person-section"
 import { formatDateTime } from "~/lib/localization/format-preference"
 import { extraHoursInterval, extraHoursSchema, type ExtraHoursValues } from "~/lib/schemas/calendar-extra-hours"
 import { toast } from "~/lib/toast"
 import { useTRPC } from "~/lib/trpc/client"
 
-export function CalendarExtraHours({ staffMemberId, timezone, close, onBusyChange }: {
+export function CalendarExtraHours({ staffMemberId, timezone, close, onBusyChange, embedded = false, canManage = true }: {
+  embedded?: boolean
+  canManage?: boolean
   staffMemberId: string
   timezone: string
-  close: () => void
-  onBusyChange: (busy: boolean) => void
+  close?: () => void
+  onBusyChange?: (busy: boolean) => void
 }) {
-  const { i18n, t } = useTranslation()
+  const { i18n, t } = useTranslation("common")
   const root = useRouteLoaderData<typeof rootLoader>("root")
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const entries = useQuery(trpc.availability.getExtraHours.queryOptions({ staffMemberId }))
   const create = useMutation(trpc.availability.createOverride.mutationOptions())
   const remove = useMutation(trpc.availability.deleteOverride.mutationOptions())
-  const titleId = useId()
   const [open, setOpen] = useState(false)
   const [flow, setFlow] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -47,8 +50,8 @@ export function CalendarExtraHours({ staffMemberId, timezone, close, onBusyChang
   const formatPreference = root?.formatPreference ?? "eu"
   const pending = submitting || create.isPending || remove.isPending
   const busy = open || removingId !== null || pending
-  useEffect(() => { onBusyChange(busy) }, [busy, onBusyChange])
-  useEffect(() => () => onBusyChange(false), [onBusyChange])
+  useEffect(() => { onBusyChange?.(busy) }, [busy, onBusyChange])
+  useEffect(() => () => onBusyChange?.(false), [onBusyChange])
   const schema = extraHoursSchema({ date: t("team:timeOff.dateInvalid"), time: t("team:timeOff.dateInvalid"), end: t("team:timeOff.endError") })
   const format = (date: Date, includeTime = true, includeDate = true) => formatDateTime(date, { formatPreference, language, timeZone: timezone, includeTime, includeDate })
   const refresh = () => Promise.all([
@@ -65,24 +68,22 @@ export function CalendarExtraHours({ staffMemberId, timezone, close, onBusyChang
   const add = () => { setFlow((version) => version + 1); setOpen(true) }
   const addButton = <Button onClick={add} size="sm" type="button" variant="outline"><Icon aria-hidden={true} name="plus" size={16} />{t("calendarExtraHours.add")}</Button>
 
+  const header = <div className="flex items-start justify-between gap-4"><SettingsSectionHeader title={t("calendarExtraHours.tab")} description={embedded ? t("calendarExtraHours.description") : undefined} />{canManage ? <span className="shrink-0">{addButton}</span> : null}</div>
+  const content = <>
+    {entries.isPending ? <div className="flex flex-1 items-center justify-center py-6"><Spinner aria-label={t("loading")} /></div> : entries.isError ? <Alert variant="error"><AlertTitle>{t("calendarExtraHours.loadError")}</AlertTitle><AlertDescription>{t("team:retryDescription")}</AlertDescription><AlertAction><Button disabled={entries.isFetching} loading={entries.isFetching} onClick={() => void entries.refetch()} size="sm" type="button" variant="outline">{t("team:retry")}</Button></AlertAction></Alert> : entries.data.length === 0 ? <Empty>
+      <EmptyHeader><EmptyMedia variant="icon"><Icon aria-hidden={true} name="calendarEvent" /></EmptyMedia><EmptyTitle>{t("calendarExtraHours.empty")}</EmptyTitle><EmptyDescription>{t("calendarExtraHours.emptyDescription")}</EmptyDescription></EmptyHeader>
+    </Empty> : <ul className="flex flex-col gap-3">{entries.data.map((entry) => <IconListItem icon="calendarEvent" key={entry.id} actions={canManage ? <Menu>
+      <MenuTrigger aria-label={t("calendarExtraHours.actionsFor", { date: format(entry.startsAt, false) })} render={<Button size="icon" type="button" variant="ghost" />}><Icon aria-hidden={true} className="size-4.5 sm:size-4" name="dotsVertical" size={18} /></MenuTrigger>
+      <MenuPopup align="end" className="min-w-48" sideOffset={6}><MenuItem closeOnClick={true} onClick={() => setRemovingId(entry.id)} variant="destructive"><Icon aria-hidden={true} name="delete" />{t("calendarExtraHours.remove")}</MenuItem></MenuPopup>
+    </Menu> : undefined}>
+      <span className="break-words text-sm font-medium">{format(entry.startsAt, false)}</span>
+      <div className="flex flex-wrap items-center gap-2"><Badge variant="outline">{t("team:timeOff.timed")}</Badge><span className="text-xs leading-relaxed text-muted-foreground">{format(entry.startsAt, true, false)} - {format(entry.endsAt, true, false)}</span></div>
+    </IconListItem>)}</ul>}
+  </>
+
   return <>
-    <ScrollArea fill={true}>
-      <ResponsiveSheetPanel className="flex min-h-full flex-col" scrollable={false}>
-        <section aria-labelledby={titleId} className="flex flex-1 flex-col gap-4">
-          <div className="flex items-center justify-between gap-4"><h3 className="text-sm font-medium" id={titleId}>{t("calendarExtraHours.tab")}</h3><span className="shrink-0">{addButton}</span></div>
-          {entries.isPending ? <div className="flex flex-1 items-center justify-center py-6"><Spinner aria-label={t("loading")} /></div> : entries.isError ? <Alert variant="error"><AlertTitle>{t("calendarExtraHours.loadError")}</AlertTitle><AlertDescription>{t("team:retryDescription")}</AlertDescription><AlertAction><Button disabled={entries.isFetching} loading={entries.isFetching} onClick={() => void entries.refetch()} size="sm" type="button" variant="outline">{t("team:retry")}</Button></AlertAction></Alert> : entries.data.length === 0 ? <Empty>
-            <EmptyHeader><EmptyMedia variant="icon"><Icon aria-hidden={true} name="calendarEvent" /></EmptyMedia><EmptyTitle>{t("calendarExtraHours.empty")}</EmptyTitle><EmptyDescription>{t("calendarExtraHours.emptyDescription")}</EmptyDescription></EmptyHeader>
-          </Empty> : <ul className="flex flex-col gap-3">{entries.data.map((entry) => <IconListItem icon="calendarEvent" key={entry.id} actions={<Menu>
-            <MenuTrigger aria-label={t("calendarExtraHours.actionsFor", { date: format(entry.startsAt, false) })} render={<Button size="icon" type="button" variant="ghost" />}><Icon aria-hidden={true} className="size-4.5 sm:size-4" name="dotsVertical" size={18} /></MenuTrigger>
-            <MenuPopup align="end" className="min-w-48" sideOffset={6}><MenuItem closeOnClick={true} onClick={() => setRemovingId(entry.id)} variant="destructive"><Icon aria-hidden={true} name="delete" />{t("calendarExtraHours.remove")}</MenuItem></MenuPopup>
-          </Menu>}>
-            <span className="break-words text-sm font-medium">{format(entry.startsAt, false)}</span>
-            <div className="flex flex-wrap items-center gap-2"><Badge variant="outline">{t("team:timeOff.timed")}</Badge><span className="text-xs leading-relaxed text-muted-foreground">{format(entry.startsAt, true, false)} – {format(entry.endsAt, true, false)}</span></div>
-          </IconListItem>)}</ul>}
-        </section>
-      </ResponsiveSheetPanel>
-    </ScrollArea>
-    <ResponsiveSheetFooter><Button disabled={busy} onClick={close} type="button" variant="ghost">{t("team:people.close")}</Button></ResponsiveSheetFooter>
+    {embedded ? <TeamPersonSection header={header}>{content}</TeamPersonSection> : <ScrollArea fill={true}><ResponsiveSheetPanel className="flex min-h-full flex-col" scrollable={false}><section className="flex flex-1 flex-col gap-4">{header}{content}</section></ResponsiveSheetPanel></ScrollArea>}
+    {close ? <ResponsiveSheetFooter><Button disabled={busy} onClick={close} type="button" variant="ghost">{t("team:people.close")}</Button></ResponsiveSheetFooter> : null}
     <Dialog open={open} onOpenChange={(next) => { if (!pending) setOpen(next) }}>
       <DialogPopup className="sm:max-w-md" forceBackdrop={true}>
         <DialogHeader><DialogTitle>{t("calendarExtraHours.add")}</DialogTitle><DialogDescription>{t("calendarExtraHours.description")}</DialogDescription></DialogHeader>

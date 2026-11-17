@@ -16,9 +16,9 @@ import {
   type ReactNode,
   type Ref,
 } from "react"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { reloadAfterSubmissionError } from "~/lib/browser/submission-recovery"
-import { useHydrated } from "~/lib/use-hydrated"
+import { useHydrated } from "~/components/ui/utils/use-hydrated"
 
 type MutationError = {
   errors?: FieldErrors

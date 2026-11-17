@@ -12,6 +12,25 @@ export const barberSeedOptions = z.object({
 
 const timezone = "Europe/Helsinki"
 const seedKind = "jupiter-barber-v1"
+
+async function ensureSeedSubscription(tx: Prisma.TransactionClient, organizationId: string, now: Date) {
+  const periodEnd = new Date(Temporal.Instant.fromEpochMilliseconds(now.getTime()).toZonedDateTimeISO(timezone).add({ months: 1 }).epochMilliseconds)
+  await tx.subscription.upsert({
+    where: { id: `barber_seed_${organizationId}` },
+    update: { periodStart: now, periodEnd },
+    create: {
+      id: `barber_seed_${organizationId}`,
+      referenceId: organizationId,
+      plan: "team",
+      status: "active",
+      seats: 5,
+      billingInterval: "month",
+      periodStart: now,
+      periodEnd,
+    },
+  })
+}
+
 const services = [
   { name: "Classic Haircut", slug: "classic-haircut", durationMinutes: 30, price: 32, category: 0, description: "A tailored cut with a wash and finish", color: "#3b82f6" },
   { name: "Skin Fade", slug: "skin-fade", durationMinutes: 45, price: 38, category: 0, description: "A precise fade blended down to the skin", color: "#6366f1" },
@@ -61,6 +80,7 @@ export async function seedBarberShop(db: PrismaClient, input: z.input<typeof bar
       if (existing.metadata !== seedKind || !existing.members.some((member) => member.user.email.toLowerCase() === options.ownerEmail)) {
         throw new Error("The demo slug belongs to another business")
       }
+      await ensureSeedSubscription(tx, existing.id, now)
       return { organizationId: existing.id, slug, created: false }
     }
 
@@ -71,6 +91,7 @@ export async function seedBarberShop(db: PrismaClient, input: z.input<typeof bar
     })
     const organizationId = generateId()
     await tx.organization.create({ data: { id: organizationId, name: "Northside Barbers", slug, metadata: seedKind, createdAt: now } })
+    await ensureSeedSubscription(tx, organizationId, now)
     const locationId = generateId()
     await tx.location.create({ data: {
       id: locationId, organizationId, name: "City Centre", slug: "city-centre",

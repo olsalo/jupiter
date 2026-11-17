@@ -19,9 +19,10 @@ interface AppointmentEmailTemplateOptions {
   bookingCode: string
   rescheduleUrl?: string
   managementUrl?: string
+  bookingUrl?: string
 }
 
-export function createAppointmentEmailTemplate({ kind, locale, organizationName, services, startsAt, timezone, country, bookingCode, rescheduleUrl, managementUrl }: AppointmentEmailTemplateOptions): Promise<EmailTemplate> {
+export function createAppointmentEmailTemplate({ kind, locale, organizationName, services, startsAt, timezone, country, bookingCode, rescheduleUrl, managementUrl, bookingUrl }: AppointmentEmailTemplateOptions): Promise<EmailTemplate> {
   const t = getEmailTranslations(locale)
   const subject = t(`appointment.${kind}`)
   const time = formatDateTime(startsAt, { formatPreference: getFormatPreferenceFromCountry(country), language: locale, timeZone: timezone })
@@ -33,9 +34,9 @@ export function createAppointmentEmailTemplate({ kind, locale, organizationName,
     time,
     bookingCode,
     bookingCodeLabel: t("appointment.bookingCode"),
-    rescheduleUrl: kind === "CANCELLATION" ? undefined : rescheduleUrl,
-    rescheduleLabel: t("appointment.reschedule"),
-    managementUrl,
+    actionUrl: kind === "CANCELLATION" ? bookingUrl : rescheduleUrl,
+    actionLabel: t(kind === "CANCELLATION" ? "appointment.bookAgain" : "appointment.reschedule"),
+    managementUrl: kind === "CANCELLATION" ? undefined : managementUrl,
     managementLabel: t("appointment.view"),
   }))
 }

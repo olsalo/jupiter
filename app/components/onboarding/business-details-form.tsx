@@ -7,7 +7,7 @@ import type { FormApi } from "@rvf/react"
 import { OnboardingActions } from "~/components/onboarding/onboarding-actions"
 import { AppForm } from "~/components/forms/app-form"
 import FormLabel from "~/components/forms/form-label"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { InputGroup, InputGroupInput } from "~/components/ui/input-group"
 import {

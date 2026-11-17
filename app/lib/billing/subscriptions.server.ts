@@ -8,6 +8,7 @@ import { getPlanForPrice, getStripePriceId, stripeAnnualBillingEnabled, stripeBi
 import type { BillingPlanInput } from "~/lib/schemas/billing"
 import { isDemoMode, isDemoPlan } from "./billing.server"
 import { isSubscriptionEntitled } from "./billing"
+import { getSeededBilling } from "./seeded-billing.server"
 
 export function readStripePlan(subscription: Stripe.Subscription) {
   const base = subscription.items.data.find((item) => getPlanForPrice(item.price.id))
@@ -100,6 +101,8 @@ export async function getBillingPlanState(organizationId: string) {
   let pending: Awaited<ReturnType<typeof scheduledChange>> = null
   let paymentPending = false
   let paymentUrl: string | null = null
+  const seeded = await getSeededBilling(prisma, organizationId)
+  if (seeded) current = seeded.current
   if (demo) {
     const planId = demo.plan === "demo_solo" ? "solo" : "team"
     const capacity = demo.seats ?? (planId === "solo" ? 1 : 3)

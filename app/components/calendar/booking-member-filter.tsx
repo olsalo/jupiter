@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Badge } from "~/components/ui/badge"
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "~/components/ui/select"
 

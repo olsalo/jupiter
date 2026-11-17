@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from "react"
 
 import FormLabel from "~/components/forms/form-label"
 import { Switch } from "~/components/ui/switch"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 type FormSwitchProps = ComponentProps<typeof Switch> & {
   label: ReactNode

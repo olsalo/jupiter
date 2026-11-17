@@ -22,7 +22,7 @@ import { sortCalendarMembers } from "~/lib/calendar/schedule"
 import { isCalendarCurrentTimeVisible, subscribeCalendarClock } from "~/lib/calendar/clock"
 import { getCalendarBookingRevealScrollPosition, getCalendarBookingScrollPosition, getCalendarTimeScrollTop, getCalendarTodayScrollLeft } from "~/lib/calendar/scroll"
 import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 const calendarDateColumnClassName = "pr-px last:pr-0"
 
@@ -104,7 +104,7 @@ export function CalendarTimeline({ expandToContent = false, centerCurrentTimeOnM
   const visibleDates = days.map(calendarDateToValue).join("/")
   const initialPositionKey = `${expandToContent ? "page" : "grid"}/${viewMode}/${visibleDates}`
 
-  const waitingForInitialPosition = positionedRange !== initialPositionKey && !preview
+  const waitingForInitialPosition = positionedRange !== initialPositionKey
   const gridWidth = { width: "100%", minWidth: minimumWidth }
   const dayColumns = { ...gridWidth, gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }
   const laneColumns = { gridTemplateColumns: `repeat(${Math.max(1, members.length)}, minmax(0, 1fr))` }
@@ -206,7 +206,7 @@ export function CalendarTimeline({ expandToContent = false, centerCurrentTimeOnM
   }, [scrollState, expandToContent])
 
   useLayoutEffect(() => {
-    if (preview) return
+    if (preview && !preview.preserveScroll) return
     const viewport = contentRef.current
     if (!viewport) return
     // Hydration first uses the server layout before the responsive state updates
@@ -219,6 +219,8 @@ export function CalendarTimeline({ expandToContent = false, centerCurrentTimeOnM
       if (!viewport.clientWidth || !viewport.clientHeight) return
       if (pageViewport && !pageViewport.clientHeight) return
       if (scrollState?.restore()) {
+        initializedRange.current = initialPositionKey
+      } else if (preview?.preserveScroll) {
         initializedRange.current = initialPositionKey
       } else if (initializedRange.current !== initialPositionKey) {
         // A remount or delayed layout can outlive the route's clock snapshot
@@ -275,6 +277,8 @@ export function CalendarTimeline({ expandToContent = false, centerCurrentTimeOnM
     const viewport = contentRef.current
     const card = viewport?.querySelector<HTMLElement>('[data-draft="true"]')
     if (!viewport || !card) return
+    if (expandToContent !== window.matchMedia("(width < 768px)").matches) return
+    if (viewportWidth !== viewport.clientWidth) return
     let frame: number | null = null
     let active = true
     const stopScrolling = () => {
@@ -295,6 +299,15 @@ export function CalendarTimeline({ expandToContent = false, centerCurrentTimeOnM
         // echo intermediate scroll positions back into this viewport
         const fromLeft = viewport.scrollLeft
         const fromTop = viewport.scrollTop
+        // A newly loaded range stays hidden until its selected slot is positioned
+        // Subsequent selections in the visible range can still animate
+        if (initializedRange.current !== initialPositionKey) {
+          syncHorizontal(left)
+          syncVertical(top)
+          initializedRange.current = initialPositionKey
+          flushSync(() => setPositionedRange(initialPositionKey))
+          return
+        }
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
           syncHorizontal(left)
           syncVertical(top)
@@ -329,7 +342,7 @@ export function CalendarTimeline({ expandToContent = false, centerCurrentTimeOnM
       viewport.removeEventListener("pointerdown", stopScrolling)
       viewport.removeEventListener("keydown", stopScrolling)
     }
-  }, [dragging, Boolean(preview), preview?.preserveScroll, draft?.day, draft?.memberId, draft?.startMinute, draft?.endMinute, width, contentHeight])
+  }, [dragging, Boolean(preview), preview?.preserveScroll, draft?.day, draft?.memberId, draft?.startMinute, draft?.endMinute, width, contentHeight, initialPositionKey, expandToContent, viewportWidth])
 
   return <>
     {waitingForInitialPosition ? <div className="absolute inset-0 flex" data-slot="calendar-position-loading"><CalendarLoading /></div> : null}

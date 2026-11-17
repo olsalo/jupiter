@@ -1,9 +1,9 @@
 import { useRef, type CSSProperties, type ReactNode } from "react"
 
-import { getDialogPopupClassName, getDialogViewportClassName } from "~/components/dialog-popup-styles"
-import { DialogBackdrop, DialogPopup } from "~/components/ui/dialog"
-import { cn } from "~/lib/utils"
-import { useHydrated } from "~/lib/use-hydrated"
+import { getDialogPopupClassName, getDialogViewportClassName } from "./dialog-popup-styles"
+import { DialogBackdrop, DialogPopup } from "../dialog"
+import { cn } from "../utils/utils"
+import { useHydrated } from "../utils/use-hydrated"
 
 type ServerRenderedDialogPopupProps = {
   children: ReactNode

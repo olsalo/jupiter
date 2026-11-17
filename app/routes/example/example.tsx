@@ -12,7 +12,7 @@ import { localizationDefaults } from "~/lib/localization/defaults"
 import type { AppRouter } from "~/.server/main"
 import type { Route } from "./+types/example"
 import { DeleteConfirmationDialog } from "~/components/overlays/delete-confirmation-dialog"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { ViewportPage } from "~/components/layout/page-layout"
 import { RouteHeader } from "~/components/layout/route-header"
 import {

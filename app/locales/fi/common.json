@@ -578,7 +578,7 @@
     "edit": "Muokkaa"
   },
   "routeDescriptions": {
-    "calendar": "Näe tulevat ajanvaraukset ja vapaat ajat",
+    "calendar": "Näe ajanvaraukset ja vapaat ajat",
     "customers": "Pidä yhteystiedot ja varaushistoria yhdessä",
     "services": "Määritä varattavat palvelut ja niiden hinnat",
     "bookingPage": "Valitse, mitä asiakkaat näkevät varatessaan verkossa"

@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
-import type { AppIconName } from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
+import type { AppIconName } from "~/components/ui/icons/icons"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "~/components/ui/alert"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"

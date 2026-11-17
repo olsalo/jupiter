@@ -11,11 +11,11 @@ import {
   useRef,
   useState,
 } from "react"
-import Icon from "../icons"
-import { cn } from "@coss/ui/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { getSheetPopupClassName, getSheetViewportClassName } from "~/components/sheet-popup-styles"
+import Icon from "./icons/icons"
+import { cn } from "./utils/utils";
+import { Button } from "./button";
+import { ScrollArea } from "./scroll-area";
+import { getSheetPopupClassName, getSheetViewportClassName } from "./overlays/sheet-popup-styles"
 
 const SheetClosingContext = createContext(false)
 const sheetExitDuration = 220
@@ -131,7 +131,7 @@ function SheetBackdrop({ className, ...props }: SheetPrimitive.Backdrop.Props) {
   return (
     <SheetPrimitive.Backdrop
       className={cn(
-        "fixed inset-0 z-50 bg-black/32 backdrop-blur-[2px] transition-all duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
+        "fixed inset-0 z-50 bg-black/32 backdrop-blur-[2px] transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0",
         className,
       )}
       data-slot="sheet-backdrop"

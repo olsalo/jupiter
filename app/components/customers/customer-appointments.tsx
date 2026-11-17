@@ -27,7 +27,7 @@ export function CustomerAppointments({ customerId, scope, page, preview = false 
     {query.isError ? <Alert variant="error"><AlertTitle>{t("customerPage.appointmentsError")}</AlertTitle><AlertAction><Button disabled={query.isFetching} loading={query.isFetching} onClick={() => void query.refetch()} size="sm" type="button" variant="outline">{t("customerPage.retry")}</Button></AlertAction></Alert> : null}
     {!appointments.length && !query.isError ? <Alert><AlertTitle>{t(scope === "upcoming" ? "customerPage.noUpcoming" : "customerPage.noHistory")}</AlertTitle></Alert> : null}
     {appointments.length ? <ul className="grid gap-3">{appointments.map((appointment) => <li key={appointment.id}>
-      <Link className="grid gap-2 rounded-lg border p-4 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" to={`/calendar/${encodeURIComponent(appointment.id)}`}>
+      <Link className="grid gap-2 rounded-lg border p-4 transition-none hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" to={`/calendar/${encodeURIComponent(appointment.id)}`}>
         <span className="min-w-0 break-words text-sm font-medium">{appointment.services.map((service) => service.name).join(", ") || t("customerPage.appointment")}</span>
         <span className="text-sm text-muted-foreground">{formatDateTime(appointment.startsAt, options)} – {formatDateTime(appointment.endsAt, { ...options, includeDate: false })}</span>
       </Link>

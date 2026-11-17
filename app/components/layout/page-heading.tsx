@@ -5,7 +5,7 @@ import { Spinner } from "~/components/ui/spinner"
 import { Separator } from "~/components/ui/separator"
 import { BillingNotificationBar } from "~/components/billing/billing-notification-bar"
 import type { BillingNotification } from "~/lib/billing/billing"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export const PageBillingNotificationContext = createContext<BillingNotification | null | undefined>(null)
 

@@ -25,7 +25,7 @@ export function createOtpEmailTemplate({
   type,
 }: OtpEmailTemplateOptions): Promise<EmailTemplate> {
   const t = getEmailTranslations(locale)
-  return renderEmail(t(`otp.${type}.subject`), createElement(OtpEmail, {
+  return renderEmail(t(`otp.${type}.subject`, { otp }), createElement(OtpEmail, {
     locale,
     title: t(`otp.${type}.title`),
     intro: t(`otp.${type}.intro`),

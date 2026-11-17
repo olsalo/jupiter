@@ -15,7 +15,7 @@ import { ResponsiveSheet, ResponsiveSheetPopup } from "~/components/overlays/res
 import { getClientTRPC, getQueryClient, useTRPC } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { useModalQueryLoading } from "~/lib/hooks/use-modal-query-loading"
-import { useHydrated } from "~/lib/use-hydrated"
+import { useHydrated } from "~/components/ui/utils/use-hydrated"
 import { resources } from "~/locales"
 
 export const handle = { overlay: true }

@@ -4,8 +4,8 @@ import { useSearchParams } from "react-router"
 
 import { AppLogo } from "~/components/navigation/app-logo"
 import { NavigationIcon } from "~/components/navigation/navigation-icon"
-import Icon from "~/components/icons"
-import { ServerRenderedDialogPopup } from "~/components/overlays/server-rendered-dialog-popup"
+import Icon from "~/components/ui/icons/icons"
+import { ServerRenderedDialogPopup } from "~/components/ui/overlays/server-rendered-dialog-popup"
 import { Button } from "~/components/ui/button"
 import {
   Dialog,

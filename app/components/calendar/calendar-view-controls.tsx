@@ -2,7 +2,7 @@ import { CalendarDayLayoutSwitch } from "~/components/calendar/day-layout-switch
 import { CalendarDateControls } from "~/components/calendar/date-controls"
 import { CalendarViewSwitch } from "~/components/calendar/view-switch"
 import { CalendarMemberSelect } from "~/components/calendar/calendar-member-select"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export function CalendarViewControls({ className, mobile = false }: { className?: string, mobile?: boolean }) {
   // CSS chooses the visible controls, so their state must match before hydration

@@ -4,7 +4,7 @@ import { useNavigate, useOutletContext } from "react-router"
 
 import { localizationDefaults } from "~/lib/localization/defaults"
 import { useAppContext } from "~/lib/hooks/use-app-context"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import type { NoteModalContext } from "~/components/notes/note-modal-context"
 import { NoteModalSkeleton } from "~/components/notes/note-modal-skeleton"
 import { Alert, AlertDescription } from "~/components/ui/alert"

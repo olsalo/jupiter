@@ -1,11 +1,11 @@
 import { useRef, type CSSProperties, type ReactNode } from "react"
 
-import Icon from "~/components/icons"
-import { getSheetPopupClassName, getSheetViewportClassName, type SheetSide, type SheetVariant } from "~/components/sheet-popup-styles"
-import { Button } from "~/components/ui/button"
-import { SheetBackdrop, SheetClose, SheetPopup } from "~/components/ui/sheet"
-import { useHydrated } from "~/lib/use-hydrated"
-import { cn } from "~/lib/utils"
+import Icon from "../icons/icons"
+import { getSheetPopupClassName, getSheetViewportClassName, type SheetSide, type SheetVariant } from "./sheet-popup-styles"
+import { Button } from "../button"
+import { SheetBackdrop, SheetClose, SheetPopup } from "../sheet"
+import { useHydrated } from "../utils/use-hydrated"
+import { cn } from "../utils/utils"
 
 type ServerRenderedSheetPopupProps = {
   children: ReactNode

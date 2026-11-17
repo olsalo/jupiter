@@ -12,7 +12,7 @@ import type { Route } from "./+types/onboarding"
 import type { loader as rootLoader } from "~/root"
 import { getStandalonePageStyles, standalonePageLogoClassName, standalonePagePadding } from "~/components/layout/standalone-page-styles"
 import { AppLogo } from "~/components/navigation/app-logo"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { LanguageSwitch } from "~/components/settings/preferences/language-switch"
 import { ThemeSwitch } from "~/components/settings/preferences/theme-switch"
 import {
@@ -28,7 +28,7 @@ import { getQueryClient } from "~/lib/trpc/client"
 import { createTRPC } from "~/lib/trpc/server"
 import { organizationMiddleware, requireAuthMiddleware } from "~/middleware/auth"
 import { useBottomScrollFade } from "~/lib/hooks/use-bottom-scroll-fade"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export const middleware: Route.MiddlewareFunction[] = [requireAuthMiddleware, organizationMiddleware]
 

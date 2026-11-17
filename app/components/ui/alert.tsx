@@ -1,8 +1,8 @@
 import { cva, type VariantProps } from "class-variance-authority"
 import type { ComponentProps } from "react"
 
-import Icon from "~/components/icons"
-import { cn } from "@coss/ui/lib/utils"
+import Icon from "./icons/icons"
+import { cn } from "./utils/utils"
 
 const alertVariants = cva(
   "@container/alert relative grid w-full min-w-0 grid-cols-[minmax(0,1fr)] items-start gap-x-3 gap-y-0.5 rounded-xl border px-3.5 py-3 text-card-foreground text-sm has-[>svg]:has-data-[slot=alert-action]:grid-cols-[calc(var(--spacing)*4)_minmax(0,1fr)_auto] has-[>svg]:grid-cols-[calc(var(--spacing)*4)_minmax(0,1fr)] has-data-[slot=alert-action]:grid-cols-[minmax(0,1fr)_auto] [&>svg]:h-lh [&>svg]:w-4",

@@ -1,6 +1,6 @@
 import type * as React from "react"
 
-import { cn } from "@coss/ui/lib/utils"
+import { cn } from "./utils/utils"
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
@@ -63,7 +63,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   return (
     <tr
       className={cn(
-        "border-b border-border transition-colors hover:bg-muted/72 in-data-[slot=frame]:hover:bg-transparent data-[state=selected]:bg-muted/72 in-data-[slot=frame]:data-[state=selected]:bg-transparent",
+        "border-b border-border transition-none hover:bg-muted/72 in-data-[slot=frame]:hover:bg-transparent data-[state=selected]:bg-muted/72 in-data-[slot=frame]:data-[state=selected]:bg-transparent",
         className,
       )}
       data-slot="table-row"

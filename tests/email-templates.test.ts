@@ -16,19 +16,25 @@ try {
       assert.ok(template.html.includes("12&lt;34&amp;"))
       assert.ok(template.text.includes("12<34&"))
       assert.ok(template.text.includes("5"))
-      assert.ok(template.subject.length)
+      assert.equal(template.subject, locale === "fi" ? "Vahvistuskoodisi on 12<34&" : "Your verification code is 12<34&")
     }
     for (const kind of ["BOOKING_CONFIRMATION", "CANCELLATION", "RESCHEDULE", "REMINDER"] as const) {
-      const template = await createAppointmentEmailTemplate({ kind, locale, organizationName: "Kädet & Co", services: ["Service <one>", "Service two"], startsAt: new Date("2026-11-01T10:00:00Z"), timezone: "Europe/Helsinki", country: "FI", bookingCode: "BOOKING-123", rescheduleUrl: "https://example.invalid/booking/BOOKING-123/reschedule", managementUrl: "https://example.invalid/booking/BOOKING-123" })
+      const template = await createAppointmentEmailTemplate({ kind, locale, organizationName: "Kädet & Co", services: ["Service <one>", "Service two"], startsAt: new Date("2026-11-01T10:00:00Z"), timezone: "Europe/Helsinki", country: "FI", bookingCode: "BOOKING-123", rescheduleUrl: "https://example.invalid/booking/BOOKING-123/reschedule", managementUrl: "https://example.invalid/booking/BOOKING-123", bookingUrl: "https://example.invalid/book/kadet" })
       const subjects = locale === "fi"
         ? { BOOKING_CONFIRMATION: "Varaus vastaanotettu", CANCELLATION: "Varaus peruttu", RESCHEDULE: "Varausaika muutettu", REMINDER: "Muistutus varauksesta" }
         : { BOOKING_CONFIRMATION: "Booking received", CANCELLATION: "Booking cancelled", RESCHEDULE: "Booking rescheduled", REMINDER: "Appointment reminder" }
       assert.equal(template.subject, subjects[kind])
-      assert.ok(template.html.includes('href="https://example.invalid/booking/BOOKING-123"'))
-      assert.ok(template.text.includes(locale === "fi" ? "Näytä varaus" : "View appointment"))
       if (kind === "CANCELLATION") {
-        assert.ok(!template.html.includes("https://example.invalid/booking/BOOKING-123/reschedule"))
+        assert.ok(template.html.includes('href="https://example.invalid/book/kadet"'))
+        assert.ok(template.text.includes("https://example.invalid/book/kadet"))
+        assert.ok(template.text.includes(locale === "fi" ? "Varaa uusi aika" : "Book a new appointment"))
+        assert.ok(!template.html.includes("https://example.invalid/booking/BOOKING-123"))
+        assert.ok(!template.text.includes("https://example.invalid/booking/BOOKING-123"))
+        assert.ok(!template.text.includes(locale === "fi" ? "Näytä varaus" : "View appointment"))
       } else {
+        assert.ok(!template.html.includes("https://example.invalid/book/kadet"))
+        assert.ok(template.html.includes('href="https://example.invalid/booking/BOOKING-123"'))
+        assert.ok(template.text.includes(locale === "fi" ? "Näytä varaus" : "View appointment"))
         assert.ok(template.html.includes('href="https://example.invalid/booking/BOOKING-123/reschedule"'))
         assert.ok(template.text.includes("https://example.invalid/booking/BOOKING-123/reschedule"))
         assert.ok(template.text.includes(locale === "fi" ? "Siirrä aikaa" : "Reschedule appointment"))

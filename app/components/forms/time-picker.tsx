@@ -3,7 +3,7 @@ import { useCallback, useMemo, type FocusEventHandler, type Ref } from "react"
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "~/components/ui/select"
 import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
 import { createTimeOptions, type TimePickerRange } from "~/lib/forms/time-picker"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export type TimePickerProps = TimePickerRange & {
   className?: string

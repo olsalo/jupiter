@@ -11,7 +11,6 @@ process.env.BETTER_AUTH_URL = "https://audit.example.invalid"
 process.env.STRIPE_SECRET_KEY = ""
 process.env.DEMO_BYPASS_ONBOARDING_PAYMENT = "true"
 delete process.env.TRUSTED_CLIENT_IP_HEADER
-delete process.env.BOOKING_TRUSTED_IP_HEADER
 
 type Counter = { id: string; identifier: string; value: string; expiresAt: Date }
 type ObjectInfo = { Key: string; Size: number; LastModified: Date }

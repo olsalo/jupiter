@@ -39,7 +39,7 @@ try {
   const beforeClientLoader = Date.now()
   const clientState = clientLoader()
   assert.ok(clientState.now >= beforeClientLoader && clientState.now <= Date.now(), "Client navigation supplies a current clock snapshot")
-  assert.deepEqual(Object.keys(clientState), ["now"], "Client navigation leaves data fetching to TanStack Query")
+  assert.deepEqual(Object.keys(clientState), ["now", "centerCurrentTimeOnMobile"], "Client navigation leaves data fetching to TanStack Query")
   const { sortCalendarMembers } = await vite.ssrLoadModule("/app/lib/calendar/schedule.ts") as typeof import("../app/lib/calendar/schedule")
   const { getCalendarAppointments, layoutCalendarAppointments, getCalendarBookingConflicts } = await vite.ssrLoadModule("/app/lib/calendar/appointments.ts") as typeof import("../app/lib/calendar/appointments")
   const { resources } = await vite.ssrLoadModule("/app/locales/index.ts") as typeof import("../app/locales")
@@ -102,13 +102,14 @@ try {
     customer: { id: "aino", firstName: "Aino", lastName: "Virtanen" }, staffMember: { id: "alice", name: "Alice" },
     services: [{ serviceId: "consultation", name: "Booked consultation", durationMinutes: 60, bufferBeforeMinutes: 5, bufferAfterMinutes: 10, service: { color: "#30968d" } }],
   }
-  function render({ appointmentPending = false, membersPending = false, availabilityState = "ready" as "ready" | "pending" | "fetching", now = Date.now(), url = "/calendar?date=2026-10-14", settings = {}, members = staff, rules = [] as CalendarScheduleRule[], refreshError = false, duringNavigation = false, dragging = false, dragUpdate = undefined as import("../app/lib/calendar/types").CalendarBookingDragUpdate | undefined, bookings = [] as Booking[], preview = undefined as CalendarBookingPreview | null | undefined, currentMemberId = undefined as string | undefined, dragSelection = undefined as import("../app/lib/calendar/types").CalendarDragSelection | undefined, draftSlots = undefined as import("../app/lib/calendar/booking-slots").CalendarBookingSlot[] | undefined, draggedBooking = undefined as (import("../app/lib/calendar/types").CalendarDragSelection & { appointmentId: string }) | undefined } = {}) {
+  function render({ bookingDay = undefined as string | undefined, calendarPending = false, appointmentPending = false, membersPending = false, availabilityState = "ready" as "ready" | "pending" | "fetching", now = Date.now(), url = "/calendar?date=2026-10-14", settings = {}, members = staff, rules = [] as CalendarScheduleRule[], refreshError = false, duringNavigation = false, dragging = false, dragUpdate = undefined as import("../app/lib/calendar/types").CalendarBookingDragUpdate | undefined, bookings = [] as Booking[], preview = undefined as CalendarBookingPreview | null | undefined, currentMemberId = undefined as string | undefined, dragSelection = undefined as import("../app/lib/calendar/types").CalendarDragSelection | undefined, draftSlots = undefined as import("../app/lib/calendar/booking-slots").CalendarBookingSlot[] | undefined, draggedBooking = undefined as (import("../app/lib/calendar/types").CalendarDragSelection & { appointmentId: string }) | undefined } = {}) {
     queryClient.setQueryData([...options.organizations.getCurrent.queryKey()], { id: "business", memberId: currentMemberId, settings: { ...defaults, ...settings } })
     queryClient.setQueryData([...options.staff.list.queryKey()], members)
     if (membersPending) queryClient.removeQueries({ queryKey: options.staff.list.queryKey(), exact: true })
     const preferences = { ...defaults, ...settings }
     const params = new URL(url, "https://example.invalid").searchParams
-    if (preview) params.set("date", calendarDateToValue(new TZDate(preview.startsAt, preferences.timezone)))
+    if (bookingDay) params.set("date", bookingDay)
+    else if (preview) params.set("date", calendarDateToValue(new TZDate(preview.startsAt, preferences.timezone)))
     const state = getCalendarDateState(params, { now, timeZone: preferences.timezone, weekStartsOn: preferences.weekStartsOn, defaultCalendarView: preferences.defaultCalendarView })
     const range = getCalendarBookingRange(state, preferences.timezone)
     if (dragSelection) {
@@ -137,11 +138,15 @@ try {
         if (availabilityState === "fetching") queryClient.getQueryCache().find({ queryKey: availabilityKey, exact: true })?.setState({ fetchStatus: "fetching" })
       }
     }
+    if (calendarPending) {
+      queryClient.removeQueries({ queryKey: scheduleKey, exact: true })
+      queryClient.removeQueries({ queryKey: options.appointment.list.queryKey({ ...range, includeCancelled: false }), exact: true })
+    }
     if (appointmentPending) queryClient.removeQueries({ queryKey: options.appointment.get.queryKey(), exact: false })
     if (refreshError) queryClient.getQueryCache().find({ queryKey: scheduleKey })?.setState({ status: "error", error: new Error("Refresh failed") })
-    const PreviewPage = () => createElement(CalendarBookingPreviewContext.Provider, { value: { preview: preview ?? null, setPreview: () => {}, dragging, dragUpdate } }, createElement(PreviewCalendarState))
+    const PreviewPage = () => createElement(CalendarBookingPreviewContext.Provider, { value: { bookingDay, preview: preview ?? null, setPreview: () => {}, dragging, dragUpdate } }, createElement(PreviewCalendarState))
     const rootData = { formatPreference: "eu", org: { id: "business" }, organizations: [{ id: "business", role: "owner" }] }
-    const router = createMemoryRouter([{ id: "root", path: "/", Component: Outlet, loader: () => rootData, children: [{ id: "routes/calendar/calendar", path: "calendar", Component: preview === undefined ? CalendarPage : PreviewPage, children: [{ path: "new", Component: NewBooking }, { path: "date-selected", Component: DateSelectedBooking }, { path: ":appointmentId/edit", Component: EditBooking }, { path: "pending", loader: ({ request }) => new Promise<null>((resolve) => { request.signal.addEventListener("abort", () => resolve(null), { once: true }) }) }] }] }], {
+    const router = createMemoryRouter([{ id: "root", path: "/", Component: Outlet, loader: () => rootData, children: [{ id: "routes/calendar/calendar", path: "calendar", Component: preview === undefined && bookingDay === undefined ? CalendarPage : PreviewPage, children: [{ path: "new", Component: NewBooking }, { path: "date-selected", Component: DateSelectedBooking }, { path: ":appointmentId/edit", Component: EditBooking }, { path: "pending", loader: ({ request }) => new Promise<null>((resolve) => { request.signal.addEventListener("abort", () => resolve(null), { once: true }) }) }] }] }], {
       initialEntries: [{ pathname: new URL(url, "https://example.invalid").pathname, search: new URL(url, "https://example.invalid").search, state: { dragSelection, draggedBooking } }], hydrationData: { loaderData: { root: rootData, "routes/calendar/calendar": { now } } },
     })
     try {
@@ -154,6 +159,22 @@ try {
       router.dispose()
     }
   }
+  for (const mode of ["day", "week"]) {
+    const url = `/calendar/new?view=${mode}&date=2026-10-14`
+    const waitingForSlots = render({ url, bookingDay: "2026-11-04", preview: null })
+    assert.match(waitingForSlots, /data-preview-date="2026-11-04"/, "The selected day loads calendar data before slots produce a preview")
+    assert.match(waitingForSlots, /data-original-date="2026-10-14"/, "Loading a selected day preserves the form's original range")
+    const waitingForCalendar = render({ url, bookingDay: "2026-11-04", preview: null, calendarPending: true })
+    assert.match(waitingForCalendar, /data-preview-date="2026-11-04"/, "The calendar stays on the selected day while its data loads")
+    assert.match(waitingForCalendar, /data-slot="calendar-loading"/, "The selected week displays a spinner while loading its data")
+    assert.doesNotMatch(waitingForCalendar, /data-slot="(?:week|day)-calendar"/, "The calendar shows its loading state while the selected range is pending")
+    const changingDay = render({ url, bookingDay: "2026-11-11", preview: {
+      startsAt: "2026-11-04T05:30:00Z", endsAt: "2026-11-04T06:30:00Z",
+      member: { id: "bob", name: "Bob" }, service: { id: "consultation", name: "Consultation", color: "#30968d" },
+    } })
+    assert.match(changingDay, /data-preview-date="2026-11-11"/, "A new selected day takes priority over the previous slot while slots load")
+  }
+  console.info("PASS selected-day calendar requests, pending calendar spinner, original date preservation and previous-slot date changes")
   const regularCreate = render({ url: "/calendar/new?view=day&date=2026-10-14" })
   const mobileHeader = regularCreate.match(/<header\b[^>]*class="[^"]*route-header[^>]*>([\s\S]*?)<\/header>/)?.[1] ?? ""
   assert.match(mobileHeader, /data-slot="calendar-view-controls"/, "The initial server render already places the mobile controls inside the header")
@@ -231,8 +252,13 @@ try {
   ])
   queryClient.setQueryData(options.service.bookingUsage.queryKey(), [{ serviceId: "popular-consultation", bookings: 12 }, { serviceId: "long-consultation", bookings: 50 }])
   const matchedDraft = render({ url: "/calendar/new?view=day&date=2026-10-14", dragSelection: { day: "2026-10-14", member: { id: "alice", name: "Alice" }, startMinute: 600, endMinute: 630 } })
-  assert.match(matchedDraft, /Popular consultation/, "New drafts suggest the most-used service with the matching length")
-  assert.match(matchedDraft, /value="30"/, "A matching suggestion preserves the dragged length")
+  const matchedDraftPanel = matchedDraft.slice(matchedDraft.indexOf('data-slot="calendar-side-panel"'))
+  assert.match(matchedDraftPanel, /Popular consultation/, "Dragged appointments suggest the most-used service matching the dragged length")
+  assert.match(matchedDraftPanel, /value="30"/, "A matching suggestion preserves the dragged length")
+  const customDraft = render({ url: "/calendar/new?view=day&date=2026-10-14", dragSelection: { day: "2026-10-14", member: { id: "alice", name: "Alice" }, startMinute: 600, endMinute: 625 } })
+  const customDraftPanel = customDraft.slice(customDraft.indexOf('data-slot="calendar-side-panel"'))
+  assert.match(customDraftPanel, /Choose a service/, "Custom dragged lengths leave the service unselected when no service matches")
+  assert.match(customDraftPanel, /value="25"/, "Custom dragged lengths are preserved")
   const popularDefault = render({ url: "/calendar/new?view=day&date=2026-10-14" })
   assert.match(popularDefault, /Long consultation/, "A new flow without a dragged length suggests the most-used service")
   assert.match(popularDefault, /value="90"/, "The default service supplies the initial booking length")

@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next"
 import { Link, useRouteLoaderData } from "react-router"
 
 import type { loader as rootLoader } from "~/root"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { standalonePageLogoClassName } from "~/components/layout/standalone-page-styles"
 import { FeatureVideo } from "~/components/marketing/feature-video"
 import { FounderLetter } from "~/components/marketing/founder-letter"

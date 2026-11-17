@@ -10,6 +10,7 @@ import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { emailOTP, organization } from "better-auth/plugins"
 import { plans } from "~/lib/billing/plans"
+import { getSeededBilling } from "~/lib/billing/seeded-billing.server"
 import { getStripePriceId, stripeClient, stripeBillingEnabled } from "~/lib/billing/stripe.server"
 import { isDemoMode } from "~/lib/billing/billing.server"
 import { getBillingPortalConfiguration, reconcileOrganizationBilling, syncStripeSubscription } from "~/lib/billing/subscriptions.server"
@@ -403,6 +404,8 @@ export async function listOrganizationPaymentMethods({
 }: {
   organizationId: string
 }) {
+  const seeded = await getSeededBilling(prisma, organizationId)
+  if (seeded) return seeded.paymentMethods
   if (!stripeBillingEnabled || !stripeClient) {
     return []
   }
@@ -643,6 +646,8 @@ export async function listOrganizationInvoices({
 }: {
   organizationId: string
 }) {
+  const seeded = await getSeededBilling(prisma, organizationId)
+  if (seeded) return seeded.invoices
   if (!stripeBillingEnabled || !stripeClient) {
     return []
   }
@@ -793,6 +798,8 @@ export async function getOrganizationNextCharge({
 }: {
   organizationId: string
 }) {
+  const seeded = await getSeededBilling(prisma, organizationId)
+  if (seeded) return seeded.nextCharge
   if (!stripeBillingEnabled || !stripeClient) {
     return null
   }

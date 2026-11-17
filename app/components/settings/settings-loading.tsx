@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import { Spinner } from "~/components/ui/spinner"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export function SettingsLoading({ className, label }: { className?: string; label?: string }) {
   const { t } = useTranslation()

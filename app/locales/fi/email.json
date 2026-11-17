@@ -1,22 +1,22 @@
 {
   "otp": {
     "sign-in": {
-      "subject": "Kirjautumiskoodisi",
+      "subject": "Vahvistuskoodisi on {{otp}}",
       "title": "Kirjautumiskoodisi",
       "intro": "Käytä alla olevaa koodia kirjautuaksesi"
     },
     "email-verification": {
-      "subject": "Vahvista sähköpostiosoitteesi",
+      "subject": "Vahvistuskoodisi on {{otp}}",
       "title": "Vahvista sähköpostiosoitteesi",
       "intro": "Käytä alla olevaa koodia jatkaaksesi"
     },
     "forget-password": {
-      "subject": "Salasanan palautuskoodi",
+      "subject": "Vahvistuskoodisi on {{otp}}",
       "title": "Salasanan palautuskoodi",
       "intro": "Käytä alla olevaa koodia jatkaaksesi"
     },
     "change-email": {
-      "subject": "Vahvista uusi sähköpostiosoitteesi",
+      "subject": "Vahvistuskoodisi on {{otp}}",
       "title": "Vahvista uusi sähköpostiosoitteesi",
       "intro": "Käytä alla olevaa koodia jatkaaksesi"
     }
@@ -36,6 +36,7 @@
     "update": "Varauksen päivitys",
     "bookingCode": "Varauskoodi",
     "reschedule": "Siirrä aikaa",
+    "bookAgain": "Varaa uusi aika",
     "view": "Näytä varaus"
   }
 }

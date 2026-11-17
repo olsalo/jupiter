@@ -2,13 +2,13 @@ import { useState, type Ref } from "react"
 import { TZDate } from "react-day-picker"
 import { enUS, fi } from "react-day-picker/locale"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { Button } from "~/components/ui/button"
 import { Calendar } from "~/components/ui/calendar"
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "~/components/ui/popover"
 import { calendarDateFromValue, calendarDateToValue } from "~/lib/calendar/date"
 import { formatDateTime, type FormatPreference } from "~/lib/localization/format-preference"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 type DatePickerProps = {
   className?: string

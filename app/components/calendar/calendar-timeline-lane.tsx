@@ -9,7 +9,7 @@ import { Badge } from "~/components/ui/badge"
 import { calendarTimelineHourHeight, calendarTimelinePadding, type CalendarTimelineLaneData } from "~/lib/calendar/timeline-layout"
 import type { CalendarDragSelection } from "~/lib/calendar/types"
 import type { FormatPreference } from "~/lib/localization/format-preference"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 export const CalendarTimelineLane = memo(function CalendarTimelineLane({ lane, mobile, canMoveBookings, hiddenAppointmentIds, startMinute, endMinute, timeZone, formatPreference, onDraggingChange, onSelect, onSelectStart, onSelectUpdate, onSelectCancel, getDraftService, serviceDurations, intervalMinutes, minDurationMinutes }: {
   lane: CalendarTimelineLaneData

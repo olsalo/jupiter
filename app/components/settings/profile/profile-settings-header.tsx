@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import { isBookableStaff } from "~/lib/auth/permissions"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { ProfileSettingsTabs } from "~/components/settings/profile/profile-settings-tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
 import type { TeamPerson } from "~/components/team/team-types"

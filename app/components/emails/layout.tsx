@@ -6,9 +6,9 @@ export function EmailLayout({ children, locale, preview, title }: { children: Re
   return <Html lang={locale}>
     <Head />
     <Preview>{preview}</Preview>
-    <Body style={{ margin: 0, backgroundColor: "#f5f5f4", color: "#1c1917", fontFamily: "Arial, Helvetica, sans-serif", padding: "40px 16px" }}>
-      <Container style={{ maxWidth: "480px", backgroundColor: "#ffffff", border: "1px solid #e7e5e4", borderRadius: "16px", padding: "32px" }}>
-        <Heading style={{ margin: "0 0 16px", fontSize: "24px", lineHeight: "32px" }}>{title}</Heading>
+    <Body style={{ margin: 0, backgroundColor: "#ffffff", color: "#1c1917", fontFamily: "Arial, Helvetica, sans-serif", padding: "48px 24px" }}>
+      <Container style={{ maxWidth: "480px" }}>
+        <Heading style={{ margin: "0 0 24px", fontSize: "24px", lineHeight: "34px", fontWeight: 600 }}>{title}</Heading>
         {children}
       </Container>
     </Body>

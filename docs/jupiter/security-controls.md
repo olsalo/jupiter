@@ -2,7 +2,7 @@
 
 ## Production ingress
 
-Jupiter defaults to reading the visitor's IP from `X-Real-IP`, which Traefik supplies. Set `TRUSTED_CLIENT_IP_HEADER` only to override this default. `BOOKING_TRUSTED_IP_HEADER` remains a legacy fallback. Configure the trusted ingress to **overwrite** the selected header with the address it observes. Never pass through an incoming client value or append to a forwarded chain. Prevent clients from bypassing this ingress and reaching the application directly.
+Jupiter defaults to reading the visitor's IP from `X-Real-IP`, which Traefik supplies. Set `TRUSTED_CLIENT_IP_HEADER` only to override this default. Configure the trusted ingress to **overwrite** the selected header with the address it observes. Never pass through an incoming client value or append to a forwarded chain. Prevent clients from bypassing this ingress and reaching the application directly.
 
 The application rejects missing, invalid or comma-separated addresses for production public booking requests and OTP delivery. The rejection indicates a proxy configuration problem, rather than placing all visitors in one shared client bucket. Development can run without this header. Authentication uses the same selected header, defaulting to `X-Real-IP`.
 

@@ -21,7 +21,10 @@ async function notificationData(appointment: NotificationAppointment, kind: Appo
   const rescheduleUrl = managementUrl && (appointment.allowCustomerRescheduling ?? settings?.allowCustomerRescheduling ?? true) && ["PENDING", "CONFIRMED"].includes(appointment.status)
     ? `${managementUrl}/reschedule`
     : undefined
-  const template = await createAppointmentEmailTemplate({ kind, locale, organizationName: appointment.organization.name, services: appointment.services.map((service) => service.name), startsAt: appointment.startsAt, timezone: appointment.timezone, country: settings?.countryCode ?? "FI", bookingCode: appointment.bookingCode, rescheduleUrl, managementUrl })
+  const bookingUrl = process.env.BETTER_AUTH_URL
+    ? new URL(`/book/${encodeURIComponent(appointment.organization.slug)}`, process.env.BETTER_AUTH_URL).toString()
+    : undefined
+  const template = await createAppointmentEmailTemplate({ kind, locale, organizationName: appointment.organization.name, services: appointment.services.map((service) => service.name), startsAt: appointment.startsAt, timezone: appointment.timezone, country: settings?.countryCode ?? "FI", bookingCode: appointment.bookingCode, rescheduleUrl, managementUrl, bookingUrl })
   return { organizationId: appointment.organizationId, appointmentId: appointment.id, kind, channel: "EMAIL", status: kind === "REMINDER" ? "SCHEDULED" : "PENDING", recipient: appointment.customer.email, scheduledAt, ...queuedEmailContent(template, locale, kind === "REMINDER" ? { reminderOffsetMinutes: offsetMinutes! } : {}) }
 }
 

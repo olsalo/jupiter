@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { UserAvatar } from "~/components/data-display/user-avatar"
 import { useCalendarBookingPreview } from "~/components/calendar/calendar-booking-preview"
 import { useCalendarState } from "~/components/calendar/use-calendar-state"

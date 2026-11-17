@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode, type Ref, type CSSProperties } from "react"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
-import Icon, { type AppIconName } from "~/components/icons"
+import Icon, { type AppIconName } from "~/components/ui/icons/icons"
 
 export function IconListItem({ icon, children, actions, leading, className, ref, iconStyle, iconClassName }: { icon?: AppIconName; children: ReactNode; actions?: ReactNode; leading?: ReactNode; className?: string; ref?: Ref<HTMLLIElement>; iconStyle?: CSSProperties; iconClassName?: string }) {
   const itemRef = useRef<HTMLLIElement>(null)

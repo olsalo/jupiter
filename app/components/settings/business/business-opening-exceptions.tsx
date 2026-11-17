@@ -5,7 +5,7 @@ import { useRouteLoaderData } from "react-router"
 
 import { AppForm } from "~/components/forms/app-form"
 import { BusinessHolidayFormFields } from "~/components/settings/business/business-holiday-form-fields"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { SettingsSectionHeader } from "~/components/settings/settings-section-header"
 import { Alert, AlertDescription } from "~/components/ui/alert"
 import { Badge } from "~/components/ui/badge"

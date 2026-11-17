@@ -2,12 +2,12 @@
 
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import Icon from "../icons"
+import Icon from "./icons/icons"
 import type * as React from "react";
 import { useTranslation } from "react-i18next"
 
-import { cn } from "@coss/ui/lib/utils";
-import { type Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "./utils/utils";
+import { type Button, buttonVariants } from "./button";
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   const { t } = useTranslation()

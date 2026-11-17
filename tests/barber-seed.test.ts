@@ -3,6 +3,7 @@ import { Temporal } from "@js-temporal/polyfill"
 import type { PrismaClient } from "../generated/prisma/client.ts"
 import { barberSeedOptions, seedBarberShop } from "../scripts/lib/barber-seed.ts"
 import { businessHolidayWindows } from "../app/lib/business/business-holidays.server.ts"
+import { getSeededBilling } from "../app/lib/billing/seeded-billing.server.ts"
 
 // Capture the proposed dataset so scheduling and relationship checks need no remote database.
 type Row = Record<string, any>
@@ -18,14 +19,14 @@ const db = new Proxy({}, {
     return {
       create: async ({ data }: { data: Row }) => { table(model).push(data); return data },
       createMany: async ({ data }: { data: Row[] }) => { table(model).push(...data); return { count: data.length } },
-      upsert: async ({ where, create }: { where: Row, create: Row }) => {
-        const found = table(model).find((row) => row.email === where.email)
-        if (found) return found
+      upsert: async ({ where, create, update }: { where: Row, create: Row, update: Row }) => {
+        const found = table(model).find((row) => where.id ? row.id === where.id : row.email === where.email)
+        if (found) return Object.assign(found, update)
         table(model).push(create)
         return create
       },
       findUnique: async ({ where }: { where: Row }) => {
-        const found = table(model).find((row) => row.slug === where.slug)
+        const found = table(model).find((row) => where.id ? row.id === where.id : row.slug === where.slug)
         return found ? { ...found, members: table("member").filter((member) => member.organizationId === found.id && member.role === "owner").map((member) => ({ ...member, user: table("user").find((user) => user.id === member.userId) })) } : null
       },
     }
@@ -43,6 +44,33 @@ assert.equal(table("user")[0].locale, "fi")
 assert.equal(table("member").find((row) => row.role === "owner")?.userId, "existing-owner")
 assert.equal(table("staffMember")[0].name, "John Smith")
 assert.equal(table("staffMember").length, 6)
+assert.equal(table("subscription").length, 1)
+assert.equal(table("subscription")[0].referenceId, result.organizationId)
+assert.equal(table("subscription")[0].plan, "team")
+assert.equal(table("subscription")[0].status, "active")
+assert.equal(table("subscription")[0].seats, 5)
+assert.equal(table("subscription")[0].periodEnd.toISOString(), "2026-11-22T11:00:00.000Z")
+const billing = await getSeededBilling(db, result.organizationId)
+assert.ok(billing)
+assert.deepEqual(billing.current, { planId: "team", interval: "month", capacity: 5, extraStaff: 2 })
+assert.equal(billing.paymentMethods.length, 2)
+assert.equal(billing.paymentMethods[0].isDefault, true)
+assert.equal(billing.invoices.length, 3)
+assert.ok(billing.invoices.every((invoice) => invoice.status === "paid" && invoice.amount === 11000 && invoice.taxAmount === 2805 && new Date(invoice.date) <= now))
+assert.equal(billing.nextCharge.amount, 11000)
+assert.equal(billing.nextCharge.date.toISOString(), "2026-11-22T11:00:00.000Z")
+assert.equal(await getSeededBilling(db, "another-organization"), null)
+table("organization")[0].stripeCustomerId = "cus_real"
+assert.equal(await getSeededBilling(db, result.organizationId), null)
+delete table("organization")[0].stripeCustomerId
+const originalNodeEnv = process.env.NODE_ENV
+try {
+  process.env.NODE_ENV = "production"
+  assert.equal(await getSeededBilling(db, result.organizationId), null)
+} finally {
+  if (originalNodeEnv === undefined) delete process.env.NODE_ENV
+  else process.env.NODE_ENV = originalNodeEnv
+}
 assert.equal(table("customer").length, 360)
 const ownerStaffId = table("staffMember")[0].id
 assert.equal(table("staffMember")[0].acceptsAppointments, false)
@@ -126,6 +154,11 @@ table("service")[0].name = "Edited Service"
 const beforeRepeat = JSON.stringify([...rows])
 assert.equal((await seedBarberShop(db, options, now)).created, false)
 assert.equal(JSON.stringify([...rows]), beforeRepeat)
+table("subscription").splice(0)
+assert.equal((await seedBarberShop(db, options, now)).created, false)
+assert.equal(table("subscription").length, 1)
+assert.equal(table("subscription")[0].referenceId, result.organizationId)
+assert.equal(table("subscription")[0].status, "active")
 const second = await seedBarberShop(db, { ownerName: "Jane Wilson", ownerEmail: "jane@example.com" }, now)
 assert.notEqual(second.organizationId, result.organizationId)
 assert.equal(table("user").find((row) => row.email === "jane@example.com")?.name, "Jane Wilson")

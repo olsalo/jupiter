@@ -2,7 +2,7 @@ import { useId, type ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 import { Link, Outlet, useLocation } from "react-router"
 
-import Icon, { type AppIconName } from "~/components/icons"
+import Icon, { type AppIconName } from "~/components/ui/icons/icons"
 import type { PlaceholderTitle } from "~/components/placeholders/route-placeholder"
 import { RouteHeader } from "~/components/layout/route-header"
 import { ScrollPage } from "~/components/layout/page-layout"

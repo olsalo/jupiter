@@ -1,144 +1,167 @@
 "use client";
 
 import { Toast } from "@base-ui/react/toast";
-import { useLayoutEffect, useRef, useState } from "react"
-import Icon from "../icons";
-import { cn } from "@coss/ui/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
-import type {AppIconName } from "../icons";
-import { anchoredToastManager, toastManager } from "~/lib/toast"
-import { useIsMobile } from "~/lib/hooks"
-import { useOpenOverlayCount } from "~/lib/use-overlay-open"
-import { useSheetOpen } from "~/lib/use-sheet-open"
-import { useLocation } from "react-router"
+import { useLayoutEffect, useRef, useState, type ComponentProps, type ReactElement } from "react"
+import Icon, { type AppIconName } from "./icons/icons"
+import { cn } from "./utils/utils"
+import { buttonVariants } from "./button"
+import { useIsMobile } from "./utils/use-media-query"
+import { useOpenOverlayCount } from "./overlays/use-overlay-open"
+import { useSheetOpen } from "./overlays/use-sheet-open"
 
-/**
- * Mapping toast types to your Icon wrapper slugs.
- */
 const TOAST_ICONS: Record<string, AppIconName> = {
   error: "alertCircle",
   info: "infoCircle",
   loading: "loader",
   success: "circleCheck",
   warning: "alertTriangle",
+}
+
+type SwipeDirection = "up" | "down" | "left" | "right";
+
+type ToastData = {
+  rootProps?: Omit<
+    ComponentProps<typeof Toast.Root>,
+    "children" | "className" | "swipeDirection" | "toast"
+  >;
+  tooltipStyle?: boolean;
 };
 
-type ToastPosition =
-  | "top-left"
-  | "top-center"
-  | "top-right"
-  | "bottom-left"
-  | "bottom-center"
-  | "bottom-right";
+function getSwipeDirection(position: ToastPosition): SwipeDirection[] {
+  const verticalDirection: SwipeDirection = position.startsWith("top")
+    ? "up"
+    : "down";
 
-interface ToastProviderProps extends Toast.Provider.Props {
-  position?: ToastPosition;
+  if (position.includes("center")) {
+    return [verticalDirection];
+  }
+
+  if (position.includes("left")) {
+    return ["left", verticalDirection];
+  }
+
+  return ["right", verticalDirection];
 }
 
-function ToastProvider({
-  children,
+function upsertReplayClassName(toast: {
+  type?: string;
+  updateKey?: number;
+}): string | undefined {
+  const k = toast.updateKey ?? 0;
+  if (k <= 0) return undefined;
+  const isEven = k % 2 === 0;
+  if (toast.type === "error") {
+    return isEven
+      ? "animate-toast-error-even motion-reduce:animate-none"
+      : "animate-toast-error-odd motion-reduce:animate-none";
+  }
+  return isEven
+    ? "animate-toast-success-even motion-reduce:animate-none"
+    : "animate-toast-success-odd motion-reduce:animate-none";
+}
+
+function Toasts({
   position,
-  timeout = 3000,
-  ...props
-}: ToastProviderProps) {
-  const isMobile = useIsMobile()
-  const isSheetOpen = useSheetOpen()
-  const openOverlayCount = useOpenOverlayCount()
-  const { pathname } = useLocation()
-  const isFormEditor = /^\/forms\/[^/]+\/edit\/?$/.test(pathname)
-  const resolvedPosition = position ?? (isMobile || isSheetOpen || isFormEditor ? "bottom-left" : "bottom-right")
-  const toastPosition = isMobile ? resolvedPosition.replace("bottom", "top") as ToastPosition : resolvedPosition
-
-  return (
-    <Toast.Provider timeout={timeout} toastManager={toastManager} {...props}>
-      {children}
-      <Toasts isFormEditor={isFormEditor} isMobile={isMobile} openOverlayCount={openOverlayCount} position={toastPosition} />
-    </Toast.Provider>
-  );
-}
-
-function Toasts({ isFormEditor, isMobile, openOverlayCount, position = "bottom-left" }: { isFormEditor: boolean; isMobile: boolean; openOverlayCount: number; position: ToastPosition }) {
-  const { toasts, close } = Toast.useToastManager();
+  portalProps,
+  isMobile,
+  openOverlayCount,
+  retainPosition,
+}: {
+  position: ToastPosition;
+  isMobile: boolean;
+  openOverlayCount: number
+  retainPosition: boolean
+  portalProps?: ComponentProps<typeof Toast.Portal>;
+}): ReactElement {
+  const { toasts, close } = Toast.useToastManager()
+  const [stablePosition, setStablePosition] = useState(position)
+  // Keep the visible stack where it appeared after its sheet closes, including exit animations
+  if (stablePosition !== position && (!retainPosition || toasts.length === 0)) {
+    setStablePosition(position)
+  }
   const previousOpenOverlayCount = useRef(0)
-  const previousIsFormEditor = useRef(false)
   const [immediatelyDismissedIds, setImmediatelyDismissedIds] = useState<Set<string>>(() => new Set())
-  const isTop = position.startsWith("top");
-
   useLayoutEffect(() => {
-    const openedOverlay = openOverlayCount > previousOpenOverlayCount.current
-    const openedFormEditor = isFormEditor && !previousIsFormEditor.current
-
-    if (!isMobile && (openedOverlay || openedFormEditor)) {
-      // Only skip transitions for toasts already visible when the overlay opens
+    if (!isMobile && openOverlayCount > previousOpenOverlayCount.current) {
       setImmediatelyDismissedIds(new Set(toasts.map((toast) => toast.id)))
       close()
     }
-
     previousOpenOverlayCount.current = openOverlayCount
-    previousIsFormEditor.current = isFormEditor
-  }, [close, isFormEditor, isMobile, openOverlayCount, toasts])
+  }, [close, isMobile, openOverlayCount, toasts])
+  const swipeDirection = getSwipeDirection(stablePosition)
 
   return (
-    <Toast.Portal data-slot="toast-portal">
+    <Toast.Portal data-slot="toast-portal" {...portalProps}>
       <Toast.Viewport
         className={cn(
           "fixed z-[9999] mx-auto flex w-[calc(100%-var(--toast-inset)*2)] max-w-90 [--toast-inset:--spacing(4)] sm:[--toast-inset:--spacing(8)]",
+          // Vertical positioning
           "data-[position*=top]:top-[max(var(--toast-inset),env(safe-area-inset-top))]",
           "data-[position*=bottom]:bottom-(--toast-inset)",
+          // Horizontal positioning
           "data-[position*=left]:left-(--toast-inset)",
           "data-[position*=right]:right-(--toast-inset)",
-          "data-[position*=center]:-translate-x-1/2 data-[position*=center]:left-1/2",
+          "data-[position*=center]:left-1/2 data-[position*=center]:-translate-x-1/2",
         )}
-        data-position={position}
+        data-position={stablePosition}
         data-slot="toast-viewport"
       >
         {toasts.map((toast) => {
           const iconName = toast.type ? TOAST_ICONS[toast.type] : null;
+          const toastData = toast.data as ToastData | undefined;
 
           return (
             <Toast.Root
+              key={toast.id}
               className={cn(
-                "absolute z-[calc(9999-var(--toast-index))] h-(--toast-calc-height) w-full select-none rounded-lg border bg-popover not-dark:bg-clip-padding text-popover-foreground shadow-lg/5 [transition:transform_.5s_cubic-bezier(.22,1,.36,1),opacity_.5s,height_.15s] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+                "absolute z-[calc(9999-var(--toast-index))] h-(--toast-calc-height) w-full select-none rounded-lg border bg-[color-mix(in_srgb,var(--popover),var(--color-black)_calc(1%*max(0,var(--toast-index,0))))] not-dark:bg-clip-padding text-popover-foreground shadow-lg/5 [transition:transform_.5s_cubic-bezier(.22,1,.36,1),opacity_.5s,height_.15s,background-color_.5s] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] data-expanded:bg-popover dark:bg-[color-mix(in_srgb,var(--popover),var(--color-black)_calc(6%*max(0,var(--toast-index,0))))] dark:data-expanded:bg-popover dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+                // Base positioning using data-position
                 "data-[position*=right]:right-0 data-[position*=right]:left-auto",
                 "data-[position*=left]:right-auto data-[position*=left]:left-0",
                 "data-[position*=center]:right-0 data-[position*=center]:left-0",
-                "data-[position*=top]:top-0 data-[position*=top]:bottom-auto data-[position*=top]:origin-top",
-                "data-[position*=bottom]:top-auto data-[position*=bottom]:bottom-0 data-[position*=bottom]:origin-bottom",
+                "data-[position*=top]:top-0 data-[position*=top]:bottom-auto data-[position*=top]:origin-[50%_calc(50%-50%*min(var(--toast-index,0),1))]",
+                "data-[position*=bottom]:top-auto data-[position*=bottom]:bottom-0 data-[position*=bottom]:origin-[50%_calc(50%+50%*min(var(--toast-index,0),1))]",
+                // Gap fill for hover
                 "after:absolute after:left-0 after:h-[calc(var(--toast-gap)+1px)] after:w-full",
                 "data-[position*=top]:after:top-full",
                 "data-[position*=bottom]:after:bottom-full",
+                // Define some variables
                 "[--toast-calc-height:var(--toast-frontmost-height,var(--toast-height))] [--toast-gap:--spacing(3)] [--toast-peek:--spacing(3)] [--toast-scale:calc(max(0,1-(var(--toast-index)*.1)))] [--toast-shrink:calc(1-var(--toast-scale))]",
+                // Define offset-y variable
                 "data-[position*=top]:[--toast-calc-offset-y:calc(var(--toast-offset-y)+var(--toast-index)*var(--toast-gap)+var(--toast-swipe-movement-y))]",
                 "data-[position*=bottom]:[--toast-calc-offset-y:calc(var(--toast-offset-y)*-1+var(--toast-index)*var(--toast-gap)*-1+var(--toast-swipe-movement-y))]",
+                // Default state transform
                 "data-[position*=top]:transform-[translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)+(var(--toast-index)*var(--toast-peek))+(var(--toast-shrink)*var(--toast-calc-height))))_scale(var(--toast-scale))]",
                 "data-[position*=bottom]:transform-[translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--toast-peek))-(var(--toast-shrink)*var(--toast-calc-height))))_scale(var(--toast-scale))]",
+                // Limited state
                 "data-limited:opacity-0",
+                // Expanded state
                 "data-expanded:h-(--toast-height)",
                 "data-position:data-expanded:transform-[translateX(var(--toast-swipe-movement-x))_translateY(var(--toast-calc-offset-y))]",
-                "data-[position*=top]:data-starting-style:transform-[translateY(calc(-100%-var(--toast-inset)))]",
-                "data-[position*=bottom]:data-starting-style:transform-[translateY(calc(100%+var(--toast-inset)))]",
+                // Starting and ending animations
+                "motion-safe:data-[position*=top]:data-starting-style:transform-[translateY(calc(-100%-var(--toast-inset)))]",
+                "motion-safe:data-[position*=bottom]:data-starting-style:transform-[translateY(calc(100%+var(--toast-inset)))]",
                 "data-ending-style:opacity-0",
-                "data-[position*=top]:data-ending-style:not-data-limited:not-data-swipe-direction:transform-[translateY(calc(-100%-var(--toast-inset)))]",
-                "data-[position*=bottom]:data-ending-style:not-data-limited:not-data-swipe-direction:transform-[translateY(calc(100%+var(--toast-inset)))]",
+                // Reduced motion: no travel, fade in and out in place
+                "motion-reduce:data-starting-style:opacity-0 motion-reduce:[transition:opacity_.5s,height_.15s,background-color_.5s]",
+                // Ending animations (direction-aware)
+                "motion-safe:data-[position*=top]:data-ending-style:not-data-limited:not-data-swipe-direction:transform-[translateY(calc(-100%-var(--toast-inset)))]",
+                "motion-safe:data-[position*=bottom]:data-ending-style:not-data-limited:not-data-swipe-direction:transform-[translateY(calc(100%+var(--toast-inset)))]",
                 "data-ending-style:data-[swipe-direction=left]:transform-[translateX(calc(var(--toast-swipe-movement-x)-100%-var(--toast-inset)))_translateY(var(--toast-calc-offset-y))]",
                 "data-ending-style:data-[swipe-direction=right]:transform-[translateX(calc(var(--toast-swipe-movement-x)+100%+var(--toast-inset)))_translateY(var(--toast-calc-offset-y))]",
                 "data-ending-style:data-[swipe-direction=up]:transform-[translateY(calc(var(--toast-swipe-movement-y)-100%-var(--toast-inset)))]",
                 "data-ending-style:data-[swipe-direction=down]:transform-[translateY(calc(var(--toast-swipe-movement-y)+100%+var(--toast-inset)))]",
+                // Ending animations (expanded)
                 "data-expanded:data-ending-style:data-[swipe-direction=left]:transform-[translateX(calc(var(--toast-swipe-movement-x)-100%-var(--toast-inset)))_translateY(var(--toast-calc-offset-y))]",
                 "data-expanded:data-ending-style:data-[swipe-direction=right]:transform-[translateX(calc(var(--toast-swipe-movement-x)+100%+var(--toast-inset)))_translateY(var(--toast-calc-offset-y))]",
                 "data-expanded:data-ending-style:data-[swipe-direction=up]:transform-[translateY(calc(var(--toast-swipe-movement-y)-100%-var(--toast-inset)))]",
                 "data-expanded:data-ending-style:data-[swipe-direction=down]:transform-[translateY(calc(var(--toast-swipe-movement-y)+100%+var(--toast-inset)))]",
+                upsertReplayClassName(toast),
                 immediatelyDismissedIds.has(toast.id) && "data-ending-style:transition-none",
               )}
-              data-position={position}
-              key={toast.id}
-              swipeDirection={
-                position.includes("center")
-                  ? [isTop ? "up" : "down"]
-                  : position.includes("left")
-                    ? ["left", isTop ? "up" : "down"]
-                    : ["right", isTop ? "up" : "down"]
-              }
+              {...toastData?.rootProps}
+              data-position={stablePosition}
+              swipeDirection={swipeDirection}
               toast={toast}
             >
               <Toast.Content className="pointer-events-auto flex items-center justify-between gap-1.5 overflow-hidden px-3.5 py-3 text-sm transition-opacity duration-250 data-behind:not-data-expanded:pointer-events-none data-behind:opacity-0 data-expanded:opacity-100">
@@ -148,10 +171,7 @@ function Toasts({ isFormEditor, isMobile, openOverlayCount, position = "bottom-l
                       className="[&>svg]:h-lh [&>svg]:w-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
                       data-slot="toast-icon"
                     >
-                      <Icon 
-                        name={iconName} 
-                        className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" 
-                      />
+                      <Icon name={iconName} className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" />
                     </div>
                   )}
 
@@ -183,28 +203,23 @@ function Toasts({ isFormEditor, isMobile, openOverlayCount, position = "bottom-l
   );
 }
 
-function AnchoredToastProvider({ children, ...props }: Toast.Provider.Props) {
-  return (
-    <Toast.Provider toastManager={anchoredToastManager} {...props}>
-      {children}
-      <AnchoredToasts />
-    </Toast.Provider>
-  );
-}
-
-function AnchoredToasts() {
+function AnchoredToasts({
+  portalProps,
+}: {
+  portalProps?: ComponentProps<typeof Toast.Portal>;
+}): ReactElement {
   const { toasts } = Toast.useToastManager();
 
   return (
-    <Toast.Portal data-slot="toast-portal-anchored">
+    <Toast.Portal data-slot="toast-portal-anchored" {...portalProps}>
       <Toast.Viewport
         className="outline-none"
         data-slot="toast-viewport-anchored"
       >
         {toasts.map((toast) => {
           const iconName = toast.type ? TOAST_ICONS[toast.type] : null;
-          const tooltipStyle =
-            (toast.data as { tooltipStyle?: boolean })?.tooltipStyle ?? false;
+          const toastData = toast.data as ToastData | undefined;
+          const tooltipStyle = toastData?.tooltipStyle ?? false;
           const positionerProps = toast.positionerProps;
 
           if (!positionerProps?.anchor) {
@@ -213,19 +228,21 @@ function AnchoredToasts() {
 
           return (
             <Toast.Positioner
+              key={toast.id}
               className="z-[9999] max-w-[min(--spacing(64),var(--available-width))]"
               data-slot="toast-positioner"
-              key={toast.id}
               sideOffset={positionerProps.sideOffset ?? 4}
               toast={toast}
             >
               <Toast.Root
                 className={cn(
-                  "relative text-balance border bg-popover not-dark:bg-clip-padding text-popover-foreground text-xs transition-[scale,opacity] before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] data-ending-style:scale-98 data-starting-style:scale-98 data-ending-style:opacity-0 data-starting-style:opacity-0 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+                  "relative text-balance border bg-popover not-dark:bg-clip-padding text-popover-foreground text-xs transition-[scale,opacity] before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] data-ending-style:opacity-0 data-starting-style:opacity-0 motion-safe:data-ending-style:scale-98 motion-safe:data-starting-style:scale-98 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
                   tooltipStyle
                     ? "rounded-md shadow-md/5 before:rounded-[calc(var(--radius-md)-1px)]"
                     : "rounded-lg shadow-lg/5 before:rounded-[calc(var(--radius-lg)-1px)]",
+                  upsertReplayClassName(toast),
                 )}
+                {...toastData?.rootProps}
                 data-slot="toast-popup"
                 toast={toast}
               >
@@ -241,10 +258,7 @@ function AnchoredToasts() {
                           className="[&>svg]:h-lh [&>svg]:w-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
                           data-slot="toast-icon"
                         >
-                          <Icon 
-                            name={iconName} 
-                            className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" 
-                          />
+                          <Icon name={iconName} className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" />
                         </div>
                       )}
 
@@ -278,10 +292,61 @@ function AnchoredToasts() {
   );
 }
 
-export {
-  ToastProvider,
-  type ToastPosition,
-  toastManager,
-  AnchoredToastProvider,
-  anchoredToastManager,
-};
+export const toastManager: ReturnType<typeof Toast.createToastManager> =
+  Toast.createToastManager();
+
+export const anchoredToastManager: ReturnType<typeof Toast.createToastManager> =
+  Toast.createToastManager();
+
+export type ToastPosition =
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
+
+export interface ToastProviderProps extends Toast.Provider.Props {
+  position?: ToastPosition;
+  portalProps?: ComponentProps<typeof Toast.Portal>;
+}
+
+export function ToastProvider({
+  children,
+  position,
+  portalProps,
+  timeout = 3000,
+  ...props
+}: ToastProviderProps): ReactElement {
+  const isMobile = useIsMobile()
+  const isSheetOpen = useSheetOpen()
+  const openOverlayCount = useOpenOverlayCount()
+  const resolvedPosition = position ?? (isMobile || isSheetOpen ? "bottom-left" : "bottom-right")
+  const toastPosition = isMobile ? resolvedPosition.replace("bottom", "top") as ToastPosition : resolvedPosition
+
+  return (
+    <Toast.Provider timeout={timeout} toastManager={toastManager} {...props}>
+      {children}
+      <Toasts isMobile={isMobile} openOverlayCount={openOverlayCount} portalProps={portalProps} position={toastPosition} retainPosition={!isMobile && !isSheetOpen && position === undefined} />
+    </Toast.Provider>
+  );
+}
+
+export interface AnchoredToastProviderProps extends Toast.Provider.Props {
+  portalProps?: ComponentProps<typeof Toast.Portal>;
+}
+
+export function AnchoredToastProvider({
+  children,
+  portalProps,
+  ...props
+}: AnchoredToastProviderProps): ReactElement {
+  return (
+    <Toast.Provider toastManager={anchoredToastManager} {...props}>
+      {children}
+      <AnchoredToasts portalProps={portalProps} />
+    </Toast.Provider>
+  );
+}
+
+export { Toast as ToastPrimitive };

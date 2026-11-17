@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import FormLabel from "~/components/forms/form-label"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import {
   Select,
   SelectItem,

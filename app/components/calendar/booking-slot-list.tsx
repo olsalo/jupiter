@@ -9,7 +9,7 @@ import { Separator } from "~/components/ui/separator"
 import { Tooltip, TooltipPopup, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip"
 import { UserAvatar } from "~/components/data-display/user-avatar"
 import { type FormatPreference } from "~/lib/localization/format-preference"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 
 type BookingSlot = { startsAt: string; endsAt: string; staffMemberId: string; locationId: string | null }
 type BookingMember = { id: string; name: string; image?: string | null }

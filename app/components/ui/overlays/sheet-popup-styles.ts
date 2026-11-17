@@ -1,4 +1,4 @@
-import { cn } from "~/lib/utils"
+import { cn } from "../utils/utils"
 
 export type SheetSide = "right" | "left" | "top" | "bottom"
 export type SheetVariant = "default" | "inset"

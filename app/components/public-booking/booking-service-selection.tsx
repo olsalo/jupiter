@@ -1,8 +1,8 @@
 import { useId, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import Icon from "~/components/icons"
-import { cn } from "~/lib/utils"
+import Icon from "~/components/ui/icons/icons"
+import { cn } from "~/components/ui/utils/utils"
 import { Button } from "~/components/ui/button"
 import {
   InputGroup,

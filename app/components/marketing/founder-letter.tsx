@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import type { FounderNoteProps } from "~/components/marketing/founder-note"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import { AppLogo } from "~/components/navigation/app-logo"
 
 export function FounderLetter({ name, portraitSrc, signatureSrc }: FounderNoteProps) {

@@ -24,7 +24,7 @@ import { BusinessScheduleSettings, businessScheduleFormId } from "~/components/s
 import { BusinessSettingsHeader } from "~/components/settings/business/business-settings-header"
 import { TeamPersonForm, type SettingsPersonFormState } from "~/components/team/team-person-form"
 import { AppForm, type AppFormState } from "~/components/forms/app-form"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import FormLabel from "~/components/forms/form-label"
 import { Button } from "~/components/ui/button"
 import { Badge } from "~/components/ui/badge"
@@ -86,7 +86,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip"
-import { cn } from "~/lib/utils"
+import { cn } from "~/components/ui/utils/utils"
 import { authClient } from "~/lib/auth/client"
 import { onboardingCountries } from "~/lib/localization/countries"
 import { currencyItems } from "~/lib/localization/currencies"
@@ -396,7 +396,7 @@ export function SettingsModal({
                   <button
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "relative flex min-h-9 w-full min-w-0 shrink-0 items-center gap-2 overflow-hidden rounded-md px-2 text-start text-sm font-medium outline-none transition-[background-color,color] duration-300 ease-out focus-visible:ring-2 focus-visible:ring-ring max-sm:w-auto max-sm:min-w-max max-sm:px-3 motion-reduce:transition-none",
+                      "relative flex min-h-9 w-full min-w-0 shrink-0 items-center gap-2 overflow-hidden rounded-md px-2 text-start text-sm font-medium outline-none transition-none duration-300 ease-out focus-visible:ring-2 focus-visible:ring-ring max-sm:w-auto max-sm:min-w-max max-sm:px-3 motion-reduce:transition-none",
                       isActive
                         ? "bg-[color-mix(in_oklab,var(--sidebar-accent)_97.5%,black)] text-sidebar-accent-foreground before:absolute before:-left-5 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-r-sm before:bg-primary before:content-[''] max-sm:before:hidden"
                         : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

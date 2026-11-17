@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next"
 
 import { AppForm, type AppFormState } from "~/components/forms/app-form"
 import { FormSwitch } from "~/components/forms/form-switch"
-import Icon from "~/components/icons"
+import Icon from "~/components/ui/icons/icons"
 import FormLabel from "~/components/forms/form-label"
 import { PhoneInput } from "~/components/forms/phone-input"
 import { ResponsiveSheetPanel, ResponsiveSheetFooter } from "~/components/overlays/responsive-sheet"
@@ -31,6 +31,7 @@ import { useAppContext } from "~/lib/hooks/use-app-context"
 import { toast } from "~/lib/toast"
 import { PermissionLevelSelect } from "./permission-level-select"
 import { TeamBreaksFields } from "./team-breaks-fields"
+import { TeamPersonExtraHours } from "./team-person-extra-hours"
 import { TeamPersonTimeOff } from "./team-person-time-off"
 import { TeamPersonEditHeader } from "./team-person-edit-header"
 import { TeamPersonNavigationLayout } from "./team-person-navigation-layout"
@@ -66,7 +67,7 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
   const root = useRouteLoaderData<typeof rootLoader>("root")
   const subscriptionReadOnly = Boolean(useAppContext().subscriptionReadOnly)
   const initialTab = new URLSearchParams(location.search).get("editTab")
-  const [localEditTab, setLocalEditTab] = useState(person && (initialTab === "access" || initialTab === "services" || initialTab === "availability" || initialTab === "breaks" || initialTab === "time-off") ? initialTab : "profile")
+  const [localEditTab, setLocalEditTab] = useState(person && (initialTab === "access" || initialTab === "services" || initialTab === "availability" || initialTab === "breaks" || initialTab === "time-off" || initialTab === "extra-hours") ? initialTab : "profile")
   const editTab = selfSettings ? settingsTab : localEditTab
   const setEditTab = (tab: string) => {
     if (selfSettings) {
@@ -165,6 +166,9 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
     {person && !selfSettings ? <PersonFormSection editing={true} selectedTab={editTab} tab="time-off" className="flex min-h-0 flex-1 flex-col [&_[data-slot=scroll-area-content]]:flex [&_[data-slot=scroll-area-content]]:min-h-full [&_[data-slot=scroll-area-content]]:flex-col">
       {person.staff ? <TeamPersonTimeOff staff={person.staff} canManage={true} self={false} /> : <Alert className="m-6"><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
     </PersonFormSection> : null}
+    {person && !selfSettings ? <PersonFormSection editing={true} selectedTab={editTab} tab="extra-hours" className="flex min-h-0 flex-1 flex-col">
+      {person.staff ? <TeamPersonExtraHours staff={person.staff} canManage={true} onBusyChange={onPendingChange} /> : <Alert className="m-6"><AlertTitle>{t("people.notBookable")}</AlertTitle><AlertDescription>{t("people.noStaffDescription")}</AlertDescription></Alert>}
+    </PersonFormSection> : null}
     <AppForm<PersonFormInput, PersonFormValues, unknown, PersonFormFields, PersonFormFields>
       className="contents"
       ref={setFormApi}
@@ -253,7 +257,7 @@ export const TeamPersonForm = memo(function TeamPersonForm({ person, close, onPe
         const submitting = form.formState.isSubmitting || update.isPending || updateOwn.isPending || resetOwnHours.isPending
         return <>
           {selfSettings ? <SettingsFormStateObserver isDirty={hasEdits} isSubmitting={submitting} canSubmit={canSubmit} isLoading={viewLoading} onChange={onSettingsFormStateChange} /> : null}
-          <div className={editTab === "time-off" || (editTab === "access" && !selfSettings) ? "hidden" : "contents"}>
+          <div className={editTab === "time-off" || editTab === "extra-hours" || (editTab === "access" && !selfSettings) ? "hidden" : "contents"}>
           {editing && !selfSettings && (editTab === "profile" || editTab === "services" || editTab === "availability" || editTab === "breaks") ? <div className="shrink-0 px-6 pt-6 pb-5"><SettingsSectionHeader title={t(editTab === "profile" ? "people.contact" : editTab === "services" ? "people.services" : editTab === "availability" ? "people.availability" : "people.breaks")} description={t(editTab === "profile" ? "people.contactSettingsDescription" : editTab === "services" ? "people.profileServicesDescription" : editTab === "availability" ? "people.editHoursDescription" : "people.breaksDescription")} /></div> : null}
           {servicesLoading ? <ResponsiveSheetPanel className="relative flex min-h-0 flex-1" scrollable={false}>
             <TeamPanelLoading label={t("people.loadingServices")} />

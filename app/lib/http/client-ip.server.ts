@@ -2,7 +2,7 @@ import { isIP } from "node:net"
 
 // The ingress must overwrite this header, never append client-supplied values.
 export function trustedIpHeader() {
-  return process.env.TRUSTED_CLIENT_IP_HEADER?.trim().toLowerCase() || process.env.BOOKING_TRUSTED_IP_HEADER?.trim().toLowerCase() || "x-real-ip"
+  return process.env.TRUSTED_CLIENT_IP_HEADER?.trim().toLowerCase() || "x-real-ip"
 }
 
 export function trustedClientIp(headers: Headers) {

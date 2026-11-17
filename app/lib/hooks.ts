@@ -1,41 +1,9 @@
+export { useIsMobile, useMediaQuery } from "~/components/ui/utils/use-media-query"
+
 import type { DehydratedState } from "@tanstack/query-core"
 import * as React from "react"
 import { useMatches } from "react-router"
 import { merge } from "ts-deepmerge"
-
-function resolveQuery(query: string) {
-  if (query.startsWith("max-")) {
-    return `(width < ${query.slice(4)})`
-  }
-
-  if (query.startsWith("min-")) {
-    return `(width >= ${query.slice(4)})`
-  }
-
-  return query
-}
-
-export function useMediaQuery(query: string, { serverMatches = false }: { serverMatches?: boolean } = {}) {
-  const mediaQuery = resolveQuery(query)
-
-  const subscribe = React.useCallback((onChange: () => void) => {
-    const mediaQueryList = window.matchMedia(mediaQuery)
-    mediaQueryList.addEventListener("change", onChange)
-
-    return () => {
-      mediaQueryList.removeEventListener("change", onChange)
-    }
-  }, [mediaQuery])
-
-  const getSnapshot = React.useCallback(
-    () => window.matchMedia(mediaQuery).matches,
-    [mediaQuery],
-  )
-
-  const getServerSnapshot = React.useCallback(() => serverMatches, [serverMatches])
-
-  return React.useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
-}
 
 export function useMinimumLoading({
   enabled,
@@ -154,9 +122,7 @@ export function useDehydratedState(): DehydratedState | undefined {
     : undefined
 }
 
-export function useIsMobile() {
-  return useMediaQuery("max-768px")
-}
+
 
 function isLoaderDataWithQueryClient(
   loaderData: unknown,
