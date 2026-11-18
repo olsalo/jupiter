@@ -7,7 +7,7 @@ import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
 
 const appPath = new URL("../app", import.meta.url).pathname
-const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/billing-notification", appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
+const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/billing-notification", appType: "custom", resolve: { alias: { "~": appPath, "@": appPath } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
 try {
   const { BillingNotificationBar } = await vite.ssrLoadModule("/app/components/billing/billing-notification-bar.tsx") as typeof import("../app/components/billing/billing-notification-bar")
   const { resources } = await vite.ssrLoadModule("/app/locales/index.ts") as typeof import("../app/locales")

@@ -10,7 +10,7 @@ const vite = await createServer({
   configFile: false,
   cacheDir: "node_modules/.vite-tests/booking-customer-details",
   appType: "custom",
-  resolve: { alias: { "~": appPath, "@coss/ui/lib": `${appPath}/lib` } },
+  resolve: { alias: { "~": appPath } },
   server: { middlewareMode: true, ws: false, hmr: false, watch: null },
 })
 try {

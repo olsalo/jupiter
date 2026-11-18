@@ -18,10 +18,6 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@coss/ui/components": fileURLToPath(
-        new URL("./app/components/ui", import.meta.url),
-      ),
-      "@coss/ui/lib": fileURLToPath(new URL("./app/lib", import.meta.url)),
       "@": fileURLToPath(new URL("./app", import.meta.url)),
       "~": fileURLToPath(new URL("./app", import.meta.url)),
     },

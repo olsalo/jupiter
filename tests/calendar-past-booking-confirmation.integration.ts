@@ -8,7 +8,7 @@ import { createServer } from "vite"
 
 const vite = await createServer({
   configFile: false, cacheDir: "node_modules/.vite-tests/calendar-past-booking-confirmation", appType: "custom",
-  resolve: { alias: { "~": new URL("../app", import.meta.url).pathname, "@": new URL("../app", import.meta.url).pathname, "@coss/ui/lib": new URL("../app/lib", import.meta.url).pathname } },
+  resolve: { alias: { "~": new URL("../app", import.meta.url).pathname, "@": new URL("../app", import.meta.url).pathname } },
   server: { ws: false, middlewareMode: true, hmr: false, watch: null },
 })
 

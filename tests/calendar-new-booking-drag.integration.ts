@@ -13,7 +13,7 @@ const vite = await createServer({
   configFile: false,
   cacheDir: "node_modules/.vite-tests/calendar-new-booking-drag",
   appType: "custom",
-  resolve: { alias: { "~": appPath, "@coss/ui/lib": `${appPath}/lib` } },
+  resolve: { alias: { "~": appPath } },
   server: { middlewareMode: true, hmr: false, ws: false, watch: null },
 })
 

@@ -11,7 +11,7 @@ import { createServer } from "vite"
 const appPath = new URL("../app", import.meta.url).pathname
 const vite = await createServer({
   configFile: false, cacheDir: "node_modules/.vite-tests/calendar-booking-panel", appType: "custom",
-  resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } },
+  resolve: { alias: { "~": appPath, "@": appPath } },
   server: { middlewareMode: true, ws: false, hmr: false, watch: null },
 })
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } })

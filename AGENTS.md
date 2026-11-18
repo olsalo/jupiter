@@ -11,7 +11,7 @@
 - Use ä, ö and other letters for languages that use them eg. finnish
 - If you need create a new component or compose reusable component from UI primitives, add them to "components" folder (not "ui" folder). You can create folders to organize components
 - Use "latest" for all dependency versions when adding or updating dependencies
-- Always try use coss components before creating custom solutions
+- Always try to use existing UI components before creating custom solutions
 - if making db changes run both db:push and db:generate
 - always pay attention to UI details and element sizes, make things polished and symmetrical
 - if creating nested modals, force backdrop render
@@ -23,7 +23,7 @@
 - if form submit leads to redirect to other route, ensure the submit button loading state also take into account the next loader loading
 - always use small business friendly ui labels, no corporate talk
 - for date formating use lib/localization/format-preference
-- use coss alert component for error/info states
+- use the shared Alert component for error/info states
 - always look at related files for example how to do things
 - don't use prisma directly in server loader, but via trpc route
 - in ui labels, only use period at end if there is comma in sentence

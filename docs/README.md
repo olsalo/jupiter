@@ -8,6 +8,7 @@ Keep these conventions when starting another product. Code links refer to the cu
 
 | Document | Purpose |
 | --- | --- |
+| [System architecture](generic/system-architecture.md) | Reusable system structure, layer boundaries, request flows, and implementation sequence for another product |
 | [Code organization](generic/code-organization.md) | Shared component and library boundaries, imports, and placement rules |
 | [Data handling](generic/data-handling.md) | SSR, hydration, client navigation, caching, tRPC mutations, and forms |
 | [Routing](generic/routing.md) | Explicit React Router route configuration |

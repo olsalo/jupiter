@@ -9,7 +9,7 @@ import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
 
 const appPath = new URL("../app", import.meta.url).pathname
-const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/billing-plan-form", appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
+const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/billing-plan-form", appType: "custom", resolve: { alias: { "~": appPath, "@": appPath } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } })
 try {
   const { BillingPlanForm } = await vite.ssrLoadModule("/app/components/billing/billing-plan-form.tsx") as typeof import("../app/components/billing/billing-plan-form")

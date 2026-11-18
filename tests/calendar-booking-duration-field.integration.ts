@@ -6,7 +6,7 @@ import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
 
 const appPath = new URL("../app", import.meta.url).pathname
-const vite = await createServer({ configFile: false, appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
+const vite = await createServer({ configFile: false, appType: "custom", resolve: { alias: { "~": appPath, "@": appPath } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
 try {
   const { BookingDurationField } = await vite.ssrLoadModule("/app/components/calendar/booking-duration-field.tsx") as typeof import("../app/components/calendar/booking-duration-field")
   const i18n = createInstance()

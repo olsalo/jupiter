@@ -13,7 +13,7 @@ import type { RouteConfigEntry } from "@react-router/dev/routes"
 const appPath = new URL("../app", import.meta.url).pathname
 const vite = await createServer({
   configFile: false, appType: "custom",
-  resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } },
+  resolve: { alias: { "~": appPath, "@": appPath } },
   server: { middlewareMode: true, hmr: false, ws: false, watch: null },
 })
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } })

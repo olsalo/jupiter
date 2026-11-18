@@ -13,7 +13,7 @@ const vite = await createServer({
   resolve: { alias: {
     "~": new URL("../app", import.meta.url).pathname,
     "@": new URL("../app", import.meta.url).pathname,
-    "@coss/ui/lib": new URL("../app/lib", import.meta.url).pathname,
+
   } },
   server: { middlewareMode: true, ws: false, hmr: false, watch: null },
 })

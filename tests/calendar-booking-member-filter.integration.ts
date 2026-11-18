@@ -11,7 +11,7 @@ process.env.NODE_ENV = "test"
 process.env.EMAIL_PROVIDER = ""
 const vite = await createServer({
   configFile: false, cacheDir: "node_modules/.vite-tests/calendar-booking-member-filter", appType: "custom",
-  resolve: { alias: { "~": new URL("../app", import.meta.url).pathname, "@": new URL("../app", import.meta.url).pathname, "@coss/ui/lib": new URL("../app/lib", import.meta.url).pathname } },
+  resolve: { alias: { "~": new URL("../app", import.meta.url).pathname, "@": new URL("../app", import.meta.url).pathname } },
   server: { ws: false, middlewareMode: true, hmr: false, watch: null },
 })
 const { prisma } = await vite.ssrLoadModule("/app/lib/database/prisma.server.ts") as typeof import("../app/lib/database/prisma.server.ts")

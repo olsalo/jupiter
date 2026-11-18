@@ -7,7 +7,7 @@ const appPath = new URL("../app", import.meta.url).pathname
 const vite = await createServer({
   configFile: false,
   appType: "custom",
-  resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/lib": `${appPath}/lib` } },
+  resolve: { alias: { "~": appPath, "@": appPath } },
   server: { middlewareMode: true, ws: false, hmr: false, watch: null },
 })
 

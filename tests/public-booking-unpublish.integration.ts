@@ -11,7 +11,7 @@ const vite = await createServer({
   configFile: false,
   cacheDir: "node_modules/.vite-tests/public-booking-unpublish",
   appType: "custom",
-  resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/lib": `${appPath}/lib` } },
+  resolve: { alias: { "~": appPath, "@": appPath } },
   plugins: [{
     name: "unpublished-booking-fixture",
     transform(code, id) {

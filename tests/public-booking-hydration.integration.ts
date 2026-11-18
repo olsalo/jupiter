@@ -15,7 +15,7 @@ timeoutManager.setTimeoutProvider({
 const appPath = new URL("../app", import.meta.url).pathname
 const vite = await createServer({
   configFile: false, cacheDir: "node_modules/.vite-tests/public-booking-hydration", appType: "custom",
-  resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } },
+  resolve: { alias: { "~": appPath, "@": appPath } },
   plugins: [{
     name: "booking-loader-fixture",
     transform(_code, id) {

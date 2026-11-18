@@ -9,14 +9,30 @@ const vite = await createServer({
   configFile: false,
   cacheDir: "node_modules/.vite-tests/auth-routing",
   appType: "custom",
-  resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } },
+  resolve: { alias: { "~": appPath, "@": appPath } },
   server: { middlewareMode: true, hmr: false, ws: false, watch: null },
 })
 
 try {
   const { auth } = await vite.ssrLoadModule("/app/lib/auth/server.ts") as typeof import("../app/lib/auth/server")
   const { loader } = await vite.ssrLoadModule("/app/routes/auth.tsx") as typeof import("../app/routes/auth")
-  const { loader: homeLoader } = await vite.ssrLoadModule("/app/routes/home.tsx") as typeof import("../app/routes/home")
+  const { loader: homeLoader, middleware: homeMiddleware } = await vite.ssrLoadModule("/app/routes/home.tsx") as typeof import("../app/routes/home")
+  for (const [path, cookie, destination] of [
+    ["/", "", "/auth"],
+    ["/?welcome=true", "", "/auth"],
+    ["/", "better-auth.session_token=expired", "/auth?sessionExpired=1"],
+  ]) {
+    const url = new URL(path, "http://localhost")
+    await assert.rejects(async () => {
+      for (const middleware of homeMiddleware) {
+        await middleware({
+          request: new Request(url, { headers: { cookie } }),
+          url, params: {}, context: new RouterContextProvider(), pattern: "/",
+        }, async () => new Response())
+      }
+      homeLoader({ request: new Request(url) } as Parameters<typeof homeLoader>[0])
+    }, (error: unknown) => error instanceof Response && error.headers.get("Location") === destination)
+  }
   for (const origin of ["http://localhost", "https://app.example.com", "https://example.com"]) {
     assert.throws(() => homeLoader({ request: new Request(`${origin}/?welcome=true`) } as Parameters<typeof homeLoader>[0]),
       (error: unknown) => error instanceof Response && error.headers.get("Location") === "/calendar?welcome=true")

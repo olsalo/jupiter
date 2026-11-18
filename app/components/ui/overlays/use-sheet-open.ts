@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react"
 const sheetSelector = [
   '[data-slot="sheet-popup"][data-open]',
   '[data-slot="drawer-popup"][data-open]',
+  '[data-slot="calendar-side-panel"]',
 ].join(",")
 
 function subscribe(onChange: () => void) {

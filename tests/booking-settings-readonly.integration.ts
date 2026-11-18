@@ -9,7 +9,7 @@ import { I18nextProvider } from "react-i18next"
 import { createServer } from "vite"
 
 const appPath = new URL("../app", import.meta.url).pathname
-const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/booking-settings-readonly", appType: "custom", resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
+const vite = await createServer({ configFile: false, cacheDir: "node_modules/.vite-tests/booking-settings-readonly", appType: "custom", resolve: { alias: { "~": appPath, "@": appPath } }, server: { middlewareMode: true, hmr: false, ws: false, watch: null } })
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } })
 try {
   const { BookingSettings } = await vite.ssrLoadModule("/app/components/settings/business/booking-settings.tsx") as typeof import("../app/components/settings/business/booking-settings")

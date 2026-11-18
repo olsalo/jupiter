@@ -11,8 +11,6 @@ const vite = await createServer({
   resolve: { alias: {
     "~": appPath,
     "@": appPath,
-    "@coss/ui/components": `${appPath}/components/ui`,
-    "@coss/ui/lib": `${appPath}/lib`,
   } },
   server: { middlewareMode: true, ws: false, hmr: false, watch: null },
 })

@@ -24,7 +24,7 @@ for (const style of ["classic", "floating"]) {
     cacheDir: `node_modules/.vite-tests/page-layout-${style}`,
     appType: "custom",
     define: { "import.meta.env.APP_LAYOUT_STYLE": JSON.stringify(style) },
-    resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/lib": `${appPath}/lib` } },
+    resolve: { alias: { "~": appPath, "@": appPath } },
     server: { middlewareMode: true, ws: false, hmr: false, watch: null },
   })
   try {

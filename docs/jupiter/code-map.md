@@ -30,7 +30,7 @@ This inventory describes the current scheduling product. Follow the shared [code
 | `settings/preferences/` | Language, formatting, theme, and accent controls |
 | `settings/profile/` | Profile settings headers, tabs, and preferences |
 | `team/` | Team members, invitations, access, working hours, breaks, and time off |
-| `ui/` | Existing coss primitives; unchanged by this reorganization |
+| `ui/` | Existing UI primitives; unchanged by this reorganization |
 
 Feature-specific hooks and types stay beside their components, such as `services/use-service-order.ts` and `team/team-types.ts`. Shared compositions of UI primitives belong in the appropriate component folder, rather than `ui/`.
 

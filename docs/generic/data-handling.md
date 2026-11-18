@@ -159,7 +159,7 @@ Server procedures may validate, log, call services, or persist data as needed. I
 
 ## Loading, errors, and access checks
 
-Components must handle pending queries because client navigation can reach them before data is available. Use the existing page or overlay loading patterns. Use COSS alerts for query errors and provide a retry action; retain usable cached content when a background refresh fails.
+Components must handle pending queries because client navigation can reach them before data is available. Use the existing page or overlay loading patterns. Use shared Alert components for query errors and provide a retry action; retain usable cached content when a background refresh fails.
 
 Internal SSR loaders can catch a failed prefetch so the component query owns recovery. This is a deliberate page-level choice, not a rule for all loaders. Public pages that need HTTP error statuses must preserve those statuses and expose only safe error details. See [Jupiter-specific behavior](../jupiter/data-handling.md) for the public booking implementation.
 

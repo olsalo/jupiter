@@ -16,7 +16,7 @@ timeoutManager.setTimeoutProvider({
 const appPath = new URL("../app", import.meta.url).pathname
 const vite = await createServer({
   configFile: false, cacheDir: "node_modules/.vite-tests/root-state", appType: "custom",
-  resolve: { alias: { "~": appPath, "@": appPath, "@coss/ui/components": `${appPath}/components/ui`, "@coss/ui/lib": `${appPath}/lib` } },
+  resolve: { alias: { "~": appPath, "@": appPath } },
   plugins: [{ name: "root-state-fixtures", transform(_code, id) {
     if (id === `${appPath}/lib/trpc/server.ts`) return `
       let query = async () => { throw new Error("Unexpected app context query") }

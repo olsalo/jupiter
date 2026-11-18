@@ -11,8 +11,6 @@ const vite = await createServer({
   configFile: false,
   appType: "custom",
   resolve: { alias: {
-    "@coss/ui/components": new URL("../app/components/ui", import.meta.url).pathname,
-    "@coss/ui/lib": new URL("../app/lib", import.meta.url).pathname,
     "@": new URL("../app", import.meta.url).pathname,
     "~": new URL("../app", import.meta.url).pathname,
   } },
